@@ -5,6 +5,7 @@ import com.corrodinggames.rts.gameFramework.InputController
 import com.corrodinggames.rts.gameFramework.SettingsEngine
 import io.github.rwx.app.AppOptions
 import io.github.rwx.app.installApp
+import io.github.rwx.agent.AgentControlServer
 import io.github.rwx.di.coreModule
 import io.github.rwx.di.desktopModule
 import io.github.rwx.i18n.LocaleSettings
@@ -25,6 +26,13 @@ import javax.swing.SwingUtilities
 object DesktopMain : KoinComponent {
     @JvmStatic
     fun main(args: Array<String>) {
+        val agentPort = args.firstOrNull { it.startsWith("--agent-port=") }
+            ?.substringAfter('=')
+            ?.toIntOrNull()
+        require(args.none { it.startsWith("--agent-port=") } || agentPort != null) {
+            "--agent-port must be an integer between 1 and 65535"
+        }
+        val appArgs = args.filterNot { it.startsWith("--agent-port=") }.toTypedArray()
         configureDesktopLogging()
         configureLwjglMemoryStack()
         System.setProperty("org.lwjgl.opengl.contextAPI", "native")
@@ -44,7 +52,7 @@ object DesktopMain : KoinComponent {
             get<GameSettingsRepository>().saveFrom(it)
         }
         LocaleSettings.initialize()
-        val options = AppOptions.parseArgs(args, isDesktop = true)
+        val options = AppOptions.parseArgs(appArgs, isDesktop = true)
         if (options.colorSchemeId != ColorSchemeRegistry.defaultSchemeId) {
             settings.selectedColorSchemeId.value = options.colorSchemeId
         }
@@ -84,6 +92,7 @@ object DesktopMain : KoinComponent {
                     onQuit = host::requestClose,
                 )
                 host.installComposeUi(session)
+                agentPort?.let { AgentControlServer.start(it, session) }
             } catch (error: Throwable) {
                 bridge.filePickerHost = null
                 host.dispose()

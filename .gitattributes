@@ -1,0 +1,21 @@
+# Keep repository text normalized and checked out as LF on every platform.
+# Explicit platform-specific rules below take precedence.
+* text=auto eol=lf
+
+# Windows command scripts need CRLF for cmd.exe compatibility.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Do not apply text conversion to common binary/game data formats.
+*.jar binary
+*.class binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.zip binary
+*.replay binary

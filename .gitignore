@@ -40,3 +40,18 @@ bin/
 *.jks
 *.keystore
 *.p12
+
+.httpCache/
+
+### Local game runtime state ###
+/.agents/
+/cache/
+/logs/
+/replays/
+/p2p.toml
+/preferences.toml
+/steam_appid.txt
+
+### JVM runtime diagnostics ###
+/hs_err_pid*.log
+/replay_pid*.log

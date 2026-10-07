@@ -1481,7 +1481,9 @@ public class GameLogic extends GameEngine {
         this.networkEngine.update(f);
         this.gameTimeMillis = (int) (this.gameTimeMillis + (f * 16.666666f));
         CommandQueue.drain();
+        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.applyPending(this);
         this.commandController.executeAllCommands();
+        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.publish(this);
         this.replayEngine.update(f);
         this.currentTick++;
         ModScheduler.tick();
