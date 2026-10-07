@@ -1938,6 +1938,14 @@ object I18n {
             ),
         )
 
+        val joinLastGame = entry(
+            key = "multiplayer.joinLastGame",
+            translations = linkedMapOf(
+                "en" to "Rejoin Last Game",
+                "zh-CN" to "重新加入上局",
+            ),
+        )
+
         val joinP2pRoom = entry(
             key = "multiplayer.joinP2pRoom",
             translations = linkedMapOf(
@@ -2536,6 +2544,30 @@ object I18n {
                 ),
             )
 
+            val desktopRenderBackend = entry(
+                key = "settings.display.desktopRenderBackend",
+                translations = linkedMapOf(
+                    "en" to "Render backend",
+                    "zh-CN" to "渲染后端",
+                ),
+            )
+
+            val desktopRenderBackendSkia = entry(
+                key = "settings.display.desktopRenderBackendSkia",
+                translations = linkedMapOf(
+                    "en" to "Skia (Experimental)",
+                    "zh-CN" to "Skia（实验性）",
+                ),
+            )
+
+            val desktopRenderBackendSlick = entry(
+                key = "settings.display.desktopRenderBackendSlick",
+                translations = linkedMapOf(
+                    "en" to "Slick (Compatible)",
+                    "zh-CN" to "Slick（兼容）",
+                ),
+            )
+
             val edgeScrollSpeed = entry(
                 key = "settings.display.edgeScrollSpeed",
                 translations = linkedMapOf(
@@ -2600,6 +2632,14 @@ object I18n {
                 ),
             )
 
+            val showBackgroundBattleDemo = entry(
+                key = "settings.display.showBackgroundBattleDemo",
+                translations = linkedMapOf(
+                    "en" to "Show background battle demo",
+                    "zh-CN" to "显示背景战斗演示",
+                ),
+            )
+
             val showFps = entry(
                 key = "settings.display.showFps",
                 translations = linkedMapOf(
@@ -2613,14 +2653,6 @@ object I18n {
                 translations = linkedMapOf(
                     "en" to "Show HP changes",
                     "zh-CN" to "显示血量变化",
-                ),
-            )
-
-            val showMainMenuBackgroundDemo = entry(
-                key = "settings.display.showMainMenuBackgroundDemo",
-                translations = linkedMapOf(
-                    "en" to "Show main menu battle demo",
-                    "zh-CN" to "显示主菜单战斗演示",
                 ),
             )
 
@@ -3000,14 +3032,6 @@ object I18n {
             )
 
         }
-
-        val saved = entry(
-            key = "settings.saved",
-            translations = linkedMapOf(
-                "en" to "Settings saved",
-                "zh-CN" to "设置已保存",
-            ),
-        )
 
         object storage {
             val `external` = entry(

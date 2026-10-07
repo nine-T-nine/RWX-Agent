@@ -86,12 +86,6 @@ class GameSettingsRepository(
         }
     }
 
-    fun discardChanges(model: SettingsModel) {
-        loadFromPreferences(model)
-        applyToLiveSettings(model, runtimeSettings())
-        GameEngine.getInstance()?.musicManager?.onSettingsChanged()
-    }
-
     private fun loadFromPreferences(model: SettingsModel) {
         val prefs = preferences
         model.batterySaving.value = prefs.getBoolean(KEY_BATTERY_SAVING, false)
@@ -108,7 +102,7 @@ class GameSettingsRepository(
         model.shaderEffects.value = prefs.getBoolean(KEY_SHADER_EFFECTS, false)
         model.teamShaders.value = prefs.getBoolean(KEY_TEAM_SHADERS, false)
         model.useAndroidOpenGlRenderer.value = prefs.getBoolean(KEY_ANDROID_OPENGL_RENDERER, false)
-        model.showMainMenuBackgroundDemo.value = prefs.getBoolean(KEY_SHOW_MAIN_MENU_BACKGROUND_DEMO, true)
+        model.showBackgroundBattleDemo.value = prefs.getBoolean(KEY_SHOW_BACKGROUND_BATTLE_DEMO, true)
         model.renderBackground.value = prefs.getBoolean(KEY_RENDER_BACKGROUND, true)
         model.renderExtraLayers.value = prefs.getBoolean(KEY_RENDER_EXTRA_LAYERS, true)
         model.showHpChanges.value = prefs.getBoolean(KEY_SHOW_HP_CHANGES, true)
@@ -128,6 +122,8 @@ class GameSettingsRepository(
         model.forceEnglish.value = prefs.getBoolean(KEY_FORCE_ENGLISH, false)
         model.enableAnimations.value = prefs.getBoolean(KEY_ENABLE_ANIMATIONS, true)
         model.overlayOpacity.value = normalizeOverlayOpacity(prefs.getFloat(KEY_OVERLAY_OPACITY, DEFAULT_OVERLAY_OPACITY))
+        model.desktopRenderBackend.value =
+            normalizeDesktopRenderBackend(prefs.getString(KEY_DESKTOP_RENDER_BACKEND, "slick"))
 
         model.quickRally.value = prefs.getBoolean(KEY_QUICK_RALLY, true)
         model.doubleClickToAttackMove.value = prefs.getBoolean(KEY_DOUBLE_CLICK_TO_ATTACK_MOVE, true)
@@ -271,6 +267,9 @@ class GameSettingsRepository(
         settings.edgeScrollSpeed = model.edgeScrollSpeed.value
     }
 
+    private fun normalizeDesktopRenderBackend(id: String?): String =
+        if (id?.lowercase() == "skia") "skia" else "slick"
+
     private fun normalizeAudioSettings(model: SettingsModel) {
         model.masterVolume.value = model.masterVolume.value.coerceIn(0f, 1f)
         model.gameVolume.value = model.gameVolume.value.coerceIn(0f, 1f)
@@ -294,7 +293,7 @@ class GameSettingsRepository(
             .putBoolean(KEY_SHADER_EFFECTS, model.shaderEffects.value)
             .putBoolean(KEY_TEAM_SHADERS, model.teamShaders.value)
             .putBoolean(KEY_ANDROID_OPENGL_RENDERER, model.useAndroidOpenGlRenderer.value)
-            .putBoolean(KEY_SHOW_MAIN_MENU_BACKGROUND_DEMO, model.showMainMenuBackgroundDemo.value)
+            .putBoolean(KEY_SHOW_BACKGROUND_BATTLE_DEMO, model.showBackgroundBattleDemo.value)
             .putBoolean(KEY_RENDER_BACKGROUND, model.renderBackground.value)
             .putBoolean(KEY_RENDER_EXTRA_LAYERS, model.renderExtraLayers.value)
             .putBoolean(KEY_SHOW_HP_CHANGES, model.showHpChanges.value)
@@ -313,6 +312,7 @@ class GameSettingsRepository(
             .putBoolean(KEY_FORCE_ENGLISH, model.forceEnglish.value)
             .putBoolean(KEY_ENABLE_ANIMATIONS, model.enableAnimations.value)
             .putFloat(KEY_OVERLAY_OPACITY, normalizeOverlayOpacity(model.overlayOpacity.value))
+            .putString(KEY_DESKTOP_RENDER_BACKEND, normalizeDesktopRenderBackend(model.desktopRenderBackend.value))
             .putBoolean(KEY_QUICK_RALLY, model.quickRally.value)
             .putBoolean(KEY_DOUBLE_CLICK_TO_ATTACK_MOVE, model.doubleClickToAttackMove.value)
             .putBoolean(KEY_SHOW_MAP_PINGS_ON_BATTLEFIELD, model.showMapPingsOnBattlefield.value)
@@ -353,7 +353,7 @@ class GameSettingsRepository(
         private const val KEY_SOFT_FOG_FADING = "softFogFading"
         private const val KEY_SHADER_EFFECTS = "shaderEffects"
         private const val KEY_TEAM_SHADERS = "teamShaders"
-        private const val KEY_SHOW_MAIN_MENU_BACKGROUND_DEMO = "showMainMenuBackgroundDemo"
+        private const val KEY_SHOW_BACKGROUND_BATTLE_DEMO = "showBackgroundBattleDemo"
         private const val KEY_RENDER_BACKGROUND = "renderBackground"
         private const val KEY_RENDER_EXTRA_LAYERS = "renderExtraLayers"
         private const val KEY_SHOW_HP_CHANGES = "showHpChanges"
@@ -391,5 +391,6 @@ class GameSettingsRepository(
         private const val KEY_EDGE_SCROLL_SPEED = "edgeScrollSpeed"
         private const val KEY_STORAGE_TYPE = "storageType"
         private const val KEY_EXTERNAL_SAF_LINK = "externalSAFLink"
+        private const val KEY_DESKTOP_RENDER_BACKEND = "desktopRenderBackend"
     }
 }

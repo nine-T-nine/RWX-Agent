@@ -1,5 +1,6 @@
 package io.github.rwx.app
 
+import io.github.rwx.logger
 import io.github.rwx.ui.AppScreen
 
 internal class GameReadyController(
