@@ -858,7 +858,8 @@ public abstract class GameEngine {
         }
         instance = this;
     }
-
+    @SuppressWarnings("removal")
+    @Override
     protected void finalize() throws Throwable {
         Log.d("RustedWarfare", "GameEngine:finalize()");
         super.finalize();

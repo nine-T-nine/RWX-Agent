@@ -70,6 +70,11 @@ public interface SGL {
     /**
      * OpenGL Enum - @url http://www.opengl.org/documentation
      */
+    public static final int GL_VIEWPORT = GL11.GL_VIEWPORT;
+
+    /**
+     * OpenGL Enum - @url http://www.opengl.org/documentation
+     */
     public static final int GL_MODULATE = GL11.GL_MODULATE;
     /**
      * OpenGL Enum - @url http://www.opengl.org/documentation

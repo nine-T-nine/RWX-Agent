@@ -14,6 +14,7 @@ import org.newdawn.slick.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -142,6 +143,12 @@ public class Graphics {
      * The buffer used to read a screen pixel
      */
     private ByteBuffer readBuffer = BufferUtils.createByteBuffer(4);
+
+    /**
+     * Scratch buffer holding the OpenGL viewport, queried when a clip rectangle has to be
+     * converted into framebuffer coordinates
+     */
+    private static final IntBuffer VIEWPORT_BUFFER = BufferUtils.createIntBuffer(4);
 
     /**
      * True if we're antialias
@@ -827,8 +834,47 @@ public class Graphics {
             clip.setBounds(x, y, width, height);
         }
 
-        GL.glScissor(x, screenHeight - y - height, width, height);
+        applyScissor(x, y, width, height);
         postdraw();
+    }
+
+    /**
+     * Send a clip rectangle to OpenGL, converting this context's coordinates into the framebuffer
+     * pixels that <code>glScissor</code> addresses.
+     * <p>
+     * The rectangle given to {@link #setClip(int, int, int, int)} is expressed in the coordinates
+     * the orthographic projection of this context was built from, while <code>glScissor</code>
+     * always works in framebuffer pixels. For an offscreen buffer the two are the same, but a
+     * HiDPI window is backed by a larger framebuffer - 1536x864 logical pixels on a 1920x1080
+     * surface - so passing the logical rectangle straight to the driver scissors everything drawn
+     * under a clip away from the window: the sidebar and the top of the map stayed black while
+     * input kept working. The current viewport is what maps this context onto the framebuffer, so
+     * it decides the scale.
+     *
+     * @param x      The x coordinate of the top left corner of the clipped area
+     * @param y      The y coordinate of the top left corner of the clipped area
+     * @param width  The width of the clipped area
+     * @param height The height of the clipped area
+     */
+    private void applyScissor(int x, int y, int width, int height) {
+        VIEWPORT_BUFFER.clear();
+        GL.glGetInteger(SGL.GL_VIEWPORT, VIEWPORT_BUFFER);
+        int viewportX = VIEWPORT_BUFFER.get(0);
+        int viewportY = VIEWPORT_BUFFER.get(1);
+        int viewportWidth = VIEWPORT_BUFFER.get(2);
+        int viewportHeight = VIEWPORT_BUFFER.get(3);
+
+        float scaleX = (viewportWidth > 0 && screenWidth > 0)
+                ? (float) viewportWidth / screenWidth : 1.0f;
+        float scaleY = (viewportHeight > 0 && screenHeight > 0)
+                ? (float) viewportHeight / screenHeight : 1.0f;
+
+        int scissorHeight = Math.round(height * scaleY);
+        GL.glScissor(
+                viewportX + Math.round(x * scaleX),
+                viewportY + viewportHeight - Math.round(y * scaleY) - scissorHeight,
+                Math.round(width * scaleX),
+                scissorHeight);
     }
 
     /**
