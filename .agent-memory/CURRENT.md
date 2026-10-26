@@ -21,7 +21,7 @@
 
 ## 下一步
 
-- GitHub 逐提交关联和贡献统计已验证公开维护身份；Contributors 摘要接口仍有平台缓存延迟，待自动刷新。
+- 按用户要求删除并重建独立公开仓库及 Pages，当前等待 GitHub `delete_repo` 授权；本地干净历史保留，`origin`/`myfork` 不动。
 - 按 `web/README.md` 从 `origin/main` 同步，在本地处理冲突后发布至 `publish/main`。
 - 原有遗留：从游戏内菜单手动输入地址加入服务器尚未实测。
 
