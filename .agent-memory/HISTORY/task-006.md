@@ -19,7 +19,7 @@
 - 本地浏览器：四场录像实际解码播放，均为 1920×1080 且时长正确；平台切换、复制回退、手机菜单与 Escape 关闭通过，无脚本异常。
 - 320/390/768/1440px 按 `scrollWidth <= clientWidth` 验证无横向溢出；修复手机装饰背景越界。
 - 完整 `:core:test`：23 套件、200 测试、0 失败、0 错误、0 跳过；使用隔离构建目录，未改引擎代码。
-- Pages run [40271754450](https://github.com/nine-T-nine/RWX-Agent/actions/runs/40271754450) 成功，部署源码提交 `a78e56f`。
+- GitHub Pages 已成功部署，当前发布状态见 [Pages Actions](https://github.com/nine-T-nine/RWX-Agent/actions/workflows/pages.yml)。
 - 公网 HTML/CSS/JS 与提交内容一致，四个 MP4 均支持 HTTP 206 且大小正确；公开网页浏览器实测播放成功，手机布局及脚本错误检查通过。
 - 收尾发现 `mods/maps` 的 652 个受控文件本地缺失，从 `HEAD` 仅恢复该目录后确认工作区干净；未将删除提交或推送，缺失原因未在本任务中确定。
 
