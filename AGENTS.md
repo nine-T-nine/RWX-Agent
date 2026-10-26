@@ -40,7 +40,7 @@
   --no-configuration-cache '-Pkotlin.incremental=false' '-Pkotlin.compiler.execution.strategy=in-process' --console=plain
 ```
 
-测试结果 XML 在 `agent-tmp/priority-build/RWX_core/test-results/test/`。基线：22 个套件、198 项全通过（2026-10-25）。
+测试结果 XML 在 `agent-tmp/priority-build/RWX_core/test-results/test/`。基线：23 个套件、200 项全通过（2026-10-26）。
 
 ## 运行与联机
 

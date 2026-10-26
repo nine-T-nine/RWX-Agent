@@ -36,7 +36,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
   --no-configuration-cache '-Pkotlin.incremental=false' '-Pkotlin.compiler.execution.strategy=in-process' --console=plain
 ```
 
-需要 Java 25。基线：198 项单测通过（2026-10-25）。
+需要 Java 25。最近完整验证：23 个套件、200 项单测通过（2026-10-26）。
 
 ## 本地联机验证（当前手工流程）
 
