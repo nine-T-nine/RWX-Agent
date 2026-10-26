@@ -20,8 +20,9 @@
 
 ## 发布
 
-使用项目约定的 `rtk git push publish main` 发布到 `nine-T-nine/RWX-Agent`；`web/**` 更新自动触发 Pages 校验与部署。
+- 实现提交 `b4effcd` 已使用 `rtk git push publish main` 发布到 `nine-T-nine/RWX-Agent`。
+- 自动触发的 [Pages 工作流 40323714015](https://github.com/nine-T-nine/RWX-Agent/actions/runs/40323714015) 已成功完成网站校验、打包与 GitHub Pages 部署。
 
 ## 遗留
 
-待推送并确认 Pages 自动部署；工作期间出现的独立 `.gitignore` 修改未纳入本次提交。
+无本任务遗留。工作期间出现的独立 `.gitignore` 修改保持本地，未纳入本次提交。
