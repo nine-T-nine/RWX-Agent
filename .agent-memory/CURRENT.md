@@ -6,6 +6,7 @@
 
 - 项目网站已发布：https://nine-t-nine.github.io/RWX-Agent/ 。源码在 `web/`，公开仓库为 `nine-T-nine/RWX-Agent`。
 - `web/**` 更新由 GitHub Actions 自动校验并部署 Pages；维护步骤见 `web/README.md`。
+- 独立公开仓库与 Pages 已同名重建；新仓库 ID `1434131753`，Contributors 已验证公开维护身份。
 
 ## 历史与远程
 
@@ -21,7 +22,7 @@
 
 ## 下一步
 
-- 按用户要求删除并重建独立公开仓库及 Pages，当前等待 GitHub `delete_repo` 授权；本地干净历史保留，`origin`/`myfork` 不动。
+- 本地 `mods/maps` 存在未提交删除，本轮未提交或恢复，后续处理按用户意图执行。
 - 按 `web/README.md` 从 `origin/main` 同步，在本地处理冲突后发布至 `publish/main`。
 - 原有遗留：从游戏内菜单手动输入地址加入服务器尚未实测。
 
