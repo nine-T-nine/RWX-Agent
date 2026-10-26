@@ -1,6 +1,10 @@
-# RWX-agent
+# RWX-Agent：让智能体参与经典RTS游戏Rusted Warfare
+
+[项目网站与经典对局](https://nine-t-nine.github.io/RWX-Agent/) · [本项目 GitHub](https://github.com/nine-T-nine/RWX-Agent) · [RWX 官方仓库](https://github.com/yomi2539/RWX)
 
 基于 [RWX](https://github.com/yomi2539/RWX) 的实时战略游戏项目。本仓库重点整理和扩展 `core/src/main/java/com/corrodinggames/rts/game/ai/custom` 下的自定义 AI 与本地命令工具。原项目 README 已备份为 [README.original.md](README.original.md)。
+
+RWX-Agent 基于 RWX 仓库扩展修改，并定期同步上游源码。网站源码与四场实机对局位于 [`web/`](web/)，维护和发布步骤见 [`web/README.md`](web/README.md)。
 
 ## 让Agent参战
 

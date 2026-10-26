@@ -4,11 +4,21 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'web/**'
+      - '.github/workflows/pages.yml'
+      - '.agent-memory/**'
+      - '**/*.md'
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'web/**'
+      - '.github/workflows/pages.yml'
+      - '.agent-memory/**'
+      - '**/*.md'
   workflow_dispatch:
 
 concurrency:

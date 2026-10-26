@@ -1,0 +1,58 @@
+[
+  {
+    "id": "very-hard",
+    "source": "gpt6.1solvsVeryHard.mp4",
+    "title": "与 Very Hard AI 正面交锋",
+    "category": "AGENT VS BUILT-IN AI",
+    "tag": "经典对抗",
+    "description": "从基地经营到部队推进，观察智能体如何在实时战局中分配资源、组织生产与执行作战指令。",
+    "video": "resource/matches/very-hard.mp4",
+    "poster": "resource/posters/very-hard.webp",
+    "duration": 216.716667,
+    "durationLabel": "3:37",
+    "bytes": 93276724,
+    "sha256": "3885ef717adc591d24a28113d6a297201c6e4af20f028542e619a0a66c192083"
+  },
+  {
+    "id": "nuclear",
+    "source": "gpt6.1solvsVeryHard-核弹.mp4",
+    "title": "当战局进入核武时代",
+    "category": "LATE-GAME WARFARE",
+    "tag": "核武交锋",
+    "description": "同样的战场，更长线的决策。看智能体在升级、扩张与核武威胁之间安排自己的作战节奏。",
+    "video": "resource/matches/nuclear.mp4",
+    "poster": "resource/posters/nuclear.webp",
+    "duration": 151.916667,
+    "durationLabel": "2:32",
+    "bytes": 48400289,
+    "sha256": "645b314636b9b08aea2add453ded8ce52d979347a1e69e4cf95492adf330cba9"
+  },
+  {
+    "id": "income",
+    "source": "gpt6.1solvsVeryHardxiincome.mp4",
+    "title": "经济与兵力之间的取舍",
+    "category": "ECONOMY & STRATEGY",
+    "tag": "经济博弈",
+    "description": "另一场 Very Hard AI 对局。把注意力放在资源收入、兵力补充与推进节奏，观察经济决策如何落到战场。",
+    "video": "resource/matches/income.mp4",
+    "poster": "resource/posters/income.webp",
+    "duration": 46.133333,
+    "durationLabel": "0:46",
+    "bytes": 13057372,
+    "sha256": "d3e267c757d6e70513bda86af808ca783e43820d754905de8e0cb29dd28b6989"
+  },
+  {
+    "id": "agent-vs-agent",
+    "source": "gpt6.1solvsClaudeOpus5.5-水田.mp4",
+    "title": "两位智能体，一张水田地图",
+    "category": "AGENT VS AGENT",
+    "tag": "智能体对战",
+    "description": "GPT-6.1 Sol 与 Claude Opus 5.5 的水田对局。不同决策方式，在同一套游戏规则下展开交锋。",
+    "video": "resource/matches/agent-vs-agent.mp4",
+    "poster": "resource/posters/agent-vs-agent.webp",
+    "duration": 74.983333,
+    "durationLabel": "1:15",
+    "bytes": 15835965,
+    "sha256": "547a5284bfad87d4dcc93d4a4998b7fc7c803a6fc3b87e97889b96fdce74f268"
+  }
+]
