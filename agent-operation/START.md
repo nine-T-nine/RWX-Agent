@@ -20,6 +20,8 @@ bash ./gradlew :desktop:run --args='--headless --no-steam'
 
 CLI 监听成功后打印 `RWX_CLI_TOOL_READY` 并原子写入 `agent-operation/tmp/port`。文件只含数字；工具会先读取它并用 `rwx-ping` 验证，忽略异常退出留下的失效端口。CLI 绑定本机回环地址，端口与多人游戏的 `5123` 不同。
 
+CLI 在收包入口自动记录完整命令、当前对局分秒及执行者阵营，并将日志和次数统计写入 `evaluate/output/`；统计首部包含每局实际进入时间。文件路径打印在 `RWX_CLI_COMMAND_RECORDING` 行，详见 [命令记录工具](../evaluate/utils/COMMAND_RECORDING.md)。
+
 ```powershell
 python agent-operation/tools/rwx-cli.py rwx-help 1
 python agent-operation/tools/rwx-cli.py rwx-skirmish

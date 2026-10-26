@@ -25,13 +25,15 @@ public final class RwxCliTool implements AutoCloseable {
     private final ExecutorService clients;
     private final RwxCliPortFile portFile;
     private final int port;
+    private final RwxCliCommandCapture commandCapture;
 
     private RwxCliTool(ServerSocket listener, ExecutorService clients,
-                       RwxCliPortFile portFile, int port) {
+                       RwxCliPortFile portFile, int port, RwxCliCommandCapture commandCapture) {
         this.listener = listener;
         this.clients = clients;
         this.portFile = portFile;
         this.port = port;
+        this.commandCapture = commandCapture;
     }
 
     private static boolean stdioForcedUtf8;
@@ -73,7 +75,8 @@ public final class RwxCliTool implements AutoCloseable {
             worker.setDaemon(true);
             return worker;
         });
-        Thread thread = new Thread(() -> serve(listener, executor, clients), "RWX-cli-tool-" + port);
+        RwxCliCommandCapture commandCapture = RwxCliCommandCapture.open(repoRoot(), port);
+        Thread thread = new Thread(() -> serve(listener, executor, clients, commandCapture), "RWX-cli-tool-" + port);
         thread.setDaemon(true);
         thread.start();
         String explicit = System.getProperty("rwx.cli.portFile", System.getenv("RWX_CLI_PORT_FILE"));
@@ -85,12 +88,13 @@ public final class RwxCliTool implements AutoCloseable {
         } catch (IOException error) {
             listener.close();
             clients.shutdownNow();
+            commandCapture.close();
             throw error;
         }
         System.out.println("RWX_CLI_TOOL_READY port=" + port + " host=127.0.0.1"
                 + " portFile=" + portFile.primaryPath() + " instancePortFile=" + portFile.instancePath());
         if (commandTerminal) openCommandTerminal(port);
-        RwxCliTool tool = new RwxCliTool(listener, clients, portFile, port);
+        RwxCliTool tool = new RwxCliTool(listener, clients, portFile, port, commandCapture);
         Runtime.getRuntime().addShutdownHook(new Thread(tool::close, "RWX-cli-shutdown"));
         return tool;
     }
@@ -103,6 +107,7 @@ public final class RwxCliTool implements AutoCloseable {
         } catch (IOException ignored) {
         }
         portFile.close();
+        commandCapture.close();
     }
 
     /** Walks up from the working directory to the checkout root (marker: settings.gradle.kts). */
@@ -118,7 +123,7 @@ public final class RwxCliTool implements AutoCloseable {
     }
 
     private static void serve(ServerSocket listener, RwxCliCommandExecutor executor,
-                              ExecutorService clients) {
+                              ExecutorService clients, RwxCliCommandCapture commandCapture) {
         while (!listener.isClosed()) {
             Socket client;
             try {
@@ -130,7 +135,7 @@ public final class RwxCliTool implements AutoCloseable {
                 continue;
             }
             try {
-                clients.submit(() -> serveClient(client, executor));
+                clients.submit(() -> serveClient(client, executor, commandCapture));
             } catch (RejectedExecutionException saturated) {
                 // Refuse politely instead of running inline (which would re-serialise the loop)
                 // or leaking a socket nobody will ever read.
@@ -144,7 +149,8 @@ public final class RwxCliTool implements AutoCloseable {
         }
     }
 
-    private static void serveClient(Socket client, RwxCliCommandExecutor executor) {
+    private static void serveClient(Socket client, RwxCliCommandExecutor executor,
+                                    RwxCliCommandCapture commandCapture) {
         try (Socket socket = client;
              java.io.PushbackInputStream rawInput = new java.io.PushbackInputStream(
                      new java.io.BufferedInputStream(socket.getInputStream()), 1);
@@ -163,6 +169,7 @@ public final class RwxCliTool implements AutoCloseable {
                     output.flush();
                     continue;
                 }
+                commandCapture.receive(line);
                 String message = handle(line, executor);
                 if (framed) {
                     output.print(RECORD_SEPARATOR);

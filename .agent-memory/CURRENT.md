@@ -7,6 +7,8 @@
 - 项目网站已发布：https://nine-t-nine.github.io/RWX-Agent/ 。源码在 `web/`，公开仓库为 `nine-T-nine/RWX-Agent`。
 - `web/**` 更新由 GitHub Actions 自动校验并部署 Pages；维护步骤见 `web/README.md`。
 - 独立公开仓库与 Pages 已同名重建；新仓库 ID `1434131753`，Contributors 已验证公开维护身份。
+- 本地 `replays/` 现存 10 个完整样本（另可能有正在录制的文件）；19:59 有一批样本被清理（22 → 10，非本次工具所为）。
+- 评估工具：`evaluate/utils/replay.py` 反解析回放（24 项自测，见 `HISTORY/task-010.md`）；`CommandRecorder.java` 在 CLI 收包入口记录对局分秒、完整命令、执行者阵营并导出两个 TXT（见 `HISTORY/task-011.md`）。
 
 ## 历史与远程
 
@@ -16,7 +18,8 @@
 
 ## 验证基线
 
-- 2026-10-26：完整 `:core:test` 23 个套件、200 项全通过；本轮不改引擎。
+- 2026-10-26：完整 `:core:test` 24 个套件、206 项全通过；Headless 发行包构建通过，原版引擎未改。
+- 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端、连续两局通过；A/B/旁观身份、首部真实进入时间、39 条完整命令及分类次数逐条核对一致。
 - 网站：四段视频本地完整解码、320/390/768/1440px 无横向溢出、菜单/平台切换通过；公开站点四个 MP4 均返回 206，线上浏览器实际播放通过。
 - Pages 工作流已成功部署；最新状态见仓库的 Pages Actions。
 

@@ -17,12 +17,14 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
 | `android/` | Android 壳 |
 | `web/` | RWX-Agent 静态项目网站、四场网页录像、媒体生成与资源校验脚本；GitHub Pages 部署见 `web/README.md` |
 | `agent-operation/` | Agent 文档与工具：`START.md`、`help.md`、`tools/rwx-cli.py`、`server/`（systemd、host-service）、`VALIDATION.md` |
+| `evaluate/utils/` | 评估工具；`CommandRecorder.java` 随 core 打包，在 CLI 收包时记录完整命令、游戏时间与执行者，导出日志及命令名次数统计到 `evaluate/output/` |
 | `.agents/skills/rwx-cli-tools/` | 战术参考与 PowerShell 批处理辅助脚本 |
 
 ## 关键实现点
 
 - **CLI**：`RwxCliCommands` 注册命令；`RwxCliTool` 监听本机回环随机端口，成功后打印 `RWX_CLI_TOOL_READY` 并把端口原子写入
   `agent-operation/tmp/port`（主实例 + 每实例记录，退出清理，异常退出可识别失效端口）。命令统一 `rwx-*`，不保留 `rwx-local-*` 别名。
+- **命令记录**：`RwxCliCommandCapture` 在 `serveClient` 执行前抓取命令与当前玩家/阵营；通过现有每帧任务队列记录实际进入对局时间，日志使用接收时的游戏时钟。每个 CLI 实例独立输出两个 TXT，详见 `evaluate/utils/COMMAND_RECORDING.md`。
 - **Session**：`RwxSessionCommands.kt` 负责命令分发、连接状态、托管房间驱动；`GameSession.kt` 负责房间配置/开局/重开/投降/回大厅。
 - **多人**：沿用原版房主调度的确定性锁步；各客户端跑完整模拟。`NetworkEngine` 的 `isProxyController` 表示“代理房主权限”。
 - **Headless**：同一个引擎，替换窗口/绘制/音频适配，不依赖 DISPLAY/Wayland；保留 Tick、网络、CLI。
@@ -36,7 +38,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
   --no-configuration-cache '-Pkotlin.incremental=false' '-Pkotlin.compiler.execution.strategy=in-process' --console=plain
 ```
 
-需要 Java 25。最近完整验证：23 个套件、200 项单测通过（2026-10-26）。
+需要 Java 25。最近完整验证：24 个套件、206 项单测通过（2026-10-26，含命令记录器）；Headless 发行包构建通过。
 
 ## 本地联机验证（当前手工流程）
 
