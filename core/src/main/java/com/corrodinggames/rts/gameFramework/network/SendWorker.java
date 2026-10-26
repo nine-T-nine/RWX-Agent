@@ -136,6 +136,16 @@ final class SendWorker implements Runnable {
             iOException.printStackTrace();
             GameEngine.log("network:SendWorker", iOException.getMessage());
         }
+        if (this.networkConnection.disconnectRequested) {
+            // A thread interrupt cannot unblock SocketInputStream.read(). After flushing
+            // the native disconnect packet, close our socket even if the peer stays silent.
+            // This also releases the receive worker on connection/registration timeouts.
+            try {
+                this.networkConnection.socket.close();
+            } catch (IOException error) {
+                GameEngine.log("network: closing disconnected socket", error);
+            }
+        }
         this.networkConnection.handleTimeoutDisconnect(false, true);
     }
 }

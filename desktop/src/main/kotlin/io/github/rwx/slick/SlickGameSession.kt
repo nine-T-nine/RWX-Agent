@@ -395,6 +395,12 @@ class SlickGameSession(
         stopRenderer()
     }
 
+    override fun finishNetworkRound() {
+        super.finishNetworkRound()
+        requestState.clearRequest()
+        activeGame()?.submit(SlickSessionRequest.EnginePreparation)
+    }
+
     override fun loadingStatus(): GameLoadingStatus {
         return loadingStatusTracker.mergeWith(super.loadingStatus())
     }

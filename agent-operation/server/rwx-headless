@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+RWX_HOME="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+JAVA="${JAVA_HOME:+$JAVA_HOME/bin/}java"
+exec "$JAVA" ${RWX_JAVA_OPTS:--Xms128m -Xmx768m} -Djava.awt.headless=true \
+  -Dfile.encoding=UTF-8 -Dlaunch.dir="${RWX_DATA_DIR:-$RWX_HOME}" \
+  -cp "$RWX_HOME/lib/*" io.github.rwx.DesktopMain --headless --no-steam "$@"

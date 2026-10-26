@@ -100,7 +100,48 @@ afterEvaluate {
     }
 }
 
+tasks.register("rwxCliRun") {
+    group = "application"
+    description = "Runs the desktop game with the RWX CLI command terminal enabled."
+    dependsOn("run")
+}
+
+tasks.matching { it.name == "run" }.configureEach {
+    (this as JavaExec).apply {
+        if (gradle.startParameter.taskNames.any { it.substringAfterLast(':') == "rwxCliRun" }) {
+            // Configure-time args are reset by the compose plugin, so append at execution time.
+            doFirst { args("--rwx-cli") }
+        }
+    }
+}
+
 val generatedMacIcon = layout.buildDirectory.file("generated-icons/logo.icns")
+
+val headlessDist = tasks.register<Sync>("headlessDist") {
+    group = "distribution"
+    description = "Assembles the Java 25 headless host/client and portable CLI tools. No display server is required."
+    into(layout.buildDirectory.dir("headless"))
+    from(tasks.named("jar")) { into("lib") }
+    from(configurations.runtimeClasspath) {
+        into("lib")
+        // Different Maven groups may publish the same jar basename (Compose does).
+        eachFile { name = file.parentFile.name + "-" + name }
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
+    from(rootProject.file("agent-operation/server/rwx-headless")) { into("bin") }
+    from(rootProject.file("agent-operation/server/host-service.py")) { into("agent-operation/server") }
+    from(rootProject.file("agent-operation/server/rwx.service")) { into("agent-operation/server") }
+    from(rootProject.file("agent-operation/tools/rwx-cli.py")) { into("agent-operation/tools") }
+}
+
+tasks.register<Tar>("headlessArchive") {
+    group = "distribution"
+    dependsOn(headlessDist)
+    compression = Compression.GZIP
+    archiveFileName.set("rwx-headless.tar.gz")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    from(headlessDist)
+}
 val generateMacOsIcns = tasks.register<Exec>("generateMacOsIcns") {
     group = "build setup"
     description = "Generates the macOS ICNS app icon with iconutil."

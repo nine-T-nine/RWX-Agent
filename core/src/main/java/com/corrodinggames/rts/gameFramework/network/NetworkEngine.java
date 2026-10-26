@@ -240,6 +240,12 @@ public final class NetworkEngine {
     public long nextUnitId = 1;
     public boolean x = false;
     private boolean bH = false;
+    /**
+     * Client status packet (112) is native "sent once per connection" state. The server waits for every client to
+     * report that it started loading the round (connection.D), and RETURN to the lobby resets that flag, so without a
+     * fresh report the next round stalls at tick 0 until the 15 second fallback. Send one report per round instead.
+     */
+    private boolean roundStatusSent = false;
     /* JADX INFO: renamed from: B */
     public volatile boolean networkGameActive = false;
     /* JADX INFO: renamed from: F */
@@ -595,25 +601,7 @@ public final class NetworkEngine {
     }
 
     public String c(int i) {
-        if (i == -2) {
-            return "Very Easy";
-        }
-        if (i == -1) {
-            return "Easy";
-        }
-        if (i == 0) {
-            return "Medium";
-        }
-        if (i == 1) {
-            return "Hard";
-        }
-        if (i == 2) {
-            return "Very Hard";
-        }
-        if (i == 3) {
-            return "Impossible";
-        }
-        return "Unknown";
+        return com.corrodinggames.rts.game.ai.strategy.AiRegistry.displayName(i);
     }
 
     public String h() {
@@ -1513,9 +1501,26 @@ public final class NetworkEngine {
                 this.freeForAllMode = true;
             }
         }
-        if (!this.isServer && !this.bH) {
-            sendClientStatusPacket();
-            this.bH = true;
+        // The server starts a round once every client reported that it began loading (packet 112 -> connection.D).
+        // Native code sends that packet only once per connection and RETURN to the lobby resets D, so a connection that
+        // survives a round never reports again and the next round stalls at tick 0 until the 15 second fallback.
+        // Report once when the round starts (the client is loading the map then) and once when entering the lobby.
+        if (!this.isServer) {
+            if (this.gameHasBeenStarted) {
+                if (!this.roundStatusSent) {
+                    GameEngine.log("RWX_CLIENT_STATUS loading=true round=start");
+                    sendClientStatusPacket(true);
+                    this.roundStatusSent = true;
+                    this.bH = true;
+                }
+            } else {
+                this.roundStatusSent = false;
+                if (!this.bH) {
+                    GameEngine.log("RWX_CLIENT_STATUS loading=" + gameEngine.isLoading + " round=lobby");
+                    sendClientStatusPacket();
+                    this.bH = true;
+                }
+            }
         }
         if (this.isServer) {
             if (!this.allPlayersReady && this.gameHasBeenStarted) {
@@ -2858,6 +2863,7 @@ public final class NetworkEngine {
                 GameInputStream gameInputStream7 = new GameInputStream(packet);
                 networkConnection7.C = gameInputStream7.readBoolean();
                 networkConnection7.D = gameInputStream7.readBoolean();
+                GameEngine.log("RWX_SERVER_STATUS D=" + networkConnection7.D);
                 return;
             case 113:
                 if (this.isServer) {
@@ -3081,6 +3087,8 @@ public final class NetworkEngine {
                 }
                 String strConvertInlineBlocks = Locale.convertInlineBlocks(new GameInputStream(packet).readUTF());
                 d("we got kicked, reason:" + strConvertInlineBlocks);
+                // Preserve the server's reason for non-GUI session clients before teardown.
+                this.callbacks.onConnectionRejected(strConvertInlineBlocks);
                 disconnectNetworking("I was kicked");
                 b("Kicked", "Kicked: " + strConvertInlineBlocks);
                 gameEngine.setPendingMessageBox("Kicked", "Kicked: " + strConvertInlineBlocks);
@@ -3832,14 +3840,18 @@ public final class NetworkEngine {
     }
 
     public void sendClientStatusPacket() {
+        sendClientStatusPacket(GameEngine.getInstance().isLoading);
+    }
+
+    /** Sends packet 112 with an explicit loading flag; the server uses it to decide when a round may start. */
+    public void sendClientStatusPacket(boolean loading) {
         if (this.isServer) {
             throw new RuntimeException("We are a server");
         }
-        GameEngine gameEngine = GameEngine.getInstance();
         GameOutputStream gameOutputStream = new GameOutputStream();
         try {
             gameOutputStream.writeBoolean(this.bG);
-            gameOutputStream.writeBoolean(gameEngine.isLoading);
+            gameOutputStream.writeBoolean(loading);
             f(gameOutputStream.buildPacketData(112));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -3887,8 +3899,32 @@ public final class NetworkEngine {
         sendChatMessage(str);
     }
 
+    /** Must be called on the game thread. Local matches do not process network chat votes. */
+    public void requestSurrender() {
+        GameEngine engine = GameEngine.getInstance();
+        if (!engine.hasLoadedLevel || engine.isStopped || engine.isMenuBackgroundMap || engine.replayEngine.j()) {
+            throw new IllegalStateException("No playable match to surrender");
+        }
+        if (this.networkGameActive) {
+            sendChatMessage("-surrender");
+            return;
+        }
+        PlayerTeam team = engine.playerTeam != null ? engine.playerTeam : this.localPlayerTeam;
+        if (team == null || team.teamId < 0 || team.isSpectatorTeamColor()) {
+            throw new IllegalStateException("No local player team to surrender");
+        }
+        if (team.isTeamVictory || team.isTeamWipedOut) return;
+        Command command = engine.commandController.newCommandForTeam(team);
+        command.isSystemAction = true;
+        command.systemActionType = 100;
+    }
+
     public void sendChatMessage(String str) {
         if (!this.networkGameActive) {
+            if ("surrender".equals(n(str))) {
+                requestSurrender();
+                return;
+            }
             GameEngine.log("sendChatMessage: not networked:" + str);
             b((NetworkConnection) null, -1, (String) null, str);
         } else {
@@ -4182,6 +4218,9 @@ public final class NetworkEngine {
     private void aB() {
         this.returnToBattleroomPending = false;
         this.gameHasBeenStarted = true;
+        // Every round needs a fresh client status report; the lobby tick may never observe gameHasBeenStarted=false
+        // when a connection survives the round, so arm the report here instead of waiting for that transition.
+        this.roundStatusSent = false;
         this.startGameFailed = false;
         this.bd = false;
         GameEngine.log("Starting new network game (" + getCurrentServerId() + ")");

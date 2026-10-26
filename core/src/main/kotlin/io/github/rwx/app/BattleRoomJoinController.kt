@@ -95,6 +95,12 @@ internal class BattleRoomJoinController(
                 clearPending()
                 hideLoading()
                 onConnected(latestProbe?.snapshot)
+                // A running room may send START before this UI join monitor settles. Replay
+                // it after onConnected publishes the lobby, so it cannot hide the game canvas.
+                com.corrodinggames.rts.gameFramework.GameEngine.getInstance()?.networkEngine?.let {
+                    if (it.networkGameActive && it.gameHasBeenStarted)
+                        io.github.rwx.ui.CoreUiEventQueue.requestBattleRoomGameStarted()
+                }
                 onSettled(true)
             }
 

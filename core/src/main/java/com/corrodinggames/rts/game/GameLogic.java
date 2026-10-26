@@ -607,6 +607,10 @@ public class GameLogic extends GameEngine {
     @Override // com.corrodinggames.rts.gameFramework.GameEngine
     /* JADX INFO: renamed from: a */
     public void loadLevel(boolean z, boolean z2, GameMode gameMode) {
+        if (z && !z2 && gameMode == GameMode.normal && this.networkEngine.singleplayerServer
+                && !this.networkEngine.networkGameActive && !this.replayEngine.j()) {
+            com.corrodinggames.rts.gameFramework.network.LocalSkirmishLifecycle.prepareRestart(this);
+        }
         beginLoadingStatus("Loading map data", 8);
         loadLevel("Loading map data");
         InGameMenuController surfaceHolder;
@@ -969,7 +973,7 @@ public class GameLogic extends GameEngine {
                 if (gameMode == GameMode.normalSave) {
                     GameEngine.log("Not starting replay recording as we are loading a save");
                 } else {
-                    this.replayEngine.a(z2);
+                    this.replayEngine.a(z2, gameMode);
                 }
             }
             if (PathEngine.m) {
@@ -1482,9 +1486,7 @@ public class GameLogic extends GameEngine {
         this.networkEngine.update(f);
         this.gameTimeMillis = (int) (this.gameTimeMillis + (f * 16.666666f));
         CommandQueue.drain();
-        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.applyPending(this);
         this.commandController.executeAllCommands();
-        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.publish(this);
         this.replayEngine.update(f);
         this.currentTick++;
         ModScheduler.tick();

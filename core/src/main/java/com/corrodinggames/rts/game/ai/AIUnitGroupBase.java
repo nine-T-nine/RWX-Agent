@@ -5,14 +5,17 @@ import com.corrodinggames.rts.gameFramework.GameEngine;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.IdentityHashMap;
 
 /* JADX INFO: renamed from: com.corrodinggames.rts.game.a.h */
 /* JADX INFO: loaded from: game-lib.jar:com/corrodinggames/rts/game/a/h.class */
 public abstract class AIUnitGroupBase extends AIStrategyNode {
+    private static final int TRANSPORT_WAIT_TIMEOUT_MILLIS = 3 * 60_000;
     /* JADX INFO: renamed from: F */
     ArrayList<OrderableUnit> units;
     /* JADX INFO: renamed from: G */
     ArrayList unitsNeedingTransport;
+    private final IdentityHashMap<OrderableUnit, Integer> transportWaitStartedAt = new IdentityHashMap<>();
 
     /* JADX INFO: renamed from: c */
     public abstract void updateAI(float f);
@@ -70,9 +73,29 @@ public abstract class AIUnitGroupBase extends AIStrategyNode {
         Iterator it = this.unitsNeedingTransport.iterator();
         while (it.hasNext()) {
             OrderableUnit orderableUnit = (OrderableUnit) it.next();
-            if (orderableUnit == null || orderableUnit.isDead || orderableUnit.transportContainer != null || orderableUnit.parentEntity != null) {
+            boolean timedOut = this.aiController.overridesTransportWaiting()
+                    && GameEngine.getInstance().gameTimeMillis - transportWaitStartedAt.getOrDefault(orderableUnit,
+                    GameEngine.getInstance().gameTimeMillis) >= TRANSPORT_WAIT_TIMEOUT_MILLIS;
+            if (orderableUnit == null || orderableUnit.isDead || orderableUnit.transportContainer != null || orderableUnit.parentEntity != null || timedOut) {
                 it.remove();
+                transportWaitStartedAt.remove(orderableUnit);
+                if (timedOut && orderableUnit != null && orderableUnit.aB == this) {
+                    this.units.remove(orderableUnit);
+                    orderableUnit.aB = null;
+                }
             }
+        }
+    }
+
+    public int getTransportWaiterCount() {
+        pruneUnitsNeedingTransport();
+        return this.unitsNeedingTransport.size();
+    }
+
+    public void addUnitNeedingTransport(OrderableUnit unit) {
+        if (!this.unitsNeedingTransport.contains(unit)) {
+            this.unitsNeedingTransport.add(unit);
+            transportWaitStartedAt.put(unit, GameEngine.getInstance().gameTimeMillis);
         }
     }
 
@@ -100,6 +123,7 @@ public abstract class AIUnitGroupBase extends AIStrategyNode {
     public void removeUnit(OrderableUnit orderableUnit) {
         this.units.remove(orderableUnit);
         this.unitsNeedingTransport.remove(orderableUnit);
+        this.transportWaitStartedAt.remove(orderableUnit);
         if (orderableUnit.aB == this) {
             orderableUnit.aB = null;
         }

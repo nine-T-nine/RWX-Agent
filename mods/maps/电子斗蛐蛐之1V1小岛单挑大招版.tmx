@@ -1,0 +1,3591 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<map version="1.2" orientation="orthogonal" renderorder="right-down" width="110" height="110" tilewidth="20" tileheight="20" nextobjectid="734">
+  <tileset firstgid="1" name="Mountain" columns="7" tilecount="35" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/mountain.png" width="140" height="100" trans="008a76" />
+    <tile id="7">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="9">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="21">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="22">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="28">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="29">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="36" name="Snow" columns="8" tilecount="80" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/snow.png" width="160" height="200" trans="008a76" />
+    <tile id="14">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="15">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="55">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="79">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="116" name="Ice" columns="5" tilecount="10" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/ice.png" width="100" height="40" trans="008a76" />
+    <tile id="9">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="terrain/Long Grass.tsx" firstgid="126" />
+  <tileset source="terrain/Dirt.tsx" firstgid="176" />
+  <tileset firstgid="186" name="Shallow Water" columns="3" tilecount="6" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/shallowwater.png" width="60" height="40" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="192" name="Water" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/water.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="193" name="Deep Water" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/deepwater.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Mountain Mountain - Hill.tsx" firstgid="194" />
+  <tileset source="ridges/Mountain Snow - Flat.tsx" firstgid="215" />
+  <tileset source="ridges/Snow Ice - Ridge.tsx" firstgid="236" />
+  <tileset firstgid="257" name="Ice ShallowWater - Ridge" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2shallowwater_ridge.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="278" name="ShallowWater Water - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/shallowwater2water_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Water DeepWater - Flat.tsx" firstgid="299" />
+  <tileset source="ridges/LongGrass ShallowWater - Ridge.tsx" firstgid="320" />
+  <tileset source="ridges/LongGrass Dirt - Flat.tsx" firstgid="350" />
+  <tileset firstgid="371" name="misc" columns="3" tilecount="18" tileheight="20" tilewidth="20">
+    <image source="bitmaps/misc.png" width="79" height="120" />
+    <tile id="4">
+      <properties>
+        <property name="res_pool" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="389" name="units" margin="1" spacing="1" columns="9" tilecount="279" tileheight="20" tilewidth="20">
+    <image source="bitmaps/units.png" width="200" height="665" />
+    <tile id="1">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="artillery" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="10">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="15">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="16">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="17">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="19">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+    <tile id="46">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="47">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="48">
+      <properties>
+        <property name="team" value="1" />
+      </properties>
+    </tile>
+    <tile id="51">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="52">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="55">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="60">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="61">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="62">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="64">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="668" name="Ice Ice - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2ice_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="689" name="Ice ShallowWater - Broken" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2shallowwater_broken.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Dirt ShalowWater - Ridge.tsx" firstgid="710" />
+  <tileset source="ridges/Mountain ShallowWater - Ridge.tsx" firstgid="731" />
+  <tileset source="ridges/Sand ShallowWater - Ridge.tsx" firstgid="752" />
+  <tileset source="ridges/Snow Snow - ridge.tsx" firstgid="773" />
+  <tileset source="ridges/Stone Snow - ridge.tsx" firstgid="794" />
+  <layer name="Ground" width="110" height="110">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3dS24UMRAGYE8G8VigLFACJBMQUQRRJDgdW46SS7BklQMFECELxALRI6aF5XHZZbv87H/xSxChkMw35Xa7y54bpdQNggjlaqXUGSOXq/o/K/Lf7NWUL8qfDeyqOuk1xDXT7Ti1GRu8L+xmlNPR9PXHjjwL9I3NBn6kmc3oyZSPis4jj2tMXO8F+O2b6UZq+vNPVSZ/LO8FXx0v9ZrqMtvmx5SLQrmz2D1gjL8vF+bmMyvtZrODW7jZdoy8J17fD2ul3iTk/Zq2+w63KLP5mkaZbfN6et3fJuQMbuJ15hob5zpLMYObvBnlNnudC5jBTd6Muqaljotwy2dmqzXpOgt10+/nqXu5Ed3MtauHjjrT5yK5vELdOPdyI7qdGr/r4fT3tWX+aI6N0uMi3NLcbOtYOa5nJ1NOHXnncLOtmyzdzRwnqTl/zvszTmw1Bze4tR649Zne3G6nfJ3yC25Nus0+ZmxecGvHjZrruwK3vG4nnnk+3Np041zbQt1W08/9FG7dubnWl+GW7sYZI+GWz+1y7V6nilm/yuU2Yk9XrFvuSLqNWHNw6zM+t9/q3/3uN7g1FZ+b7lfSDm4ybnrtxYZyt61pudazbPH1nI/uZnveLRXqWhmzNrL0ewHTbbY7yOAn7bba/ZxzqPWSpbhxxkwpt+0YGTomcq9pc46nf3feuVvIflFpN9v1MdYsxG2EWnPVV2436cBtbDdzT3kva15XzHFxVDfKsXW/kBpzuZXcE+zaH5zqpvu1bBfrZt7L1VqrvCMMU91at4t1M+1quVH3ehJuLdpdRVzTXOPlqG4t2aWcEUOdTUK5pe7lDtnvTe2hkjj/pIX7BdvYeGQ4hKbU3jdXT4rUWubsrtu1MM/07bORcMu9lyq3GzXW1qy7kOczcOvHLeZerPTeRbjluReDW/nrW4gbNV8sMR9ZultKn1bJuoIb3JbuFtubLJm5zxlu9desUte54BYWai9obM9dSFL6Gnp0M+8DUnohOa9d7p67pbjZ7HJGundryW5S612cSPduuWL2UYbE1nPZotthxO9WqkYlayYlLbrFJFeNpvSrSPcrjOSW+rzOl5Q5ba7n3rV7m1PduM/rUmrGda52DbfaZttcTP//811eRPxe3LGxhf2oqW7Hu9eptplE7Y3sdqy9p1v0stWeLbZ65N7r6fN9yf2o5rMj83MgYt1aGAtz1mNMP4pE7VG9RuZZNbFuLfRs5XSLmfvnfIYOt7bd5mdGG7hld+N8Xk6sH3XOENzS3Xx1xulndn3+lOR8Em77c0pqPsnpcwg9txdu+a9vcIMb3ODWe+DWZ+DWZ+DWZ3p3c+07bXFPKdz8MWsRbnCrnVg3s0eBWp/M4aafaUL1DNk+CwJu/PX/HG6cWmytpxVuPDfb2b1w45+VXdLN7GXH9Y228/WXpLrder6/vsfH7GWHW7355Dzu6c+LXFZzMC+p62bOHe8VfR+g7/Fobc/G0txcNcixmjNSD94Ibpz1ydHMSrhx9vVzP18sxm1EsxJuOcJ1G9VsRDe9/39Us9HcRq6vkd1GmufDbcxInZkBt/putfZR6XGtS8JNbpxM/TxG6rwT31kocEsbJ2sFbvt2sefw2HJ9oNTnXa53kfi++pok3PLnU4bvuSQ3c99+zLkZtZyW7OZz7ClLWStBEARBEASJyV9CowSsEL0AAA==
+  </data>
+  </layer>
+  <layer name="Items" width="110" height="110">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3dTQrCMBAG0PRGgkdx6RFc1n8vb0AKXdSqoZh0eA9m09UXZjszTQkAAAAAgFJ9l9Ix16mrnYRfnHO/Lrmu+rYqt9yve66HvgEAAAB8bVc7AEX2tQMAwMK2tQPw1qF2AIr0E982f08BAAAAAAAAAAAvUW9vRH3XIOrtjajvGkS9vRH1XQAAAAAArMun/Xv3nNo0tX8/5p4TAAAAAAAAAABzou+VRxV9rzwqe+Xtm5ulNEfZlnGv5mYpzVG2xX+nAAAAAAAAgKU9Ae9iEK0QvQAA
+  </data>
+  </layer>
+  <layer name="Units" width="110" height="110">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3dsQ0AIAwDwbA8TcahYTw2QKIJCN1N4OpbRwAAAAAAAAAAVWa7vQDgbUMnAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC+kb6pALa6TgIAAAAAAAAAAAAHFm0gQpMQvQAA
+  </data>
+  </layer>
+  <objectgroup name="Triggers">
+    <object name="map_info" id="1" x="72" y="55" width="203" height="122">
+      <properties>
+        <property name="type" value="skirmish" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="81" x="840" y="380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="82" x="840" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="83" x="840" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="84" x="840" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="85" x="840" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="86" x="840" y="300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="87" x="860" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="88" x="880" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="89" x="900" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="90" x="920" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="91" x="940" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="92" x="960" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="93" x="980" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="94" x="1000" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="95" x="1000" y="300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="96" x="1000" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="97" x="1000" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="98" x="1000" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="99" x="1000" y="380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="100" x="1000" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="101" x="1000" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="102" x="1000" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="103" x="980" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="104" x="960" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="105" x="940" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="106" x="920" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="107" x="900" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="108" x="880" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="109" x="860" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="111" x="840" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="112" x="840" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1喷火器" type="unitAdd" id="113" x="840" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="146" x="820" y="380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="147" x="820" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="148" x="820" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="149" x="820" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="150" x="820" y="300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="151" x="820" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="152" x="820" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="153" x="840" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="154" x="860" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="155" x="880" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="156" x="900" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="157" x="920" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="158" x="940" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="159" x="960" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="160" x="980" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="161" x="1000" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="162" x="1020" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="163" x="1020" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="164" x="1020" y="300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="165" x="1020" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="166" x="1020" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="167" x="1020" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="168" x="1020" y="380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="169" x="1020" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="170" x="1020" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="171" x="1020" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="172" x="1020" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="173" x="1000" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="174" x="980" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="175" x="960" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="176" x="940" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="177" x="920" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="178" x="900" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="179" x="880" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="180" x="860" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="181" x="840" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="182" x="820" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="183" x="820" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="184" x="820" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1修复湾" type="unitAdd" id="185" x="820" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2炭烤检测" type="unitDetect" id="268" x="-540" y="-600" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="1" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1炭烤检测" type="unitDetect" id="269" x="-540" y="-620" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="0" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="280" x="1060" y="1720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="281" x="1060" y="1700" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="282" x="1060" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="283" x="1060" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="284" x="1060" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="292" x="900" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="293" x="900" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="294" x="900" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="295" x="900" y="1700" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="304" x="1080" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="305" x="1080" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="306" x="1080" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="307" x="1080" y="1700" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="308" x="1080" y="1720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="331" x="880" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="332" x="880" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="333" x="880" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="334" x="880" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="344" x="1080" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="348" x="900" y="1720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="349" x="900" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="350" x="920" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="351" x="940" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="352" x="960" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="353" x="980" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="354" x="1000" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="355" x="1020" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="356" x="1040" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="357" x="1060" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="358" x="900" y="1600" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="359" x="900" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="360" x="920" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="361" x="940" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="362" x="960" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="363" x="980" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="364" x="1000" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="365" x="1020" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="366" x="1060" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="367" x="1040" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="368" x="1060" y="1600" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="369" x="1080" y="1600" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="370" x="1080" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="371" x="1080" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="372" x="1060" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="373" x="1040" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="374" x="1020" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="375" x="1000" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="376" x="980" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="377" x="960" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="378" x="940" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="379" x="920" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="380" x="900" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="381" x="880" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="382" x="880" y="1580" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="383" x="880" y="1600" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="384" x="880" y="1700" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="385" x="880" y="1720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="386" x="880" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="387" x="880" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="388" x="900" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="389" x="920" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="390" x="940" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="391" x="960" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="392" x="980" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="393" x="1000" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="394" x="1020" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="395" x="1040" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="396" x="1060" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="397" x="1080" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2修复湾" type="unitAdd" id="398" x="1080" y="1740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="repairbay*3(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2号坐炮ADD" type="unitAdd" id="406" x="3200" y="480" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1号坐炮ADD" type="unitAdd" id="407" x="3200" y="120" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="413" x="1060" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2喷火器" type="unitAdd" id="414" x="900" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="spawnUnits" value="turret_flamethrower*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2舰队检测" type="unitDetect" id="416" x="600" y="-620" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="1" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1舰队检测" type="unitDetect" id="417" x="600" y="-620" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="0" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="2航母舰队" type="unitAdd" id="420" x="2000" y="160" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2舰队检测" />
+        <property name="spawnUnits" value="experiementalCarrier*4(falling=true),heavyBattleship*8(falling=true),heavyMissileShip*3(falling=true)" />
+        <property name="team" value="1" />
+        <property name="globalMessage" value="谁在呼叫舰队？航母打击群已抵达战场……" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1炭烤台词" type="unitDetect" id="421" x="140" y="-140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="globalMessage" value="享受被炙烤的乐趣吧，挑战者" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1炭烤动画" type="mapText" id="423" x="980" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除1炭烤" />
+      </properties>
+    </object>
+    <object name="2炭烤动画" type="mapText" id="424" x="1020" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除2炭烤" />
+      </properties>
+    </object>
+    <object name="删除1炭烤" type="unitDetect" id="425" x="980" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1炭烤动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除2炭烤" type="unitDetect" id="426" x="1020" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2炭烤台词" type="unitDetect" id="427" x="220" y="-60" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2炭烤检测" />
+        <property name="globalMessage" value="享受被炙烤的乐趣吧，挑战者" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2航母舰队" type="unitAdd" id="428" x="1920" y="2020" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1舰队检测" />
+        <property name="spawnUnits" value="experiementalCarrier*4(falling=true),heavyBattleship*8(falling=true),heavyMissileShip*3(falling=true)" />
+        <property name="team" value="0" />
+        <property name="globalMessage" value="谁在呼叫舰队？航母打击群已抵达战场……" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1舰队动画" type="mapText" id="429" x="1080" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1舰队检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除1舰队" />
+      </properties>
+    </object>
+    <object name="2舰队动画" type="mapText" id="430" x="1120" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2舰队检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除2舰队" />
+      </properties>
+    </object>
+    <object name="删除1舰队" type="unitDetect" id="431" x="1080" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1舰队动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除2舰队" type="unitDetect" id="432" x="1120" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2舰队动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆检测" type="unitDetect" id="433" x="1880" y="-620" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="1" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1地爆检测" type="unitDetect" id="434" x="1880" y="-620" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="0" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="436" x="460" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="440" x="660" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="441" x="880" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="444" x="1120" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="445" x="1380" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="446" x="1580" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="447" x="800" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="448" x="1040" y="680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="449" x="1240" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="450" x="460" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="451" x="660" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="452" x="880" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="453" x="1120" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="454" x="1380" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="455" x="1580" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="459" x="760" y="1300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="460" x="1000" y="1380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="461" x="1260" y="1320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="462" x="460" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="463" x="660" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="464" x="880" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="465" x="1120" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="466" x="1380" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="467" x="1580" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="468" x="760" y="1300" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="469" x="1000" y="1380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="470" x="1260" y="1320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="471" x="800" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="472" x="1040" y="680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="473" x="1240" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1地爆动画" type="mapText" id="474" x="980" y="940" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除1地爆" />
+      </properties>
+    </object>
+    <object name="2地爆动画" type="mapText" id="475" x="1020" y="940" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除2地爆" />
+      </properties>
+    </object>
+    <object name="删除1地爆" type="unitDetect" id="477" x="980" y="920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆动画" />
+        <property name="warmup" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1地爆台词" type="unitDetect" id="479" x="1640" y="40" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="warmup" value="0.8s" />
+        <property name="globalMessage" value="地" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1地爆台词" type="unitDetect" id="481" x="1640" y="80" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="warmup" value="0.6s" />
+        <property name="globalMessage" value="爆" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1地爆台词" type="unitDetect" id="482" x="1640" y="120" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="warmup" value="0.4s" />
+        <property name="globalMessage" value="天" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1地爆台词" type="unitDetect" id="483" x="1640" y="160" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="warmup" value="0.2s" />
+        <property name="globalMessage" value="星" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1地爆台词" type="unitDetect" id="484" x="1640" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="globalMessage" value="!" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆台词" type="unitDetect" id="485" x="1740" y="40" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="warmup" value="0.8s" />
+        <property name="globalMessage" value="地" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆台词" type="unitDetect" id="486" x="1740" y="80" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="warmup" value="0.6s" />
+        <property name="globalMessage" value="爆" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆台词" type="unitDetect" id="487" x="1740" y="120" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="warmup" value="0.4s" />
+        <property name="globalMessage" value="天" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆台词" type="unitDetect" id="488" x="1740" y="160" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="warmup" value="0.2s" />
+        <property name="globalMessage" value="星" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2地爆台词" type="unitDetect" id="490" x="1740" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="globalMessage" value="!" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="491" x="460" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="492" x="660" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="493" x="880" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="494" x="1120" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="495" x="1380" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="496" x="1580" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="497" x="760" y="660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="498" x="920" y="480" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="499" x="760" y="660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="500" x="920" y="480" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1实验室" type="unitAdd" id="501" x="920" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2机枪" type="unitAdd" id="502" x="920" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="503" x="980" y="1540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2实验室" type="unitAdd" id="504" x="980" y="1840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="laboratory*1(falling=true)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="505" x="980" y="1540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1机枪" type="unitAdd" id="506" x="980" y="1840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆检测" />
+        <property name="spawnUnits" value="turretT2*15(falling=true)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="删除2地爆" type="unitDetect" id="507" x="1020" y="920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2地爆动画" />
+        <property name="warmup" value="0.5s" />
+      </properties>
+    </object>
+    <object name="2领域检测" type="unitDetect" id="508" x="2960" y="-40" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="1" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1领域检测" type="unitDetect" id="509" x="2960" y="0" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="0" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="511" x="1260" y="1180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="512" x="1320" y="1200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="513" x="1620" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="515" x="1400" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="516" x="1140" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="517" x="900" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="518" x="640" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="519" x="380" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="520" x="760" y="1320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="521" x="1000" y="1240" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="522" x="1280" y="1260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="523" x="700" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="524" x="1000" y="1520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="525" x="1240" y="1540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="526" x="700" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="527" x="680" y="1920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="528" x="980" y="1800" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="529" x="1240" y="1840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="530" x="800" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="531" x="1040" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="532" x="1260" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="533" x="1240" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="534" x="980" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="535" x="680" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="536" x="960" y="500" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="537" x="760" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="538" x="1140" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="539" x="1340" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="540" x="1260" y="1180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="541" x="1280" y="1260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="542" x="1400" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="543" x="1620" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="544" x="1140" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="545" x="1000" y="1240" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="546" x="1000" y="1520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="547" x="700" y="1560" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="548" x="760" y="1320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="549" x="640" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="550" x="380" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="551" x="800" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="552" x="1040" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="553" x="1260" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="554" x="1240" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="555" x="980" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="556" x="960" y="500" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="557" x="680" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="558" x="760" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="559" x="1140" y="280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="560" x="1340" y="420" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="561" x="680" y="1920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="562" x="700" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="563" x="980" y="1800" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="564" x="1240" y="1540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="565" x="1240" y="1840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="566" x="900" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1领域台词" type="unitDetect" id="567" x="2240" y="800" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="globalMessage" value="领域展开，现在你在我的主场！" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2领域台词" type="unitDetect" id="568" x="2240" y="880" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="globalMessage" value="领域展开，现在你在我的主场！" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除1领域" type="unitDetect" id="569" x="1080" y="920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除2领域" type="unitDetect" id="570" x="1120" y="920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1领域动画" type="mapText" id="571" x="1080" y="940" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除1领域" />
+      </properties>
+    </object>
+    <object name="2领域动画" type="mapText" id="572" x="1120" y="940" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除2领域" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="573" x="1380" y="2000" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="574" x="1380" y="2000" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="575" x="1180" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="576" x="1180" y="440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1激光检测" type="unitDetect" id="577" x="2100" y="2220" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="0" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="2激光检测" type="unitDetect" id="578" x="2080" y="2240" width="600" height="600">
+      <properties>
+        <property name="unitType" value="mechBunkerDeployed" />
+        <property name="team" value="1" />
+        <property name="minUnits" value="1" />
+        <property name="resetActivationAfter" value="0.5s" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="579" x="940" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="580" x="940" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="581" x="680" y="1960" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="583" x="680" y="1980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="584" x="460" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="585" x="460" y="1140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="586" x="720" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="587" x="720" y="1140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="588" x="980" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="589" x="980" y="1140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="590" x="1200" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="591" x="1220" y="1140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="592" x="1400" y="960" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="593" x="1440" y="1140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="594" x="1620" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="595" x="1640" y="1160" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="596" x="660" y="1280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="597" x="900" y="1220" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="598" x="980" y="1080" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="599" x="1120" y="1200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="600" x="940" y="1400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="601" x="1140" y="1360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="602" x="1360" y="1340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="603" x="640" y="1460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="604" x="800" y="1460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="605" x="1100" y="1520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="606" x="1340" y="1500" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="607" x="1200" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="608" x="1360" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="609" x="1180" y="1860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="610" x="1220" y="2000" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="611" x="960" y="1880" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="612" x="820" y="1980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="613" x="820" y="1780" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="614" x="680" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="615" x="620" y="1920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="616" x="940" y="1660" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="617" x="1100" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="618" x="840" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="619" x="720" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="620" x="940" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="621" x="1180" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="622" x="900" y="680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="623" x="580" y="500" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="624" x="860" y="520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="625" x="1120" y="500" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="626" x="1320" y="540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="627" x="1260" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="628" x="1080" y="320" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="629" x="920" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="630" x="940" y="340" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="631" x="660" y="260" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="632" x="880" y="140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="633" x="1300" y="140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="634" x="600" y="780" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="635" x="1020" y="1980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="637" x="720" y="1860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="638" x="920" y="1920" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="639" x="1140" y="1880" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="640" x="1340" y="1860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="641" x="1000" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="642" x="780" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="643" x="920" y="1540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="644" x="1060" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="645" x="1260" y="1620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="646" x="1300" y="1440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="647" x="1100" y="1440" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="648" x="680" y="1520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="649" x="660" y="1360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="650" x="880" y="1280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="651" x="1040" y="1280" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="652" x="1240" y="1240" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="653" x="1400" y="1180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="654" x="1580" y="1040" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="655" x="1620" y="1120" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="656" x="1180" y="1100" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="657" x="840" y="1080" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="658" x="540" y="1200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="659" x="400" y="1020" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="660" x="620" y="900" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="661" x="780" y="820" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="662" x="1000" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="663" x="880" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="664" x="1220" y="800" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="665" x="980" y="720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="666" x="720" y="680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="667" x="1260" y="740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="668" x="960" y="1120" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="669" x="1020" y="1400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="670" x="1020" y="1800" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="671" x="1320" y="1840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="672" x="1400" y="2020" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="673" x="1320" y="680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="674" x="860" y="540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="675" x="660" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="676" x="760" y="200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="677" x="980" y="120" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="678" x="1200" y="140" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="679" x="1300" y="240" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="680" x="1440" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="681" x="1080" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="682" x="920" y="400" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="683" x="780" y="460" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="684" x="1140" y="740" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="685" x="820" y="1780" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="686" x="1420" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="687" x="1000" y="480" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="688" x="820" y="780" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1激光台词" type="unitDetect" id="689" x="2260" y="1960" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="globalMessage" value="激光能量场展开，让我们速战速决吧" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="2激光台词" type="unitDetect" id="691" x="2260" y="2020" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="globalMessage" value="激光能量场展开，让我们速战速决吧" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除1激光" type="unitDetect" id="692" x="1080" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="删除2激光" type="unitDetect" id="693" x="1120" y="980" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光动画" />
+        <property name="warmup" value="0.2s" />
+      </properties>
+    </object>
+    <object name="1激光动画" type="mapText" id="694" x="1080" y="1000" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除1激光" />
+      </properties>
+    </object>
+    <object name="2激光动画" type="mapText" id="695" x="1120" y="1000" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#DC143C" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="删除2激光" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="696" x="560" y="520" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1领域" type="unitAdd" id="697" x="1320" y="180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2领域" type="unitAdd" id="698" x="1320" y="180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2领域检测" />
+        <property name="spawnUnits" value="modularSpider_laserdefense*50(offsetHeight=-9999999),mechEngineer*50(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1号坐炮ADD" type="unitAdd" id="710" x="1960" y="-380" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2号坐炮ADD" type="unitAdd" id="711" x="2240" y="-300" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1号坐炮ADD" type="unitAdd" id="712" x="720" y="-360" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2号坐炮ADD" type="unitAdd" id="713" x="1060" y="-360" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1号坐炮ADD" type="unitAdd" id="714" x="-20" y="-380" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2号坐炮ADD" type="unitAdd" id="715" x="-320" y="-140" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1号坐炮ADD" type="unitAdd" id="716" x="2240" y="2600" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2号坐炮ADD" type="unitAdd" id="717" x="2480" y="2360" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="718" x="1080" y="180" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="719" x="700" y="780" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="720" x="700" y="1200" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="721" x="1180" y="1760" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="1激光" type="unitAdd" id="722" x="1060" y="360" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="1激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="723" x="960" y="380" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="724" x="1080" y="620" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="725" x="1020" y="1640" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="726" x="580" y="1680" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="727" x="1300" y="1720" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="728" x="960" y="1600" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="729" x="560" y="1060" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="730" x="660" y="1240" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="731" x="820" y="540" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="732" x="940" y="840" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="2激光" type="unitAdd" id="733" x="1340" y="860" width="20" height="20">
+      <properties>
+        <property name="activatedBy" value="2激光检测" />
+        <property name="spawnUnits" value="laserTank*1(offsetHeight=-9999999)" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+  </objectgroup>
+</map>

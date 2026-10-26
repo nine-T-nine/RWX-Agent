@@ -87,6 +87,6 @@ public class RallyGroup extends AIUnitGroupBase {
     /* JADX INFO: renamed from: c */
     public void addUnitNeedingTransport(OrderableUnit orderableUnit) {
         addUnit(orderableUnit);
-        this.unitsNeedingTransport.add(orderableUnit);
+        super.addUnitNeedingTransport(orderableUnit);
     }
 }

@@ -35,6 +35,12 @@ internal class BattleRoomLaunchController(
             showUnavailableDialog("Only the current room host can start the game")
             return
         }
+        GameEngine.getInstance()?.networkEngine?.let { network ->
+            if (network.isProxyController && !network.isServer) {
+                gameSession.startBattleRoom()
+                return // The native start packet will enter the game once the server accepts it.
+            }
+        }
         val launchConfig = gameSession.loadState.pendingRendererBattleRoomConfig
         currentOriginalMultiplayerRwxMapBlockMessage()?.let { message ->
             showUnavailableDialog(message)
@@ -130,7 +136,8 @@ internal class BattleRoomLaunchController(
     /** Replays a deferred network game-start event once per frame until the UI can handle it. */
     fun driveDeferredNetworkGameStart() {
         if (!BattleRoomUiBridge.startGamePending) return
-        if (gameSession.currentBattleRoom()?.isNetworkMultiplayer != true) {
+        if (gameSession.currentBattleRoom()?.isNetworkMultiplayer != true &&
+            GameEngine.getInstance()?.networkEngine?.hasActiveStartedGameConnection() != true) {
             BattleRoomUiBridge.startGamePending = false
             return
         }
@@ -138,8 +145,18 @@ internal class BattleRoomLaunchController(
     }
 
     private fun enterStartedBattleRoomGame() {
+        val network = GameEngine.getInstance()?.networkEngine
         val mapPath = gameSession.currentBattleRoom()?.room?.mapPath?.takeIf { it.isNotBlank() }
+            // During GUI reconnect the renderer can still be preparing its menu surface,
+            // so the published room snapshot is temporarily absent. The start packet has
+            // already supplied the native map path; use it to replace that menu request.
+            ?: network?.takeIf { it.hasActiveStartedGameConnection() }
+                ?.selectedMapPath?.takeIf { it.isNotBlank() }
         if (mapPath == null) {
+            if (network?.hasActiveStartedGameConnection() == true) {
+                BattleRoomUiBridge.startGamePending = true
+                return
+            }
             logger.warn { "Unable to enter started battle room without an active map" }
             showUnavailableDialog(
                 I18n.battleroom.unableToStartGame("Network game is no longer active")

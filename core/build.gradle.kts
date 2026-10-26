@@ -20,6 +20,14 @@ java {
     }
 }
 
+// help.md 与命令实现放在一起维护，同时打进 core jar，供 `rwx-help` 从 classpath 读取。
+tasks.processResources {
+    from(rootProject.layout.projectDirectory.dir("agent-operation")) {
+        include("help.md")
+        into("com/corrodinggames/rts/game/ai/custom/rwx_cli_tool")
+    }
+}
+
 dependencies {
     api(project(":mod-api"))
     implementation(libs.compose.runtime)

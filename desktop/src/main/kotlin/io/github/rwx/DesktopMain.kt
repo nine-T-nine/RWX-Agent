@@ -6,6 +6,7 @@ import com.corrodinggames.rts.gameFramework.SettingsEngine
 import io.github.rwx.app.AppOptions
 import io.github.rwx.app.GameFramePresenter
 import io.github.rwx.app.installApp
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxCliTool
 import io.github.rwx.di.coreModule
 import io.github.rwx.di.desktopModule
 import io.github.rwx.i18n.LocaleSettings
@@ -25,10 +26,21 @@ import org.koin.core.component.get
 import org.koin.core.context.GlobalContext
 import org.koin.dsl.module
 import javax.swing.SwingUtilities
+import java.util.concurrent.atomic.AtomicReference
 
 object DesktopMain : KoinComponent {
     @JvmStatic
     fun main(args: Array<String>) {
+        val startup = AppOptions.parseArgs(args, isDesktop = true)
+        startup.dataDir?.let { System.setProperty("launch.dir", java.io.File(it).absolutePath) }
+        startup.cliPortFile?.let { System.setProperty("rwx.cli.portFile", java.io.File(it).absolutePath) }
+        if (startup.headless) {
+            io.github.rwx.headless.HeadlessMain.run(startup)
+            return
+        }
+        // CLI 模式下先把标准输出切到 UTF-8：Windows 默认按 GBK 写日志，Python 等客户端
+        // 按 UTF-8 读取时中文会乱码；必须早于日志系统初始化。
+        if (args.any { it == "--rwx-cli" }) RwxCliTool.forceUtf8Stdio()
         configureDesktopLogging()
         val options = AppOptions.parseArgs(args, isDesktop = true)
         configureLwjglMemoryStack()
@@ -65,6 +77,7 @@ object DesktopMain : KoinComponent {
         }
         Runtime.getRuntime().addShutdownHook(Thread { steamBridge.shutdown() })
         SwingUtilities.invokeLater {
+            val cliTool = AtomicReference<RwxCliTool?>(null)
             val host = when (renderBackend) {
                 DesktopRenderBackend.Skia -> SwingAppHost.create(
                     fullscreen = SettingsEngine.getInstance().slick2dFullScreen,
@@ -83,6 +96,7 @@ object DesktopMain : KoinComponent {
                 if (error != null) {
                     logger.error(error) { "Desktop shutdown failed; native frame was not disposed" }
                 } else {
+                    cliTool.getAndSet(null)?.close()
                     bridge.filePickerHost = null
                     GlobalContext.stopKoin()
                     kotlin.system.exitProcess(0)
@@ -107,6 +121,9 @@ object DesktopMain : KoinComponent {
                     onQuit = host::requestClose,
                 )
                 host.installComposeUi(session)
+                if (options.rwxCliEnabled) {
+                    cliTool.set(RwxCliTool.start { command, arguments -> session.executeCliCommand(command, arguments).get() })
+                }
             } catch (error: Throwable) {
                 bridge.filePickerHost = null
                 host.dispose()

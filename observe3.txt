@@ -1,0 +1,534 @@
+结果：失败（defeat）——我方全部建筑与单位于约 11:40 被消灭（游戏状态 outcome: defeat）。地图 Lake (2p)，1v1，AI Impossible，收入 x2。全局未暂停，速度始终为 1。
+
+RWX 1v1 | Impossible | Lake (2p) | income x2
+实际命令与返回结果；同名命令保留参数最多/输出最丰富的几条（最多 3 条），按执行时间排序；超长输出截断。
+
+[2026-10-24T16:59:19] $ rwx-ping
+pong
+
+[2026-10-24T17:00:19] $ rwx-local-skirmish
+error: TimeoutError('timed out')
+
+[2026-10-24T17:00:21] $ rwx-local-battleroom-select-map --name 'Lake (2p)'
+error: No active battle room
+
+[2026-10-24T17:00:41] $ rwx-local-skirmish
+error: Unable to prepare local battle room
+
+[2026-10-24T17:01:34] $ rwx-local-battleroom-show --player --currentMap
+玩家：
+Player | 阵营 A | 出生点 1 | 颜色 GREEN (0)
+AI 3 - Hard | 阵营 A | 出生点 3 | 颜色 BLUE (2)
+AI 2 - Hard | 阵营 B | 出生点 2 | 颜色 RED (1)
+
+当前地图：King of the Middle (3p)
+
+[2026-10-24T17:02:01] $ rwx-local-battleroom-select-map --name 'Lake (2p)'
+当前地图：Lake (2p)
+
+[2026-10-24T17:02:01] $ rwx-local-battleroom-set-player --player 3 --kick
+已移除 AI 3 - Hard
+
+[2026-10-24T17:02:01] $ rwx-local-battleroom-set-player --player 2 --difficulty impossible
+已将 AI 2 - Impossible 的难度设置为 不可能
+
+[2026-10-24T17:02:01] $ rwx-local-battleroom-settings --income 2 --aiDifficulty impossible
+已更新房间设置
+房间设置：
+收入倍数 (--income): 2.0
+初始资金 (--credits): $4000（默认）
+初始单位 (--startUnits): 1
+雾效 (--fog): los (2)
+地图已探明 (--revealedMap): true
+默认 AI 难度 (--aiDifficulty): Impossible (3)
+最大玩家数 (--maxPlayers): 10
+禁用核武器 (--noNukes): false
+共享控制 (--sharedControl): false
+允许旁观 (--allowSpectators): true
+锁定阵营 (--teamLock): false
+锁定房间 (--roomLock): false
+固定同盟 (--fixedAllyTeams): false
+
+[2026-10-24T17:02:01] $ rwx-local-battleroom-show --player --currentMap --settings
+玩家：
+Player | 阵营 A | 出生点 1 | 颜色 GREEN (0)
+AI 2 - Impossible | 阵营 B | 出生点 2 | 颜色 RED (1)
+
+当前地图：Lake (2p)
+
+房间设置：
+收入倍数 (--income): 2.0
+初始资金 (--credits): $4000（默认）
+初始单位 (--startUnits): 1
+雾效 (--fog): los (2)
+地图已探明 (--revealedMap): true
+默认 AI 难度 (--aiDifficulty): Impossible (3)
+最大玩家数 (--maxPlayers): 10
+禁用核武器 (--noNukes): false
+共享控制 (--sharedControl): false
+允许旁观 (--allowSpectators): true
+锁定阵营 (--teamLock): false
+锁定房间 (--roomLock): false
+固定同盟 (--fixedAllyTeams): false
+
+[2026-10-24T17:02:08] $ rwx-local-battleroom-start
+已请求开始游戏
+
+[2026-10-24T17:02:23] $ rwx-local-game-auto-set --rule assist-build --radius 300
+assist-build 已启用 (tick 4014, time 00:13)
+[开] assist-build — 协助施工
+    空闲建造者就近协助未完工建筑，不自行决定新建建筑
+    优先级 15 | 候选 0 | 接管 0 | 触发 1 | 运行中
+    radius=300 idleOnly
+最近触发（新→旧）:
+  · 00:13 [assist-build] 启用 assist-build radius=300 priority=15 cooldown=0.5s
+
+[2026-10-24T17:02:23] $ rwx-local-game-auto-set --rule repair --radius 300
+repair 已启用 (tick 4016, time 00:13)
+[开] repair — 空闲自动修理
+    空闲建造者/工程师修理范围内受损的己方建筑或单位，然后回到原位置
+    优先级 10 | 候选 0 | 接管 0 | 触发 1 | 运行中
+    radius=300 idleOnly
+最近触发（新→旧）:
+  · 00:13 [repair] 启用 repair radius=300 priority=10 cooldown=0.5s
+
+[2026-10-24T17:02:31] $ rwx-query-production --factory land --level 0
+陆军工厂 可生产单位（全部等级，共 14 个）
+id | 名称 | 价格 | 类型 | 生命 | 射程 | 用时
+c_tank | 坦克 | 350 | 陆地攻击单位 | 210 | 130 | 8.3秒
+hoverTank | 悬浮坦克 | 450 | 陆地攻击单位 | 150 | 140 | 8.3秒
+builder | 建造者 | 500 | 工程单位 | 170 | 30 | 8.3秒
+hovercraft | 登陆艇 | 600 | 运输单位 | 450 | 30 | 5.6秒
+scout | 侦察者 | 700 | 陆地攻击单位 | 350 | 110 | 11.1秒
+heavyTank | 重型坦克 | 800 | 陆地攻击单位 | 600 | 160 | 15.2秒
+c_artillery | 自行火炮 | 900 | 陆地攻击单位 | 140 | 290 | 11.9秒
+plasmaTank | 等离子坦克 | 1000 | 陆地攻击单位 | 220 | 165 | 18.5秒
+heavyHoverTank | 重型气垫坦克 | 1000 | 陆地攻击单位 | 450 | 160 | 16.7秒
+c_laserTank | 激光坦克 | 1600 | 陆地攻击单位 | 400 | 190 | 12.8秒
+missileTank | 防空导弹坦克 | 2500 | 陆地攻击单位 | 1100 | 340 | 33.3秒
+heavyArtillery | 重型火炮 | 3100 | 陆地攻击单位 | 600 | 310 | 33.3秒
+combatEngineer | 战斗工程师 | 3500 | 工程单位、陆地攻击单位 | 1000 | 170 | 33.3秒
+c_mammothTank | 猛犸坦克 | 3900 | 陆地攻击单位、实验单位 | 2600 | 190 | 27.8秒
+
+[2026-10-24T17:02:31] $ rwx-query-production --factory mechFactory --level 0
+机械工厂 可生产单位（全部等级，共 5 个）
+id | 名称 | 价格 | 类型 | 生命 | 射程 | 用时
+builder | 建造者 | 500 | 工程单位 | 170 | 30 | 8.3秒
+mechGun | 基础机甲 | 600 | 陆地攻击单位 | 500 | 130 | 13.9秒
+mechMissile | 防空机甲 | 900 | 陆地攻击单位 | 500 | 190 | 9.8秒
+mechArtillery | 火炮机甲 | 1400 | 陆地攻击单位 | 500 | 290 | 27.8秒
+mechBunker | 移动炮塔 | 4500 | 陆地攻击单位 | 800 | 200 | 27.8秒
+
+[2026-10-24T17:02:31] $ rwx-query-building --name c_turret_t1 --detail
+id          c_turret_t1
+name        Turret
+name_zh     炮塔
+kind        building, tier 1
+cost        500 credits, 20.8s
+hp          700
+vision      15 tiles
+weapon      damage 41 direct, range 8.3 tiles, reload 0.5s, vs ground
+actions     upgrade, c_turret_t2_gun_0   1000 credits   target
+            c_turret_t1_artillery_1   1600 credits   target
+            c_turret_t2_flame_2   700 credits   target
+            c_turret_t1_lightning_3   2200 credits   target
+commands    attack, guard
+upgrade     to c_turret_t2_gun, 1000 credits, to c_turret_t1_artillery, 1600 credits
+            to c_turret_t2_flame, 700 credits, to c_turret_t1_lightning, 2200 credits
+from        builder
+placement   2x2 footprint
+features    可升级：机枪 T2 / 火炮 / 喷火 / 闪电分支
+description  攻击地面单位, 可升级
+about       基础炮塔，攻击地面单位，可升级成多种分支，本身攻击力较弱
+
+[2026-10-24T17:02:40] $ rwx-local-game-map-show --terrain --x 400 --y 1300 --half-width 20 --half-height 40 --ascii
+map(WxH/2600.0x2600.0,world unit):
+1 tile=20 world units
+  range: x=0..820 y=500..2120(world unit) x=0..40 y=25..105(tiles)
+  scale: 820x1620(world unit) 41x81(tile)
+resourcePools: 9
+  · 1130,390 | 8 (occupied) | team 1 extractorT1 #25
+  · 2370,510 | 0 (unoccupied)
+  · 150,530 | 0 (unoccupied)
+  · 230,1190 | 0 (unoccupied)
+  · 1250,1190 | 0 (unoccupied)
+  · 2190,1190 | 0 (unoccupied)
+  · 2370,1890 | 0 (unoccupied)
+  · 130,1910 | 0 (unoccupied)
+  · 1170,2050 | 8 (occupied) | team 0 extractorT1 #27
+  legend: .=land ~=water ^=mountain *=lava 0=free-resource 8=occupied-resource ?=fog
+  grid (row = y, col = x):
+  y= 25 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 26 | . . . . . . . 0 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 27 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 28 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 29 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 30 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 31 | . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+  y= 32 | . . . . . . . . . . . . . . . . . . . . . . . . . ^ ^ ^ . . . . . . . . . . . . .
+  y= 33 | . . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+  y= 34 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 35 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 36 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 37 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 38 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 39 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 40 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 41 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 42 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 43 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 44 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 45 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 46 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 47 | . . . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 48 | . . . . . . . . . . . . . . . . . . . . . . ^ ^ ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 49 | . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 50 | . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 51 | . . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 52 | . . . . . . . . . . . . . . . . . . . . ^ ^ ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 53 | . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 54 | . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 55 | . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 56 | . . . . . . . . . . . . . . . . . . . . ^ ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 57 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 58 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 59 | . . . . . . . . . . . 0 . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 60 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 61 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 62 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 63 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 64 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 65 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 66 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 67 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+  y= 68 | . . . . . . . . . . . . . . . . . . . . . ^ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
+... (省略 37 行)
+
+[2026-10-24T17:02:51] $ rwx-local-game-state --summary
+游戏状态
+tick: 12588
+time: 00:42 (42233 ms)
+paused: false
+speed: 1.0
+map: Lake (2p)
+controlledTeam: 0
+outcome: active
+credits: 3165
+incomePerSecond: 52
+units: 7
+
+[2026-10-24T17:05:33] $ rwx-local-game-order-attack-move --units all-army --x 2230 --y 1300
+Command accepted
+result: submitted
+tick: 61054
+appliedImmediately: false
+units: 95,109,129,163
+message: accepted attack-move (replaced the previous order on 2 units; add --queue to append) (queued for the next simulation tick)
+
+[2026-10-24T17:05:41] $ rwx-local-game-unit-actions --unit 102
+可用动作 (unit 102):
+id: c_1 | name: 设置集结点 | available: true | queued: 0 | target: point | price: 0
+id: mechFactoryT2_2 | name: 升级 - T2 | available: true | queued: 0 | target: none | price: 4000 | unitType: mechFactoryT2
+id: u_builder | name: 建造者 | available: true | queued: 0 | target: none | price: 500 | unitType: builder
+id: u_mechGun | name: 基础机甲 | available: true | queued: 0 | target: none | price: 600 | unitType: mechGun
+id: u_mechMissile | name: 防空机甲 | available: true | queued: 0 | target: none | price: 900 | unitType: mechMissile
+id: u_mechArtillery | name: 火炮机甲 | available: true | queued: 0 | target: none | price: 1400 | unitType: mechArtillery
+id: u_mechBunker | name: 移动炮塔 | available: true | queued: 0 | target: none | price: 4500 | unitType: mechBunker
+
+[2026-10-24T17:05:49] $ rwx-local-game-order-rally --units 102 --x 2250 --y 1600
+Command accepted
+result: submitted
+tick: 65901
+appliedImmediately: false
+units: 102
+message: accepted rally (queued for the next simulation tick)
+
+[2026-10-24T17:06:31] $ rwx-local-game-order-action --units 40 --action u_gunShip --count 3 --after-upgrade
+Command accepted
+result: submitted
+tick: 78306
+requested: 3 | submitted: 3 | pending: 0 | failed: 0
+units: 40,40,40
+message: accepted action (queued for the next simulation tick) (reserved credits: 800)
+
+[2026-10-24T17:07:03] $ rwx-local-game-order-cancel --unit 40 --action u_gunShip --all
+Command accepted
+result: submitted
+tick: 87794
+appliedImmediately: false
+units: 40
+message: cancelled queue entries: u_gunShip, u_gunShip (refund pending until the command executes) (queued for the next simulation tick)
+
+[2026-10-24T17:07:03] $ rwx-local-game-order-rally --units 40,102 --x 1000 --y 2080
+Command accepted
+result: submitted
+tick: 87801
+appliedImmediately: false
+units: 40,102
+message: accepted rally (queued for the next simulation tick)
+
+[2026-10-24T17:07:03] $ rwx-local-game-order-build --builder 256 --type c_antiAirTurret --x 1200 --y 2150 --auto-place --queue
+Command accepted
+result: submitted
+tick: 87804
+appliedImmediately: false
+units: 256
+message: accepted build of c_antiAirTurret at 1200,2140 (cost 600, available 3333) (queued for the next simulation tick) (reserved credits: 600)
+
+[2026-10-24T17:07:03] $ rwx-local-game-order-move --units all-army --x 1000 --y 2080
+Command accepted
+result: submitted
+tick: 87808
+appliedImmediately: false
+units: 961,1281,1510
+message: accepted move (replaced the previous order on 3 units; add --queue to append) (queued for the next simulation tick)
+
+[2026-10-24T17:08:42] $ rwx-local-game-brief
+战况 06:33 (tick 117690, 运行中, speed 1)
+地图: Lake (2p) | 我方 team 0 | 结果: active
+经济: 资金 3388 (+52/s)
+我方: 单位 8，建筑 10，空闲单位 0 | airFactory x1, builder x3, c_antiAirTurret x3, c_turret_t1 x1, commandCenter x1, extractorT1 x2, heavyTank x2, landFactory x1, mechArtillery x1, mechFactory x1, mechMissile x2
+友军: 单位 0，建筑 0，空闲单位 0 | 无
+视野内敌军: attackSubmarine x2, builder x1, c_artillery x1, c_interceptor x3, c_tank x2, hoverTank x1, lightGunship x1, lightSub x2, missileShip x1
+生产: 工厂 4（队列占用 0，空闲 4） | 生产队列条目 0
+升级: 无
+血量分档 (<10%濒死, 10%–<50%残血, 50%–80%受伤)
+  单位: mechMissile 濒死0/残血1/受伤0, builder 濒死0/残血0/受伤1, mechArtillery 濒死0/残血0/受伤1
+  建筑: c_turret_t1 濒死0/残血0/受伤1
+待发: 0（等待资金 0，等待升级 0）
+
+[2026-10-24T17:08:43] $ rwx-local-game-events --seconds 25 --types losses,destroyed,new
+[06:08][new] found Helicopter x2, Builder x1, Hovertank x1, Tank x2, Light Gun Ship x1 around (586.0,1757.4)
+[06:10][destroyed] our Anti-air Turret,1610 has destroyed Helicopter(670.9,1864.0)
+[06:10][destroyed] our Heavy Tank,2361 has destroyed Gun Boat(1147.8,1711.8)
+[06:11][destroyed] our Anti-air Turret,1610 has destroyed Helicopter(724.4,1854.9)
+[06:12][losses] we lost Interceptor,2327(793.4,1766.3) by Hovertank(661.5,1746.8)
+[06:12][destroyed] our Anti-air Turret,1610 has destroyed Helicopter(695.5,1846.6)
+[06:14][destroyed] our Anti-air Turret,1610 has destroyed Helicopter(795.2,1779.3)
+[06:14][destroyed] our Artillery Mech,1985 has destroyed Gun Boat(1106.5,1711.7)
+[06:14][destroyed] our Turret,2325 has destroyed Builder(715.1,1850.0)
+[06:14][destroyed] our Anti-Air Mech,2059 has destroyed Light Gun Ship(667.0,1848.3)
+[06:14][destroyed] our Anti-Air Mech,2207 has destroyed Light Gun Ship(909.3,1694.9)
+[06:15][new] found Artillery x1, Light Gun Ship x3, Hovertank x1, Interceptor x3 around (509.0,1758.7)
+[06:15][destroyed] our Anti-air Turret,1610 has destroyed Helicopter(702.9,1850.2)
+[06:15][losses] we lost Turret,2325(700,1960) by Tank(697.2,1869.7)
+[06:17][destroyed] our Heavy Tank,2432 has destroyed Hovertank(758.0,1864.3)
+[06:18][destroyed] our Anti-Air Mech,2207 has destroyed Light Gun Ship(767.0,1723.9)
+[06:19][losses] we lost Builder,1861(824.4,1970.6) by Tank(742.3,1873.2)
+[06:20][destroyed] our Heavy Tank,2432 has destroyed Tank(742.3,1873.2)
+[06:21][destroyed] our Anti-Air Mech,2207 has destroyed Light Gun Ship(754.8,1714.3)
+[06:21][destroyed] our Artillery Mech,1985 has destroyed Missile Ship(1083.4,1676.5)
+[06:23][destroyed] our Anti-Air Mech,2207 has destroyed Light Gun Ship(770.9,1716.4)
+[06:25][losses] we lost Heavy Tank,2361(1024.4,1810.2) by Missile Ship(1186.9,1693.1)
+[06:25][destroyed] our Heavy Tank,2432 has destroyed Tank(697.3,1967.6)
+[06:25][new] found Tank x2, Interceptor x1, Heavy Interceptor x1, Builder x1, Underwater Probe x2, Helicopter x1, Attack Submarine x2, Light Gun Ship x1 around (776.0,1626.9)
+[06:30][losses] we lost Builder,1732(203.7,1944.0) by Tank(307.0,1870.3)
+[06:32][destroyed] our Anti-Air Mech,2059 has destroyed Helicopter(731.2,1786.5)
+[06:32][losses] we lost Anti-Air Mech,2207(742.6,1877.9) by Hovertank(671.9,1772.9)
+
+[2026-10-24T17:09:54] $ rwx-local-game-order-build --builder 2632 --type c_antiAirTurret --x 1100 --y 1950 --auto-place
+Command accepted
+result: submitted
+tick: 139030
+appliedImmediately: false
+units: 2632
+message: accepted build of c_antiAirTurret at 1100,1940 (cost 600, available 1343) (replaced the previous order on 1 unit; add --queue to append) (queued for the next simulation tick) (reserved credits: 600)
+
+[2026-10-24T17:10:00] $ rwx-local-game-keep-list
+维持规则 (tick 140812, time 07:50)
+count: 1
+说明: 采样器（250ms）在队列低于 count 时自动补产；只在动作可用且买得起时补，不会透支资金。
+  #3 单位 32 · u_heavyTank x4（当前 3） | 已补 2 | 等资金（3/4）
+最近动作（新→旧）:
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · 新建 #3 单位 32 保持 u_heavyTank x4
+  · #1 更新为 x4
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · 丢弃 #2：单位 102 已不存在
+  · #2 单位 102 补充 u_mechMissile
+  · #1 单位 32 补充 u_heavyTank
+  · #2 单位 102 补充 u_mechMissile
+  · #2 单位 102 补充 u_mechMissile
+  · #1 单位 32 补充 u_heavyTank
+  · 新建 #2 单位 102 保持 u_mechMissile x1
+  · 新建 #1 单位 32 保持 u_heavyTank x1
+
+[2026-10-24T17:10:27] $ rwx-local-game-order-action --units 23 --action u_builder --count 2
+Command accepted
+result: partial
+tick: 148902
+requested: 2 | submitted: 1 | pending: 0 | failed: 1
+units: 23
+message: accepted action (queued for the next simulation tick) (reserved credits: 500)
+failure: Action 'u_builder' cannot be afforded by unit 23 right now (need 500, available 209)
+
+[2026-10-24T17:11:06] $ rwx-local-game-unit-list --owner enemy --x 2370 --y 1890 --radius 600 --compact
+单位列表 (tick 160742, time 08:56)
+单位 (0):
+
+[2026-10-24T17:11:06] $ rwx-local-game-unit-list --owner enemy --x 130 --y 1910 --radius 600 --compact
+单位列表 (tick 160743, time 08:56)
+单位 (0):
+
+[2026-10-24T17:11:13] $ rwx-local-game-keep-set --unit 32 --action u_heavyTank --count 2
+维持规则 (tick 162757, time 09:03)
+count: 1
+说明: 采样器（250ms）在队列低于 count 时自动补产；只在动作可用且买得起时补，不会透支资金。
+  #4 单位 32 · u_heavyTank x2（当前 0） | 已补 0 | 排队中
+最近动作（新→旧）:
+  · 新建 #4 单位 32 保持 u_heavyTank x2
+  · #3 更新为 x2
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · 新建 #3 单位 32 保持 u_heavyTank x4
+  · #1 更新为 x4
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · 丢弃 #2：单位 102 已不存在
+  · #2 单位 102 补充 u_mechMissile
+  · #1 单位 32 补充 u_heavyTank
+  · #2 单位 102 补充 u_mechMissile
+  · #2 单位 102 补充 u_mechMissile
+
+[2026-10-24T17:11:26] $ rwx-local-game-keep-clear
+维持规则 (tick 166783, time 09:17)
+count: 0
+说明: 采样器（250ms）在队列低于 count 时自动补产；只在动作可用且买得起时补，不会透支资金。
+当前没有维持规则。用 rwx-local-game-keep-set --unit <工厂id> --action <动作id> --count N 新建。
+最近动作（新→旧）:
+  · 清空全部维持规则（1 项）
+  · 新建 #4 单位 32 保持 u_heavyTank x2
+  · #3 更新为 x2
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · 新建 #3 单位 32 保持 u_heavyTank x4
+  · #1 更新为 x4
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · 丢弃 #2：单位 102 已不存在
+  · #2 单位 102 补充 u_mechMissile
+  · #1 单位 32 补充 u_heavyTank
+  · #2 单位 102 补充 u_mechMissile
+
+[2026-10-24T17:11:50] $ rwx-local-game-keep-set --unit 32 --action u_heavyTank --count 1
+维持规则 (tick 173829, time 09:40)
+count: 1
+说明: 采样器（250ms）在队列低于 count 时自动补产；只在动作可用且买得起时补，不会透支资金。
+  #5 单位 32 · u_heavyTank x1（当前 0） | 已补 0 | 排队中
+最近动作（新→旧）:
+  · 新建 #5 单位 32 保持 u_heavyTank x1
+  · 清空全部维持规则（1 项）
+  · 新建 #4 单位 32 保持 u_heavyTank x2
+  · #3 更新为 x2
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · #3 单位 32 补充 u_heavyTank
+  · 新建 #3 单位 32 保持 u_heavyTank x4
+  · #1 更新为 x4
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · #1 单位 32 补充 u_heavyTank
+  · 丢弃 #2：单位 102 已不存在
+  · #2 单位 102 补充 u_mechMissile
+  · #1 单位 32 补充 u_heavyTank
+
+[2026-10-24T17:12:52] $ rwx-local-game-unit-list --owner self --full
+单位列表 (tick 192454, time 10:42)
+摘要: 我方(team 0) commandCenter x1, landFactory x1, c_antiAirTurret x1, heavyTank x10, builder x2
+单位 (15):
+id: 23 | type: commandCenter | team: 0 | pos: 990,2010 | hp: 4000/4000 | build: 1.0 | tech: T1 | stance: onlyInRange
+id: 32 | type: landFactory | team: 0 | pos: 1090,2190 | hp: 1200/1200 | build: 1.0 | tech: T2 | upgrade: 2 | production: 1 | progress: 75%
+id: 786 | type: c_antiAirTurret | team: 0 | pos: 1060,1940 | hp: 800/800 | build: 1.0 | tech: T1 | order: attack | stance: onlyInRange | waypoint: 1150,425
+id: 3072 | type: heavyTank | team: 0 | pos: 1050,1865 | hp: 431/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3215 | type: heavyTank | team: 0 | pos: 1028,1893 | hp: 205/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3342 | type: heavyTank | team: 0 | pos: 978,1841 | hp: 434/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3446 | type: heavyTank | team: 0 | pos: 1109,1837 | hp: 463/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3589 | type: builder | team: 0 | pos: 986,2113 | hp: 170/170 | build: 1.0 | tech: T1 | stance: onlyInRange
+id: 3760 | type: heavyTank | team: 0 | pos: 1100,2043 | hp: 453/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3808 | type: heavyTank | team: 0 | pos: 950,1983 | hp: 305/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 3813 | type: builder | team: 0 | pos: 989,2092 | hp: 170/170 | build: 1.0 | tech: T1 | stance: onlyInRange
+id: 3816 | type: heavyTank | team: 0 | pos: 1113,1905 | hp: 340/600 | build: 1.0 | tech: T1 | order: move | stance: onlyInRange | waypoint: 1084,1874 | queue: 2
+id: 4073 | type: heavyTank | team: 0 | pos: 975,1943 | hp: 558/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+id: 4156 | type: heavyTank | team: 0 | pos: 1099,2100 | hp: 143/600 | build: 1.0 | tech: T1 | order: move | stance: onlyInRange | waypoint: 1117,2062 | queue: 2
+id: 4362 | type: heavyTank | team: 0 | pos: 951,2102 | hp: 600/600 | build: 1.0 | tech: T1 | order: attackMove | stance: onlyInRange | waypoint: 976,2042
+
+[2026-10-24T17:13:00] $ rwx-local-game-order-build --builder 3813 --type c_antiAirTurret --x 1150 --y 1950 --auto-place --queue
+Command accepted
+result: submitted
+tick: 194881
+appliedImmediately: false
+units: 3813
+message: accepted build of c_antiAirTurret at 1140,1940 (cost 600, available 4173) (queued for the next simulation tick) (reserved credits: 600)
+
+[2026-10-24T17:13:55] $ rwx-local-game-brief
+战况 11:45 (tick 211202, 运行中, speed 1)
+地图: Lake (2p) | 我方 team 0 | 结果: defeat
+经济: 资金 5073 (+0/s)
+我方: 单位 0，建筑 0，空闲单位 0 | 无
+友军: 单位 0，建筑 0，空闲单位 0 | 无
+视野内敌军: aaBeamGunship x2, airFactory x5, antiAirTurretFlak x6, antiNukeLauncherC x2, attackSubmarine x5, battleShip x5, bomber x2, builder x17, c_antiAirTurret x14, c_antiAirTurretT2 x5, c_antiAirTurretT3 x1, c_artillery x6, c_helicopter x6, c_interceptor x12, c_mammothTank x1, c_tank x1, c_turret_t1 x11, c_turret_t1_artillery x2, c_turret_t1_lightning x2, c_turret_t2_artillery x1, c_turret_t2_flame x1, c_turret_t2_gun x6, c_turret_t3_gun x2, combatEngineer x1, commandCenter x1, dropship x3, experimentalLandFactory x2, extractorT1 x1, extractorT3 x1, extractorT3_overclocked x1, extractorT3_reinforced x5, fabricatorT1 x3, fabricatorT2 x2, fireBee x1, gunBoat x1, gunShip x1, heavyArtillery x3, heavyHoverTank x2, heavyInterceptor x2, heavyTank x2, hoverTank x8, landFactory x6, laserDefence x8, lightGunship x9, lightSub x5, mechArtillery x9, mechBunker x5, mechFactory x6, mechGun x8, mechMissile x10, missileAirship x1, missileShip x2, missileTank x1, nautilusSubmarineLand x1, plasmaTank x2, repairbay x8, scout x6, seaFactory x7
+生产: 工厂 0（队列占用 0，空闲 0） | 生产队列条目 0
+升级: 无
+血量分档 (<10%濒死, 10%–<50%残血, 50%–80%受伤)
+  单位: 无
+  建筑: 无
+待发: 0（等待资金 0，等待升级 0）
+
+[2026-10-24T17:13:55] $ rwx-local-game-events --seconds 45 --types losses,destroyed,new
+[11:01][losses] we lost Heavy Tank,3072(943.6,2013.4) by Heavy Artillery(706.3,1919.0)
+[11:02][new] found Missile Airship x1, Helicopter x2, Artillery x1 around (1042.9,1751.6)
+[11:02][losses] we lost Anti-air Turret,4730(900,1940) by Fire Bee(759.0,2037.8)
+[11:05][losses] we lost Heavy Tank x3 by Fire Bee(760.3,2037.4)x2, Mobile Turret(1282.6,2227.2)
+[11:05][destroyed] our Heavy Tank,3816 has destroyed AA Missile Tank(949.5,2012.2)
+[11:08][losses] we lost Builder x2 by Mobile Turret(1276.3,2219.4), Bomber(971.3,2003.3)
+[11:09][destroyed] our Heavy Tank,3342 has destroyed Helicopter(1050.7,1837.8)
+[11:10][losses] we lost Heavy Tank,4073(1014.9,2044.3) by Bomber(1013.7,2022.3)
+[11:11][new] found Scout at (1170.8,1709.2)
+[11:13][losses] we lost Extractor,4688(1170,2050) by Mobile Turret(1274.0,2216.8)
+[11:14][destroyed] our Heavy Tank,3342 has destroyed Helicopter(1078.6,1826.9)
+[11:15][new] found Artillery Mech x1, Basic Mech x1 around (948.2,1968.3)
+[11:15][losses] we lost Anti-air Turret,786(1060,1940) by Missile Airship(1161.0,1821.3)
+[11:17][losses] we lost Heavy Tank x4 by Basic Mech(1196.3,2028.4)x2, Artillery Mech(701.0,1924.2), etc.
+[11:19][destroyed] our Heavy Tank,3760 has destroyed Scout(1086.5,1876.3)
+[11:20][new] found Scout x2 around (1119.1,1691.3)
+[11:24][losses] we lost Builder,5117(990.9,2087.1) by Mobile Turret(1175.8,2159.7)
+[11:24][losses] we lost Command,23(990,2010) by Fire Bee(802.3,2023.9)
+[11:24][new] found Command x1, Builder x17, Extractor x4, Land Factory x6, Air Factory x5, Anti-air T3 x1, Scout x4, Tank x1, Anti-air Flak x6, Light Gun Ship x9, Hovertank x8, Turret T3 x2, Dropship x3, Extractor x1, Sea Factory x7, Interceptor x12, Anti-air Turret x14, Anti-air T2 x4, Flamethrower x1, Turret x11, Turret T2 x6, Artillery T2 x1, Attack Submarine x5, Underwater Probe x5, Fabricator x2, Fabricator x3, Bomber x2, Mech Factory x6, AA Beam Gunship x2, Anti-Nuke Defence x2, Anti-Air Mech x10, Battle Ship x5, Artillery x2, Missile Ship x2, Extractor x1, Heavy Interceptor x2, Helicopter x6, Gun Boat x1, Extractor x1, Experimental Factory x2, Lightning x2, Combat Engineer x1, Artillery x5, Artillery Mech x5, Repair Bay x8, Laser Shield x8, Mobile Turret x4, Basic Mech x7, Extractor x1, Heavy Tank x2, AA Missile Tank x1, Heavy Artillery x1, Gun Ship x1, Heavy Hovertank x2, Nautilus x1, Plasma Tank x2, Mammoth Tank x1 around (1244.1,907.1)
+[11:35][new] found Heavy Artillery x1, Artillery Mech x2 around (1256.7,1092.2)
+[11:39][new] found Anti-air Turret at (2300,1840)
+
+[2026-10-24T17:14:02] $ rwx-local-game-state --summary
+游戏状态
+tick: 213243
+time: 11:52 (712383 ms)
+paused: false
+speed: 1.0
+map: Lake (2p)
+controlledTeam: 0
+outcome: defeat
+credits: 5073
+incomePerSecond: 0
+units: 0
+

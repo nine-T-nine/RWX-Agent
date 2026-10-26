@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="20" tileheight="20" infinite="0" nextlayerid="5" nextobjectid="1">
+ <tileset firstgid="1" source="terrain/Deep Water.tsx"/>
+ <tileset firstgid="4" source="terrain/Ice.tsx"/>
+ <tileset firstgid="14" source="terrain/Lava.tsx"/>
+ <tileset firstgid="35" source="terrain/Long Grass.tsx"/>
+ <tileset firstgid="85" source="terrain/Mountain.tsx"/>
+ <tileset firstgid="120" source="terrain/Sand.tsx"/>
+ <tileset firstgid="162" name="Shallow Water" tilewidth="20" tileheight="20" tilecount="6" columns="3">
+  <image source="terrain/bitmaps/shallowwater.png" trans="008a76" width="60" height="40"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="168" source="terrain/Snow.tsx"/>
+ <tileset firstgid="248" source="terrain/Stone.tsx"/>
+ <tileset firstgid="284" source="terrain/Water.tsx"/>
+ <tileset firstgid="287" name="LongGrass ShallowWater - Flat" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="ridges/bitmaps/mountain2shallowwater_flat.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="308" source="misc.tsx"/>
+ <tileset firstgid="332" name="ShallowWater Water - Flat" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="ridges/bitmaps/shallowwater2water_flat.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="353" source="ridges/Mountain Stone - Flat.tsx"/>
+ <tileset firstgid="374" source="ridges/Mountain Snow - Flat.tsx"/>
+ <tileset firstgid="395" source="ridges/Sand ShallowWater - Flat.tsx"/>
+ <tileset firstgid="416" source="ridges/Stone ShallowWater - ridge.tsx"/>
+ <tileset firstgid="431" source="units.tsx"/>
+ <layer id="1" name="set" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3YQQ5AMBCF4bqHg7iIuziPlVsSCwnNNJkyZn6NxduRfF5bLWtKab2R0Skk29CxffT+vuQ7xprqo/fXqs/TpvV5m2p8x3Wzcayfw9p3Ni5Z6L47xq/7JiFE374vkX3U/ujzr++uqfG9/f7LbVqjh+33te97un49fNLZh7J+z759/yD7qP1Fzr83fJa2Vn3Whqg8/fbwstF80rmPZCz5cqf03zLaFt0j2aYxlu7xHGtyd9ps5P35EgAZAAA=
+  </data>
+ </layer>
+ <layer id="2" name="Ground" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACtWYyUoEMRCGq99DcOlRD+JBfA0X3EB8ABkfwA2Xg3gQEREv4kFERRRFX3Gsgg7EmKTTmerq8vDRzRTpfPyZzFR6AACDBuwWADvIBsjQxI3YbtGtVO6nPb//5GfWWquf9vxy/KR/W1L8yKlfIe1W59dFXi79IoztNor3Y0yMW8/dw/t9h4OMTCZwzDPwMGs5HuL1HX5znuHI6Uf0In7EEaPfI9ZuPTxExkj63dB6wF+uFfqVyv005nePtSsPd0r8iAWsL1YsJex143eM1xMPp4x+5LaJjFRsJTj2Gs4fg/47ZiLzLVtuhhVBv7q11e63ivU1h3VFft9Yf/PwlbB/OZjEZ81F5not/P3Zi5BfXYa2X6ncT2N+n1h78vARGDOPn08L+jWFO7scP8poKgB3dmYPh+YbxsE9f+ScPdqC3M6K4foWSbfcs1EbhPo+49jlWoeyC/WovveWXWWn4buY4neZ0UNzQT39RY1jKDuptY5l2GV2doa+c5F7NvoBYt8ljAAZAAA=
+  </data>
+ </layer>
+ <layer id="4" name="Units" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3YMREAIAwAscKABvx7wBBKMFDmckei4OePILNbdQHwq9mrCwAAAN6zvBqA1PCSrg4qL3h9ABkAAA==
+  </data>
+ </layer>
+ <layer id="3" name="Items" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3VMQ6AMAxD0fROUGjh/ueqRwY2DyTiPym7JUtxRA5bi9h1vX2d5N2hXKduJM03levS3UnzPdG1p1LXAFABu+RhlwD8FfvhYT8AVMLP91T6+XTtydj1AlFuzqYAGQAA
+  </data>
+ </layer>
+</map>

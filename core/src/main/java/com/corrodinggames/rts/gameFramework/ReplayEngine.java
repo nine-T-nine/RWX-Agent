@@ -42,6 +42,8 @@ public class ReplayEngine {
     /* JADX INFO: renamed from: s */
     boolean isStopped;
     public volatile boolean P;
+    /** Set by the CLI before a local match starts; consumed by {@link #a(boolean)}. */
+    private static volatile boolean requestLocalReplayRecording;
     /* JADX INFO: renamed from: t */
     String replayFilePath;
     /* JADX INFO: renamed from: u */
@@ -465,7 +467,20 @@ public class ReplayEngine {
         }
     }
 
+    /** Entry point from the map-load path; menu background loads must not consume a local arm. */
+    public void a(boolean z, GameMode gameMode) {
+        if (gameMode == GameMode.menu) {
+            return;
+        }
+        aInternal(z, true);
+    }
+
     public void a(boolean z) {
+        aInternal(z, false);
+    }
+
+    private void aInternal(boolean z, boolean allowLocalRecording) {
+        boolean localRequested = allowLocalRecording && requestLocalReplayRecording;
         if (GameEngine.isPCOrIOSVersion) {
             if (!GameEngine.isReplayRecordingEnabledOnPCOrIOS) {
                 return;
@@ -475,8 +490,51 @@ public class ReplayEngine {
         }
         GameEngine gameEngine = GameEngine.getInstance();
         if (gameEngine.networkEngine.networkGameActive && !z && !this.N && gameEngine.settingsEngine.saveMultiplayerReplays) {
+            requestLocalReplayRecording = false;
             d(gameEngine.getCurrentMapName() + " [v" + gameEngine.getVersionString() + "] (" + Utility.formatCurrentDate("d MMM yyyy HH.mm.ss") + ").replay");
+            return;
         }
+        // Local single-player disables networkEngine.networkGameActive before this point, so the
+        // multiplayer branch above never runs. An explicit arm request records from tick 0 instead.
+        // Keep the arm armed while z is set (menu background / save / replay load) so it survives
+        // until the real match starts.
+        if (localRequested && !z && !this.N && !this.isReplaying && !this.P) {
+            d("[local] " + gameEngine.getCurrentMapName()
+                    + " [v" + gameEngine.getVersionString() + "] ("
+                    + Utility.formatCurrentDate("d MMM yyyy HH.mm.ss") + ").replay");
+            if (isRecording()) requestLocalReplayRecording = false;
+        }
+    }
+
+    /** Arms replay recording for the next local game; consumed when the map finishes loading. */
+    public static void requestLocalRecording() {
+        requestLocalReplayRecording = true;
+    }
+
+    public static boolean isLocalRecordingRequested() {
+        return requestLocalReplayRecording;
+    }
+
+    public static void clearLocalRecordingRequest() {
+        requestLocalReplayRecording = false;
+    }
+
+    /** True while a replay is being written (not while one is being played back). */
+    public boolean isRecording() {
+        return this.P && !this.isReplaying;
+    }
+
+    public boolean isReplaying() {
+        return this.P && this.isReplaying;
+    }
+
+    public String getReplayFilePath() {
+        return this.replayFilePath;
+    }
+
+    /** Number of commands actually written to the replay file (not playback command index). */
+    public int getRecordedCommandCount() {
+        return this.recordedCommandCount;
     }
 
     public void d(String str) {

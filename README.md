@@ -1,80 +1,55 @@
-<div style="text-align: center;">
+# RWX-agent
 
-![Banner](logo.svg)
+基于 [RWX](https://github.com/yomi2539/RWX) 的实时战略游戏项目。本仓库重点整理和扩展 `core/src/main/java/com/corrodinggames/rts/game/ai/custom` 下的自定义 AI 与本地命令工具。原项目 README 已备份为 [README.original.md](README.original.md)。
 
-----
+## 让Agent参战
 
-![GitHub Created At](https://img.shields.io/github/created-at/yomi2539/RWX?color=blue&style=for-the-badge)
-[![Discord](https://img.shields.io/discord/1352880561215246376?style=for-the-badge&logo=discord)](https://discord.gg/q2amh4Gt3f)
-[![License](https://img.shields.io/github/license/yomi2539/RWX?style=for-the-badge&color=blue)](./LICENSE)
+把`agent-operation/START.md`喂给AI
 
-[![Downloads](https://img.shields.io/github/downloads/yomi2539/RWX/total?style=flat-square&color=e74c3c)](https://github.com/yomi2539/RWX/releases)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/5c73d6b0-e2f9-46d7-a0d2-271b8f81b6b2/deploy-status)](https://app.netlify.com/projects/rwx-docs/deploys)
+## 运行
 
-**R**usted **W**arfare e**X**tension
+准备 JDK 25，在项目根目录执行：
 
-Rebuilding and extending Rusted Warfare as an open-source cross-platform RTS game
-
-</div>
-
-> **Project Status**: Actively maintained. Issues and pull requests are welcome.
-
-English, [简体中文](README_zh.md)
-
-## Highlights
-
-- **Desktop + Android** supported
-- **P2P multiplayer**: A brand-new way to play together
-- **Area Control** mode: capture zones, continuous scoring, new win conditions
-- **Linked Maps**: connect multiple maps with portals and transfer units between them
-- **JVM modding** for deeper gameplay extensions
-
-## Roadmap
-
-### Platforms
-
-- [x] Desktop build (Windows / Linux / macOS)
-- [x] Android build
-
-### Multiplayer
-
-- [x] P2P-based multiplayer system
-- [ ] Dedicated relay / fallback path improvements
-
-### Gameplay features
-
-- [x] Area Control mode
-- [x] Linked Maps / map portals
-- [ ] Balance / UX polish for Area Control and Linked Maps
-
-## Building
-
-Java 25 is required. Common release tasks:
-
-```bash
-# Current-platform desktop distribution via Compose Multiplatform built-in packaging
-# (app image plus OS installers under desktop/build/compose/binaries)
-./gradlew :desktop:packageDistributionForCurrentOS
-
-# Current-platform single JAR (Compose uber jar, current OS natives only)
-./gradlew :desktop:packageUberJarForCurrentOS
-
-# Android APK
-./gradlew :android:assembleRelease
+```powershell
+.\gradlew.bat :desktop:run
 ```
 
-See the [workflow](.github/workflows/ci.yml) and the
-[getting started guide](https://rwx-docs.netlify.app/tutorial/getting-started) for more details.
+需要在 Windows 上同时使用游戏命令终端时，执行：
 
-## Thanks
+```powershell
+.\gradlew.bat :desktop:rwxCliRun
+```
 
-The UI design references [RWPP](https://github.com/RWPP-Team/RWPP)
+## 增加自定义 AI
 
-## Disclaimer
+自定义 AI 源码在 [`core/src/main/java/com/corrodinggames/rts/game/ai/custom`](core/src/main/java/com/corrodinggames/rts/game/ai/custom)。启动游戏后，在本地战役室添加 AI 玩家，并从 AI 难度列表选择已注册的自定义 AI，例如 `AI-high` 或 `AI_S`。这些选项由 [`CustomAiCatalog.java`](core/src/main/java/com/corrodinggames/rts/game/ai/custom/CustomAiCatalog.java) 统一注册。
 
-This is an unofficial extension project for Rusted Warfare, aiming to extend game functionality and gameplay through a
-modern technology stack. All related assets used in this project belong to their original authors.
-For educational and research purposes only, commercial use is prohibited.
+> 新增一个 AI：
 
+1. 参考 [`high/CustomHighAiStrategy.java`](core/src/main/java/com/corrodinggames/rts/game/ai/custom/high/CustomHighAiStrategy.java)，在 `custom` 下新建实现 `AiStrategy` 的类。
+2. 在类的 `definition()` 中设置唯一且稳定的编号（`>= 4`）、ID、显示名称和策略工厂；按需设置收入倍率及保留的原版 AI 阶段。
+3. 将该类的 `definition()` 加到 `CustomAiCatalog.definitions()`，重新启动游戏后即可在 AI 列表中选择。已用于存档的编号和 ID 不要更改。
 
----
+`util` 目录提供策略辅助代码；[`analysis.md`](core/src/main/java/com/corrodinggames/rts/game/ai/custom/analysis.md) 说明原版 AI 与自定义层的接入方式。
+
+> 理解游戏AI机制
+
+参见'core/src/main/java/com/corrodinggames/rts/game/ai/custom/analysis.md`.
+
+## 使用本地命令终端
+
+运行 `:desktop:rwxCliRun` 后，Windows 会打开 **RWX Command Terminal**。在该终端中输入：
+
+```powershell
+rwx-help
+rwx-skirmish
+rwx-battleroom-add-ai --difficulty AI_S
+rwx-battleroom-start
+rwx-game-state --summary
+```
+
+`rwx_cli_tool` 的完整命令、参数和限制见 [`help.md`](agent-operation/help.md)。
+
+## 许可与来源
+
+项目许可证见 [LICENSE](LICENSE)。原项目说明见 [README.original.md](README.original.md)。

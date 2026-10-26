@@ -170,6 +170,14 @@ abstract class GameSession {
         runEngineCommand(label, command)
     }
 
+    /** CLI session operations use the same engine-owner handoff as GUI room operations. */
+    fun <T> executeSessionCommand(command: (GameEngine) -> T): T {
+        ensureStartedOutsideGameLock(lastViewport)
+        val result = runEngineCommand("CLI session") { engine -> runCatching { command(engine) } }
+            ?: error("Game engine is busy; retry the session command")
+        return result.getOrThrow()
+    }
+
     open fun configureRendererProfile(profile: GameSessionRendererProfile) {
         rendererProfile = profile
     }
@@ -521,6 +529,7 @@ abstract class GameSession {
                 true,
                 Runnable {
                     if (activeBattleRoomJoinConnector !== connector) {
+                        runCatching { connector.connectedSocket?.close() }
                         return@Runnable
                     }
                     val errorMessage = connector.errorMessage
@@ -535,15 +544,22 @@ abstract class GameSession {
                         activeBattleRoomJoinConnector = null
                         return@Runnable
                     }
-                    runCatching {
-                        networkEngine.disconnectNetworking("starting new")
-                        networkEngine.a(socket)
-                        networkEngine.p2pSession = p2pSession
-                        BattleRoomUiBridge.updateUI()
-                    }.onFailure { error ->
-                        latestBattleRoomJoinError = "Connection failed: ${error.message ?: error.javaClass.simpleName}"
+                    postEngineCommand("complete battle room join") {
+                        if (activeBattleRoomJoinConnector !== connector) {
+                            runCatching { socket.close() }
+                            return@postEngineCommand
+                        }
+                        runCatching {
+                            networkEngine.disconnectNetworking("starting new")
+                            networkEngine.a(socket)
+                            networkEngine.p2pSession = p2pSession
+                            BattleRoomUiBridge.updateUI()
+                        }.onFailure { error ->
+                            runCatching { socket.close() }
+                            latestBattleRoomJoinError = "Connection failed: ${error.message ?: error.javaClass.simpleName}"
+                        }
+                        activeBattleRoomJoinConnector = null
                     }
-                    activeBattleRoomJoinConnector = null
                 },
             )
             activeBattleRoomJoinConnector = connector
@@ -649,6 +665,10 @@ abstract class GameSession {
                 )
             },
         ) { engine, networkEngine ->
+            if (!networkEngine.isServer && networkEngine.isProxyController) {
+                networkEngine.k("-map '${MapMetadata.getMapName(requestedMapPath)}'")
+                return@editBattleRoom true
+            }
             initBattleRoomMap(engine, requestedMapPath, force = true, savedGame = isSavedGame)
             networkEngine.getEditableRoomSettings()?.let { settings ->
                 settings.gameModeType = gameModeType
@@ -670,7 +690,8 @@ abstract class GameSession {
             },
         ) { _, networkEngine ->
             repeat(addCount) {
-                networkEngine.addAIToGame()
+                if (networkEngine.isProxyController && !networkEngine.isServer) networkEngine.k("-addai")
+                else networkEngine.addAIToGame()
             }
             BattleRoomUiBridge.updateUI()
             true
@@ -708,8 +729,8 @@ abstract class GameSession {
                 state.copy(pendingRendererBattleRoomConfig = draft.copy(room = draft.room.copy(options = options)))
             },
         ) { _, networkEngine ->
-            networkEngine.roomSettings = options
-            val settings = networkEngine.getEditableRoomSettings() ?: options
+            if (networkEngine.isServer) networkEngine.roomSettings = options
+            val settings = if (networkEngine.isServer) networkEngine.getEditableRoomSettings() ?: options else options
             networkEngine.a(settings)
             BattleRoomUiBridge.updateUI()
             true
@@ -763,7 +784,8 @@ abstract class GameSession {
 
     open fun startBattleRoom(): Boolean =
         runBattleRoomCommand("start battle room") { _, networkEngine ->
-            check(networkEngine.startBattleRoomGame()) { "Unable to start battle room game" }
+            if (networkEngine.isProxyController && !networkEngine.isServer) networkEngine.k("-start")
+            else check(networkEngine.startBattleRoomGame()) { "Unable to start battle room game" }
             true
         }
 
@@ -832,7 +854,27 @@ abstract class GameSession {
         return GameLoadingStatus(text = text, progress = progress)
     }
 
+    /**
+     * True while an in-process restart is reloading the current map.
+     *
+     * <p>The desktop shell treats "canResume() == false" as "the external game closed" and
+     * navigates to the main menu. During a restart the engine briefly has no loaded level and
+     * holds its state lock, so without this guard the shell would abandon the match it is about
+     * to reload. Reads are deliberately lock-free.</p>
+     */
+    @Volatile
+    private var internalRestartInProgress = false
+
+    fun beginInternalRestart() {
+        internalRestartInProgress = true
+    }
+
+    fun endInternalRestart() {
+        internalRestartInProgress = false
+    }
+
     open fun canResume(): Boolean {
+        if (internalRestartInProgress) return true
         val state = loadState
         if (state.menuBackgroundActive || state.asyncMapLoadInProgress) return false
         // Never park the frame loop behind a long engine hold: no engine or a busy engine simply
@@ -1037,6 +1079,27 @@ abstract class GameSession {
         }
     }
 
+    /** Native RETURN clears units but retains the loaded-level flag; retire the round without disconnecting. */
+    open fun finishNetworkRound() {
+        val finished = runEngineCommand("finish returned network round") { engine ->
+            val network = engine.networkEngine
+            if (!network.networkGameActive || network.gameHasBeenStarted) false else {
+                engine.hasLoadedLevel = false
+                engine.isStopped = true
+                engine.isPaused = true
+                engine.isLoading = false
+                true
+            }
+        } == true
+        if (!finished) return
+        updateLoadState { it.copy(runningMapPath = null, menuBackgroundActive = false,
+            pendingMapPath = null, pendingMapSnapshot = null, pendingRendererBattleRoomConfig = null,
+            activeRendererBattleRoomConfig = null, asyncMapLoadPath = null,
+            asyncMapLoadInProgress = false, asyncMapLoadError = null) }
+        lastFrame = GameFrame(lastViewport, emptyList())
+        clearInputState()
+    }
+
     open fun requestSaveGame(name: String) {
         val saveName = name.toRwSaveName()
         postEngineCommand("save game") { engine ->
@@ -1139,7 +1202,7 @@ abstract class GameSession {
 
     open fun requestSurrender() {
         postEngineCommand("surrender") { engine ->
-            engine.networkEngine?.sendChatMessage("-surrender")
+            engine.networkEngine?.requestSurrender()
         }
     }
 
@@ -1177,7 +1240,12 @@ abstract class GameSession {
         return synchronized(gameLock) {
             val engine = activeEngineLocked() ?: return@synchronized emptyList()
             val networkEngine = engine.networkEngine ?: return@synchronized emptyList()
-            if (!engine.isNetworkGameActive()) return@synchronized emptyList()
+            // Local skirmish rooms keep a chat log even though networking never becomes active,
+            // so an open battle room counts as a reason to publish the log.
+            val hasBattleRoom = networkEngine.networkGameActive ||
+                networkEngine.isServer ||
+                networkEngine.isProxyController
+            if (!engine.isNetworkGameActive() && !hasBattleRoom) return@synchronized emptyList()
             networkEngine.chatLog.messages.mapNotNull { entry ->
                 val message = entry as? ChatMessage ?: return@mapNotNull null
                 MultiplayerChatSnapshot(

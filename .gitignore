@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 .kotlin
 **.log
+*.log
 
 ### IntelliJ IDEA ###
 .idea/
@@ -44,7 +45,7 @@ bin/
 .httpCache/
 
 ### Local game runtime state ###
-/.agents/
+
 /cache/
 /logs/
 /replays/
@@ -55,3 +56,17 @@ bin/
 ### JVM runtime diagnostics ###
 /hs_err_pid*.log
 /replay_pid*.log
+saves/*
+images/*
+.agent-tmp/*
+.agent-scratch/*
+**/tmp/
+tmp.*
+docs/*
+
+observe*.txt
+agent-tmp/*
+/agent-operation/tmp/
+**/__pycache__/
+mods/*
+logs/*

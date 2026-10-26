@@ -93,6 +93,9 @@ public abstract class OrderableUnit extends UnitBase {
     public float turretTurnSpeed;
     /* JADX INFO: renamed from: Q */
     int lastAttackTick;
+    /** Observational timestamps only: not serialized and never used by simulation logic. */
+    public transient int lastWeaponFireMillis = -1;
+    public transient int lastInterceptionMillis = -1;
 
     /* JADX INFO: renamed from: i */
     private int lastReclaimSearchTick;
@@ -214,8 +217,11 @@ public abstract class OrderableUnit extends UnitBase {
 
     /* JADX INFO: renamed from: aA */
     public float legacyMovementTimer;
+    /** AI bookkeeping: the UnitGroup this unit currently belongs to (null when unassigned). */
     public AIUnitGroupBase aB;
+    /** AI bookkeeping: the BaseZone the AI assigned this unit to. */
     public BaseZone aC;
+    /** AI bookkeeping: cached "a path to that zone exists" result. */
     public boolean aD;
 
     /* JADX INFO: renamed from: aF */
@@ -257,6 +263,7 @@ public abstract class OrderableUnit extends UnitBase {
     /* JADX INFO: renamed from: aL */
     public int nextCollisionQueryTick;
     public static final UnitList aM;
+    /** True while the unit holds a repair/reclaim target; AI keeps such units on their job. */
     public boolean aN;
     public boolean aO;
     static final UnitStateTracker aP;
@@ -328,6 +335,10 @@ public abstract class OrderableUnit extends UnitBase {
 
     public abstract Texture d(int i);
 
+    /**
+     * True when this unit's own body takes part in movement and collision (false for buildings,
+     * spawners and pure effect units). Consumed by {@code updateAllUnitCollisions}.
+     */
     public abstract boolean I();
 
     public abstract float m();
@@ -1231,6 +1242,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     /* JADX INFO: Access modifiers changed from: protected */
     public void W() {
+        com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this, null, "upgrade-finished");
         GameEngine gameEngine = GameEngine.getInstance();
         if (this.team == gameEngine.playerTeam) {
             gameEngine.gameUI.warLogDisplay.logUnitUpgraded(this);
@@ -3293,6 +3305,7 @@ public abstract class OrderableUnit extends UnitBase {
                     unitMovementData.speed = 0.0f;
                 }
                 a(baseUnit, i);
+                this.lastWeaponFireMillis = GameEngine.getInstance().gameTimeMillis;
                 M(i);
                 unitMovementData.isOddShot = !unitMovementData.isOddShot;
                 return true;
@@ -4481,6 +4494,7 @@ public abstract class OrderableUnit extends UnitBase {
         return I();
     }
 
+    /** True when this unit accepts movement commands: a readable alias of {@link #I()}. */
     public boolean aS() {
         return canExecuteMovementCommands();
     }
@@ -5275,6 +5289,8 @@ public abstract class OrderableUnit extends UnitBase {
             ((OrderableUnit) baseUnitG).a(i);
         }
         baseUnitG.onUnitSpawned();
+        com.corrodinggames.rts.gameFramework.GameStatistics.f.info(baseUnitG, this,
+                baseUnitG.buildProgress < 1.0f ? "construction-started" : "construction-finished");
         if (baseUnitG instanceof OrderableUnit) {
             OrderableUnit orderableUnit = (OrderableUnit) baseUnitG;
             boolean z = false;

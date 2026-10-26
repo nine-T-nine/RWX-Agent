@@ -1,0 +1,3387 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<map version="1.2" orientation="orthogonal" renderorder="right-down" width="111" height="111" tilewidth="20" tileheight="20" nextobjectid="431">
+  <properties>
+    <property name="sw1" value="186" />
+    <property name="sw2" value="770" />
+    <property name="sw3" value="126" />
+    <property name="sw4" value="21" />
+    <property name="sw5" value="1103" />
+    <property name="sw6" value="1148" />
+  </properties>
+  <tileset firstgid="1" name="Mountain" columns="7" tilecount="35" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/mountain.png" width="140" height="100" trans="008a76" />
+    <tile id="7">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="9">
+      <properties>
+        <property name="small-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="21">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="22">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="28">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="29">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="36" name="Snow" columns="8" tilecount="80" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/snow.png" width="160" height="200" trans="008a76" />
+    <tile id="14">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="15">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="55">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+    <tile id="79">
+      <properties>
+        <property name="tree" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="116" name="Ice" columns="5" tilecount="10" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/ice.png" width="100" height="40" trans="008a76" />
+    <tile id="9">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="terrain/Long Grass.tsx" firstgid="126" />
+  <tileset source="terrain/Dirt.tsx" firstgid="176" />
+  <tileset firstgid="186" name="Shallow Water" columns="3" tilecount="6" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/shallowwater.png" width="60" height="40" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="192" name="Water" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/water.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="193" name="Deep Water" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/deepwater.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Mountain Mountain - Hill.tsx" firstgid="194" />
+  <tileset source="ridges/Mountain Snow - Flat.tsx" firstgid="215" />
+  <tileset source="ridges/Snow Ice - Ridge.tsx" firstgid="236" />
+  <tileset firstgid="257" name="Ice ShallowWater - Ridge" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2shallowwater_ridge.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="278" name="ShallowWater Water - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/shallowwater2water_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Water DeepWater - Flat.tsx" firstgid="299" />
+  <tileset source="ridges/LongGrass ShallowWater - Ridge.tsx" firstgid="320" />
+  <tileset source="ridges/LongGrass Dirt - Flat.tsx" firstgid="350" />
+  <tileset firstgid="371" name="misc" columns="3" tilecount="18" tileheight="20" tilewidth="20">
+    <image source="bitmaps/misc.png" width="79" height="120" />
+    <tile id="4">
+      <properties>
+        <property name="res_pool" value="" />
+      </properties>
+    </tile>
+    <tile id="9">
+      <properties>
+        <property name="team" value="none" />
+        <property name="unit" value="tree" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="389" name="Ice Ice - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2ice_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="410" name="Ice ShallowWater - Broken" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/ice2shallowwater_broken.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="cliff-soft" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Dirt ShalowWater - Ridge.tsx" firstgid="431" />
+  <tileset source="ridges/Mountain ShallowWater - Ridge.tsx" firstgid="452" />
+  <tileset source="ridges/Sand ShallowWater - Ridge.tsx" firstgid="467" />
+  <tileset source="ridges/Snow Snow - ridge.tsx" firstgid="488" />
+  <tileset firstgid="509" name="units" margin="1" spacing="1" columns="9" tilecount="261" tileheight="20" tilewidth="20">
+    <image source="bitmaps/units.png" width="200" height="615" />
+    <tile id="0">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="builderShip" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="artillery" />
+      </properties>
+    </tile>
+    <tile id="4">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="heavyTank" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="hoverTank" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="antiAirTurret" />
+      </properties>
+    </tile>
+    <tile id="9">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="experimentalSpider" />
+      </properties>
+    </tile>
+    <tile id="10">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="11">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="airShip" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="amphibiousJet" />
+      </properties>
+    </tile>
+    <tile id="13">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="mechFactory" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="seaFactory" />
+      </properties>
+    </tile>
+    <tile id="15">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="16">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="17">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="attackSubmarine" />
+      </properties>
+    </tile>
+    <tile id="19">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="hovercraft" />
+      </properties>
+    </tile>
+    <tile id="21">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="gunBoat" />
+      </properties>
+    </tile>
+    <tile id="22">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="battleShip" />
+      </properties>
+    </tile>
+    <tile id="23">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="laserDefence" />
+      </properties>
+    </tile>
+    <tile id="24">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="experimentalLandFactory" />
+      </properties>
+    </tile>
+    <tile id="25">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="repairbay" />
+      </properties>
+    </tile>
+    <tile id="26">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="fabricator" />
+      </properties>
+    </tile>
+    <tile id="27">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="experimentalHoverTank" />
+      </properties>
+    </tile>
+    <tile id="28">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="experimentalTank" />
+      </properties>
+    </tile>
+    <tile id="29">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="mammothTank" />
+      </properties>
+    </tile>
+    <tile id="30">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="31">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="gunShip" />
+      </properties>
+    </tile>
+    <tile id="32">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="laserTank" />
+      </properties>
+    </tile>
+    <tile id="33">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="heavyHoverTank" />
+      </properties>
+    </tile>
+    <tile id="34">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="nukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="35">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="antiNukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="36">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="experimentalDropship" />
+      </properties>
+    </tile>
+    <tile id="37">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="heavyBattleship" />
+      </properties>
+    </tile>
+    <tile id="38">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="missileTank" />
+      </properties>
+    </tile>
+    <tile id="39">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="combatEngineer" />
+      </properties>
+    </tile>
+    <tile id="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="bomber" />
+      </properties>
+    </tile>
+    <tile id="41">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="mechMinigun" />
+      </properties>
+    </tile>
+    <tile id="42">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="mechBunker" />
+      </properties>
+    </tile>
+    <tile id="45">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="builderShip" />
+      </properties>
+    </tile>
+    <tile id="46">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="47">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="48">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="artillery" />
+      </properties>
+    </tile>
+    <tile id="49">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="heavyTank" />
+      </properties>
+    </tile>
+    <tile id="50">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="hoverTank" />
+      </properties>
+    </tile>
+    <tile id="51">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="52">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="53">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="antiAirTurret" />
+      </properties>
+    </tile>
+    <tile id="54">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="experimentalSpider" />
+      </properties>
+    </tile>
+    <tile id="55">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="56">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="airShip" />
+      </properties>
+    </tile>
+    <tile id="57">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="amphibiousJet" />
+      </properties>
+    </tile>
+    <tile id="58">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="mechFactory" />
+      </properties>
+    </tile>
+    <tile id="59">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="seaFactory" />
+      </properties>
+    </tile>
+    <tile id="60">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="61">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="62">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="63">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="attackSubmarine" />
+      </properties>
+    </tile>
+    <tile id="64">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+    <tile id="65">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="hovercraft" />
+      </properties>
+    </tile>
+    <tile id="66">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="gunBoat" />
+      </properties>
+    </tile>
+    <tile id="67">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="battleShip" />
+      </properties>
+    </tile>
+    <tile id="68">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="laserDefence" />
+      </properties>
+    </tile>
+    <tile id="69">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="experimentalLandFactory" />
+      </properties>
+    </tile>
+    <tile id="70">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="repairbay" />
+      </properties>
+    </tile>
+    <tile id="71">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="fabricator" />
+      </properties>
+    </tile>
+    <tile id="72">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="experimentalHoverTank" />
+      </properties>
+    </tile>
+    <tile id="73">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="experimentalTank" />
+      </properties>
+    </tile>
+    <tile id="74">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="mammothTank" />
+      </properties>
+    </tile>
+    <tile id="75">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="76">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="gunShip" />
+      </properties>
+    </tile>
+    <tile id="77">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="laserTank" />
+      </properties>
+    </tile>
+    <tile id="78">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="heavyHoverTank" />
+      </properties>
+    </tile>
+    <tile id="79">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="nukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="antiNukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="81">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="experimentalSpider" />
+      </properties>
+    </tile>
+    <tile id="82">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="83">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="84">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="heavyHoverTank" />
+      </properties>
+    </tile>
+    <tile id="85">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="heavyTank" />
+      </properties>
+    </tile>
+    <tile id="86">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="87">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="88">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="89">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="antiAirTurret" />
+      </properties>
+    </tile>
+    <tile id="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="experimentalDropship" />
+      </properties>
+    </tile>
+    <tile id="91">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="heavyBattleship" />
+      </properties>
+    </tile>
+    <tile id="92">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="missileTank" />
+      </properties>
+    </tile>
+    <tile id="93">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="combatEngineer" />
+      </properties>
+    </tile>
+    <tile id="96">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="97">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="98">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="99">
+      <properties>
+        <property name="showFog" value="5" />
+      </properties>
+    </tile>
+    <tile id="100">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="101">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="experimentalSpider" />
+      </properties>
+    </tile>
+    <tile id="102">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="heavyHoverTank" />
+      </properties>
+    </tile>
+    <tile id="105">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="108">
+      <properties>
+        <property name="showFog" value="10" />
+      </properties>
+    </tile>
+    <tile id="109">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="114">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="117">
+      <properties>
+        <property name="showFog" value="20" />
+      </properties>
+    </tile>
+    <tile id="118">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+    <tile id="119">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="hovercraft" />
+      </properties>
+    </tile>
+    <tile id="120">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="gunBoat" />
+      </properties>
+    </tile>
+    <tile id="124">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="nukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="125">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unit" value="antiNukeLaucher" />
+      </properties>
+    </tile>
+    <tile id="126">
+      <properties>
+        <property name="showFog" value="40" />
+      </properties>
+    </tile>
+    <tile id="136">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="140">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="141">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="144">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="ladyBug" />
+      </properties>
+    </tile>
+    <tile id="145">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="bugMelee" />
+      </properties>
+    </tile>
+    <tile id="146">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="bugSpore" />
+      </properties>
+    </tile>
+    <tile id="147">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="bugNest" />
+      </properties>
+    </tile>
+    <tile id="148">
+      <properties>
+        <property name="team" value="4" />
+        <property name="unit" value="bugRanged" />
+      </properties>
+    </tile>
+    <tile id="153">
+      <properties>
+        <property name="team" value="5" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="154">
+      <properties>
+        <property name="team" value="5" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="155">
+      <properties>
+        <property name="team" value="6" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="156">
+      <properties>
+        <property name="team" value="6" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="157">
+      <properties>
+        <property name="team" value="7" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="158">
+      <properties>
+        <property name="team" value="7" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="159">
+      <properties>
+        <property name="team" value="8" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="160">
+      <properties>
+        <property name="team" value="8" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="162">
+      <properties>
+        <property name="team" value="5" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="164">
+      <properties>
+        <property name="team" value="6" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="166">
+      <properties>
+        <property name="team" value="7" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="168">
+      <properties>
+        <property name="team" value="8" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="171">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="ladyBug" />
+      </properties>
+    </tile>
+    <tile id="172">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="bugMelee" />
+      </properties>
+    </tile>
+    <tile id="173">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="bugSpore" />
+      </properties>
+    </tile>
+    <tile id="174">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="bugNest" />
+      </properties>
+    </tile>
+    <tile id="175">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="bugRanged" />
+      </properties>
+    </tile>
+    <tile id="177">
+      <properties>
+        <property name="team" value="9" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="178">
+      <properties>
+        <property name="team" value="9" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="180">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="ladyBug" />
+      </properties>
+    </tile>
+    <tile id="181">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugMelee" />
+      </properties>
+    </tile>
+    <tile id="182">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugSpore" />
+      </properties>
+    </tile>
+    <tile id="183">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugNest" />
+      </properties>
+    </tile>
+    <tile id="184">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugRanged" />
+      </properties>
+    </tile>
+    <tile id="186">
+      <properties>
+        <property name="team" value="9" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="188">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="crystalResource" />
+      </properties>
+    </tile>
+    <tile id="189">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugMeleeSmall" />
+      </properties>
+    </tile>
+    <tile id="190">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unit" value="bugMeleeLarge" />
+      </properties>
+    </tile>
+    <tile id="207">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="builderShip" />
+      </properties>
+    </tile>
+    <tile id="208">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="builder" />
+      </properties>
+    </tile>
+    <tile id="209">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="tank" />
+      </properties>
+    </tile>
+    <tile id="210">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="artillery" />
+      </properties>
+    </tile>
+    <tile id="211">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="heavyTank" />
+      </properties>
+    </tile>
+    <tile id="212">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="hoverTank" />
+      </properties>
+    </tile>
+    <tile id="213">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+    <tile id="214">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="215">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="antiAirTurret" />
+      </properties>
+    </tile>
+    <tile id="217">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="helicopter" />
+      </properties>
+    </tile>
+    <tile id="218">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="airShip" />
+      </properties>
+    </tile>
+    <tile id="219">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="amphibiousJet" />
+      </properties>
+    </tile>
+    <tile id="221">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="seaFactory" />
+      </properties>
+    </tile>
+    <tile id="222">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="landFactory" />
+      </properties>
+    </tile>
+    <tile id="223">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="airFactory" />
+      </properties>
+    </tile>
+    <tile id="224">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="extractor" />
+      </properties>
+    </tile>
+    <tile id="225">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="attackSubmarine" />
+      </properties>
+    </tile>
+    <tile id="226">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="scoutShip" />
+      </properties>
+    </tile>
+    <tile id="227">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="hovercraft" />
+      </properties>
+    </tile>
+    <tile id="228">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="gunBoat" />
+      </properties>
+    </tile>
+    <tile id="229">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="battleShip" />
+      </properties>
+    </tile>
+    <tile id="230">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="laserDefence" />
+      </properties>
+    </tile>
+    <tile id="231">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="experimentalLandFactory" />
+      </properties>
+    </tile>
+    <tile id="232">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="repairbay" />
+      </properties>
+    </tile>
+    <tile id="233">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="fabricator" />
+      </properties>
+    </tile>
+    <tile id="235">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="experimentalTank" />
+      </properties>
+    </tile>
+    <tile id="236">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="mammothTank" />
+      </properties>
+    </tile>
+    <tile id="237">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="dropship" />
+      </properties>
+    </tile>
+    <tile id="238">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="gunShip" />
+      </properties>
+    </tile>
+    <tile id="239">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="laserTank" />
+      </properties>
+    </tile>
+    <tile id="240">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="unit" value="heavyHoverTank" />
+      </properties>
+    </tile>
+    <tile id="252">
+      <properties>
+        <property name="team" value="1" />
+        <property name="type" value="gunT2" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="253">
+      <properties>
+        <property name="team" value="1" />
+        <property name="type" value="artillery" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="254">
+      <properties>
+        <property name="team" value="1" />
+        <property name="type" value="flamethrower" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="256">
+      <properties>
+        <property name="team" value="0" />
+        <property name="type" value="gunT2" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="257">
+      <properties>
+        <property name="team" value="0" />
+        <property name="type" value="artillery" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+    <tile id="258">
+      <properties>
+        <property name="team" value="0" />
+        <property name="type" value="flamethrower" />
+        <property name="unit" value="turret" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="770" name="Sand" columns="7" tilecount="42" tileheight="20" tilewidth="20">
+    <image source="terrain/bitmaps/sand.png" width="140" height="120" trans="008a76" />
+    <tile id="28">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="29">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="31">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="35">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="36">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="38">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+    <tile id="40">
+      <properties>
+        <property name="large-rock" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/LongGrass ShallowWater - Flat.tsx" firstgid="812" />
+  <tileset source="ridges/Mountain LongGrass - Flat.tsx" firstgid="833" />
+  <tileset source="ridges/Mountain Sand - Flat.tsx" firstgid="854" />
+  <tileset source="terrain/Sand.tsx" firstgid="875" />
+  <tileset source="terrain/Lava.tsx" firstgid="917" />
+  <tileset source="ridges/LongGrass LongGrass - Ridge.tsx" firstgid="932" />
+  <tileset source="ridges/Sand LandGrass - Flat.tsx" firstgid="962" />
+  <tileset source="ridges/LongGrass LongGrass - Hill.tsx" firstgid="983" />
+  <tileset source="ridges/Sand ShallowWater - Flat.tsx" firstgid="1004" />
+  <tileset source="terrain/Stone.tsx" firstgid="1025" />
+  <tileset source="ridges/Stone Lava - Ridge.tsx" firstgid="1061" />
+  <tileset firstgid="1076" name="stone2longgrass_flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="ridges/bitmaps/stone2longgrass_flat.png" width="60" height="140" />
+  </tileset>
+  <tileset source="units.tsx" firstgid="1097" />
+  <layer name="set" opacity="0.89" width="111" height="111">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3dQW6DMBSEYdR00VPnHrlKT9dVJIRMMcT4zbz3L2ZTtWD8aQgNCL8ey/Iyzs/39USPvVJa8/9crgfPeVafOF31jJ4Dp8y2OmMZPTeqUfI6coyeK5U4mGHob1bdMINZNcOMZhUMs5u1DKPnnK7V7GBVM/cO4ubnV/kc2eOnaohZv2G0FW7+frh5+uHm6Yebpx9uvn7Yedrh5umHm6cfbr5+2Hna4ebph5uvH3aedrj5+mHnaefo9vU4TvQYZ/g52G1dfpfjuFmetVN3O2PVaxl9TKP8VO1GmjkZ9toput1p5mLY46dmN8usZRh97GfscPP1U7KLdlP0c7BTcVPz27PDzddPwU7VTclP0U7dTcUPuzx2uPn6YYddBTcFP+ywU3absf1Iu6ydO3tP1snu7ZfFrrWt3p+52kXte6Rdb8dGdzHaLstn3ZnnVUbvt1rvZlxHzLjfHmmXpXctt+eS93olQ++222k9b9Lyc//Mc+9d67y4N5fb3xnVR3pH76r17qiPe26j90Xv7vHjOlPfjv/vPP34XsXXbq9P2b/PzGJ3d8cU7bh/52encO91hl82N+ywq+rHc2LYjbDDz9cNO+yy+0W7Kdsp+ym47dnh5+umZKfkp+LmZKfgp+R2ZIefr5ui3dtvlmHreReFOL+X6m5DVbMzbsp2dxgqm12xc/BbG56x3P5N9DGMdnOxO7JsJXqMM+xc/TKFd337hvfse4a1LXzDujKeYT0nz7CGmm9Yv9AzrBvqmbvd8PN2w87bDj9fN/y83fDzdsPP2w0/b7e1H4b7ZqpudPB/t2gT/PK7cQ71OUfSwRxdq9zBLF2rZJjdLKNhNbMMhtXNHA0x6zNUcVyPJ3punLKet1mW231Gz0GWbOf1U8/W9qKPsVJa89+b6LF/mj81A+iIhMAAAA==
+  </data>
+  </layer>
+  <layer name="Ground" width="111" height="111">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO2dTY4cxxGFB+JcxbJgWrBhwhAG2ghcGDoVdQ5dxUvTgiwtBC0MnkI/oKWFoIXgboAFpMMR732RnTVTjZlFgtPV2VlZ8cV7EVXzw8+f3dx8fgXjxe3NzR/D+PA0/nrBeJ6s+Zfbh7/Wax+RVcbpk9P47Ob/x6vi3zjnJeD5xLLPK7KKnDIe8firZF489iocizyfP3FEzD4MrCq9ZDzce2pkn8u0+fyJYcnMeSBhQDQZtaY+O75++cQwZeZqU+aH7j3lpVFvVJ+PlaHTmYt51ExHjxXbqvYpXT4mhhUz1UfMMnI+6fjRevgYGL4AzGhsI8vsNeFKehuVM66veX7l/EatZT0I8cfOe6ReEm703lDt4+UVazDT2oyvEW9T3DKNKk05XrQeRx+9Fn4vCq2RmtLJb/Uv1YfbC8kj10u9vAJ+yiM7/TfJaaeRbC7dg+pt3H6qOUf2UOeRVW9BdVZpgvQolPulfY8bR/TQyiOrONOcrfpOGivHqbtW9EKi02yNo3joyE1pq+NvNP5OA1WuVDlDa6XKN/L5I/CL3Mi1uJ5whmumU8KCeG+XZ+ezD8Uv40ZiTrVQ6aOr045OiI6z/VdeSvL3vvmp+kbjQK5L6UqdizDqeq/S8SW14b798w+nc3x0m+faJfGqYkXqKD2fywX1muqWnn+cc3eK5wc7s4uaU7HveEcWS5fnjmXlZUonM/WY5IHy2/PXe2vPcaMa6Gh1xSD5UHGlXlHlGMm3bezFj94LZPk+W3868+g5Kj+m810eqtwke9yD31bjXFw7GqKxUTlBNeY8mvp8J9fcNVXMV9Y+5ZVVPEjtUqzJtc7o0a1B9HgJL3JNq7RHvicw64uE7UzOdz6ncs+tW9UL8trl7Ap+0StVvaj2RWqMipc6l9NhllfVnqv3O/6oaptinfn3Jd5JnjGTnFf5Opu3VGsuLxQ3dx6aRyQPMvaXaG/UHMmfqq6o+TQnZvSmzl/lFt2Hm09eO/2fx4z2qv5ExabD7tKYOf/pxJ1yoZpROe1yN44Z7VX3BJkvk726NShjx+zNae9fifHvZz4Hs3POaG82R+KxjvaU5qprqjSXMaW1jlxXZPXdaXwvxg8FS6ejbh1z+Va9l527o71Mc7RGO19xe6Y5/KZg9ctp/P2mHr8WLCNDlYfu+px+nTdlnyHa6z6z7OTjjKfEGERmjpUbvxYMO7VN5TW5ZlcTz4NoL+stlfd1dUb0l8VlNTPKkGiL5rC6dsJYac/1ltk+1L7UvyR3t/FmR2aK4ZlfVes7ntPJb6VjpT3VW5I9df1T6Xabs3Hbm1nGMPJzMa+uizAiMT1/XWmvev5F1qZ1wDE9AreMX3XNnRpeMVXH4+czdvT5l/tavU/z9wjcCD+nn069yGpRxiHzzdijuD7E5Zury2rto3BT/um8reOX3RG1N+OXhFc1p1rzaNwqfqR2OC9U2lX6IewUH7cnxza79qNyc/7pctjlssrx7PXIrlPraO/iPCLb75envfx4UG7beHva3xfPap0onnSOYzDWPPWzKJkHuF6S8IxrHF1zlXeqmJMYVPF1a27acz9H1PFCx75a8xo0F7Wn9OR6ShI3lRuRHa2rimnGSPn8NWnOaW/GJ6t57jMZO6ftjq5UX3Mfmrs5XdNPp3V/22HtUXtZrKi2ZmL6amDX/R1jsjfa1+yluTO3n09rvnca/9mBn+s5Vc4Tv3Ket/Ur8Z6c+CDRtcuz8+tVmosae/uO2za2c6zUYlb3yLU7H1PeOb6+u9V/L4/so6v71X6ZaWzTxXuDrldrUfmmi7vTGvncnbg36NRZuve47gp2lca27+dsflzNW8mum8POx9Sxu9v6Z9WVvjteXu1hVa2rNHb2xm1UWlxV87LaTuoOYV7FXemOruc+X2l4ZX85amzzxn+cxuvT+Gfw0pXfw82es2QMXX+nvKuaP9Y7Wk+r/KI95zZW1bqx9xi5ffPOz74N/LLPra55HS+sOGc5P86NuiM+3OGq5lzKLus93gZu2143fj8u7lmq55vKPxVPwmw7lvWZ5NzVHoifrvLMrPdQOvhymLOqZ6k8s6MHpTVS79yaXS7OX1ewy3qPcyz/9ex/75nP5zz3RV+/O9/KniXe46l64Xi6/I8c7sIzFVrzlK4Jy1X1LvYeG5eR38btuzBvRc/i7hNIz+fYVq+j7pxO42vaT2V5sLLPHHuPkd9XgdvqZ5yjZ3a8r/JLFbf4dXV/R/Kgq7k459sFvcLGLXuuEn/WffVzlW292BdV+up6k9Lq5pmUieLn9lnl357PVegzzhWaU/6S+ZOaTzx1Y/c30a8QTjO5tLrmkWeXq5+rRHbOm1xcKNORXfy+K9UxfV8xXlXz6LPLlc9VSI95iT9meo317veD9giHqr5WvqD2vKrmES2uXD/Wuq6uXKwr3W3HPj2d/3e39e+Vz+iP7CNey17fN1/97LLSnGNF4+XmRc1VP/NQ6an6t6rBSv97a2+vMWputo6oPHfa+SxhN6N3patOPl3zz4m5+Hfqnst1x871+zM5lOl3PH4t2qs0R+4TFK+qtmW9xcjuz0m/QvtWyk3N27vu7aE5d03EbxS7bJ3Yp/zpVv/eJPU9N4/k4dG1l/WWl2iv06NnfUr8XRKqIbLXmFPV/savj8ov88pZNs4/3bGZ3+Hq6oiMzDuOxq+6l+vUkHiNhFG1ZmQ31jy1vtof8W6ah0fhp+7Bna9ckt+ZN51HrHXu73N09jT73hH5ufrmfMRpz3kQ0RzxTadrp1Oi1Wz+Q/FT9Y3yo9feyfGKXXWvMKN9WpvJNWz89vq9kMjsfJ6RW+aNM32YWiv7Oh6r/JJqr5Nrbn51ndnxM7/XOzIcmb0ufHLWc4hHknXd3xSL2qP1q+qbZrir2r+aYcXM1YduTBxLl8tOc+7v1TpOai9VXSO1I8vPyPAnyDL+rPvIzNVeohWnw8oXXX7Tv6EZ7xeoXtRe1T5dvNSxjeHrgmUcP4f56p6NaCV7j+i100dQzbm/lVMxUDW4mu/0RueOcyLLOLLv23Svr1srMmad83T/ZrS6Vyf/kv1n+dv1km4Ok1g7TanrJLrrfK6rOVL3XJyreBIfUsxJ3Dt67Qzn/dUcxcgxnP0/ElTPSXKdeAWJvapBLo+cR3X0QmJd5ZbK42q9Wc2p7y8Qjbm9duNEz0nj1dmT4+JySb2vvPnS/9OJ9pyOl8s354cdTVEG3TrVWfNSfV+qOcKvk6/dekU4K5azPJUWSS525mR7XcWtelam9uqOu890fNPlQVzXzaH7rdYmOejyafX//Zr1LVU8suOVHgi7jn6oV9FYdz+n9kD8frXmKn4qH7v+2PW26lw0Pzp76Naubs3bm1tV+yrfprlJfE/pk3JQPkzfy85Pten2vTc3et+QxY3ogeTybN7TNbu6zz5f5ZQ6fh//v3nlnSr/SC67munWqJhR3lUOuXqr5tC596U51bsoDZJYUj3O6sX5wIy2CRvloffNrap9M/5CYqk8mPh2pV+iS1UL4/Fu/XsoboSf8zqSz1W8CMtO/lT6y66BaN1p+KG5OX7KV9y1uZpPY9Wd47Q3kwfx66Nwi/w+Nvd/1OO6c1yeuD7C5VZ17g7HT9/F50jcRn7vwx7U6YfUqEv1oOas8PPx/U1r7x+QW+WhNHc72qg40HiTtdz6NAdGbkdmpjxU5bXrzyhXVaNcX6E81+VfNefIHrnKQ4k3qjjSWJPjRONkL9fikZdqkMaHeFynp8i0TDxVzb9mrRENxl6UeCHRmPNjws75bNVDjcyuXWuzDIn/KQ5qXqUzpWFV1x4Ls1mGVEvUh1UuOObj68fIbIah0gblSb3X1b4nZp5h1tc4Nq4OztS8kdcTM8YwcnTP2pzOiB/GviPyemI2xzFj6e45sr4jzomcIqsnXvuwrHh2RuR0baz+C7MKJCeEwAAA
+  </data>
+  </layer>
+  <layer name="Items" width="111" height="111">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3bywrDIBAFUPPNfbfQb69ZFEKgzUoZx3NAsnRm7koxpQAAAAAAAAAA0MJpKeVc12UZe48ZXes8b3XdG861xx4zetR5Put6NZxrjz0AAIC5vHeLcWTM7ttL9vumzNll6WcmsgMAAAAAAAAAABhbxHdgEWta/4uOVle0elbRa4pSV7R6VtFq2ucWqTaOyQsAAAAAAAAAAP6b5W1Uxj4z9rSX9f1exp62fr29zNhrRvICAAA41uO860zdhuzG1OOeyX1WGz1m+d58ZTYemQEAAAAAAADM6QPuceMOhMAAAA==
+  </data>
+  </layer>
+  <layer name="Units" opacity="0.92" width="111" height="111">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3aSREAIQwEQB5YWF0YQjwS9sFV1HQbCEn4ZUoBAAAAAAAAIEWr+2v0AzUAAAAAAGCl7/YDiOTfAQAAAAAAAAAAkO5Wlk6Gb475vcvuAAAAAAAAAACA16XnoNL7BwAAAAAA+HPinuJmAwAAAAAAAJBnAEk9d2uEwAAA
+  </data>
+  </layer>
+  <objectgroup name="Triggers">
+    <object name="map_info" id="1" x="20" y="20" width="20" height="20">
+      <properties>
+        <property name="type" value="skirmish" />
+        <property name="introText">
+地图作者：测试
+地图下载：牛马打铁之家QQ：110908172
+</property>
+        <property name="winCondition" value="mainBuildings" />
+        <property name="此项目开源，你可以在任何地图上应用它（需标明原作者）" value="" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="87" x="0" y="60" width="20" height="20">
+      <properties>
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="1" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="88" x="40" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="3s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="2" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="89" x="80" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="6s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="3" />
+      </properties>
+    </object>
+    <object name="早晨" type="mapText" id="90" x="120" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="45s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『清晨』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="4" />
+      </properties>
+    </object>
+    <object name="早晨2" type="mapText" id="91" x="160" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="48s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="5" />
+      </properties>
+    </object>
+    <object name="早晨3" type="mapText" id="92" x="200" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="51s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="6" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="93" x="240" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="120s" />
+        <property name="deactivatedBy" value="7" />
+        <property name="globalMessage" value="中午2:00『正午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="1" type="unitAdd" id="96" x="0" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="39s" />
+      </properties>
+    </object>
+    <object name="2" type="unitAdd" id="97" x="40" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="42s" />
+      </properties>
+    </object>
+    <object name="3" type="unitAdd" id="98" x="80" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="45s" />
+      </properties>
+    </object>
+    <object name="4" type="unitAdd" id="99" x="120" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="114s" />
+      </properties>
+    </object>
+    <object name="5" type="unitAdd" id="100" x="160" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="117s" />
+      </properties>
+    </object>
+    <object name="6" type="unitAdd" id="101" x="200" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="120s" />
+      </properties>
+    </object>
+    <object name="7" type="unitAdd" id="102" x="240" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="180s" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="103" x="280" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="180s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="8" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="104" x="320" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="183s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="9" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="105" x="360" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="186s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="10" />
+      </properties>
+    </object>
+    <object name="8" type="unitAdd" id="106" x="280" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="219s" />
+      </properties>
+    </object>
+    <object name="9" type="unitAdd" id="107" x="320" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="222s" />
+      </properties>
+    </object>
+    <object name="10" type="unitAdd" id="108" x="360" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="225s" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="109" x="400" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="225s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="11" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="110" x="440" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="228s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="12" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="111" x="480" y="60" width="20" height="20">
+      <properties>
+        <property name="delay" value="231s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="13" />
+      </properties>
+    </object>
+    <object name="11" type="unitAdd" id="112" x="400" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="294s" />
+      </properties>
+    </object>
+    <object name="12" type="unitAdd" id="113" x="440" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="297s" />
+      </properties>
+    </object>
+    <object name="13" type="unitAdd" id="114" x="480" y="100" width="20" height="20">
+      <properties>
+        <property name="delay" value="300s" />
+      </properties>
+    </object>
+    <object name="Day1" type="mapText" id="116" x="0" y="40" width="20" height="20">
+      <properties>
+        <property name="globalMessage" value="Day1" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="118" x="0" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="300s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="14" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="119" x="40" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="303s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="15" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="120" x="80" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="306s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="16" />
+      </properties>
+    </object>
+    <object name="雾霾" type="mapText" id="121" x="120" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="345s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『雾霾』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="17" />
+      </properties>
+    </object>
+    <object name="雾霾2" type="mapText" id="122" x="160" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="348s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="18" />
+      </properties>
+    </object>
+    <object name="雾霾3" type="mapText" id="123" x="200" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="351s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="19" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="124" x="240" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="420s" />
+        <property name="deactivatedBy" value="" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="125" x="280" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="480s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="21" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="126" x="320" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="483s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="22" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="127" x="360" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="486s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="23" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="128" x="400" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="525s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="24" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="129" x="440" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="528s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="25" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="130" x="480" y="140" width="20" height="20">
+      <properties>
+        <property name="delay" value="531s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="26" />
+      </properties>
+    </object>
+    <object name="14" type="unitAdd" id="131" x="0" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="339s" />
+      </properties>
+    </object>
+    <object name="15" type="unitAdd" id="132" x="40" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="342s" />
+      </properties>
+    </object>
+    <object name="16" type="unitAdd" id="133" x="80" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="345s" />
+      </properties>
+    </object>
+    <object name="17" type="unitAdd" id="134" x="120" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="414s" />
+      </properties>
+    </object>
+    <object name="18" type="unitAdd" id="135" x="160" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="417s" />
+      </properties>
+    </object>
+    <object name="19" type="unitAdd" id="136" x="200" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="420s" />
+      </properties>
+    </object>
+    <object name="20" type="unitAdd" id="137" x="240" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="480s" />
+      </properties>
+    </object>
+    <object name="21" type="unitAdd" id="138" x="280" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="519s" />
+      </properties>
+    </object>
+    <object name="22" type="unitAdd" id="139" x="320" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="522s" />
+      </properties>
+    </object>
+    <object name="23" type="unitAdd" id="140" x="360" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="525s" />
+      </properties>
+    </object>
+    <object name="24" type="unitAdd" id="141" x="400" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="594s" />
+      </properties>
+    </object>
+    <object name="25" type="unitAdd" id="142" x="440" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="597s" />
+      </properties>
+    </object>
+    <object name="26" type="unitAdd" id="143" x="480" y="180" width="20" height="20">
+      <properties>
+        <property name="delay" value="600s" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="151" x="0" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="600s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="27" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="152" x="0" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="900s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="40" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="154" x="0" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1500s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="66" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="155" x="0" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1800s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="79" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="156" x="0" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2100s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="92" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="157" x="0" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2400s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="105" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="158" x="40" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="603s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="28" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="159" x="40" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="903s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="41" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="160" x="40" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1203s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="54" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="161" x="40" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1503s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="67" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="162" x="40" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1803s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="80" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="163" x="40" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2103s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="93" />
+      </properties>
+    </object>
+    <object name="蓝调2" type="mapText" id="164" x="40" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2403s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="106" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="165" x="80" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="606s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="29" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="166" x="80" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="906s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="42" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="167" x="80" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1206s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="55" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="168" x="80" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1506s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="68" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="169" x="80" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1806s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="81" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="170" x="80" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2106s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="94" />
+      </properties>
+    </object>
+    <object name="蓝调3" type="mapText" id="171" x="80" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2406s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="107" />
+      </properties>
+    </object>
+    <object name="早晨" type="mapText" id="172" x="120" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="645s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『清晨』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="30" />
+      </properties>
+    </object>
+    <object name="早晨" type="mapText" id="175" x="120" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1245s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『清晨』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="56" />
+      </properties>
+    </object>
+    <object name="早晨" type="mapText" id="177" x="120" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1845s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『清晨』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="82" />
+      </properties>
+    </object>
+    <object name="早晨" type="mapText" id="179" x="120" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2445s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『清晨』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="108" />
+      </properties>
+    </object>
+    <object name="早晨2" type="mapText" id="180" x="160" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="648s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="31" />
+      </properties>
+    </object>
+    <object name="早晨2" type="mapText" id="182" x="160" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1248s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="57" />
+      </properties>
+    </object>
+    <object name="早晨2" type="mapText" id="184" x="160" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1848s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="83" />
+      </properties>
+    </object>
+    <object name="早晨2" type="mapText" id="186" x="160" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2448s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="109" />
+      </properties>
+    </object>
+    <object name="早晨3" type="mapText" id="187" x="200" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="651s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="32" />
+      </properties>
+    </object>
+    <object name="早晨3" type="mapText" id="189" x="200" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1251s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="58" />
+      </properties>
+    </object>
+    <object name="早晨3" type="mapText" id="191" x="200" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1851s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="84" />
+      </properties>
+    </object>
+    <object name="早晨3" type="mapText" id="194" x="200" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2451s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AD1EEEE" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="110" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="195" x="240" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="720s" />
+        <property name="deactivatedBy" value="33" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="196" x="240" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1020s" />
+        <property name="deactivatedBy" value="46" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="197" x="240" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1320s" />
+        <property name="deactivatedBy" value="59" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="198" x="240" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1620s" />
+        <property name="deactivatedBy" value="72" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="199" x="240" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1920s" />
+        <property name="deactivatedBy" value="85" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="200" x="240" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2220s" />
+        <property name="deactivatedBy" value="98" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="中午" type="mapText" id="201" x="240" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2520s" />
+        <property name="deactivatedBy" value="111" />
+        <property name="globalMessage" value="中午2:00『晌午』" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="202" x="280" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="780s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="34" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="203" x="280" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1080s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="47" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="204" x="280" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1380s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="60" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="205" x="280" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1680s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="73" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="206" x="280" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1980s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="86" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="207" x="280" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2280s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="99" />
+      </properties>
+    </object>
+    <object name="下午" type="mapText" id="208" x="280" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2580s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="下午6:00『黄昏』" />
+        <property name="globalMessage_textColor" value="#FFA07A" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="112" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="210" x="320" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="783s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="35" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="211" x="320" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1083s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="48" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="212" x="320" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1383s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="61" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="213" x="320" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1683s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="74" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="214" x="320" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1983s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="87" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="215" x="320" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2283s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="100" />
+      </properties>
+    </object>
+    <object name="下午2" type="mapText" id="216" x="320" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2583s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#1AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="113" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="217" x="360" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="786s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="36" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="218" x="360" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1086s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="49" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="219" x="360" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1386s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="62" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="220" x="360" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1686s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="75" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="221" x="360" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="1986s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="88" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="222" x="360" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2286s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="101" />
+      </properties>
+    </object>
+    <object name="下午3" type="mapText" id="223" x="360" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2586s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#2AFFA07A" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="114" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="224" x="400" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="825s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="37" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="225" x="400" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1125s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="50" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="226" x="400" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1425s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="63" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="228" x="400" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="2025s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="89" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="229" x="400" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2325s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="102" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="231" x="440" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="828s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="38" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="232" x="440" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1128s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="51" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="233" x="440" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1428s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="64" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="235" x="440" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="2028s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="90" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="236" x="440" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2328s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="103" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="238" x="480" y="220" width="20" height="20">
+      <properties>
+        <property name="delay" value="831s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="39" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="239" x="480" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="1131s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="52" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="241" x="480" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1431s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="65" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="243" x="480" y="540" width="20" height="20">
+      <properties>
+        <property name="delay" value="2031s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="91" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="244" x="480" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2331s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="104" />
+      </properties>
+    </object>
+    <object name="27" type="unitAdd" id="246" x="0" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="639s" />
+      </properties>
+    </object>
+    <object name="28" type="unitAdd" id="247" x="40" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="642s" />
+      </properties>
+    </object>
+    <object name="29" type="unitAdd" id="248" x="80" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="645s" />
+      </properties>
+    </object>
+    <object name="30" type="unitAdd" id="249" x="120" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="714s" />
+      </properties>
+    </object>
+    <object name="31" type="unitAdd" id="250" x="160" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="717s" />
+      </properties>
+    </object>
+    <object name="32" type="unitAdd" id="251" x="200" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="720s" />
+      </properties>
+    </object>
+    <object name="33" type="unitAdd" id="252" x="240" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="780s" />
+      </properties>
+    </object>
+    <object name="34" type="unitAdd" id="253" x="280" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="819s" />
+      </properties>
+    </object>
+    <object name="35" type="unitAdd" id="254" x="320" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="822s" />
+      </properties>
+    </object>
+    <object name="36" type="unitAdd" id="255" x="360" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="825s" />
+      </properties>
+    </object>
+    <object name="37" type="unitAdd" id="256" x="400" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="894s" />
+      </properties>
+    </object>
+    <object name="38" type="unitAdd" id="257" x="440" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="897s" />
+      </properties>
+    </object>
+    <object name="39" type="unitAdd" id="258" x="480" y="260" width="20" height="20">
+      <properties>
+        <property name="delay" value="900s" />
+      </properties>
+    </object>
+    <object name="40" type="unitAdd" id="259" x="0" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="939s" />
+      </properties>
+    </object>
+    <object name="41" type="unitAdd" id="260" x="40" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="942s" />
+      </properties>
+    </object>
+    <object name="42" type="unitAdd" id="261" x="80" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="945s" />
+      </properties>
+    </object>
+    <object name="43" type="unitAdd" id="262" x="120" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1014s" />
+      </properties>
+    </object>
+    <object name="44" type="unitAdd" id="263" x="160" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1017s" />
+      </properties>
+    </object>
+    <object name="45" type="unitAdd" id="264" x="200" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1020s" />
+      </properties>
+    </object>
+    <object name="46" type="unitAdd" id="265" x="240" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1080s" />
+      </properties>
+    </object>
+    <object name="47" type="unitAdd" id="266" x="280" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1119s" />
+      </properties>
+    </object>
+    <object name="48" type="unitAdd" id="267" x="320" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1122s" />
+      </properties>
+    </object>
+    <object name="49" type="unitAdd" id="268" x="360" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1125s" />
+      </properties>
+    </object>
+    <object name="50" type="unitAdd" id="269" x="400" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1194s" />
+      </properties>
+    </object>
+    <object name="51" type="unitAdd" id="270" x="440" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1197s" />
+      </properties>
+    </object>
+    <object name="52" type="unitAdd" id="271" x="480" y="340" width="20" height="20">
+      <properties>
+        <property name="delay" value="1200s" />
+      </properties>
+    </object>
+    <object name="53" type="unitAdd" id="272" x="0" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1239s" />
+      </properties>
+    </object>
+    <object name="54" type="unitAdd" id="273" x="40" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1242s" />
+      </properties>
+    </object>
+    <object name="55" type="unitAdd" id="274" x="80" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1245s" />
+      </properties>
+    </object>
+    <object name="56" type="unitAdd" id="275" x="120" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1314s" />
+      </properties>
+    </object>
+    <object name="57" type="unitAdd" id="276" x="160" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1317s" />
+      </properties>
+    </object>
+    <object name="58" type="unitAdd" id="277" x="200" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1320s" />
+      </properties>
+    </object>
+    <object name="59" type="unitAdd" id="278" x="240" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1380s" />
+      </properties>
+    </object>
+    <object name="60" type="unitAdd" id="279" x="280" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1419s" />
+      </properties>
+    </object>
+    <object name="61" type="unitAdd" id="280" x="320" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1422s" />
+      </properties>
+    </object>
+    <object name="62" type="unitAdd" id="281" x="360" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1425s" />
+      </properties>
+    </object>
+    <object name="63" type="unitAdd" id="282" x="400" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1494s" />
+      </properties>
+    </object>
+    <object name="64" type="unitAdd" id="283" x="440" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1497s" />
+      </properties>
+    </object>
+    <object name="65" type="unitAdd" id="284" x="480" y="420" width="20" height="20">
+      <properties>
+        <property name="delay" value="1500s" />
+      </properties>
+    </object>
+    <object name="66" type="unitAdd" id="285" x="0" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1539s" />
+      </properties>
+    </object>
+    <object name="67" type="unitAdd" id="286" x="40" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1542s" />
+      </properties>
+    </object>
+    <object name="68" type="unitAdd" id="287" x="80" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1545s" />
+      </properties>
+    </object>
+    <object name="69" type="unitAdd" id="288" x="120" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1614s" />
+      </properties>
+    </object>
+    <object name="70" type="unitAdd" id="289" x="160" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1617s" />
+      </properties>
+    </object>
+    <object name="71" type="unitAdd" id="290" x="200" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1620s" />
+      </properties>
+    </object>
+    <object name="72" type="unitAdd" id="291" x="240" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1680s" />
+      </properties>
+    </object>
+    <object name="73" type="unitAdd" id="292" x="280" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1719s" />
+      </properties>
+    </object>
+    <object name="74" type="unitAdd" id="293" x="320" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1722s" />
+      </properties>
+    </object>
+    <object name="75" type="unitAdd" id="294" x="360" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1725s" />
+      </properties>
+    </object>
+    <object name="76" type="unitAdd" id="295" x="400" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1794s" />
+      </properties>
+    </object>
+    <object name="77" type="unitAdd" id="296" x="440" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1797s" />
+      </properties>
+    </object>
+    <object name="78" type="unitAdd" id="297" x="480" y="500" width="20" height="20">
+      <properties>
+        <property name="delay" value="1800s" />
+      </properties>
+    </object>
+    <object name="79" type="unitAdd" id="298" x="0" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1839s" />
+      </properties>
+    </object>
+    <object name="80" type="unitAdd" id="299" x="40" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1842s" />
+      </properties>
+    </object>
+    <object name="81" type="unitAdd" id="300" x="80" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1845s" />
+      </properties>
+    </object>
+    <object name="82" type="unitAdd" id="301" x="120" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1914s" />
+      </properties>
+    </object>
+    <object name="83" type="unitAdd" id="302" x="160" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1917s" />
+      </properties>
+    </object>
+    <object name="84" type="unitAdd" id="303" x="200" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1920s" />
+      </properties>
+    </object>
+    <object name="85" type="unitAdd" id="304" x="240" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="1980s" />
+      </properties>
+    </object>
+    <object name="86" type="unitAdd" id="305" x="280" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2019s" />
+      </properties>
+    </object>
+    <object name="87" type="unitAdd" id="306" x="320" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2022s" />
+      </properties>
+    </object>
+    <object name="88" type="unitAdd" id="307" x="360" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2025s" />
+      </properties>
+    </object>
+    <object name="89" type="unitAdd" id="308" x="400" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2094s" />
+      </properties>
+    </object>
+    <object name="90" type="unitAdd" id="309" x="440" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2097s" />
+      </properties>
+    </object>
+    <object name="91" type="unitAdd" id="310" x="480" y="580" width="20" height="20">
+      <properties>
+        <property name="delay" value="2100s" />
+      </properties>
+    </object>
+    <object name="92" type="unitAdd" id="311" x="0" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2139s" />
+      </properties>
+    </object>
+    <object name="93" type="unitAdd" id="312" x="40" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2142s" />
+      </properties>
+    </object>
+    <object name="94" type="unitAdd" id="313" x="80" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2145s" />
+      </properties>
+    </object>
+    <object name="95" type="unitAdd" id="314" x="120" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2214s" />
+      </properties>
+    </object>
+    <object name="96" type="unitAdd" id="315" x="160" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2217s" />
+      </properties>
+    </object>
+    <object name="97" type="unitAdd" id="316" x="200" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2220s" />
+      </properties>
+    </object>
+    <object name="98" type="unitAdd" id="317" x="240" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2280s" />
+      </properties>
+    </object>
+    <object name="99" type="unitAdd" id="318" x="280" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2319s" />
+      </properties>
+    </object>
+    <object name="100" type="unitAdd" id="319" x="320" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2322s" />
+      </properties>
+    </object>
+    <object name="101" type="unitAdd" id="320" x="360" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2325s" />
+      </properties>
+    </object>
+    <object name="102" type="unitAdd" id="321" x="400" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2394s" />
+      </properties>
+    </object>
+    <object name="103" type="unitAdd" id="322" x="440" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2397s" />
+      </properties>
+    </object>
+    <object name="104" type="unitAdd" id="323" x="480" y="660" width="20" height="20">
+      <properties>
+        <property name="delay" value="2400s" />
+      </properties>
+    </object>
+    <object name="Day2" type="mapText" id="325" x="0" y="120" width="20" height="20">
+      <properties>
+        <property name="delay" value="300s" />
+        <property name="globalMessage" value="Day2" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day3" type="mapText" id="326" x="0" y="200" width="20" height="20">
+      <properties>
+        <property name="delay" value="600s" />
+        <property name="globalMessage" value="Day3" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day4" type="mapText" id="327" x="0" y="280" width="20" height="20">
+      <properties>
+        <property name="delay" value="900s" />
+        <property name="globalMessage" value="Day4" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day5" type="mapText" id="328" x="0" y="360" width="20" height="20">
+      <properties>
+        <property name="delay" value="1200s" />
+        <property name="globalMessage" value="Day5" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day6" type="mapText" id="329" x="0" y="440" width="20" height="20">
+      <properties>
+        <property name="delay" value="1500s" />
+        <property name="globalMessage" value="Day6" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day7" type="mapText" id="330" x="0" y="520" width="20" height="20">
+      <properties>
+        <property name="delay" value="1800s" />
+        <property name="globalMessage" value="Day7" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day8" type="mapText" id="331" x="0" y="600" width="20" height="20">
+      <properties>
+        <property name="delay" value="2100s" />
+        <property name="globalMessage" value="Day8" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="Day9" type="mapText" id="332" x="0" y="680" width="20" height="20">
+      <properties>
+        <property name="delay" value="2400s" />
+        <property name="globalMessage" value="Day9" />
+        <property name="globalMessage_textColor" value="red" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+      </properties>
+    </object>
+    <object name="雾霾" type="mapText" id="333" x="120" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="945s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『雾霾』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="43" />
+      </properties>
+    </object>
+    <object name="雾霾" type="mapText" id="334" x="120" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1545s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『雾霾』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="69" />
+      </properties>
+    </object>
+    <object name="雾霾" type="mapText" id="335" x="120" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2145s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午9:30『雾霾』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="95" />
+      </properties>
+    </object>
+    <object name="雾霾2" type="mapText" id="336" x="160" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="948s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="44" />
+      </properties>
+    </object>
+    <object name="雾霾2" type="mapText" id="337" x="160" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1548s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="70" />
+      </properties>
+    </object>
+    <object name="雾霾2" type="mapText" id="338" x="160" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2148s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="96" />
+      </properties>
+    </object>
+    <object name="雾霾3" type="mapText" id="339" x="200" y="300" width="20" height="20">
+      <properties>
+        <property name="delay" value="951s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="45" />
+      </properties>
+    </object>
+    <object name="雾霾3" type="mapText" id="340" x="200" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1551s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="71" />
+      </properties>
+    </object>
+    <object name="雾霾3" type="mapText" id="341" x="200" y="620" width="20" height="20">
+      <properties>
+        <property name="delay" value="2151s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E9AC0CD" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="97" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="342" x="400" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1725s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="76" />
+      </properties>
+    </object>
+    <object name="夜晚" type="mapText" id="343" x="400" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2625s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="晚上10:00『午夜』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="115" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="344" x="440" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1728s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="77" />
+      </properties>
+    </object>
+    <object name="夜晚2" type="mapText" id="345" x="440" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2628s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="116" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="346" x="480" y="460" width="20" height="20">
+      <properties>
+        <property name="delay" value="1731s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="78" />
+      </properties>
+    </object>
+    <object name="夜晚3" type="mapText" id="347" x="480" y="700" width="20" height="20">
+      <properties>
+        <property name="delay" value="2631s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#6E000000" />
+        <property name="textSize" value="999999" />
+        <property name="deactivatedBy" value="117" />
+      </properties>
+    </object>
+    <object name="蓝调" type="mapText" id="349" x="0" y="380" width="20" height="20">
+      <properties>
+        <property name="delay" value="1200s" />
+        <property name="text" value="十" />
+        <property name="textColor" value="#0A0000CD" />
+        <property name="textSize" value="999999" />
+        <property name="globalMessage" value="上午6:00『蓝调时刻』" />
+        <property name="globalMessage_textColor" value="blue" />
+        <property name="globalMessage_delayPerChar" value="0.1s" />
+        <property name="deactivatedBy" value="53" />
+      </properties>
+    </object>
+    <object name="105" type="unitAdd" id="354" x="0" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2439s" />
+      </properties>
+    </object>
+    <object name="106" type="unitAdd" id="355" x="40" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2442s" />
+      </properties>
+    </object>
+    <object name="107" type="unitAdd" id="356" x="80" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2445s" />
+      </properties>
+    </object>
+    <object name="108" type="unitAdd" id="357" x="120" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2514s" />
+      </properties>
+    </object>
+    <object name="109" type="unitAdd" id="358" x="160" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2517s" />
+      </properties>
+    </object>
+    <object name="110" type="unitAdd" id="359" x="200" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2520s" />
+      </properties>
+    </object>
+    <object name="111" type="unitAdd" id="360" x="240" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2580s" />
+      </properties>
+    </object>
+    <object name="112" type="unitAdd" id="361" x="280" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2619s" />
+      </properties>
+    </object>
+    <object name="113" type="unitAdd" id="362" x="320" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2622s" />
+      </properties>
+    </object>
+    <object name="114" type="unitAdd" id="363" x="360" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2625s" />
+      </properties>
+    </object>
+    <object name="115" type="unitAdd" id="364" x="400" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2694s" />
+      </properties>
+    </object>
+    <object name="116" type="unitAdd" id="365" x="440" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2697s" />
+      </properties>
+    </object>
+    <object name="117" type="unitAdd" id="366" x="480" y="740" width="20" height="20">
+      <properties>
+        <property name="delay" value="2700s" />
+      </properties>
+    </object>
+  </objectgroup>
+</map>

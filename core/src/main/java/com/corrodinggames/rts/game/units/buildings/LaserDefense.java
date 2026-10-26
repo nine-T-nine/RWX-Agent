@@ -313,6 +313,7 @@ public class LaserDefense extends FactoryWithQueue {
                         gameEngine.soundEngine.playSoundAt(SoundEngine.laserDeflect2Sound, 0.2f, 1.0f + Utility.randomFloatInRange(-0.07f, 0.07f), projectile.posX, projectile.posY);
                     }
                     orderableUnit.currentEnergy -= f5;
+                    orderableUnit.lastInterceptionMillis = gameEngine.gameTimeMillis;
                     return true;
                 }
             }

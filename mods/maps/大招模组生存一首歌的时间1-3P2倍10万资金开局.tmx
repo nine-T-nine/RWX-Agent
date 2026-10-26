@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="135" height="125" tilewidth="20" tileheight="20" infinite="0" nextlayerid="6" nextobjectid="10">
+ <tileset firstgid="1" name="Mountain" tilewidth="20" tileheight="20" tilecount="35" columns="7">
+  <image source="铁锈地图/tilesets/bitmaps/mountain.png" trans="008a76" width="140" height="100"/>
+  <tile id="7">
+   <properties>
+    <property name="small-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="small-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="small-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="21">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="22">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="28">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="29">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="36" name="Snow" tilewidth="20" tileheight="20" tilecount="80" columns="8">
+  <image source="铁锈地图/tilesets/bitmaps/snow.png" trans="008a76" width="160" height="200"/>
+  <tile id="14">
+   <properties>
+    <property name="tree" value=""/>
+   </properties>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="tree" value=""/>
+   </properties>
+  </tile>
+  <tile id="55">
+   <properties>
+    <property name="tree" value=""/>
+   </properties>
+  </tile>
+  <tile id="79">
+   <properties>
+    <property name="tree" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="116" name="Ice" tilewidth="20" tileheight="20" tilecount="10" columns="5">
+  <image source="铁锈地图/tilesets/bitmaps/ice.png" trans="008a76" width="100" height="40"/>
+  <tile id="9">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="126" source="铁锈地图/tilesets/terrain/Long Grass.tsx"/>
+ <tileset firstgid="176" source="铁锈地图/tilesets/terrain/Dirt.tsx"/>
+ <tileset firstgid="186" name="Shallow Water" tilewidth="20" tileheight="20" tilecount="6" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/shallowwater.png" trans="008a76" width="60" height="40"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="192" name="Water" tilewidth="20" tileheight="20" tilecount="3" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/water.png" trans="008a76" width="60" height="20"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="195" name="Deep Water" tilewidth="20" tileheight="20" tilecount="3" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/deepwater.png" trans="008a76" width="60" height="20"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="198" source="铁锈地图/tilesets/ridges/Mountain Mountain - Hill.tsx"/>
+ <tileset firstgid="219" source="铁锈地图/tilesets/ridges/Mountain Snow - Flat.tsx"/>
+ <tileset firstgid="240" source="铁锈地图/tilesets/ridges/Snow Ice - Ridge.tsx"/>
+ <tileset firstgid="261" name="Ice ShallowWater - Ridge" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/ice2shallowwater_ridge.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="cliff" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="282" name="ShallowWater Water - Flat" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/shallowwater2water_flat.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="303" source="铁锈地图/tilesets/ridges/Water DeepWater - Flat.tsx"/>
+ <tileset firstgid="324" source="铁锈地图/tilesets/ridges/LongGrass ShallowWater - Ridge.tsx"/>
+ <tileset firstgid="354" source="铁锈地图/tilesets/ridges/LongGrass Dirt - Flat.tsx"/>
+ <tileset firstgid="375" name="misc" tilewidth="20" tileheight="20" tilecount="24" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/misc.png" width="79" height="160"/>
+  <tile id="4">
+   <properties>
+    <property name="res_pool" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="399" name="Ice Ice - Flat" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/ice2ice_flat.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="420" name="Ice ShallowWater - Broken" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/ice2shallowwater_broken.png" trans="008a76" width="60" height="140"/>
+  <tile id="0">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="18">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+  <tile id="20">
+   <properties>
+    <property name="cliff-soft" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="441" source="铁锈地图/tilesets/ridges/Dirt ShalowWater - Ridge.tsx"/>
+ <tileset firstgid="462" source="铁锈地图/tilesets/ridges/Mountain ShallowWater - Ridge.tsx"/>
+ <tileset firstgid="483" source="铁锈地图/tilesets/ridges/Sand ShallowWater - Ridge.tsx"/>
+ <tileset firstgid="504" source="铁锈地图/tilesets/ridges/Snow Snow - ridge.tsx"/>
+ <tileset firstgid="525" source="铁锈地图/tilesets/units.tsx"/>
+ <tileset firstgid="804" name="Sand" tilewidth="20" tileheight="20" tilecount="42" columns="7">
+  <image source="铁锈地图/tilesets/bitmaps/sand.png" trans="008a76" width="140" height="120"/>
+  <tile id="28">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="29">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="31">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="35">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="36">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="38">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+  <tile id="40">
+   <properties>
+    <property name="large-rock" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="846" source="铁锈地图/tilesets/ridges/LongGrass ShallowWater - Flat.tsx"/>
+ <tileset firstgid="867" source="铁锈地图/tilesets/ridges/Mountain LongGrass - Flat.tsx"/>
+ <tileset firstgid="888" source="铁锈地图/tilesets/ridges/Mountain Sand - Flat.tsx"/>
+ <tileset firstgid="909" source="铁锈地图/tilesets/terrain/Sand.tsx"/>
+ <tileset firstgid="951" source="铁锈地图/tilesets/ridges/Mountain ShallowWater - Flat.tsx"/>
+ <tileset firstgid="972" name="misc" tilewidth="20" tileheight="20" tilecount="24" columns="3">
+  <image source="铁锈地图/tilesets/bitmaps/misc.png" width="79" height="160"/>
+  <tile id="4">
+   <properties>
+    <property name="res_pool" value=""/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="team" value="none"/>
+    <property name="unit" value="tree"/>
+   </properties>
+  </tile>
+ </tileset>
+ <layer id="1" name="Ground" width="135" height="125">
+  <data encoding="base64" compression="gzip">
+   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
+  </data>
+ </layer>
+ <layer id="3" name="Units" width="135" height="125" opacity="0.59">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3XsQkAIAwEQHEAGx3RGZzfXrATong3wUPgn6QEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPCGnqMTEGW4PQAAcKnqXwEOaLoEWBS98D3bAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7ExXeQjrrAcBAA==
+  </data>
+ </layer>
+ <layer id="2" name="Items" width="135" height="125" offsetx="0.666667" offsety="1.33333">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3cS27bMBAAUAXZtL1B0E3QS/afXLDftL1PmUWRwDZdySLFofgeoE0cyJQ4HA5pQdMEAAAAAAD06O3VNL1Lx/ur1i0hmg8pJj6m45PY4MDnFBN36bgvFBtfrqfpazq+XZc5H/vxPcXEj3T8FBsceEgx8Ssdv8UGUNkfeWZ4alVy1Kr7VGLMq1X357EeMObJeT7m1Y7AXPIFAAAAAAB4Loc8v9GT47kcAAAAOO/cM6r247bXyz23H5d3U+m8S+95q1g63I/zjqont5XOu3QPNMr49Y6qeKLsp5d+RxUA8bSqEXtZb42sVY0YpUYmr1SNuDQPRKmRqU8eIEcegBi8b4VDYgJYK1oesW/V1pp4qN131qsxzYmZ2n1nvdovfQec4hk7ctb8fhpt3TOimusFz9j1reR6odQcYi6KoeR6odQzOLnznJtnnn9mPoqn1ByyxVxk35Qc+6br9Dy2/jev2HtbZ+uxpQbtx9Zj69Ja9lx+U5fuw6U1qNqBHLUDwFisQcjx3hNyIvwm2+MeHkTR8174JR4Guc4Set4rss95mbn5IPJe0Wg5bSs954N/ctcgX6wTOR/MtYdrIC/CvBChDRyLMLdFaMMerZ3bI8wLEdqwB3NiQS3IiNQmy4yUJ0auTXL9PFL/n6M2gf1RD8QSqT9GrgciitQf6oG8FjVjL/2hni4j4n1c2qaI17A19+CJe0EJL1s3gCM11jXyxT7UXNeIkb6VXNe8nvl/L9Z/FZ1507oBM53KZ3JceTetG8AiW46B2xN/e7Xd10M15hIeiYNj7sky7hcAAAAAAAC09xf5HuPkrAcBAA==
+  </data>
+ </layer>
+ <objectgroup id="4" name="Triggers">
+  <object id="1" name="map_info" x="60" y="64" width="203" height="122">
+   <properties>
+    <property name="fog" value="map"/>
+    <property name="introText">用一首歌的时间，你能活到最后吗
+禁用单位如下
+禁用信标
+禁用心灵系列
+禁用战略裂变导弹
+禁用核弹狂魔
+禁用核弹井
+禁用深海计划
+禁用鹦鹉螺
+目前没有禁用宾语，请自觉遵守
+</property>
+    <property name="loseCondition" value="commandCenter"/>
+    <property name="survivalWaves">+00:15 【ti:希望有羽毛和翅膀 (Hope Is the Thing With Feathers)】
++00:15 【ar:知更鸟/HOYO_MiX/Chevy】
++00:15 【al:崩坏星穹铁道_空气蛹 INSIDE】
++00:15 【by:】
++00:15 【offset:0】
++00:16 希望有羽毛和翅膀 (Hope Is the Thing With Feathers)_知更鸟/HOYO_MiX/Chevy - 20 器械工厂(生产小车)
++00:08 作曲 Composer：王可鑫 Eli.W (HOYO_MiX) -  20 资源小车T2 , 20 自爆小车
++00:04 作词 Lyricist：Ruby Qu - 20 维修小车  
++00:04 编曲 Arranger：王可鑫 Eli.W (HOYO_MiX) - 20 机炮小车
++00:09 制作人 Producer：王可鑫 Eli.W (HOYO_MiX) - 20 机炮小车
++02:02 We rise together as our destiny unfolds（随着命运的展开 就让我们一同迎战） - 10 航母 , 10 妈妈船 , 10 风暴战舰
++01:02 We face the darkness and our trials are yet untold（而考验尚未结束 我们仍需直面黑暗） - 40 跳虫 , 2 机械秽型虫
++01:16 Through the shadows of despair（穿过绝望的阴影） - 40 机械花甲虫 , 40 板载运输机
++00:38 Oh in silence hopes we share（在沉默中我们共享希望） - 35 武装无人机
++00:37 To chase our dreams that we've declared（只为追逐我们宣告中的理想） - 20 Legendaryhelicopter
++01:15 We glimpse through our eyes（我们曾尝试多看一眼） - 20 spyDrone , 20 劣质导蛋
++00:38 Yet fools blind our sights（却被无知蒙蔽了视线）- 30 弃盾等离子 , 5 轰炸机
++00:35 Can't make what they say（既然听不懂他们的注解） - 30 武直不死鸟
++00:30 We'll find our way we'll find our way（那就由我们找寻自己该走的路） - 30 重型拦截器
++00:41 Heads up The wheels are spinning（请注意 命运的车轮正在转动） - 25 火力不足恐惧症
++00:47 Across the plains in valleys deep（跨越平原 穿过深谷） - 25 战斗机甲 , 25 战术机甲
++00:29 To dawn the wheels that sing（向着黎明 这车轮行滚滚而行歌唱着） - 25 激光黑洞坦克
++00:44 An unending dream（一个无尽的梦） - 15 蓄能火炮机甲 , 2 不朽者
++00:33 Heads up the tracks are running（请注意 轨道已然在运转）- 3 烈火蜂后
++00:41 Across the plains where shadows hide（穿过阴霾藏匿的平原） - 40 全地形重型坦克
++00:33 We run we stride（我们奔跑 我们向前） - 10 自行导弹车
++01:28 In the face of fear and plight and yet we hold our ground（面对恐惧和困境 我们依然坚守阵地） - 100 伞兵＂空＂ , 20 飞碟
++01:02 In life we stand and strive our victory is found（历久弥坚 胜利定会在望） - 5 母碟核心 , 300 机枪艇
++01:16 And the storms we've weathered through（我们已穿越风雨） - 20 海军工厂 , 10 绿色轰炸机
++00:40 And we hope in the light of truth（只希望能沐浴在真理的光芒中） - 8 红色轰炸机
++00:36 To break free from chains and come anew（挣脱枷锁重获新生） - 8 等离子机枪机甲
++01:18 Heads up The wheels are spinning（请注意 命运的车轮正在转动） - 10 晓雾风暴
++00:36 Across the plains in valleys deep（跨越平原 穿过深谷） - 1 天灾重型攻击机
++00:38 To dawn the wheels that sing（向着黎明 这车轮行滚滚而行歌唱着） - 3 吸血资金蛋 , 10 心灵塔
++01:00 An unending dream（一个无尽的梦） - 20 雷电交加 , 15 AA喷火机甲 , 35 AL重型拦截器
++00:14 Heads up the tracks are running（请注意 轨道已然在运转） - 5 熔岩巨兽
++00:40 Across the plains where shadows hide（穿过阴霾藏匿的平原） - 2 戈尔贡
++00:34 We run we stride（我们奔跑 我们向前） - 8 灾厄维护者发射器
++02:50 Heads up A steady rhythm（抬起头 跟着坚定的节奏） - 3 天灾重型攻击机 , 100 航母
++04:44 A destination that's ever near（终点已近在咫尺） - 5 阿尔法虫王完全体 , 10 雷兽 , 300 跳虫 , 20 贝塔虫母
++00:34 It comes Stride to our kingdom（迈向我们的理想之地） - 100 飞碟
++00:40 And see the light of day（让一切重现曙光） - 10 废土战车 , 50 废土战斗机 , 50 概念重型攻击机
++00:34 Heads up the wheels are singing（请注意 命运的车轮正在歌唱） - 1000 激昂小坦
++00:48 The whispers and secrets they'd keep（他们保守着苦痛的秘密和私语） - 50 人类骑兵 , 200 人类弓箭手
++00:24 To hope We bound（而我们终将迎来希望） - 1000 翼鸟骑手
++01:26 Break free we chased our dreams beneath the starry night（挣脱束缚 我们在星空下追逐梦想） - 5 巨型对地导弹坦克 , 5 巨型防空导弹坦克 , 5 灭世者
++01:32 In the face of god we rose as one（面对神灵 我们团结一致 奋勇向前） - 2 灭世神 , 10 灭世者
++00:15 人声 Vocal Artist：Chevy
++00:15 木吉他 Acoustic Guitar：陈义
++00:15 电吉他 Electric Guitar：陈义
++00:15 架子鼓 Drums：眭逸凡Patrick
++00:15 和声 Backing Vocal：Chevy/宫奇Gon (HOYO_MiX)/温菁 Jing.W (HOYO_MiX)/林一凡Fan (HOYO_MiX)/王可鑫 Eli.W (HOYO_MiX)
++00:15 人声录音棚 Vocal Recording Studio：The Hideout Recording Studio
++00:15 人声录音师 Vocal Recording Engineer：Nik Hotchkiss
++00:15 乐器录音棚 Instrumental Recording Studio：升赫录音棚Soundhub Studio
++00:15 乐器录音师 Instrumental Recording Engineer：Kevin刘瀚文@Soundhub Studios
++00:15 混音师 Mixing Engineer：阿烈@Soundhub Studios
++00:15 母带制作 Mastering Engineer：宫奇Gon (HOYO_MiX)
++00:15 出品 Produced by：HOYO_MiX</property>
+    <property name="type" value="survival"/>
+    <property name="winCondition" value="none"/>
+   </properties>
+  </object>
+  <object id="2" name="team_0_info" type="team_info" x="96" y="258" width="173" height="154">
+   <properties>
+    <property name="credits" value="2100"/>
+    <property name="team" value="0"/>
+   </properties>
+  </object>
+  <object id="3" name="attack_point" x="12" y="29" width="112" height="43"/>
+  <object id="4" name="attack_point" x="2575" y="33" width="112" height="43"/>
+  <object id="5" name="attack_point" x="2565" y="2435" width="112" height="43"/>
+  <object id="6" name="attack_point" x="9" y="2432" width="112" height="43"/>
+  <object id="7" name="attack_point" x="3" y="1340" width="118" height="76"/>
+  <object id="8" name="attack_point" x="2563" y="1333" width="112" height="43"/>
+  <object id="9" name="team_1_info" type="team_info" x="98" y="482" width="173" height="154">
+   <properties>
+    <property name="ai" value="survival"/>
+    <property name="credits" value="1000"/>
+    <property name="team" value="1"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer id="5" name="set" width="135" height="125" opacity="0.05">
+  <data encoding="base64" compression="gzip">
+   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
+  </data>
+ </layer>
+</map>

@@ -31,6 +31,10 @@ public class NetworkCallbacks {
     public void b(NetworkConnection networkConnection, String str) {
     }
 
+    /** Server rejection text, separate from the legacy disconnect callback's player name. */
+    public void onConnectionRejected(String reason) {
+    }
+
     public void a(PlayerTeam playerTeam) {
     }
 

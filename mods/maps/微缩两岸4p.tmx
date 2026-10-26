@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="40" height="40" tilewidth="20" tileheight="20" infinite="0" nextlayerid="6" nextobjectid="1">
+ <tileset firstgid="1" source="terrain/Deep Water.tsx"/>
+ <tileset firstgid="4" source="terrain/Dirt.tsx"/>
+ <tileset firstgid="14" source="terrain/Dirt_Details.tsx"/>
+ <tileset firstgid="74" source="terrain/Dust.tsx"/>
+ <tileset firstgid="95" source="terrain/Ice.tsx"/>
+ <tileset firstgid="105" source="terrain/Lava.tsx"/>
+ <tileset firstgid="126" source="terrain/Long Grass.tsx"/>
+ <tileset firstgid="176" source="terrain/Mountain.tsx"/>
+ <tileset firstgid="211" source="terrain/Sand.tsx"/>
+ <tileset firstgid="253" name="Shallow Water" tilewidth="20" tileheight="20" tilecount="6" columns="3">
+  <image source="terrain/bitmaps/shallowwater.png" trans="008a76" width="60" height="40"/>
+  <tile id="0">
+   <properties>
+    <property name="water" value=""/>
+   </properties>
+  </tile>
+ </tileset>
+ <tileset firstgid="259" source="terrain/Short Grass.tsx"/>
+ <tileset firstgid="260" source="terrain/Snow.tsx"/>
+ <tileset firstgid="340" source="terrain/Stone.tsx"/>
+ <tileset firstgid="376" source="terrain/Water.tsx"/>
+ <tileset firstgid="379" source="ridges/Stone ShallowWater - ridge.tsx"/>
+ <tileset firstgid="394" source="ridges/Sand ShallowWater - Flat.tsx"/>
+ <tileset firstgid="415" source="ridges/Stone Sand - Flat.tsx"/>
+ <tileset firstgid="436" source="misc.tsx"/>
+ <tileset firstgid="460" name="longgrass2stone_flat" tilewidth="20" tileheight="20" tilecount="21" columns="3">
+  <image source="ridges/bitmaps/longgrass2stone_flat.png" width="60" height="140"/>
+ </tileset>
+ <tileset firstgid="481" source="ridges/LongGrass ShallowWater - Flat.tsx"/>
+ <tileset firstgid="502" source="units.tsx"/>
+ <layer id="1" name="Ground" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3XQQqAMAxE0RS8pXfxkj2PIN2JtE2xoZnoLP5O9FFpIFlEMnh7wow++uiL7/Ou5zudi+i7ny2qz9tFH33P52pp799SP0vfm3MuhkPqrfBp56P5tCx8re/P9hcf8v9Fvx8r5svIXPvKHKePPmtXa09B8UXbT6Lsn97RRx998X3IXUHS/wUAGQAA
+  </data>
+ </layer>
+ <layer id="4" name="Items" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3YOwrAMAwEUfn+14nzcw6XTSFIoSKQwlvMA4HLLQdH+FtaRNetbfaSesum9647DPZVW069h+4y2Oe0BQAAYJZsSlfvpnRq8ZRN+XBq8Qr9CwAA4NWU/O/+47TlixurcoEFABkAAA==
+  </data>
+ </layer>
+ <layer id="5" name="Units" width="40" height="40">
+  <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAACu3DMQ0AIAwAsDEtiEED/j3wcs7BnrVJI5jkrdrlZAUAAAAA5rpZu+yszPIBbDP6jwAZAAA=
+  </data>
+ </layer>
+</map>

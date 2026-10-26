@@ -19,6 +19,10 @@ data class AppOptions(
     val noSteam: Boolean = false,
     val backendId: String? = null,
     val autoReplay: String? = null,
+    val rwxCliEnabled: Boolean = false,
+    val headless: Boolean = false,
+    val dataDir: String? = null,
+    val cliPortFile: String? = null,
 ) {
     companion object {
         private const val SCREEN_PREFIX = "--screen="
@@ -34,6 +38,7 @@ data class AppOptions(
         private const val JOIN_SERVER_PREFIX = "--join-server="
         private const val BACKEND_PREFIX = "--render-backend="
         private const val AUTO_REPLAY_PREFIX = "--auto-replay="
+        private const val RWX_CLI_ARG = "--rwx-cli"
 
         private val screensByArgument = mapOf(
             "main-menu" to AppScreen.MainMenu,
@@ -83,6 +88,10 @@ data class AppOptions(
             var noSteam = false
             var rendererId: String? = null
             var autoReplay: String? = null
+            var rwxCliEnabled = false
+            var headless = false
+            var dataDir: String? = null
+            var cliPortFile: String? = null
 
             args.forEach { arg ->
                 when {
@@ -125,6 +134,11 @@ data class AppOptions(
                         }
                     }
 
+                    arg == RWX_CLI_ARG -> rwxCliEnabled = true
+                    arg == "--headless" -> headless = true
+                    arg.startsWith("--data-dir=") -> dataDir = arg.substringAfter('=').also { require(it.isNotBlank()) }
+                    arg.startsWith("--cli-port-file=") -> cliPortFile = arg.substringAfter('=').also { require(it.isNotBlank()) }
+
                     else -> throw IllegalArgumentException("Unsupported app argument: $arg")
                 }
             }
@@ -144,6 +158,10 @@ data class AppOptions(
                 noSteam = noSteam,
                 backendId = rendererId,
                 autoReplay = autoReplay,
+                rwxCliEnabled = rwxCliEnabled || headless,
+                headless = headless,
+                dataDir = dataDir,
+                cliPortFile = cliPortFile,
             )
         }
 

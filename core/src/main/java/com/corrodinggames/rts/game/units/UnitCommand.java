@@ -246,6 +246,14 @@ public final class UnitCommand {
         this.targetUnit = baseUnit;
     }
 
+    /** Guard a ground position (defend an area) rather than following a unit. */
+    public void setGuardAt(float f, float f2) {
+        resetCommand();
+        this.commandType = UnitCommandType.guardAt;
+        this.targetX = f;
+        this.targetY = f2;
+    }
+
     /* JADX INFO: renamed from: d */
     public void setTouchTargetUnit(BaseUnit baseUnit) {
         resetCommand();

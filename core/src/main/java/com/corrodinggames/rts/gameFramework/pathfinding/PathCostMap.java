@@ -34,6 +34,12 @@ public final class PathCostMap {
     public byte[] f;
     public short[] g;
     public HashMap h;
+
+    /**
+     * Highest isolated-group value found by {@code buildIsolatedGroups}. The AI reads it as a
+     * "map too fragmented" signal (see AIController.isPathfindingOverloaded). Note this map is
+     * built for UnitMovementType.WATER despite the PathEngine.airCostMap field name.
+     */
     public int i;
     public byte[] j;
     public boolean m;

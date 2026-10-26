@@ -1,0 +1,2401 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<map version="1.2" orientation="orthogonal" renderorder="right-down" width="200" height="150" tilewidth="20" tileheight="20" nextobjectid="346">
+  <properties>
+    <property name="sw4" value="669" />
+    <property name="sw5" value="1553" />
+    <property name="sw6" value="334" />
+    <property name="sw1" value="1577" />
+    <property name="sw3" value="411" />
+    <property name="sw2" value="863" />
+  </properties>
+  <tileset source="units.tsx" firstgid="1" />
+  <tileset source="misc.tsx" firstgid="280" />
+  <tileset source="decoration.tsx" firstgid="298" />
+  <tileset firstgid="333" name="Deep Water" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="bitmaps/deepwater.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="terrain/Dirt.tsx" firstgid="334" />
+  <tileset source="terrain/Dirt_Details.tsx" firstgid="344" />
+  <tileset source="terrain/Ice.tsx" firstgid="404" />
+  <tileset source="terrain/Lava.tsx" firstgid="414" />
+  <tileset source="terrain/Long Grass.tsx" firstgid="429" />
+  <tileset source="terrain/Mountain.tsx" firstgid="469" />
+  <tileset source="terrain/Sand.tsx" firstgid="504" />
+  <tileset firstgid="546" name="Shallow Water" columns="3" tilecount="6" tileheight="20" tilewidth="20">
+    <image source="bitmaps/shallowwater.png" width="60" height="40" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="terrain/Short Grass.tsx" firstgid="552" />
+  <tileset source="terrain/Snow.tsx" firstgid="553" />
+  <tileset source="terrain/Stone.tsx" firstgid="633" />
+  <tileset source="terrain/Water.tsx" firstgid="669" />
+  <tileset source="ridges/Dirt Dirt - Ridge.tsx" firstgid="670" />
+  <tileset source="ridges/Dirt ShalowWater - Ridge.tsx" firstgid="691" />
+  <tileset source="ridges/Ice Ice - Flat.tsx" firstgid="712" />
+  <tileset source="ridges/Ice ShallowWater - Broken.tsx" firstgid="733" />
+  <tileset source="ridges/Ice ShallowWater - Ridge.tsx" firstgid="754" />
+  <tileset source="ridges/LongGrass Dirt - Flat.tsx" firstgid="775" />
+  <tileset firstgid="796" name="LongGrass Dirt - Ridge" columns="3" tilecount="30" tileheight="20" tilewidth="20">
+    <image source="bitmaps/longgrass2dirt_ridge.png" width="60" height="200" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="6" />
+    <tile id="7">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/LongGrass LongGrass - Hill.tsx" firstgid="826" />
+  <tileset source="ridges/LongGrass LongGrass - Ridge.tsx" firstgid="847" />
+  <tileset source="ridges/LongGrass ShallowWater - Flat.tsx" firstgid="877" />
+  <tileset source="ridges/LongGrass ShallowWater - Ridge.tsx" firstgid="898" />
+  <tileset source="ridges/LongGrass ShortGrass - Flat.tsx" firstgid="928" />
+  <tileset source="ridges/Mountain Dirt - Flat.tsx" firstgid="949" />
+  <tileset source="ridges/Mountain Dirt - Ridge.tsx" firstgid="970" />
+  <tileset source="ridges/Mountain LongGrass - Flat.tsx" firstgid="985" />
+  <tileset source="ridges/Mountain Mountain - Hill.tsx" firstgid="1006" />
+  <tileset source="ridges/Mountain Mountain - Ridge.tsx" firstgid="1027" />
+  <tileset source="ridges/Mountain Nothing - Flat.tsx" firstgid="1042" />
+  <tileset source="ridges/Mountain Nothing - Ridge.tsx" firstgid="1063" />
+  <tileset source="ridges/Mountain Sand - Flat.tsx" firstgid="1078" />
+  <tileset source="ridges/Mountain Sand - Ridge.tsx" firstgid="1099" />
+  <tileset source="ridges/Mountain ShallowWater - Flat.tsx" firstgid="1114" />
+  <tileset source="ridges/Mountain ShallowWater - Ridge.tsx" firstgid="1135" />
+  <tileset source="ridges/Mountain Snow - Flat.tsx" firstgid="1150" />
+  <tileset source="ridges/Mountain Stone - Flat.tsx" firstgid="1171" />
+  <tileset source="ridges/Mountain Stone - Ridge.tsx" firstgid="1192" />
+  <tileset source="ridges/Nothing Sand - Flat.tsx" firstgid="1207" />
+  <tileset source="ridges/Sand Dirt - Flat.tsx" firstgid="1228" />
+  <tileset source="ridges/Sand Dirt - Ridge.tsx" firstgid="1249" />
+  <tileset source="ridges/Sand LandGrass - Flat.tsx" firstgid="1270" />
+  <tileset source="ridges/Sand Nothing - Flat.tsx" firstgid="1291" />
+  <tileset source="ridges/Sand Sand - Hill.tsx" firstgid="1312" />
+  <tileset source="ridges/Sand Sand - Ridge.tsx" firstgid="1333" />
+  <tileset source="ridges/Sand ShallowWater - Flat.tsx" firstgid="1354" />
+  <tileset source="ridges/Sand ShallowWater - Ridge.tsx" firstgid="1375" />
+  <tileset firstgid="1396" name="ShallowWater Water - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="bitmaps/shallowwater2water_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset source="ridges/Snow Dirt - Flat.tsx" firstgid="1417" />
+  <tileset source="ridges/Snow Dirt - Ridge.tsx" firstgid="1438" />
+  <tileset source="ridges/Snow Ice - Ridge.tsx" firstgid="1459" />
+  <tileset source="ridges/Snow Snow - Hill.tsx" firstgid="1480" />
+  <tileset source="ridges/Snow Snow - ridge.tsx" firstgid="1501" />
+  <tileset source="ridges/Stone Lava - Ridge.tsx" firstgid="1522" />
+  <tileset source="ridges/Stone Sand - Flat.tsx" firstgid="1537" />
+  <tileset source="ridges/Stone ShallowWater - ridge.tsx" firstgid="1558" />
+  <tileset source="ridges/Stone Snow - ridge.tsx" firstgid="1573" />
+  <tileset source="ridges/Stone Stone - Ridge.tsx" firstgid="1594" />
+  <tileset firstgid="1609" name="Water DeepWater - Flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="bitmaps/water2deepwater_flat.png" width="60" height="140" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="12">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="18">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+    <tile id="20">
+      <properties>
+        <property name="water" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="1630" name="stone2longgrass_ridge" columns="3" tilecount="15" tileheight="20" tilewidth="20">
+    <image source="bitmaps/stone2longgrass_ridge.png" width="60" height="100" />
+    <tile id="0">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="1">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="2">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="3">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="5">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="6">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="7">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="8">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="10">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="11">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="13">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+    <tile id="14">
+      <properties>
+        <property name="large-cliff" value="" />
+      </properties>
+    </tile>
+  </tileset>
+  <tileset firstgid="1645" name="snow2longgrass_flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="bitmaps/snow2longgrass_flat.png" width="60" height="140" />
+  </tileset>
+  <tileset firstgid="1666" name="longgrass2stone_flat" columns="3" tilecount="21" tileheight="20" tilewidth="20">
+    <image source="../rusted_warfare/assets/tilesets/bitmaps/longgrass2stone_flat.png" width="60" height="140" />
+  </tileset>
+  <layer name="Ground" width="200" height="150">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3dwY4jNRDG8Wlamjt3hBDiMs+AECCB4AS7o2X3hEYKb5LXGO0BnpRESWs6jt1dbrtsl/t/+LQomaRtV/3S7ckkfP7i4eHzTvP0eJvn8eHhONzmcLr9j+E259vOmf/c+bHu89WeX838e1qT/zpI7XW04uNwDT7wsZe4/ez2fIyPwyM+8NFXYnysXV/hAx+95d14m/fjW+/H5s/x/vlqzw8f+EiJ+3r/4dTTLxuNsP/AR2/x+dh6/sAHPnqLb/+REnzgo6fgAx/4CEe6P//SCftzfOwh0v2HxAf7D3z0FnzgAx9yH6F9hcQH+w989Bb25/jARzhL+3P3b0ncuPezP8dHbwntP87voU/973s/3b3/HPYf+OgtSz7m8flw78cHPnoL+w984AMf+MDHlvD37fjARzip54u11J4fPtr14b6n5qZ2/fbko0Yt8LFek8Nwia8m7mdWaySm14/D2+dopak9vym+9Z/XBh/4SPWR8pjawUebPlq/vorJ1Gu1x2GlFvhoryaawUdc8NFeTTSDj7jgo72aaAYfccFHWk2s9ZpVH6H9OT7q+ljqqfnvVmr3T+pcWs9aDbSOi4+0nrJmxNJYY9Zf69j4SO8pS0asjFO6tvho34ekjq3Ewhhj1hQfNnxI61k7rY8vdi3xYcdHTF1r913tceRaQ3zY8hFb31q9V3scudYOH/Z8bKlz6f6rPY5ca4YPmz621rtUD9YeR661woddHyl1b3Eu2mNKeQ3SGhs+9GvQkpFWxpFrbfBh30eOPmhpLrnHkuO1R2uM+ChXgxaM1D5+7rXARz8+cvZFC3NpYQ3w0ZeP3P1Rey61546Pvn1Mzzv99+uw/jmHLXkd7o+rdSzfMTVs4GMfPkr0bG0fWudMfPTrw2dFcx4l+il0PHzgQ5rz6+rrcP/8+GhvPvgoXwPf56VLGSnpI7THsjQffJSvQej7BEoYKX2emh/LPW9amA8+ytdg6fs2tI2UPEe5x9H4nhF87MvHUn+1OJeYseMDH5JI+sTifnZtzPjAhyTSPrH0fppkrPjAhyQxfZLbiOY5ae158YEPSWL7pGUfMX7xgQ9JYvvE97cbvvfdSiQ0Fo154wMfPfjQmjc+8IGPtmqDj/o1wEe7tcFH/Rrgo93a4KN+Dbb+/mqtTyXJ9fh58NF+8IEPfOADH/jYkqfH2zyPabcdHu/Tqo+vTuM9nm77esznI/Scrflwa/TBU8+U2/Bh38e5jw/D5d9cPs7P9c14/5z4sJk9+/j22sffZTx/hJ4THzazZx973n/gQ5Z34yUv1/w9vt12XrfY2/Bhy8dU90+z2n0cL0m5rRcfvn7OHXy060MrPfk4Dte9auQaSB9nzcfvp/w8i+tjft9vnfmYzidb+mCevflw759q3KOPHxf62739hw59TOPz3bdHH1uyNx+h7MnHXs8fWyM57+T0Efs9UL340Pj+q7XrK0ldl9KLD7dmvrm6tY5dq1w1je2rnPvz1KT4iP35FB9ba+/OrScfh2um6yX3tWOrj6OnJyzlZs7XNVrreUuRnCNifMz7CB+ya6/aPYAPfKT6mIfrK66vuL56S2yv+84RpXywP9f3seX9D1/27iPmHJ2rplOv7c1H7LxTfSxdS4ReI9305EN6Htizj9Dj8YGPwLr8JH2cNR+/nvL9LK6P+X2/dOgj5vpqDz60Y83HUn+nPr51H7nSi4/p75Gnef0zpt2GD5s+3ntql3JbLz74fBQ+zuHzUfjw9bf0OxqkPvh+Bnz05OPcy4dh/TsapD5Cz4cPm9m7D+l3NEh98P0MffnIueah/mzZx173H7lr4wYf+MAHPlqqAT7arQ0+6tcgtk+kfVoivrHgo/3gAx/4wAc+8IEPfOADH9Jjt+5Duj74wEdOH/O+bHUuMePEBz4kkfSJhg3NfpKMFx/4kGStT7RsaPfT2rjxgQ9JlvpE00aJfloaPz7wIUmoT7RtlOinpXngAx+S+PqkhI0S/bQ0H43v98FHfz7cPillo0Q/+Y41Hc/S7xum4KN8DXw9U7pnSxzLnR8+8NFCz9TsJ8l8Lc0HH+VrUMtGiX6SzNnSfPBRvga+88d5P7L1MxmSvFY4Zui4Wteq+LDvw9cre/SRez3xYd9HrWuqkv1Ueh3w0YePFmyU6KfS64EP+z5asVGin0qvCz5s+2jJRol+Kr0++LDrozUbJfopZUwpa6w1Nnzo1KBFGyX6KXVcW9dZa1z4yF+DVm2U6KccY9uy1lpjwkfeGrRso0Q/5Rpf7HprjQcf+WrQuo0S/ZRzjDFrrjUWfOSpgQUbJfop9zil6641Dnyk95QVGyX6SWOskrXXGgM+0nrKko0S/aQ13rX11zo+Prb3lDUbJfpJc8xLNdA6Nj6Ws/b3qVZ7rfY4tox7rRYax8XHcmrURLvPLPqoVQt8tFcTzeAjLvhoryaawUdc8NFeTTSDj7jgY70mh+GS0P68dnz/L+pQUh5TO771n9cGH/hI9XEcLsEHPnL5aP36KqbXt6T2/GrWAh/2sxcfNYIP+/k43ubTuN3CX+P989WeHz7wkZKnx9ukni/c56s9P3zgAx9tBh/24/bzh+v11ct4G9eB7/7nER/46CtLPqbfjYZ8uPfjAx+9ZWl/vvYeiXs/+3N89Bb2H/jAR7qPu/ee8YGPHSS0/9jig/0HPnoLPvCBj3Ck759LfLA/x0dvYX+OD3zgAx/4yOEjtP+QhP0HPnpLio/jcPt5KXzgo7f49udT37v9H/Ixhf05PnqLb//h8+H7XK7v5zh/4KOnxPg4XIMPfOwlvv3HVh/sP/DRW2J8+L73BB/9+/gfpTdRM8DUAQA=
+  </data>
+  </layer>
+  <layer name="Items" visible="0" width="200" height="150">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3BgQAAAADDoPlT3+AEVQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AyZK0wzwNQBAA==
+  </data>
+  </layer>
+  <layer name="Units" width="200" height="150">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3c0Q2AIAwFQOJCDuMM7uw4fvsDxIgVezdAeSQkkBIoBYA/WaIDAAAAAAAAAAAAAAAAULVGBwAAAAAAAAAAAAAAAKBqiw4AAAAAAAAAAEzpeLHWk2ONrAkAANzjfA7QtkcH4DPsmwAAAAAAAAAAAAAAAAAAAECvrP8UZJ03AAAAAABkkPUeIOu8AQAAAAAAAAAAAAAAAAAAuPL+nB7WCQAAAAAzGtHXatUc1UvTowMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCDE+ms8zXA1AEA
+  </data>
+  </layer>
+  <layer name="Set" visible="0" opacity="0.8" width="200" height="150">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3BgQAAAADDoPlT3+AEVQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AyZK0wzwNQBAA==
+  </data>
+  </layer>
+  <objectgroup name="Triggers">
+    <object name="map_info" id="1" x="2980" y="0" width="20" height="20">
+      <properties>
+        <property name="type" value="skirmish" />
+        <property name="winCondition" value="allUnitsAndBuildings" />
+        <property name="introText">
+地图:萨姆核心   作者:无晔游名
+玩法:收集[防空机甲]和[小坦克]
+在商店购买部队，消灭敌方所有部队后胜利
+提示:
+己方T2萨姆被拆除后商店将无法使用
+注意不要让自己部队全部阵亡
+用修复湾回收部队以获得升级炮台的资金
+游戏进行到25分钟会中岛刷新核弹发射井
+祝你游戏愉快！
+</property>
+        <property name="fog" value="map" />
+      </properties>
+    </object>
+    <object name="刷兵1" type="unitAdd" id="2" x="20" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="刷兵2" type="unitAdd" id="3" x="1480" y="20" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="刷兵3" type="unitAdd" id="4" x="2940" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="刷兵4" type="unitAdd" id="5" x="1480" y="2940" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="小岛1" type="unitAdd" id="6" x="460" y="440" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="小岛4" type="unitAdd" id="7" x="460" y="2520" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="小岛2" type="unitAdd" id="8" x="2520" y="440" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="小岛3" type="unitAdd" id="9" x="2520" y="2520" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="mechMissile*1" />
+        <property name="repeatDelay" value="60s" />
+      </properties>
+    </object>
+    <object name="主岛1" type="unitAdd" id="10" x="1280" y="1300" width="20" height="20">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="tank*1" />
+        <property name="repeatDelay" value="180s" />
+      </properties>
+    </object>
+    <object name="主岛2" type="unitAdd" id="11" x="1700" y="1300" width="20" height="20">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="tank*1" />
+        <property name="repeatDelay" value="180s" />
+      </properties>
+    </object>
+    <object name="主岛3" type="unitAdd" id="12" x="1700" y="1720" width="20" height="20">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="tank*1" />
+        <property name="repeatDelay" value="180s" />
+      </properties>
+    </object>
+    <object name="主岛4" type="unitAdd" id="13" x="1300" y="1720" width="20" height="20">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="tank*1" />
+        <property name="repeatDelay" value="180s" />
+      </properties>
+    </object>
+    <object name="主岛中" type="unitAdd" id="14" x="1480" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="-1" />
+        <property name="spawnUnits" value="tank*1" />
+        <property name="repeatDelay" value="180s" />
+      </properties>
+    </object>
+    <object name="路障1" type="unitAdd" id="18" x="520" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="antiAirTurret*1" />
+      </properties>
+    </object>
+    <object name="路障2" type="unitAdd" id="19" x="1480" y="500" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="antiAirTurret*1" />
+      </properties>
+    </object>
+    <object name="路障3" type="unitAdd" id="20" x="2460" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="antiAirTurret*1" />
+      </properties>
+    </object>
+    <object name="路障4" type="unitAdd" id="21" x="1480" y="2460" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="antiAirTurret*1" />
+      </properties>
+    </object>
+    <object name="路障t2" type="unitAdd" id="22" x="460" y="1220" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="路障t2" type="unitAdd" id="23" x="460" y="1780" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="路障t2" type="unitAdd" id="24" x="1200" y="440" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="路障t2" type="unitAdd" id="25" x="1760" y="440" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="26" x="2520" y="1220" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="27" x="2520" y="1780" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="28" x="1200" y="2520" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="29" x="1760" y="2520" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="31" x="1100" y="1080" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="32" x="1900" y="1080" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="34" x="1900" y="1900" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="t2" type="unitAdd" id="35" x="1060" y="1920" width="40" height="40">
+      <properties>
+        <property name="team" value="-2" />
+        <property name="spawnUnits" value="c_antiAirTurretT2*1" />
+      </properties>
+    </object>
+    <object name="4初始" type="unitAdd" id="36" x="1480" y="2840" width="40" height="60">
+      <properties>
+        <property name="team" value="3" />
+        <property name="spawnUnits" value="mammothTank*1" />
+      </properties>
+    </object>
+    <object name="3初始" type="unitAdd" id="37" x="2860" y="1480" width="40" height="60">
+      <properties>
+        <property name="team" value="2" />
+        <property name="spawnUnits" value="mammothTank*1" />
+      </properties>
+    </object>
+    <object name="1生成家" type="unitAdd" id="38" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="spawnUnits" value="c_antiAirTurretT3*1" />
+      </properties>
+    </object>
+    <object name="2核心刷新" type="unitAdd" id="39" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="spawnUnits" value="c_antiAirTurretT3*1" />
+      </properties>
+    </object>
+    <object name="3家" type="unitAdd" id="40" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="spawnUnits" value="c_antiAirTurretT3*1" />
+      </properties>
+    </object>
+    <object name="4家" type="unitAdd" id="41" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="spawnUnits" value="c_antiAirTurretT3*1" />
+      </properties>
+    </object>
+    <object name="机枪1" type="unitAdd" id="42" x="280" y="1420" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="机枪2" type="unitAdd" id="43" x="280" y="1580" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="机枪1" type="unitAdd" id="44" x="1400" y="280" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="jq2" type="unitAdd" id="45" x="1560" y="280" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="jq1" type="unitAdd" id="46" x="2660" y="1420" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="jq2" type="unitAdd" id="47" x="2660" y="1580" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="jq1" type="unitAdd" id="48" x="1400" y="2680" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="jq2" type="unitAdd" id="49" x="1560" y="2680" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="spawnUnits" value="turret" />
+      </properties>
+    </object>
+    <object name="1出生" type="unitAdd" id="50" x="100" y="1480" width="40" height="60">
+      <properties>
+        <property name="team" value="0" />
+        <property name="spawnUnits" value="mammothTank*1" />
+      </properties>
+    </object>
+    <object name="2出生" type="unitAdd" id="51" x="1480" y="100" width="40" height="60">
+      <properties>
+        <property name="team" value="1" />
+        <property name="spawnUnits" value="mammothTank*1" />
+      </properties>
+    </object>
+    <object name="移动炮台" type="unitDetect" id="61" x="90" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="mechMissile" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="购买3" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="63" x="90" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="删除3" />
+        <property name="activatedBy" value="删除3" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitDetect" id="64" x="190" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="购买2" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="65" x="190" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="activatedBy" value="删除2" />
+        <property name="id" value="删除2" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除1" type="unitRemove" id="68" x="290" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="删除1" />
+        <property name="activatedBy" value="删除1" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitDetect" id="69" x="0" y="1280" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="mechMissile" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="购买4" />
+        <property name="resetActivationAfter" value="1" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="70" x="0" y="1280" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="删除4" />
+        <property name="activatedBy" value="删除4" />
+      </properties>
+    </object>
+    <object name="重型坦克1" type="unitDetect" id="72" x="290" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买1" />
+      </properties>
+    </object>
+    <object name="重型坦克" type="unitAdd" id="74" x="200" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="heavyTank" />
+        <property name="id" value="购买1" />
+        <property name="alsoActivate" value="删除1" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="移动炮台" type="unitAdd" id="78" x="200" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="购买3" />
+        <property name="alsoActivate" value="删除3" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitAdd" id="79" x="200" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mammothTank" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="购买4" />
+        <property name="alsoActivate" value="删除4" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitAdd" id="80" x="200" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="heavyInterceptor" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="购买2" />
+        <property name="alsoActivate" value="删除2" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="81" x="20" y="1300" width="40" height="20">
+      <properties>
+        <property name="text" value="猛犸坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="83" x="220" y="1300" width="40" height="20">
+      <properties>
+        <property name="text" value="重型拦截" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitDetect" id="85" x="1660" y="0" width="80" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="mechMissile" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="2购买4" />
+        <property name="resetActivationAfter" value="1" />
+      </properties>
+    </object>
+    <object name="重型坦克" type="unitDetect" id="86" x="1660" y="290" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买1" />
+      </properties>
+    </object>
+    <object name="移动炮台" type="unitDetect" id="87" x="1660" y="90" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="mechMissile" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="2购买3" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitDetect" id="88" x="1660" y="190" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="2购买2" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="89" x="1660" y="0" width="80" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除4" />
+        <property name="activatedBy" value="2删除4" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="90" x="1660" y="90" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除3" />
+        <property name="activatedBy" value="2删除3" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="91" x="1660" y="190" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="activatedBy" value="2删除2" />
+        <property name="id" value="2删除2" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="93" x="1660" y="290" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="id" value="2删除1" />
+        <property name="activatedBy" value="2删除1" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="98" x="120" y="1300" width="40" height="20">
+      <properties>
+        <property name="text" value="移动炮台" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="99" x="320" y="1300" width="40" height="20">
+      <properties>
+        <property name="text" value="重型坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="核心4" type="unitDetect" id="100" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买4" />
+      </properties>
+    </object>
+    <object name="核心3" type="unitDetect" id="102" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买3" />
+      </properties>
+    </object>
+    <object name="核心2" type="unitDetect" id="103" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买2" />
+      </properties>
+    </object>
+    <object name="核心1" type="unitDetect" id="104" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买1" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitDetect" id="105" x="0" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="购买8" />
+      </properties>
+    </object>
+    <object name="登陆艇" type="unitDetect" id="106" x="300" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="购买5" />
+      </properties>
+    </object>
+    <object name="修复湾" type="unitDetect" id="107" x="200" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="购买6" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitDetect" id="108" x="100" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="购买7" />
+      </properties>
+    </object>
+    <object name="修复湾" type="unitAdd" id="109" x="260" y="1560" width="60" height="60">
+      <properties>
+        <property name="spawnUnits" value="repairbay" />
+        <property name="id" value="购买6" />
+        <property name="alsoActivate" value="删除6" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="核心5" type="unitDetect" id="110" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买5" />
+      </properties>
+    </object>
+    <object name="核心6" type="unitDetect" id="111" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买6" />
+      </properties>
+    </object>
+    <object name="核心7" type="unitDetect" id="112" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买7" />
+      </properties>
+    </object>
+    <object name="核心8" type="unitDetect" id="113" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="购买8" />
+      </properties>
+    </object>
+    <object name="删除5" type="unitRemove" id="114" x="300" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="删除5" />
+        <property name="activatedBy" value="删除5" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除6" type="unitRemove" id="115" x="200" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="删除6" />
+        <property name="activatedBy" value="删除6" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除7" type="unitRemove" id="116" x="100" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="删除7" />
+        <property name="activatedBy" value="删除7" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除8" type="unitRemove" id="117" x="0" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="删除8" />
+        <property name="activatedBy" value="删除8" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="运输船" type="unitAdd" id="118" x="200" y="1600" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="hovercraft" />
+        <property name="id" value="购买5" />
+        <property name="alsoActivate" value="删除5" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitAdd" id="119" x="200" y="1600" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechMinigun" />
+        <property name="id" value="购买7" />
+        <property name="alsoActivate" value="删除7" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitAdd" id="120" x="200" y="1600" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechFlame" />
+        <property name="id" value="购买8" />
+        <property name="alsoActivate" value="删除8" />
+        <property name="team" value="0" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="122" x="120" y="1340" width="40" height="20">
+      <properties>
+        <property name="text" value="4防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="123" x="220" y="1340" width="40" height="20">
+      <properties>
+        <property name="text" value="2防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="124" x="320" y="1340" width="40" height="20">
+      <properties>
+        <property name="text" value="1防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="125" x="20" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="喷火机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="127" x="20" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="6坦克" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="128" x="120" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="机枪机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="129" x="120" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="4小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="130" x="220" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="修复湾" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="131" x="220" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="2坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="132" x="320" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="登陆艇" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="133" x="320" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="2坦克" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="2核心1" type="unitDetect" id="134" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买1" />
+      </properties>
+    </object>
+    <object name="2核心2" type="unitDetect" id="135" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买2" />
+      </properties>
+    </object>
+    <object name="2核心4" type="unitDetect" id="137" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买4" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="139" x="1680" y="20" width="40" height="20">
+      <properties>
+        <property name="text" value="猛犸坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="140" x="1680" y="120" width="40" height="20">
+      <properties>
+        <property name="text" value="移动炮台" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="141" x="1680" y="60" width="40" height="20">
+      <properties>
+        <property name="text" value="6防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="142" x="1680" y="160" width="40" height="20">
+      <properties>
+        <property name="text" value="4防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="143" x="1680" y="220" width="40" height="20">
+      <properties>
+        <property name="text" value="重型拦截" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="144" x="1680" y="260" width="40" height="20">
+      <properties>
+        <property name="text" value="2防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="145" x="1680" y="320" width="40" height="20">
+      <properties>
+        <property name="text" value="重型坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="146" x="1680" y="360" width="40" height="20">
+      <properties>
+        <property name="text" value="1防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="147" x="20" y="1340" width="40" height="20">
+      <properties>
+        <property name="text" value="6防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="2核心3" type="unitDetect" id="148" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买3" />
+      </properties>
+    </object>
+    <object name="2登陆舰" type="unitDetect" id="149" x="1260" y="290" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="2购买5" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitDetect" id="150" x="1260" y="0" width="80" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="2购买8" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitDetect" id="151" x="1260" y="90" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="2购买7" />
+      </properties>
+    </object>
+    <object name="修复湾" type="unitDetect" id="152" x="1260" y="190" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="2购买6" />
+      </properties>
+    </object>
+    <object name="2登陆舰刷新" type="unitAdd" id="153" x="1400" y="200" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="hovercraft" />
+        <property name="id" value="2购买5" />
+        <property name="alsoActivate" value="2删除5" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2修复刷新" type="unitAdd" id="155" x="1400" y="260" width="60" height="60">
+      <properties>
+        <property name="spawnUnits" value="repairbay" />
+        <property name="id" value="2购买6" />
+        <property name="alsoActivate" value="2删除6" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2机枪机甲" type="unitAdd" id="156" x="1400" y="200" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechMinigun" />
+        <property name="id" value="2购买7" />
+        <property name="alsoActivate" value="2删除7" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2喷火机甲" type="unitAdd" id="157" x="1400" y="200" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechFlame" />
+        <property name="id" value="2购买8" />
+        <property name="alsoActivate" value="2删除8" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="158" x="1260" y="0" width="80" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除8" />
+        <property name="activatedBy" value="2删除8" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="159" x="1260" y="90" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除7" />
+        <property name="activatedBy" value="2删除7" />
+      </properties>
+    </object>
+    <object name="删除六" type="unitRemove" id="160" x="1260" y="190" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除6" />
+        <property name="activatedBy" value="2删除6" />
+      </properties>
+    </object>
+    <object name="删除5" type="unitRemove" id="161" x="1260" y="290" width="80" height="90">
+      <properties>
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2删除5" />
+        <property name="activatedBy" value="2删除5" />
+      </properties>
+    </object>
+    <object name="2核心5" type="unitDetect" id="162" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买5" />
+      </properties>
+    </object>
+    <object name="2核心6" type="unitDetect" id="163" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买6" />
+      </properties>
+    </object>
+    <object name="2核心7" type="unitDetect" id="164" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买7" />
+      </properties>
+    </object>
+    <object name="2核心8" type="unitDetect" id="165" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="2购买8" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="166" x="1290" y="20" width="20" height="20">
+      <properties>
+        <property name="text" value="喷火机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="167" x="1290" y="60" width="20" height="20">
+      <properties>
+        <property name="text" value="6小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="168" x="1290" y="120" width="20" height="20">
+      <properties>
+        <property name="text" value="机枪机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="169" x="1290" y="160" width="20" height="20">
+      <properties>
+        <property name="text" value="4小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="170" x="1290" y="220" width="20" height="20">
+      <properties>
+        <property name="text" value="修复湾" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="171" x="1290" y="260" width="20" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="172" x="1290" y="320" width="20" height="20">
+      <properties>
+        <property name="text" value="登陆艇" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="173" x="1290" y="360" width="20" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="边境" type="unitRemove" id="176" x="3010" y="0" width="90" height="3000">
+      <properties>
+        <property name="resetActivationAfter" value="100" />
+      </properties>
+    </object>
+    <object name="3重型坦克" type="unitDetect" id="177" x="2610" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买1" />
+      </properties>
+    </object>
+    <object name="3重型拦截机" type="unitDetect" id="178" x="2710" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="3购买2" />
+      </properties>
+    </object>
+    <object name="3移动炮台" type="unitDetect" id="179" x="2810" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="3购买3" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitDetect" id="180" x="2910" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="3购买4" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="185" x="2610" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除1" />
+        <property name="activatedBy" value="3删除1" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="186" x="2710" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除2" />
+        <property name="activatedBy" value="3删除2" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="187" x="2810" y="1680" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除3" />
+        <property name="activatedBy" value="3删除3" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除" type="unitRemove" id="188" x="2910" y="1680" width="90" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除4" />
+        <property name="activatedBy" value="3删除4" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="核心1" type="unitDetect" id="189" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买1" />
+      </properties>
+    </object>
+    <object name="核心2" type="unitDetect" id="190" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买2" />
+      </properties>
+    </object>
+    <object name="核心3" type="unitDetect" id="191" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买3" />
+      </properties>
+    </object>
+    <object name="核心4" type="unitDetect" id="192" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买4" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="193" x="2640" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="重型坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="194" x="2640" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="1防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="195" x="2740" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="重型拦截" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="196" x="2740" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="2防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="197" x="2840" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="移动炮台" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="198" x="2840" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="4防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="标" type="mapText" id="199" x="2940" y="1680" width="40" height="20">
+      <properties>
+        <property name="text" value="猛犸坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价" type="mapText" id="200" x="2940" y="1720" width="40" height="20">
+      <properties>
+        <property name="text" value="6防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="登陆舰" type="unitDetect" id="201" x="2610" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="3购买5" />
+      </properties>
+    </object>
+    <object name="修复湾" type="unitDetect" id="202" x="2710" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="3购买6" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitDetect" id="203" x="2810" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="3购买7" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitDetect" id="204" x="2910" y="1280" width="90" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="3购买8" />
+      </properties>
+    </object>
+    <object name="登陆舰" type="unitAdd" id="205" x="2760" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="hovercraft" />
+        <property name="id" value="3购买5" />
+        <property name="alsoActivate" value="3删除5" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="4登陆艇" type="unitAdd" id="206" x="1580" y="2760" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="hovercraft" />
+        <property name="id" value="4购买5" />
+        <property name="alsoActivate" value="4删除5" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="重型坦克" type="unitAdd" id="207" x="1400" y="2760" width="20" height="20">
+      <properties>
+        <property name="id" value="4购买1" />
+        <property name="alsoActivate" value="4删除1" />
+        <property name="spawnUnits" value="heavyTank" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="4修复湾刷新" type="unitAdd" id="208" x="1540" y="2680" width="60" height="60">
+      <properties>
+        <property name="spawnUnits" value="repairbay" />
+        <property name="id" value="4购买6" />
+        <property name="alsoActivate" value="4删除6" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="3修复湾刷新" type="unitAdd" id="209" x="2660" y="1420" width="60" height="60">
+      <properties>
+        <property name="spawnUnits" value="repairbay" />
+        <property name="id" value="3购买6" />
+        <property name="alsoActivate" value="3删除6" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="重型坦克" type="unitDetect" id="210" x="1260" y="2610" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买1" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitDetect" id="211" x="1260" y="2710" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="4购买2" />
+      </properties>
+    </object>
+    <object name="移动炮台" type="unitDetect" id="218" x="1260" y="2810" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="4购买3" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitDetect" id="219" x="1260" y="2910" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="mechMissile" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="4购买4" />
+      </properties>
+    </object>
+    <object name="登陆艇" type="unitDetect" id="220" x="1660" y="2610" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="4购买5" />
+      </properties>
+    </object>
+    <object name="修复湾" type="unitDetect" id="221" x="1660" y="2710" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="2" />
+        <property name="alsoActivate" value="4购买6" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitDetect" id="222" x="1660" y="2810" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="4" />
+        <property name="alsoActivate" value="4购买7" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitDetect" id="223" x="1660" y="2910" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="tank" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="6" />
+        <property name="alsoActivate" value="4购买8" />
+      </properties>
+    </object>
+    <object name="核心5" type="unitDetect" id="224" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买5" />
+      </properties>
+    </object>
+    <object name="核心6" type="unitDetect" id="225" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买6" />
+      </properties>
+    </object>
+    <object name="核心7" type="unitDetect" id="226" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买7" />
+      </properties>
+    </object>
+    <object name="核心8" type="unitDetect" id="227" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="3购买8" />
+      </properties>
+    </object>
+    <object name="4核心1" type="unitDetect" id="228" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买1" />
+      </properties>
+    </object>
+    <object name="4核心2" type="unitDetect" id="230" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买2" />
+      </properties>
+    </object>
+    <object name="4核心3" type="unitDetect" id="231" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买3" />
+      </properties>
+    </object>
+    <object name="4核心4" type="unitDetect" id="232" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买4" />
+      </properties>
+    </object>
+    <object name="4核心5" type="unitDetect" id="233" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买5" />
+      </properties>
+    </object>
+    <object name="4核心6" type="unitDetect" id="234" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买6" />
+      </properties>
+    </object>
+    <object name="4核心7" type="unitDetect" id="235" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买7" />
+      </properties>
+    </object>
+    <object name="4核心8" type="unitDetect" id="236" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="minUnits" value="1" />
+        <property name="alsoActivate" value="4购买8" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitAdd" id="237" x="1580" y="2760" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechMinigun" />
+        <property name="id" value="4购买7" />
+        <property name="alsoActivate" value="4删除7" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitAdd" id="238" x="1580" y="2760" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechFlame" />
+        <property name="id" value="4购买8" />
+        <property name="alsoActivate" value="4删除8" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="移动炮台" type="unitAdd" id="239" x="1400" y="2760" width="20" height="20">
+      <properties>
+        <property name="id" value="4购买3" />
+        <property name="alsoActivate" value="4删除3" />
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitAdd" id="240" x="1400" y="2760" width="20" height="20">
+      <properties>
+        <property name="id" value="4购买2" />
+        <property name="alsoActivate" value="4删除2" />
+        <property name="spawnUnits" value="heavyInterceptor" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="猛犸坦克" type="unitAdd" id="241" x="1400" y="2760" width="20" height="20">
+      <properties>
+        <property name="id" value="4购买4" />
+        <property name="alsoActivate" value="4删除4" />
+        <property name="spawnUnits" value="mammothTank" />
+        <property name="team" value="3" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="3移动炮台" type="unitAdd" id="242" x="2760" y="1600" width="20" height="20">
+      <properties>
+        <property name="id" value="3购买3" />
+        <property name="alsoActivate" value="3删除3" />
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="3重型坦克" type="unitAdd" id="243" x="2760" y="1600" width="20" height="20">
+      <properties>
+        <property name="id" value="3购买1" />
+        <property name="alsoActivate" value="3删除1" />
+        <property name="spawnUnits" value="heavyTank" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="3猛犸坦克" type="unitAdd" id="244" x="2760" y="1600" width="20" height="20">
+      <properties>
+        <property name="id" value="3购买4" />
+        <property name="alsoActivate" value="3删除4" />
+        <property name="spawnUnits" value="mammothTank" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="重型拦截机" type="unitAdd" id="245" x="2760" y="1600" width="20" height="20">
+      <properties>
+        <property name="id" value="3购买2" />
+        <property name="alsoActivate" value="3删除2" />
+        <property name="spawnUnits" value="heavyInterceptor" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="机枪机甲" type="unitAdd" id="246" x="2760" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechMinigun" />
+        <property name="id" value="3购买7" />
+        <property name="alsoActivate" value="3删除7" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="喷火机甲" type="unitAdd" id="247" x="2760" y="1420" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mechFlame" />
+        <property name="id" value="3购买8" />
+        <property name="alsoActivate" value="3删除8" />
+        <property name="team" value="2" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="删除5" type="unitRemove" id="248" x="1660" y="2610" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除5" />
+        <property name="activatedBy" value="4删除5" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除7" type="unitRemove" id="250" x="1660" y="2810" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除7" />
+        <property name="activatedBy" value="4删除7" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除8" type="unitRemove" id="251" x="1660" y="2910" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除8" />
+        <property name="activatedBy" value="4删除8" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="3删除5" type="unitRemove" id="252" x="2610" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除5" />
+        <property name="activatedBy" value="3删除5" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="3删除6" type="unitRemove" id="253" x="2710" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除6" />
+        <property name="activatedBy" value="3删除6" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除7" type="unitRemove" id="254" x="2810" y="1280" width="100" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除7" />
+        <property name="activatedBy" value="3删除7" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除8" type="unitRemove" id="255" x="2910" y="1280" width="90" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="3删除8" />
+        <property name="activatedBy" value="3删除8" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="2重型坦克" type="unitAdd" id="256" x="1580" y="200" width="20" height="20">
+      <properties>
+        <property name="id" value="2购买1" />
+        <property name="alsoActivate" value="2删除1" />
+        <property name="spawnUnits" value="heavyTank" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2重型拦截机" type="unitAdd" id="257" x="1580" y="200" width="20" height="20">
+      <properties>
+        <property name="id" value="2购买2" />
+        <property name="alsoActivate" value="2删除2" />
+        <property name="spawnUnits" value="heavyInterceptor" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2猛犸坦克" type="unitAdd" id="258" x="1580" y="200" width="20" height="20">
+      <properties>
+        <property name="spawnUnits" value="mammothTank" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="id" value="2购买4" />
+        <property name="alsoActivate" value="2删除4" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="2移动炮台" type="unitAdd" id="259" x="1580" y="200" width="20" height="20">
+      <properties>
+        <property name="id" value="2购买3" />
+        <property name="alsoActivate" value="2删除3" />
+        <property name="spawnUnits" value="mechBunker" />
+        <property name="team" value="1" />
+        <property name="resetActivationAfter" value="1000" />
+        <property name="allToActivate" value="true" />
+      </properties>
+    </object>
+    <object name="删除1" type="unitRemove" id="260" x="1260" y="2610" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除1" />
+        <property name="activatedBy" value="4删除1" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除2" type="unitRemove" id="261" x="1260" y="2710" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除2" />
+        <property name="activatedBy" value="4删除2" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除3" type="unitRemove" id="262" x="1260" y="2810" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除3" />
+        <property name="activatedBy" value="4删除3" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除4" type="unitRemove" id="263" x="1260" y="2910" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除4" />
+        <property name="activatedBy" value="4删除4" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删除6" type="unitRemove" id="264" x="1660" y="2710" width="80" height="90">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="4删除6" />
+        <property name="activatedBy" value="4删除6" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="265" x="2650" y="1280" width="20" height="20">
+      <properties>
+        <property name="text" value="登陆艇" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="266" x="2650" y="1320" width="20" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="267" x="2750" y="1280" width="20" height="20">
+      <properties>
+        <property name="text" value="修复湾" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="268" x="2750" y="1320" width="20" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="269" x="2850" y="1280" width="20" height="20">
+      <properties>
+        <property name="text" value="机枪机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="270" x="2850" y="1320" width="20" height="20">
+      <properties>
+        <property name="text" value="4小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="271" x="2950" y="1280" width="20" height="20">
+      <properties>
+        <property name="text" value="喷火机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="272" x="2950" y="1320" width="20" height="20">
+      <properties>
+        <property name="text" value="6小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="273" x="1280" y="2960" width="40" height="20">
+      <properties>
+        <property name="text" value="6防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="274" x="1280" y="2920" width="40" height="20">
+      <properties>
+        <property name="text" value="猛犸坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="275" x="1280" y="2860" width="40" height="20">
+      <properties>
+        <property name="text" value="4防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="276" x="1280" y="2820" width="40" height="20">
+      <properties>
+        <property name="text" value="移动炮台" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="277" x="1280" y="2760" width="40" height="20">
+      <properties>
+        <property name="text" value="2防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="278" x="1280" y="2720" width="40" height="20">
+      <properties>
+        <property name="text" value="重型拦截" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="279" x="1280" y="2660" width="40" height="20">
+      <properties>
+        <property name="text" value="1防空" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="280" x="1280" y="2620" width="40" height="20">
+      <properties>
+        <property name="text" value="重型坦克" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="281" x="1680" y="2620" width="40" height="20">
+      <properties>
+        <property name="text" value="登陆艇" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="282" x="1680" y="2720" width="40" height="20">
+      <properties>
+        <property name="text" value="修复湾" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="283" x="1680" y="2820" width="40" height="20">
+      <properties>
+        <property name="text" value="机枪机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="显示" type="mapText" id="284" x="1680" y="2920" width="40" height="20">
+      <properties>
+        <property name="text" value="喷火机甲" />
+        <property name="textColor" value="red" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="285" x="1680" y="2960" width="40" height="20">
+      <properties>
+        <property name="text" value="6小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="286" x="1680" y="2860" width="40" height="20">
+      <properties>
+        <property name="text" value="4小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="287" x="1680" y="2760" width="40" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="价格" type="mapText" id="288" x="1680" y="2660" width="40" height="20">
+      <properties>
+        <property name="text" value="2小坦" />
+        <property name="textColor" value="black" />
+      </properties>
+    </object>
+    <object name="核弹发射井" type="unitAdd" id="301" x="1460" y="1480" width="80" height="80">
+      <properties>
+        <property name="spawnUnits" value="nukeLauncherC" />
+        <property name="team" value="-1" />
+        <property name="delay" value="1200000" />
+        <property name="globalMessage">
+游戏已进行20分钟
+核弹发射井已在中岛刷新，可以前往争夺！
+</property>
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="red" />
+      </properties>
+    </object>
+    <object name="被毁" type="unitDetect" id="302" x="200" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="0" />
+        <property name="globalMessage" value="一号玩家核心被摧毁！其商店已失效！其可以选择带领现有部队继续战斗或者投降。" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+      </properties>
+    </object>
+    <object name="被毁" type="unitDetect" id="303" x="1480" y="200" width="40" height="40">
+      <properties>
+        <property name="team" value="1" />
+        <property name="globalMessage" value="二号玩家核心被摧毁！其商店已失效！其可以选择带领现有部队继续战斗或者投降。" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+      </properties>
+    </object>
+    <object name="被毁" type="unitDetect" id="304" x="2740" y="1500" width="40" height="40">
+      <properties>
+        <property name="team" value="2" />
+        <property name="globalMessage" value="三号玩家核心被摧毁！其商店已失效！其可以选择带领现有部队继续战斗或者投降。" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+      </properties>
+    </object>
+    <object name="被毁" type="unitDetect" id="305" x="1480" y="2760" width="40" height="40">
+      <properties>
+        <property name="team" value="3" />
+        <property name="globalMessage" value="四号玩家核心被摧毁！其商店已失效！其可以选择带领现有部队继续战斗或者投降。" />
+        <property name="unitType" value="c_antiAirTurretT3" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+      </properties>
+    </object>
+    <object name="一号全阵亡" type="unitDetect" id="306" x="0" y="0" width="3020" height="3000">
+      <properties>
+        <property name="team" value="0" />
+        <property name="globalMessage" value="一号玩家全军覆没！" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+        <property name="alsoActivate" value="一破" />
+      </properties>
+    </object>
+    <object name="二号全阵亡" type="unitDetect" id="307" x="0" y="0" width="3020" height="3000">
+      <properties>
+        <property name="team" value="1" />
+        <property name="globalMessage" value="二号玩家全军覆没！" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+        <property name="alsoActivate" value="二破" />
+      </properties>
+    </object>
+    <object name="三号全阵亡" type="unitDetect" id="308" x="0" y="0" width="3020" height="3000">
+      <properties>
+        <property name="team" value="2" />
+        <property name="globalMessage" value="三号玩家全军覆没！" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+        <property name="alsoActivate" value="三破" />
+      </properties>
+    </object>
+    <object name="四号全阵亡" type="unitDetect" id="309" x="0" y="0" width="3020" height="3000">
+      <properties>
+        <property name="team" value="3" />
+        <property name="globalMessage" value="四号玩家全军覆没！" />
+        <property name="maxUnits" value="0" />
+        <property name="globalMessage_delayPerChar" value="200" />
+        <property name="globalMessage_textColor" value="#FFFF00" />
+        <property name="alsoActivate" value="四破" />
+      </properties>
+    </object>
+    <object name="一基地刷" type="unitAdd" id="319" x="3460" y="0" width="60" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="spawnUnits" value="commandCenter" />
+      </properties>
+    </object>
+    <object name="2基地" type="unitAdd" id="320" x="3460" y="320" width="60" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="spawnUnits" value="commandCenter" />
+      </properties>
+    </object>
+    <object name="3基地" type="unitAdd" id="321" x="3460" y="640" width="60" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="spawnUnits" value="commandCenter" />
+      </properties>
+    </object>
+    <object name="4基地" type="unitAdd" id="322" x="3460" y="960" width="60" height="80">
+      <properties>
+        <property name="team" value="3" />
+        <property name="spawnUnits" value="commandCenter" />
+      </properties>
+    </object>
+    <object name="删一" type="unitRemove" id="323" x="3460" y="0" width="60" height="80">
+      <properties>
+        <property name="team" value="0" />
+        <property name="id" value="一破" />
+        <property name="activatedBy" value="一破" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删二" type="unitRemove" id="324" x="3460" y="320" width="60" height="80">
+      <properties>
+        <property name="team" value="1" />
+        <property name="id" value="二破" />
+        <property name="activatedBy" value="二破" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删三" type="unitRemove" id="325" x="3460" y="640" width="60" height="80">
+      <properties>
+        <property name="team" value="2" />
+        <property name="id" value="三破" />
+        <property name="activatedBy" value="三破" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="删四" type="unitRemove" id="326" x="3460" y="960" width="60" height="80">
+      <properties>
+        <property name="team" value="3" />
+        <property name="id" value="四破" />
+        <property name="activatedBy" value="四破" />
+        <property name="resetActivationAfter" value="1000" />
+      </properties>
+    </object>
+    <object name="左边" type="mapText" id="334" x="3480" y="100" width="20" height="20">
+      <properties>
+        <property name="text" value="左边区域为游戏区" />
+        <property name="textColor" value="#FFFF00" />
+        <property name="textSize" value="30" />
+      </properties>
+    </object>
+    <object name="提示" type="mapText" id="335" x="3480" y="200" width="20" height="20">
+      <properties>
+        <property name="text" value="玩法:在商店购买部队并消灭所有人" />
+      </properties>
+    </object>
+    <object name="提示" type="mapText" id="336" x="3480" y="260" width="20" height="20">
+      <properties>
+        <property name="text" value="提示一:家里的三级防空是核心，如果被摧毁你将无法使用商店" />
+      </properties>
+    </object>
+    <object name="提示" type="mapText" id="337" x="3480" y="320" width="20" height="20">
+      <properties>
+        <property name="text" value="提示二:货币有两种，一种是防空机甲一种是小坦克" />
+      </properties>
+    </object>
+    <object name="提示" type="mapText" id="341" x="3480" y="380" width="20" height="20">
+      <properties>
+        <property name="text" value="防空机甲在出生岛和四个侧岛刷新，而小坦克只在中岛刷新" />
+      </properties>
+    </object>
+    <object name="提示核弹" type="mapText" id="342" x="3480" y="440" width="20" height="20">
+      <properties>
+        <property name="text" value="提示三:二十分钟后将会在中岛刷新核弹发射井请注意争夺" />
+      </properties>
+    </object>
+    <object name="提示三2" type="mapText" id="343" x="3480" y="500" width="20" height="20">
+      <properties>
+        <property name="text" value="如果核弹正中核心(三级防空塔)能将其直接摧毁，所以请注意中间的核弹争夺" />
+      </properties>
+    </object>
+    <object name="提示四" type="mapText" id="344" x="3480" y="560" width="20" height="20">
+      <properties>
+        <property name="text" value="提示四:你的商店区域并不一定安全，因为登陆艇可能从那里进来" />
+      </properties>
+    </object>
+    <object name="左边" type="mapText" id="345" x="3480" y="680" width="20" height="20">
+      <properties>
+        <property name="text" value="左边区域为游戏区" />
+        <property name="textColor" value="#FFFF00" />
+        <property name="textSize" value="30" />
+      </properties>
+    </object>
+  </objectgroup>
+</map>

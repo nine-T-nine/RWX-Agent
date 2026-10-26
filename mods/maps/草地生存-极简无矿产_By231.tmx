@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
+<map version="1.2" orientation="orthogonal" renderorder="right-down" width="80" height="80" tilewidth="20" tileheight="20" nextobjectid="11">
+  <properties>
+    <property name="sw1" value="546" />
+    <property name="sw5" value="640" />
+    <property name="sw3" value="504" />
+    <property name="tag" value="RW" />
+  </properties>
+  <tileset source="terrain/Long Grass.tsx" firstgid="429" />
+  <tileset firstgid="469" name="_____" columns="1" tilecount="1" tileheight="20" tilewidth="20">
+    <image source="bitmaps/deepwater.png" width="20" height="20" trans="008a76" />
+    <tile id="0">
+      <properties>
+        <property name="team" value="0" />
+        <property name="unit" value="commandCenter" />
+      </properties>
+    </tile>
+  </tileset>
+  <layer name="Ground" width="80" height="80">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3DMQ0AAAwDoM6/lnqsh92Q0Euqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqvg6Cv6QDAGQAAA==
+  </data>
+  </layer>
+  <layer name="Items" width="80" height="80">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3OAQ0AAAgDoNs/n32M4ZyQgAQAAAAAAAAAAAAAAOC3ru0BAAAAAAAAAAAAAAAAlw1n+G2CAGQAAA==
+  </data>
+  </layer>
+  <layer name="Units" width="80" height="80">
+    <data encoding="base64" compression="gzip">
+   H4sIAAAAAAAAAO3OAQ0AAAgDoNs/n32M4ZyQgAQAAAAAAAAAAAAAAOC3ru0BAAAAAAAAAAAAAAAAlw1n+G2CAGQAAA==
+  </data>
+  </layer>
+  <objectgroup name="Triggers">
+    <object name="map_info" id="0" x="-20" y="-20" width="5" height="5">
+      <properties>
+        <property name="fog" value="map" />
+        <property name="introText">
+草地生存：没有矿产，1000$。@231
+
+</property>
+        <property name="loseCondition" value="commandCenter" />
+        <property name="winCondition" value="none" />
+        <property name="type" value="survival" />
+      </properties>
+    </object>
+    <object name="team_0_info" type="team_info" id="1" x="-20" y="-20" width="5" height="5">
+      <properties>
+        <property name="credits" value="10000" />
+        <property name="team" value="0" />
+      </properties>
+    </object>
+    <object name="team_1_info" type="team_info" id="2" x="-20" y="-20" width="5" height="5">
+      <properties>
+        <property name="ai" value="survival" />
+        <property name="credits" value="0" />
+        <property name="team" value="1" />
+      </properties>
+    </object>
+    <object name="attack_point" id="3" x="60" y="60" width="20" height="20" />
+    <object name="attack_point" id="4" x="1520" y="60" width="20" height="20" />
+    <object name="attack_point" id="5" x="1520" y="1520" width="20" height="20" />
+    <object name="attack_point" id="6" x="60" y="1520" width="20" height="20" />
+    <object name="attack_point" id="7" x="180" y="180" width="20" height="20" />
+    <object name="attack_point" id="8" x="1400" y="180" width="20" height="20" />
+    <object name="attack_point" id="9" x="180" y="1400" width="20" height="20" />
+    <object name="attack_point" id="10" x="1400" y="1400" width="20" height="20" />
+  </objectgroup>
+</map>
