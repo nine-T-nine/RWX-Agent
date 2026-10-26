@@ -70,6 +70,7 @@ agent-tmp/*
 **/__pycache__/
 mods/*
 logs/*
+evaluate/output/*
 
 # Original showcase recordings; browser-ready copies are tracked under matches/.
 /web/resource/gpt*.mp4

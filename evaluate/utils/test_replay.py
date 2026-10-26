@@ -211,7 +211,7 @@ def _command_body(team_id, unit_command=None, units=(), attack_mode=-1,
     return body.bytes()
 
 
-def build_sample_replay(path):
+def build_sample_replay(path, with_system_command=True):
     """合成一个包含 2 条命令 + 聊天 + 校验的完整回放。"""
     out = _Writer()
     out.utf(rp.REPLAY_MAGIC)
@@ -280,11 +280,12 @@ def build_sample_replay(path):
     out.block("rc", rc1.bytes())
 
     # 命令 2：t60 全体改速度（系统命令，TEAM_ALL）
-    body2 = _command_body(-1, system=(2.0, 0.0, 0))
-    rc2 = _Writer()
-    rc2.int(60)
-    rc2.block("c", body2)
-    out.block("rc", rc2.bytes())
+    if with_system_command:
+        body2 = _command_body(-1, system=(2.0, 0.0, 0))
+        rc2 = _Writer()
+        rc2.int(60)
+        rc2.block("c", body2)
+        out.block("rc", rc2.bytes())
 
     chat = _Writer()
     chat.int(0)
@@ -395,6 +396,34 @@ class SyntheticReplayTest(unittest.TestCase):
         self.assertEqual(len(self.replay.chats), 1)
         self.assertEqual(self.replay.chats[0].sender_id, -1)
         self.assertEqual(self.replay.chats[0].message, "Still waiting on: Remote-B")
+
+    def test_tick_to_time(self):
+        # 合成样本：600 tick = 9600 ms → 16 ms/tick；本样本带 1 条改速度命令，只能算"分段估算"
+        self.assertAlmostEqual(self.replay.ms_per_tick, 16.0)
+        self.assertIn("16.000 ms/tick", self.replay.time_basis)
+        self.assertIn("改速度命令", self.replay.time_basis)
+        self.assertEqual(self.replay.tick_to_ms(0), 0)
+        self.assertEqual(self.replay.tick_to_ms(300), 4800)
+        self.assertEqual(self.replay.tick_to_ms(600), 9600)
+        self.assertAlmostEqual(self.replay.tick_to_seconds(600), 9.6)
+        self.assertEqual(self.replay.clock(13474), "3:35.6")
+        self.assertEqual(self.replay.clock(600), "0:09.6")
+        # 超出结尾锚点（未完成录制）按最后一段速率外推，不抛异常
+        self.assertGreater(self.replay.tick_to_ms(700), 9600)
+
+        # 没有改速度命令时换算应被判定为精确
+        clean = rp.Replay.load(self._clean_path())
+        self.assertIn("换算精确", clean.time_basis)
+        self.assertEqual(clean.tick_to_ms(300), 4800)
+
+    def _clean_path(self):
+        path = os.path.join(self.tmp.name, "clean.replay")
+        return build_sample_replay(path, with_system_command=False)
+
+    def test_render_text_clock_column(self):
+        text = self.replay.render_text(clock=True)
+        self.assertIn("[0:02.1]", text)          # t=130 → 2080 ms
+        self.assertIn("# clock  : 16.000 ms/tick", text)
 
     def test_render_text(self):
         text = self.replay.render_text()

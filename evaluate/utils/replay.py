@@ -30,6 +30,9 @@
     python evaluate/utils/replay.py replays/xxx.replay --text --team 1 \
         --from-tick 600 --to-tick 3000 --limit 200
 
+    # 文本里附带 [分:秒.十分位] 游戏时间（换算口径见表头 # clock / 概要"时间口径"）
+    python evaluate/utils/replay.py replays/xxx.replay --text --clock
+
     # 在文本里夹带 es/cs 校验行（默认不显示）
     python evaluate/utils/replay.py replays/xxx.replay --text --checksums
 
@@ -84,8 +87,11 @@
   的初始对象表映射到类型，之后新造的单位只能显示 ``#123``。
 * 回放不记录"建造产生的新 id"，无法反推每个新单位是什么。
 * 截断或损坏的录制（仓库历史样本里出现过）只能解析到出错处，``partial`` 为真。
-* 时间以 tick 为准：标称 1 tick = 16 ms（62.5 Hz），整局时长受游戏速度命令影响，
-  不要用毫秒倒推 tick。
+* 时间换算：``gameTimeMillis`` 每 tick 推进约 16 ms（本地样本实测 ``frames × 16 == time``
+  精确成立，见 ``Replay.ms_per_tick``）。所以 tick × 16 ms 在"整局 1× 速度"时精确；一旦有
+  改速度命令（系统命令或联机步进），每 tick 的毫秒数会变，工具按 ``resync``/结尾锚点分段线性
+  估算，并在文本表头 ``# clock``、概要"时间口径"里标明是精确还是估算。
+  真实墙钟时间无法还原：暂停、加速、掉帧都不进 tick。
 
 相关工具
 ========
@@ -126,6 +132,7 @@ __all__ = [
     "ATTACK_MODES",
     "SYSTEM_ACTIONS",
     "TICKS_PER_SECOND",
+    "NOMINAL_MS_PER_TICK",
 ]
 
 # ---------------------------------------------------------------------------
@@ -135,6 +142,8 @@ __all__ = [
 #: 标称模拟频率；回放只记 tick，毫秒时长会受游戏速度命令影响。
 TICKS_PER_SECOND = 62.5
 TICK_SECONDS = 1.0 / TICKS_PER_SECOND
+#: 实测标称值：edGameLogic.update 里 gameTimeMillis 每 tick 推进约 16 ms。
+NOMINAL_MS_PER_TICK = 16.0
 
 #: core/src/main/java/com/corrodinggames/rts/game/units/UnitCommandType.java
 UNIT_COMMAND_TYPES: Tuple[str, ...] = (
@@ -1052,6 +1061,85 @@ class Replay:
     def resync_count(self) -> int:
         return sum(1 for item in self.checkpoints if item.kind == "resync")
 
+    # -- tick 与游戏时间换算 ------------------------------------------
+    @property
+    def anchors(self) -> List[Tuple[int, int]]:
+        """`(tick, gameTimeMillis)` 锚点：起点 + resync 快照 + 结尾元数据。"""
+        anchors = [(0, 0)]
+        for item in self.checkpoints:
+            if item.kind == "resync":
+                anchors.append(
+                    (int(item.detail["resync_tick"]), int(item.detail["game_time_ms"]))
+                )
+        if self.end_meta is not None and self.end_meta.frames > 0:
+            anchors.append((self.end_meta.frames, self.end_meta.game_time_ms))
+        unique: Dict[int, int] = {}
+        for tick, millis in sorted(anchors):
+            unique[tick] = millis
+        return sorted(unique.items())
+
+    @property
+    def speed_change_ticks(self) -> List[int]:
+        return [command.tick for command in self.commands if command.game_speed_change]
+
+    @property
+    def ms_per_tick(self) -> Optional[float]:
+        """整局平均"每 tick 推进多少游戏毫秒"；没有结尾元数据时返回 None。"""
+        end = self.end_meta
+        if end is None or end.frames <= 0:
+            return None
+        return end.game_time_ms / end.frames
+
+    @property
+    def time_basis(self) -> str:
+        """说明 tick → 时间的可信度，供文本/概要展示。"""
+        rate = self.ms_per_tick
+        if rate is None:
+            return f"无结尾元数据，按标称 {NOMINAL_MS_PER_TICK:g} ms/tick 估算"
+        basis = (
+            f"{rate:.3f} ms/tick（{self.end_meta.frames} tick = "
+            f"{self.end_meta.game_time_ms} ms）"
+        )
+        if self.speed_change_ticks:
+            return basis + f"，含 {len(self.speed_change_ticks)} 条改速度命令，按锚点分段估算"
+        return basis + "，整局速率恒定，换算精确"
+
+    def tick_to_ms(self, tick: int) -> int:
+        """tick → 游戏时间（毫秒）。有锚点时线性插值，否则按标称值。"""
+        anchors = self.anchors
+        if not anchors:
+            return int(round(tick * NOMINAL_MS_PER_TICK))
+        if tick <= anchors[0][0]:
+            return anchors[0][1]
+        if tick >= anchors[-1][0]:
+            # 未完成录制会超出最后一个锚点：按最后一段的速率外推
+            prev_tick, prev_ms = anchors[-2] if len(anchors) > 1 else anchors[-1]
+            last_tick, last_ms = anchors[-1]
+            span = last_tick - prev_tick
+            if span <= 0:
+                return last_ms
+            rate = (last_ms - prev_ms) / span
+            return int(round(last_ms + (tick - last_tick) * rate))
+        for index in range(1, len(anchors)):
+            left_tick, left_ms = anchors[index - 1]
+            right_tick, right_ms = anchors[index]
+            if tick <= right_tick:
+                span = right_tick - left_tick
+                if span <= 0:
+                    return right_ms
+                return int(round(left_ms + (tick - left_tick) * (right_ms - left_ms) / span))
+        return anchors[-1][1]
+
+    def tick_to_seconds(self, tick: int) -> float:
+        return self.tick_to_ms(tick) / 1000.0
+
+    def clock(self, tick: int) -> str:
+        """把 tick 渲染成 `MM:SS.s`（分钟不归零，和 CLI 记录器的口径一致）。"""
+        tenths = int(round(self.tick_to_ms(tick) / 100.0))
+        minutes, remainder = divmod(tenths, 600)
+        seconds, tenth = divmod(remainder, 10)
+        return f"{minutes}:{seconds:02d}.{tenth}"
+
     def status(self) -> str:
         if self.header is None:
             return "无法解析（头部损坏）"
@@ -1129,6 +1217,7 @@ class Replay:
         limit: Optional[int] = None,
         checksums: bool = False,
         header: bool = True,
+        clock: bool = False,
     ) -> str:
         lines: List[str] = []
         if header:
@@ -1139,11 +1228,12 @@ class Replay:
         for command in self.commands:
             if not self._matches(command, team, from_tick, to_tick):
                 continue
+            clock_text = f"[{self.clock(command.tick)}] " if clock else ""
             entries.append(
                 (
                     command.tick,
                     0,
-                    f"t={command.tick:<6} {self._who(command.team_id):<20} "
+                    f"t={command.tick:<6} {clock_text}{self._who(command.team_id):<20} "
                     f"{self.describe_order(command)}",
                 )
             )
@@ -1153,7 +1243,10 @@ class Replay:
             if to_tick is not None and chat.tick > to_tick:
                 continue
             sender = chat.sender_name or ("system" if chat.sender_id == -1 else f"t{chat.sender_id}")
-            entries.append((chat.tick, 1, f"t={chat.tick:<6} {'chat':<20} {sender}: {chat.message}"))
+            clock_text = f"[{self.clock(chat.tick)}] " if clock else ""
+            entries.append(
+                (chat.tick, 1, f"t={chat.tick:<6} {clock_text}{'chat':<20} {sender}: {chat.message}")
+            )
         if checksums:
             for checkpoint in self.checkpoints:
                 if from_tick is not None and checkpoint.tick < from_tick:
@@ -1227,6 +1320,7 @@ class Replay:
             f"commands: {len(self.commands)}  chats: {len(self.chats)}  "
             f"resyncs: {self.resync_count}"
         )
+        lines.append(f"# clock  : {self.time_basis}")
         lines.append(f"# status : {self.status()}")
         return "\n".join(lines)
 
@@ -1237,7 +1331,9 @@ class Replay:
             unit_cmd = command.unit_command
             row = {
                 "tick": command.tick,
-                "time_s": round(command.tick / TICKS_PER_SECOND, 3),
+                "game_time_ms": self.tick_to_ms(command.tick),
+                "clock": self.clock(command.tick),
+                "time_s": round(self.tick_to_seconds(command.tick), 3),
                 "team": command.team_id,
                 "team_name": self.meta.team_label(command.team_id),
                 "source_team": command.source_team_id,
@@ -1308,6 +1404,7 @@ class Replay:
             f"帧/时长     : {frames} ticks / {self.duration_seconds:.1f}s "
             f"(标称 {TICKS_PER_SECOND:g} Hz)"
         )
+        lines.append(f"时间口径    : {self.time_basis}")
         lines.append(
             f"命令/聊天   : {len(self.commands)} commands / {len(self.chats)} chat / "
             f"{self.resync_count} resync"
@@ -1394,6 +1491,7 @@ def write_outputs(
     modes: Sequence[str],
     limit: Optional[int] = None,
     stem: Optional[str] = None,
+    clock: bool = False,
 ) -> List[str]:
     """按模式把结果写成文件，返回写出的路径列表。``stem`` 可覆盖输出主名。"""
     os.makedirs(out_dir, exist_ok=True)
@@ -1405,7 +1503,7 @@ def write_outputs(
             payload = replay.summary() + "\n"
         elif mode == "text":
             target = os.path.join(out_dir, f"{stem}.txt")
-            payload = replay.render_text(limit=limit) + "\n"
+            payload = replay.render_text(limit=limit, clock=clock) + "\n"
         elif mode == "jsonl":
             target = os.path.join(out_dir, f"{stem}.jsonl")
             payload = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in replay.order_rows())
@@ -1447,6 +1545,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--to-tick", type=int, metavar="N", help="结束 tick（含）")
     parser.add_argument("--limit", type=int, metavar="N", help="文本输出最多 N 行")
     parser.add_argument("--checksums", action="store_true", help="文本中夹带 es/cs/resync 行")
+    parser.add_argument(
+        "--clock", action="store_true", help="文本中额外显示 [分:秒.十分位] 游戏时间"
+    )
     parser.add_argument("--strict", action="store_true", help="结构异常直接报错")
     parser.add_argument(
         "--index",
@@ -1500,7 +1601,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     print("--name 只能配合单个文件使用", file=sys.stderr)
                     return 2
                 stem = safe_stem(args.name)
-            written = write_outputs(replay, args.out, modes, limit=args.limit, stem=stem)
+            written = write_outputs(
+                replay, args.out, modes, limit=args.limit, stem=stem, clock=args.clock
+            )
             print(f"{path}: {replay.status()}，写出 {len(written)} 个文件")
             for target in written:
                 print(f"  -> {target}")
@@ -1519,6 +1622,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                         to_tick=args.to_tick,
                         limit=args.limit,
                         checksums=args.checksums,
+                        clock=args.clock,
                     )
                 )
             else:

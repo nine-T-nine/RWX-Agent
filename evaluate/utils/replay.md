@@ -16,8 +16,8 @@ RL 数据抽取。纯 Python 标准库，不需要启动游戏或 JVM。
 # 概要：地图、队伍、帧数、各队/各指令命令数、文件健康度
 python evaluate/utils/replay.py "replays/xxx.replay" --summary
 
-# 命令文本（一行一条命令）
-python evaluate/utils/replay.py "replays/xxx.replay" --text --limit 50
+# 命令文本（一行一条命令；--clock 附带 [分:秒.十分位] 游戏时间）
+python evaluate/utils/replay.py "replays/xxx.replay" --text --clock --limit 50
 
 # JSONL（一行一个 JSON 对象，喂数据集）
 python evaluate/utils/replay.py "replays/xxx.replay" --jsonl
@@ -26,7 +26,7 @@ python evaluate/utils/replay.py "replays/xxx.replay" --jsonl
 python evaluate/utils/replay.py "replays/xxx.replay" --text --team 1 --from-tick 600 --to-tick 3000
 
 # 落盘到 evaluate/output（--name 覆盖输出主名）
-python evaluate/utils/replay.py "replays/xxx.replay" --text --jsonl `
+python evaluate/utils/replay.py "replays/xxx.replay" --text --jsonl --clock `
   --out evaluate/output --name replay-xxx
 
 # 多文件概要汇总成 evaluate/output/replays.index.txt
@@ -49,20 +49,61 @@ rows = r.order_rows()                # 结构化命令（JSON 友好）
 ## 输出长什么样
 
 ```
-# file   : [local] Valley Pass (6p) [v1.15] (23 Oct 2026 10.04.08).replay
+# file   : [local] Island freeze (4p) [by hxyy] [v1.15] (24 Oct 2026 13.08.27).replay
 # build  : v1.15 (versionCode 176, protocol 96)
-# map    : maps/skirmish/[p6]Valley Pass (6p).tmx
-# teams  : 0=AI - Hard, 1=AI - Hard, 2=AI - Hard, 3=AI - Hard, 4=Player, 5=AI - Hard
-# frames : 42713  duration: 683.4s  commands: 2868  chats: 1  resyncs: 0
+# map    : maps/skirmish/[p4]Island freeze (4p) [by hxyy].tmx
+# teams  : 0=AI - Very Hard, 1=AI - Very Hard, 2=Player, 3=AI - Very Hard
+# frames : 90235  duration: 1443.8s  commands: 18438  chats: 0  resyncs: 0
+# clock  : 16.000 ms/tick（90235 tick = 1443760 ms），整局速率恒定，换算精确
 # status : 完整
-t=52     AI - Hard(t0)        build custom:extractorT1 @(170,170)            units[1]=#288(builder)
-t=102    AI - Hard(t0)        action u_builder                               units[1]=#287(commandCenter)
-t=1302   AI - Hard(t0)        build landFactory @(805,1680)                  units[1]=#4(builder)
+t=14027  [3:44.4] AI - Very Hard(t1)   attack -> #187                                 units[0]=
+t=14027  [3:44.4] AI - Very Hard(t1)   attack -> #100                                 units[0]=
+t=14077  [3:45.2] AI - Very Hard(t1)   attack -> #412                                 units[1]=#426
 ```
 
-- `t=` 是**执行 tick**（标称 62.5 tick/s ≈ 16 ms/tick）。
-- `units[...]` 是这条命令作用的单位 id；开局单位能显示类型（`#288(builder)`），之后新造的单位只有 id。
-- `[system:...]` 是系统命令（改游戏速度 / 投降 / 快速重同步 / 刷兵）。
+### 各列含义
+
+| 列 | 含义 |
+|---|---|
+| `t=14027` | 命令被执行时的**模拟 tick**（不是秒，也不是"第几条命令"） |
+| `[3:44.4]` | 同一 tick 换算出的**游戏时间**（`--clock` 才有），口径见表头 `# clock` |
+| `AI - Very Hard(t1)` | 下令的队伍（`t` 后是引擎的队伍槽 id）；`TEAM_ALL` 表示全体/系统 |
+| `attack -> #187` | 指令类型与目标；`->` 后面是**目标单位 id**（`@(x,y)` 表示坐标目标） |
+| `units[...]` | **这条命令实际作用的单位 id 列表**（引擎里的 `selectedUnits + pendingUnitIds`） |
+| `units[0]=` | 空列表：命令发出去了，但**执行时没有任何单位可作用**，等于空指令（no-op） |
+
+`units[0]=` 很常见，不是解析错误。典型来源是 AI 的"区域被攻击"反应：
+
+```java
+// BaseZone.commandUnitsToAttackClosestEnemy()
+for (每个己方单位) if (能交战 && 可选 && 没有当前 waypoint && 可达) command.addUnitToCommand(unit);
+command.setAttackTarget(closestEnemyUnit);   // ← 无条件下发，即使一个都没加进去
+```
+
+所以同一条 `attack -> #187` 有时是 `units[1]=#426`（真下给某个单位），有时是 `units[0]=`
+（当时没有空闲单位，命令执行后什么都不发生）。做数据集抽样时建议用
+`--jsonl` 的 `noop` 字段把它们过滤掉。
+
+## tick 与游戏时间
+
+- `gameTimeMillis` 在 `GameLogic.update` 里每 tick 推进 `stepRate × 16.6667` 毫秒；本地
+  1× 速度的对局实测正好是 **16.000 ms/tick**，且 `结束帧数 × 16 == 结尾 time` 精确成立
+  （本仓库 10 个本地样本全部满足），所以 `tick × 16 ms` 在这些对局里**没有偏差**。
+- 一旦出现改速度（`[system:... speed=N]` 或联机步进调整），每 tick 的毫秒数就变了
+  （历史上见过 19.9 / 32.8 ms/tick 的样本），此时工具按 `resync` 快照与结尾元数据做
+  **分段线性估算**，并在表头 `# clock` / 概要"时间口径"里写明"精确"还是"估算"。
+- 能换算的是**游戏时间**（`gameTimeMillis`，HUD 上那个计时）。**真实墙钟时间无法还原**：
+  暂停、加速、掉帧都不进 tick，回放也不记录。
+- 想自己算：`Replay.ms_per_tick` 是整局平均，`Replay.tick_to_ms(tick)` / `Replay.clock(tick)`
+  走锚点插值，`Replay.anchors` 给出所有 `(tick, gameTimeMillis)` 锚点。
+
+```python
+r = Replay.load("replays/xxx.replay")
+r.ms_per_tick            # 16.0
+r.tick_to_ms(14027)      # 224432
+r.clock(14027)           # "3:44.4"
+r.time_basis             # "16.000 ms/tick（…），整局速率恒定，换算精确"
+```
 
 JSONL 一行示例（`--jsonl`）：
 
