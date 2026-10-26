@@ -44,8 +44,8 @@ if __name__ == '__main__':
     assert 'https://github.com/yomi2539/RWX' in html
     assert '并定期同步上游源码' in html
     recordings = json.loads((WEB / 'resource/matches.json').read_text(encoding='utf-8'))
-    assert len(recordings) == 4
-    assert len({item['id'] for item in recordings}) == 4
+    assert len(recordings) == 3
+    assert len({item['id'] for item in recordings}) == 3
     for item in recordings:
         video = WEB / item['video']
         assert video.stat().st_size == item['bytes'], 'Video size mismatch: ' + item['id']

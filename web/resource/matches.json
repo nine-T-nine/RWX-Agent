@@ -14,20 +14,6 @@
     "sha256": "3885ef717adc591d24a28113d6a297201c6e4af20f028542e619a0a66c192083"
   },
   {
-    "id": "nuclear",
-    "source": "gpt6.1solvsVeryHard-核弹.mp4",
-    "title": "当战局进入核武时代",
-    "category": "LATE-GAME WARFARE",
-    "tag": "核武交锋",
-    "description": "同样的战场，更长线的决策。看智能体在升级、扩张与核武威胁之间安排自己的作战节奏。",
-    "video": "resource/matches/nuclear.mp4",
-    "poster": "resource/posters/nuclear.webp",
-    "duration": 151.916667,
-    "durationLabel": "2:32",
-    "bytes": 48400289,
-    "sha256": "645b314636b9b08aea2add453ded8ce52d979347a1e69e4cf95492adf330cba9"
-  },
-  {
     "id": "income",
     "source": "gpt6.1solvsVeryHardxiincome.mp4",
     "title": "经济与兵力之间的取舍",

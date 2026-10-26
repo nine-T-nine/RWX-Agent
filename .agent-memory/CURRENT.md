@@ -4,31 +4,33 @@
 
 ## 当前快照
 
-- 项目网站已发布：https://nine-t-nine.github.io/RWX-Agent/ 。源码在 `web/`，公开仓库为 `nine-T-nine/RWX-Agent`。
-- `web/**` 更新由 GitHub Actions 自动校验并部署 Pages；维护步骤见 `web/README.md`。
-- 独立公开仓库与 Pages 已同名重建；新仓库 ID `1434131753`，Contributors 已验证公开维护身份。
-- 本地 `replays/` 现存 10 个完整样本（另可能有正在录制的文件）；19:59 有一批样本被清理（22 → 10，非本次工具所为）。
-- 评估工具：`evaluate/utils/replay.py` 反解析回放（24 项自测，见 `HISTORY/task-010.md`）；`CommandRecorder.java` 在 CLI 收包入口记录对局分秒、完整命令、执行者阵营并导出两个 TXT（见 `HISTORY/task-011.md`）。
+- 项目网站：https://nine-t-nine.github.io/RWX-Agent/ ，源码在 `web/`；`web/**` 通过 Actions 自动校验并部署 Pages，维护见 `web/README.md`。
+- 已移除有问题的核弹录像展示、原片、网页副本及封面；现保留三场录像，生成配置和文档同步更新（`HISTORY/task-012.md`）。
+- 独立公开仓库 `nine-T-nine/RWX-Agent` ID 为 `1434131753`，Contributors 已验证公开维护身份。
+- 本地 `replays/` 最近核对为 10 个完整样本；19:59 的清理（22 → 10）非 Agent 工具所为。
+- 回放反解析与命令记录工具在 `evaluate/utils/`；验证与复现见 `HISTORY/task-010.md`、`HISTORY/task-011.md`。
 
 ## 历史与远程
 
 - 功能基线为 `20cf9b9 → a7bdfc3`，保留真正上游的全部原始提交；历史备份在仓库外，不应提交或发布。
-- 指定的 4 个自有历史提交已采用公开维护身份；4 个匿名提交的身份和 72 个上游提交保持原样。
+- 4 个自有历史提交采用公开维护身份；4 个匿名提交和 72 个上游提交保持原样。
 - `origin`/`myfork` 继续跟踪上游；个人开发仅推送 `publish`（`nine-T-nine/RWX-Agent`）。
 
 ## 验证基线
 
-- 2026-10-26：完整 `:core:test` 24 个套件、206 项全通过；Headless 发行包构建通过，原版引擎未改。
-- 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端、连续两局通过；A/B/旁观身份、首部真实进入时间、39 条完整命令及分类次数逐条核对一致。
-- 网站：四段视频本地完整解码、320/390/768/1440px 无横向溢出、菜单/平台切换通过；公开站点四个 MP4 均返回 206，线上浏览器实际播放通过。
-- Pages 工作流已成功部署；最新状态见仓库的 Pages Actions。
+- 2026-10-26：完整 `:core:test` 24 套件、206 项、零失败（本次重跑通过）；Headless 发行包此前构建通过。
+- 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端连续两局通过，39 条命令及分类统计一致。
+- 网站：三场录像、13 个发布文件、117.2 MiB；本地链接、视频 SHA-256、JS 语法、生成配置与清单一致性校验通过。
+
+## 进行中
+
+- 完整单测与网站校验已通过，测试临时产物已清理；正在提交并推送 `publish/main`，随后确认 Pages 部署。
 
 ## 下一步
 
-- 本地 `mods/maps` 存在未提交删除，本轮未提交或恢复，后续处理按用户意图执行。
 - 按 `web/README.md` 从 `origin/main` 同步，在本地处理冲突后发布至 `publish/main`。
 - 原有遗留：从游戏内菜单手动输入地址加入服务器尚未实测。
 
 ## 媒体
 
-- 原片保留于 `web/resource/` 并忽略入库；网页副本位于 `web/resource/matches/`，完整站点约 163.5 MiB。
+- 三个保留原片位于 `web/resource/` 并忽略入库；网页副本位于 `web/resource/matches/`，完整站点约 117.2 MiB。

@@ -1,4 +1,4 @@
-"""Create browser-ready copies of the four supplied recordings. Requires FFmpeg."""
+"""Create browser-ready copies of the supplied recordings. Requires FFmpeg."""
 
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
@@ -12,9 +12,6 @@ RECORDINGS = [
     {'id': 'very-hard', 'source': 'gpt6.1solvsVeryHard.mp4', 'title': '与 Very Hard AI 正面交锋',
      'category': 'AGENT VS BUILT-IN AI', 'tag': '经典对抗',
      'description': '从基地经营到部队推进，观察智能体如何在实时战局中分配资源、组织生产与执行作战指令。'},
-    {'id': 'nuclear', 'source': 'gpt6.1solvsVeryHard-核弹.mp4', 'title': '当战局进入核武时代',
-     'category': 'LATE-GAME WARFARE', 'tag': '核武交锋',
-     'description': '同样的战场，更长线的决策。看智能体在升级、扩张与核武威胁之间安排自己的作战节奏。'},
     {'id': 'income', 'source': 'gpt6.1solvsVeryHardxiincome.mp4', 'title': '经济与兵力之间的取舍',
      'category': 'ECONOMY & STRATEGY', 'tag': '经济博弈',
      'description': '另一场 Very Hard AI 对局。把注意力放在资源收入、兵力补充与推进节奏，观察经济决策如何落到战场。'},
@@ -64,4 +61,4 @@ if __name__ == '__main__':
          '-i', str(RESOURCE / RECORDINGS[0]['source']), '-frames:v', '1',
          '-vf', 'crop=1600:900:0:0,scale=1600:-2', '-c:v', 'libwebp', '-quality', '89',
          str(RESOURCE / 'posters/hero.webp')])
-    print('Prepared all four recordings, posters and resource/matches.json.', flush=True)
+    print(f'Prepared all {len(results)} recordings, posters and resource/matches.json.', flush=True)

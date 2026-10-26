@@ -1,6 +1,6 @@
 # RWX-Agent 项目网站
 
-介绍项目能力并播放四场实机对局的静态网站，无前端依赖或构建步骤。
+介绍项目能力并播放三场实机对局的静态网站，无前端依赖或构建步骤。
 
 - 网站：https://nine-t-nine.github.io/RWX-Agent/
 - 本项目源码：https://github.com/nine-T-nine/RWX-Agent
@@ -23,7 +23,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | `index.html` | 中文页面内容、导航、无脚本视频链接 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
 | `app.js` | 录像切换、平台切换、复制命令和手机导航 |
-| `resource/matches.json` | 四场录像的名称、说明、时长及 SHA-256 |
+| `resource/matches.json` | 三场录像的名称、说明、时长及 SHA-256 |
 | `resource/matches/` | 已提交的 H.264/AAC 网页录像，完整时长、1080p/60fps |
 | `resource/posters/` | 从原录像提取的 WebP 封面 |
 
@@ -31,7 +31,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 
 ## 重新生成媒体
 
-四个原始 MP4 保留在 `resource/`，不进入 Git；其中两个超过 GitHub 单文件限制。网站使用 `resource/matches/` 内的压缩副本，原始视频不被覆盖。
+三个原始 MP4 保留在 `resource/`，不进入 Git；其中一个超过 GitHub 单文件限制。网站使用 `resource/matches/` 内的压缩副本，原始视频不被覆盖。
 
 准备 FFmpeg（同时提供 `ffprobe`），将原始文件放回 `resource/`，然后从项目根目录运行：
 
@@ -43,7 +43,7 @@ node --check web/app.js
 
 生成器复用已存在的网页 MP4；需要重新编码某段录像时，先删除对应的 `resource/matches/<id>.mp4`，再运行生成器。生成器会刷新封面和清单。更改标题、说明时同步修改生成器内的记录定义与清单。
 
-网页录像采用 H.264、AAC、`yuv420p` 和 MP4 faststart，优先保证浏览器兼容和快速起播。校验器检查本地链接、锚点、视频哈希、四段录像的完整性及站点体积。
+网页录像采用 H.264、AAC、`yuv420p` 和 MP4 faststart，优先保证浏览器兼容和快速起播。校验器检查本地链接、锚点、视频哈希、三段录像的完整性及站点体积。
 
 ## 发布 GitHub Pages
 
