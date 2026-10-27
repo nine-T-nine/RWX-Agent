@@ -14,7 +14,7 @@ import static com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameTyp
 /** Pure filtering/aggregation/formatting over immutable occurrence-time snapshots. */
 final class RwxEventProcessor {
     private record Indexed(GameEvent event, int order) { }
-    private record Line(int time, int order, EventType type, String description) {
+    private record Line(int time, int order, EventType type, String description, List<GameEvent> contributors) {
         String text() {
             return format(time, type.name().toLowerCase(Locale.ROOT), description);
         }
@@ -27,6 +27,11 @@ final class RwxEventProcessor {
     }
 
     static EventPage query(List<GameEvent> raw, int now, EventQuery query) {
+        return query(raw, now, query, 50);
+    }
+
+    /** Same aggregation as the CLI, without its display limit when used by the stream. */
+    static EventPage query(List<GameEvent> raw, int now, EventQuery query, int limit) {
         List<Indexed> filtered = new ArrayList<>();
         long cutoff = (long) now - Math.round(query.seconds * 1000);
         for (int i = 0; i < raw.size(); i++) {
@@ -78,19 +83,19 @@ final class RwxEventProcessor {
                             + entity(event.attacker, ours, false) + " has destroyed "
                             + entity(event.subject, false, true);
                 } else description = event.detail;
-                lines.add(new Line(event.gameTimeMillis, row.order, event.type, description));
+                lines.add(new Line(event.gameTimeMillis, row.order, event.type, description, List.of(event)));
             }
         }
         for (Group group : losses.values()) lines.add(lossLine(group));
         if (found != null) lines.add(newLine(found));
         lines.sort(Comparator.comparingInt(Line::time).thenComparingInt(Line::order));
-        int start = Math.max(0, lines.size() - 50);
+        int start = Math.max(0, lines.size() - limit);
         List<String> output = new ArrayList<>();
         List<EventRecord> items = new ArrayList<>();
         for (int i = start; i < lines.size(); i++) {
             Line line = lines.get(i);
             output.add(line.text());
-            items.add(new EventRecord(line.time(), line.type(), line.description()));
+            items.add(new EventRecord(line.time(), line.type(), line.description(), raw.get(line.order()), line.contributors()));
         }
         return new EventPage(output, items);
     }
@@ -144,7 +149,7 @@ final class RwxEventProcessor {
             description = prefix + first.subject.name + " x" + group.events.size()
                     + " by " + String.join(", ", labels);
         }
-        return new Line(first.gameTimeMillis, group.first.order, EventType.LOSSES, description);
+        return new Line(first.gameTimeMillis, group.first.order, EventType.LOSSES, description, group.events);
     }
 
     private static Line newLine(Group group) {
@@ -166,7 +171,7 @@ final class RwxEventProcessor {
             description = "found " + String.join(", ", labels) + " around "
                     + coordinates(x / group.events.size(), y / group.events.size());
         }
-        return new Line(group.first.event.gameTimeMillis, group.first.order, EventType.NEW, description);
+        return new Line(group.first.event.gameTimeMillis, group.first.order, EventType.NEW, description, group.events);
     }
 
     static String coordinates(double x, double y) {

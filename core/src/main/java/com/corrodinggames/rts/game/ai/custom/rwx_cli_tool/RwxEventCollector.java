@@ -60,7 +60,7 @@ final class RwxEventCollector extends UnitEventListener {
 
     @Override public void damaged(BaseUnit unit, BaseUnit attacker) {
         if (!active() || unit.team != owner) return;
-        store.append(new GameEvent(world.gameTimeMillis, EventType.DAMAGED,
+        store.append(event(EventType.DAMAGED,
                 snapshot(unit), snapshot(attacker), null));
     }
 
@@ -68,10 +68,10 @@ final class RwxEventCollector extends UnitEventListener {
         if (!active() || unit.team == null || unit.team.teamId < 0) return;
         EventEntity subject = snapshot(unit), killer = snapshot(attacker);
         if ("self".equals(subject.relation) || "ally".equals(subject.relation)) {
-            store.append(new GameEvent(world.gameTimeMillis, EventType.LOSSES, subject, killer, null));
+            store.append(event(EventType.LOSSES, subject, killer, null));
         } else if ("enemy".equals(subject.relation) && killer != null
                 && ("self".equals(killer.relation) || "ally".equals(killer.relation))) {
-            store.append(new GameEvent(world.gameTimeMillis, EventType.DESTROYED, subject, killer, null));
+            store.append(event(EventType.DESTROYED, subject, killer, null));
         }
     }
 
@@ -94,7 +94,7 @@ final class RwxEventCollector extends UnitEventListener {
         if (detail == null) return;
         ownUnits.add(unit.objectId);
         if (other != null && "produced".equals(phase)) ownUnits.add(other.id);
-        store.append(new GameEvent(world.gameTimeMillis, EventType.INFO, self, null, detail));
+        store.append(event(EventType.INFO, self, null, detail));
     }
 
     void observe(List<BaseUnit> friends, List<BaseUnit> enemies) {
@@ -104,7 +104,7 @@ final class RwxEventCollector extends UnitEventListener {
             if (!enemy.d(owner)) continue;
             current.add(enemy.objectId);
             if (!visibleEnemies.contains(enemy.objectId)) {
-                store.append(new GameEvent(world.gameTimeMillis, EventType.NEW, snapshot(enemy), null, null));
+                store.append(event(EventType.NEW, snapshot(enemy), null, null));
             }
         }
         Set<Long> currentOwn = new HashSet<>();
@@ -129,6 +129,10 @@ final class RwxEventCollector extends UnitEventListener {
         String name = names.computeIfAbsent(unit.r(), type -> RwxUnitNames.english(type, type.v()));
         return new EventEntity(unit.objectId, unit.r().v(), name, unit.team.teamId, relation,
                 visible ? unit.posX : null, visible ? unit.posY : null);
+    }
+
+    private GameEvent event(EventType type, EventEntity subject, EventEntity attacker, String detail) {
+        return new GameEvent(world.gameTimeMillis, type, subject, attacker, detail, world.currentTick);
     }
 
     private static int tier(BaseUnit unit) {

@@ -5,6 +5,7 @@
 | 工具 | 支持环境 | 用途 |
 |---|---|---|
 | `rwx-cli.py` | Windows、Linux、WSL、macOS，Python 3.9+ | 单次、批量、交互 CLI；推荐入口 |
+| `rwx-game-events-to-jsonl.py` | Python 3 | 订阅本地事件并追加 JSONL |
 | `rwx-cli.sh` | Bash + Python 3 | 上述 Python 客户端的包装，无 PowerShell 依赖 |
 | `rwx-cli.ps1` / `rwx-cli-lib.ps1` | Windows PowerShell 5.1+ / PowerShell 7 | .NET 客户端；读端口文件后可回退到 Windows PID/日志发现 |
 | `rwx-cli-daemon.ps1` | Windows PowerShell | 兼容旧的文件邮箱集成；多个调用方不要共享一个邮箱 |
@@ -62,6 +63,21 @@ WSL NAT 不保证能访问 Windows 回环；在 WSL 中运行 Linux RWX，或通
 CLI 客户端退出不关闭游戏连接；`rwx-disconnect` 关闭多人连接；`rwx-exit` 退出 RWX。断线后先检查状态，再显式重连，客户端不会盲目重发可能已执行的生产/攻击命令。
 
 Python 退出码：`0` 成功、`2` 发现/连接/参数失败、`4` RWX 回复 `error:`。PowerShell 另使用 `3` 表示连接失败。命令改为 `rwx-*`，不保留旧前缀别名。
+
+## 实时事件 JSONL
+
+启用 RWX CLI 后事件服务自动就绪，日志中的 `RWX_EVENTS_READY` 和 `agent-operation/tmp/events-port` 提供独立端口；端口仅监听 `127.0.0.1`。在任意工作目录运行：
+
+```powershell
+python agent-operation/tools/rwx-game-events-to-jsonl.py
+python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-operation/tmp/a/events-port --info --allies
+```
+
+默认日志固定为脚本上级目录的 `agent-operation/tmp/game-events.jsonl`，逐行追加并 flush；`--output` 可指定其他文件，`--port` 可覆盖发现文件。Ctrl+C 停止。每次启动扫描日志中的最后会话与序列，连接后自动重放；重复序列不追加。默认订阅 `damaged,destroyed,losses,new`，`--info` 增加信息事件，`--allies` 切换友军击杀和损失。
+
+服务端最多保留 180 游戏秒、1000 条传输记录。恢复范围不足或采集到传输的队列溢出会记录 `gap` / `overflow`；进程重启不能恢复旧进程的内存日志。JSON 的 `event`、游戏时间和 tick 是游戏事件数据，`session`、`seq`、`eventId`、`revision` 为传输元数据。`update` 修改已有聚合，`remove` 中 `replaced` 撤销被重新合并的聚合，`expired` 仅表示它退出查询窗口；这些记录不应当作新损失计数。`cursor` 表示被订阅条件过滤的序列；`parse_error` 记录接收器无法解析的消息。接收器不进行事件重要性判断。
+
+多个接收器可以同时订阅，各自按自己的游标回放，互不影响；每个连接使用独立线程，不读取数据的慢客户端只会拖住自己（服务端最多同时服务 16 个订阅，超出时拒绝新连接）。
 
 ## 可选 Windows 文件邮箱
 

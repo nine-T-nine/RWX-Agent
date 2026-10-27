@@ -493,10 +493,9 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             BaseUnit[] units = BaseUnit.bE.a();
             for (int index = 0; index < BaseUnit.bE.size(); index++) {
                 BaseUnit unit = units[index];
-                if (unit == null || unit.isDead || !isObservable(unit, controlled)) continue;
+                if (!matchesVisibleOwner(unit, controlled, query.owner)) continue;
                 if (groupIds != null && !groupIds.contains(unit.objectId)) continue;
                 if (selectorIds != null && !selectorIds.contains(unit.objectId)) continue;
-                if (!matchesOwner(unit, controlled, query.owner)) continue;
                 if (!query.includeTypes.isEmpty() && !matchesAnyType(unit, query.includeTypes)) continue;
                 if (!query.excludeTypes.isEmpty() && matchesAnyType(unit, query.excludeTypes)) continue;
                 if (query.hpBelowPercent != null && healthPercent(unit) >= query.hpBelowPercent) continue;
@@ -1389,36 +1388,29 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             BaseUnit[] all = BaseUnit.bE.a();
             for (int index = 0; index < BaseUnit.bE.size(); index++) {
                 BaseUnit unit = all[index];
-                if (unit == null || unit.isDead || !isObservable(unit, controlled)) continue;
-                if (!matchesOwner(unit, controlled, RwxLocalGameTypes.UnitOwner.ENEMY)) continue;
+                if (!matchesVisibleOwner(unit, controlled, RwxLocalGameTypes.UnitOwner.ENEMY)) continue;
                 float distance = distance(query.x, query.y, unit.posX, unit.posY);
                 if (distance > query.radius) continue;
-                OrderableUnit orderable = unit instanceof OrderableUnit ? (OrderableUnit) unit : null;
                 // canAttackFlyingUnits()/canAttackSurfaceUnits() default to true on OrderableUnit,
                 // so an unarmed builder/factory would otherwise be tagged as an AA/AT threat.
-                boolean armed = orderable != null && hasWeapon(orderable) && orderable.m() > 0.0f;
-                boolean antiAir = armed && orderable.canAttackFlyingUnits();
-                boolean antiGround = armed && orderable.canAttackSurfaceUnits();
-                boolean antiSubmerged = armed && orderable.canAttackSubmergedUnits();
-                float range = armed ? orderable.m() : 0.0f;
+                ThreatProfile profile = threatProfile(unit);
                 boolean flying = unit.i();
                 boolean building = unit.r().isBuildingUnit();
                 enemyCount++;
                 if (flying) airCount++;
                 if (building) buildingCount++;
                 if (!flying && !building) groundCount++;
-                if (antiAir) antiAirCount++;
-                if (antiGround) antiGroundCount++;
-                if (antiSubmerged) antiSubmergedCount++;
+                if (profile.antiAir()) antiAirCount++;
+                if (profile.antiGround()) antiGroundCount++;
+                if (profile.antiSubmerged()) antiSubmergedCount++;
                 if (distance < nearest) nearest = distance;
                 units.add(new RwxLocalGameTypes.ThreatUnit(
                         unit.objectId, unit.r().v(), unit.r().getUnitTypeDescriptionShort(),
                         unit.team == null ? -1 : unit.team.teamId, unit.posX, unit.posY, distance,
                         unit.currentHealth, unit.maxHealth, flying, building,
-                        antiAir, antiGround, antiSubmerged, range));
+                        profile.antiAir(), profile.antiGround(), profile.antiSubmerged(), profile.range()));
             }
             units.sort((left, right) -> Float.compare(left.distance, right.distance));
-            if (units.size() > 100) units = new ArrayList<>(units.subList(0, 100));
             List<RwxLocalGameTypes.ThreatCluster> clusters = query.cluster
                     ? RwxThreatClusters.cluster(units, query.clusterRadius)
                     : Collections.emptyList();
@@ -1907,6 +1899,12 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
         return matchesOwnerRelation(relationOf(unit.team, controlled), owner);
     }
 
+    /** Common live-entity scope; enemy visibility is checked at query time, never from history. */
+    static boolean matchesVisibleOwner(BaseUnit unit, PlayerTeam controlled, RwxLocalGameTypes.UnitOwner owner) {
+        return unit != null && !unit.isDead && isObservable(unit, controlled)
+                && matchesOwner(unit, controlled, owner);
+    }
+
     /** Shared by the visible entity list and its event delta, so their default scope agrees. */
     static boolean matchesOwnerRelation(String relation, RwxLocalGameTypes.UnitOwner owner) {
         if (owner == null) return "self".equals(relation) || "enemy".equals(relation);
@@ -1915,6 +1913,8 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             case ALLY: return "ally".equals(relation);
             case ENEMY: return "enemy".equals(relation);
             case NEUTRAL: return "neutral".equals(relation);
+            case ANY: return "self".equals(relation) || "ally".equals(relation)
+                    || "enemy".equals(relation) || "neutral".equals(relation);
             default: return false;
         }
     }
@@ -3448,6 +3448,18 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             return ((CustomUnit) unit).canAttack();
         }
         return unit.m() > 0.0f;
+    }
+
+    /** Attack capability used by the threat query; an unarmed unit is never an AA/AT threat. */
+    record ThreatProfile(boolean armed, boolean antiAir, boolean antiGround, boolean antiSubmerged,
+                         float range) { }
+
+    static ThreatProfile threatProfile(BaseUnit unit) {
+        OrderableUnit orderable = unit instanceof OrderableUnit ? (OrderableUnit) unit : null;
+        boolean armed = orderable != null && hasWeapon(orderable) && orderable.m() > 0.0f;
+        if (!armed) return new ThreatProfile(false, false, false, false, 0.0f);
+        return new ThreatProfile(true, orderable.canAttackFlyingUnits(), orderable.canAttackSurfaceUnits(),
+                orderable.canAttackSubmergedUnits(), orderable.m());
     }
 
     private static String describeOrderType(RwxLocalGameTypes.OrderType type) {

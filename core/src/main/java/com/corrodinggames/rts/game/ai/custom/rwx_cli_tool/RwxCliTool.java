@@ -26,14 +26,17 @@ public final class RwxCliTool implements AutoCloseable {
     private final RwxCliPortFile portFile;
     private final int port;
     private final RwxCliCommandCapture commandCapture;
+    private final RwxEventStream eventStream;
 
     private RwxCliTool(ServerSocket listener, ExecutorService clients,
-                       RwxCliPortFile portFile, int port, RwxCliCommandCapture commandCapture) {
+                       RwxCliPortFile portFile, int port, RwxCliCommandCapture commandCapture,
+                       RwxEventStream eventStream) {
         this.listener = listener;
         this.clients = clients;
         this.portFile = portFile;
         this.port = port;
         this.commandCapture = commandCapture;
+        this.eventStream = eventStream;
     }
 
     private static boolean stdioForcedUtf8;
@@ -91,10 +94,17 @@ public final class RwxCliTool implements AutoCloseable {
             commandCapture.close();
             throw error;
         }
+        RwxEventStream eventStream;
+        try {
+            eventStream = RwxEventStream.start(target.toAbsolutePath().resolveSibling("events-port"));
+        } catch (IOException error) {
+            portFile.close(); listener.close(); clients.shutdownNow(); commandCapture.close();
+            throw new IOException("Cannot start RWX event service: " + error.getMessage(), error);
+        }
         System.out.println("RWX_CLI_TOOL_READY port=" + port + " host=127.0.0.1"
                 + " portFile=" + portFile.primaryPath() + " instancePortFile=" + portFile.instancePath());
         if (commandTerminal) openCommandTerminal(port);
-        RwxCliTool tool = new RwxCliTool(listener, clients, portFile, port, commandCapture);
+        RwxCliTool tool = new RwxCliTool(listener, clients, portFile, port, commandCapture, eventStream);
         Runtime.getRuntime().addShutdownHook(new Thread(tool::close, "RWX-cli-shutdown"));
         return tool;
     }
@@ -108,6 +118,7 @@ public final class RwxCliTool implements AutoCloseable {
         }
         portFile.close();
         commandCapture.close();
+        eventStream.close();
     }
 
     /** Walks up from the working directory to the checkout root (marker: settings.gradle.kts). */

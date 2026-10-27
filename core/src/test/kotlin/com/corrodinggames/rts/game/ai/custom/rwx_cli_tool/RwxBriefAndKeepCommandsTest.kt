@@ -377,6 +377,23 @@ class RwxBriefAndKeepCommandsTest {
         assertEquals(listOf(1), ids("--owner", "self"))
         assertEquals(listOf(2), ids("--owner", "enemy"))
         assertEquals(listOf(4), ids("--owner", "neutral"))
+        assertEquals(listOf(1, 2, 3, 4), ids("--owner", "any"))
+        assertTrue(runUnitList(service, "--owner", "any", "--full").contains("Filter: owner=any | hp=all"))
+    }
+
+    @Test
+    fun `unit-list compact does not change the effective filter`() {
+        val service = FakeService().apply {
+            ownUnits = listOf(unit(1, health = 55f), unit(2, health = 100f))
+        }
+        val plain = runUnitList(service, "--owner", "self")
+        val compact = runUnitList(service, "--owner", "self", "--compact")
+        assertTrue(plain.contains("Filter: owner=self | hp<80%"), plain)
+        assertTrue(compact.contains("Filter: owner=self | hp<80%"), compact)
+        assertTrue(plain.contains("#1 "), plain)
+        assertTrue(compact.contains("#1 "), compact)
+        assertFalse(plain.contains("#2 "), plain)
+        assertFalse(compact.contains("#2 "), compact)
     }
 
     private fun terrainService(ascii: Boolean = false, clipped: Boolean = false): FakeService {
@@ -498,7 +515,7 @@ class RwxBriefAndKeepCommandsTest {
         )
         val text = runUnitList(service, "--owner", "self", "--compact", "--full")
         assertTrue(text.contains("#1 c_tank hp55% @100,100 | MOVE"), text)
-        assertTrue(text.contains("#2 c_tank @100,100 | q3"), text)
+        assertTrue(text.contains("#2 c_tank @100,100 hp100% | q3"), text)
         // compact 不打印完整明细里的 tick/build 字段
         assertTrue(!text.contains("build: "), text)
     }

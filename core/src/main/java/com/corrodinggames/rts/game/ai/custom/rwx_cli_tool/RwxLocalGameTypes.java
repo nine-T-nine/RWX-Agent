@@ -8,7 +8,7 @@ import java.util.List;
 public final class RwxLocalGameTypes {
     private RwxLocalGameTypes() { }
 
-    public enum UnitOwner { SELF, ALLY, ENEMY, NEUTRAL }
+    public enum UnitOwner { SELF, ALLY, ENEMY, NEUTRAL, ANY }
 
     public enum OrderType {
         MOVE, ATTACK_MOVE, ATTACK, STOP, PATROL, GUARD, GUARD_AT, FOLLOW,
@@ -292,9 +292,14 @@ public final class RwxLocalGameTypes {
         public final EventType type;
         public final EventEntity subject, attacker;
         public final String detail;
+        public final Integer tick;
         public GameEvent(int gameTimeMillis, EventType type, EventEntity subject, EventEntity attacker, String detail) {
+            this(gameTimeMillis, type, subject, attacker, detail, null);
+        }
+        GameEvent(int gameTimeMillis, EventType type, EventEntity subject, EventEntity attacker, String detail, Integer tick) {
             this.gameTimeMillis = gameTimeMillis; this.type = type;
             this.subject = subject; this.attacker = attacker; this.detail = detail;
+            this.tick = tick;
         }
     }
 
@@ -328,10 +333,19 @@ public final class RwxLocalGameTypes {
         public final int gameTimeMillis;
         public final EventType type;
         public final String description;
+        /** First contributing occurrence, used internally to identify aggregate revisions. */
+        final GameEvent source;
+        final List<GameEvent> contributors;
         public EventRecord(int gameTimeMillis, EventType type, String description) {
+            this(gameTimeMillis, type, description, null, Collections.emptyList());
+        }
+        EventRecord(int gameTimeMillis, EventType type, String description, GameEvent source,
+                    List<GameEvent> contributors) {
             this.gameTimeMillis = gameTimeMillis;
             this.type = type;
             this.description = description;
+            this.source = source;
+            this.contributors = List.copyOf(contributors);
         }
     }
 

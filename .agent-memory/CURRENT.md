@@ -4,8 +4,9 @@
 
 ## 当前快照
 
-- 2026-10-27：`game-state` 合并宏观统计与共享事件，旧摘要命令已移除；完整测试 24 套件、209 项通过，Headless 房主 + Windows GUI 非空事件和历史保留验证通过（`HISTORY/task-015.md`）。联机验证中曾出现游戏线程查询超时，重跑通过。
-- 本地 Windows GUI（带 RWX CLI）仍在运行；`水田2P` 对 Very Hard AI 的录制对局已于 06:56 按用户指令投降结束，CLI 端口见 `agent-operation/tmp/port`。
+- 2026-10-27：实体查询与事件流已完成：`--owner any`、共享实时可见性、威胁能力分类与输出补全；事件流（NDJSON、聚合修订、断线续传、gap/overflow 诊断）与 JSONL 接收器完成，真实 Headless 对局验证通过（`HISTORY/task-016.md`）。
+- 2026-10-27：`game-state` 合并宏观统计与共享事件，旧摘要命令已移除；Headless 房主 + Windows GUI 非空事件和历史保留验证通过（`HISTORY/task-015.md`）。
+- 本地 Windows GUI 当前未运行；上次 `水田2P` 对 Very Hard AI 的录制对局已于 06:56 按用户指令投降结束。CLI/事件端口文件在 `agent-operation/tmp/`，失效时以 `rwx-ping` / `RWX_EVENTS_READY` 校验。
 - 项目网站：https://nine-t-nine.github.io/RWX-Agent/ ，源码在 `web/`；`web/**` 通过 Actions 自动校验并部署 Pages，维护见 `web/README.md`。
 - 已移除有问题的核弹录像展示、原片、网页副本及封面；现保留三场录像，生成配置和文档同步更新（`HISTORY/task-012.md`）。
 - 独立公开仓库 `nine-T-nine/RWX-Agent` ID 为 `1434131753`，Contributors 已验证公开维护身份。
@@ -20,7 +21,8 @@
 
 ## 验证基线
 
-- 2026-10-26：完整 `:core:test` 24 套件、206 项、零失败（本次重跑通过）；Headless 发行包此前构建通过。
+- 2026-10-27：完整 `:core:test :desktop:headlessArchive` 26 套件、224 项、零失败；真实 Headless 对局验证事件 JSONL 连续、续传不重复（`HISTORY/task-016.md`）。
+- 2026-10-26：完整 `:core:test` 24 套件、206 项、零失败；Headless 发行包构建通过。
 - 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端连续两局通过，39 条命令及分类统计一致。
 - 网站：三场录像、13 个发布文件、117.2 MiB；本地链接、视频 SHA-256、JS 语法及清单一致性通过；`b4effcd` 已推送 `publish/main`，Pages 部署成功（运行 `40323714015`）。
 

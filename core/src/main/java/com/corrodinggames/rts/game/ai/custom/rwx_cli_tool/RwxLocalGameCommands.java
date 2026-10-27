@@ -98,17 +98,19 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                 if (optionalValue(arguments, "--hp") != null || optionalFlag(arguments, "--full")) {
                     throw new IllegalArgumentException("--summary always counts every match, so --hp/--full do not apply");
                 }
-                RwxLocalGameTypes.UnitPage page = service.units(parseUnitQuery(arguments, true, true));
+                RwxLocalGameTypes.UnitQuery query = parseUnitQuery(arguments, true, true);
+                RwxLocalGameTypes.UnitPage page = service.units(query);
                 StringBuilder output = new StringBuilder("单位汇总 (tick ").append(page.tick)
                         .append(", time ").append(RwxCliText.time(page.gameTimeMillis)).append(")")
+                        .append("\nFilter: ").append(unitFilter(query))
                         .append("\ncount: ").append(page.units.size());
                 appendSummary(output, page.units);
                 return output.toString();
             }
             // Observations are read-only by default: only an explicit --delta advances the change
             // baseline, so repeated plain unit-list calls do not silently eat the events.
-            return formatUnits(service.units(parseUnitQuery(arguments, !delta)),
-                    compact, json, delta);
+            RwxLocalGameTypes.UnitQuery query = parseUnitQuery(arguments, !delta);
+            return formatUnits(service.units(query), query, compact, json, delta);
         }
         if (command == RwxCliCommands.Command.ACTIONS) {
             validateOptions(arguments, new String[] {"--unit"}, "--json");
@@ -814,8 +816,10 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                 return RwxLocalGameTypes.UnitOwner.ENEMY;
             case "neutral":
                 return RwxLocalGameTypes.UnitOwner.NEUTRAL;
+            case "any":
+                return RwxLocalGameTypes.UnitOwner.ANY;
             default:
-                throw new IllegalArgumentException("--owner must be self, ally, enemy or neutral");
+                throw new IllegalArgumentException("--owner must be self, ally, enemy, neutral or any");
         }
     }
 
@@ -1213,18 +1217,52 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
         return (int) count;
     }
 
-    private static String formatUnits(RwxLocalGameTypes.UnitPage page, boolean compact,
+    private static String unitFilter(RwxLocalGameTypes.UnitQuery query) {
+        List<String> filters = new ArrayList<>();
+        filters.add("owner=" + (query.owner == null ? "self,enemy" : query.owner.name().toLowerCase(Locale.ROOT)));
+        filters.add(query.hpBelowPercent == null ? "hp=all" : "hp<" + RwxCliText.number(query.hpBelowPercent) + "%");
+        if (!query.includeTypes.isEmpty()) filters.add("type=" + String.join(",", query.includeTypes));
+        if (!query.excludeTypes.isEmpty()) filters.add("exclude=" + String.join(",", query.excludeTypes));
+        if (query.groupName != null) filters.add("group=" + query.groupName);
+        if (query.selector != null) filters.add("units=" + query.selector);
+        if (query.radius != null) filters.add("center=" + query.x + "," + query.y + " radius=" + query.radius + " world");
+        if (query.idleOnly) filters.add("idle");
+        if (query.excludeBuilders) filters.add("exclude-builders");
+        return String.join(" | ", filters);
+    }
+
+    private static String formatUnits(RwxLocalGameTypes.UnitPage page, RwxLocalGameTypes.UnitQuery query, boolean compact,
                                       boolean json, boolean delta) {
         if (json) return formatUnitsJson(page);
         StringBuilder output = new StringBuilder("单位列表")
                 .append(" (tick ").append(page.tick)
-                .append(", time ").append(RwxCliText.time(page.gameTimeMillis)).append(')');
+                .append(", time ").append(RwxCliText.time(page.gameTimeMillis)).append(')')
+                .append("\nFilter: ").append(unitFilter(query));
         appendSummary(output, page.units);
         if (delta) appendChanges(output, page.changes);
         output.append("\n单位 (").append(page.units.size()).append("):");
         for (RwxLocalGameTypes.UnitSnapshot unit : page.units) {
-            output.append("\n").append(compact ? compactUnitLine(unit) : formatUnitLine(unit));
+            output.append("\n").append(compact ? compactUnitLine(unit) : listUnitLine(unit));
         }
+        return output.toString();
+    }
+
+    private static String listUnitLine(RwxLocalGameTypes.UnitSnapshot unit) {
+        StringBuilder output = new StringBuilder("#").append(unit.id).append(' ').append(unit.unitTypeId)
+                .append(" team=").append(unit.teamId).append(" @").append((int) unit.x).append(',').append((int) unit.y)
+                .append(" hp=").append((int) unit.health).append('/').append((int) unit.maxHealth);
+        if (unit.buildProgress < 0.999f) output.append(" | build=").append(Math.round(unit.buildProgress * 100)).append('%');
+        if (unit.techLevel > 1) output.append(" | tech=T").append(unit.techLevel);
+        if (unit.upgradeLevel > 1) output.append(" | upgrade=").append(unit.upgradeLevel);
+        if (unit.currentOrder != null) output.append(" | ").append(unit.currentOrder);
+        if (unit.targetUnitId != null) output.append(" -> #").append(unit.targetUnitId);
+        else if (unit.waypointX != null && unit.waypointY != null) output.append(" -> ")
+                .append((int) (float) unit.waypointX).append(',').append((int) (float) unit.waypointY);
+        if (unit.waypointQueue.size() > 1) output.append(" | queued orders=").append(unit.waypointQueue.size());
+        if (unit.queueSize != null && unit.queueSize > 0) output.append(" | production queue=").append(unit.queueSize);
+        String upgrade = upgradingLabel(unit);
+        if (upgrade != null) output.append(" | upgrading ").append(upgrade);
+        else if (currentProgress(unit) != null) output.append(" | progress=").append(Math.round(currentProgress(unit) * 100)).append('%');
         return output.toString();
     }
 
@@ -1242,6 +1280,8 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
             output.append(" build").append(Math.round(unit.buildProgress * 100.0f)).append('%');
         }
         output.append(" @").append((int) unit.x).append(',').append((int) unit.y);
+        if (unit.maxHealth <= 0.0f) output.append(" hp=unknown");
+        else if (percent >= 99.95f) output.append(" hp100%");
         if (unit.currentOrder != null) output.append(" | ").append(unit.currentOrder);
         if (unit.targetUnitId != null) output.append(" -> ").append(unit.targetUnitId);
         if (unit.queueSize != null && unit.queueSize > 0) {
@@ -1686,6 +1726,7 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                 .append("\nunits: positions/distance/range in world units (1 tile = 20, space = 60)")
                 .append("\ncenter: ").append((int) threats.x).append(',').append((int) threats.y)
                 .append(" | radius: ").append((int) threats.radius).append(" (world)")
+                .append("\nvisibility: currently visible enemies only")
                 .append("\n敌方可见单位: ").append(threats.enemyCount)
                 .append(" | air: ").append(threats.airCount)
                 .append(" | ground: ").append(threats.groundCount)
@@ -1695,6 +1736,14 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                 .append(" | antiSubmerged: ").append(threats.antiSubmergedCount);
         if (threats.nearestDistance >= 0.0f) {
             output.append("\nnearestDistance: ").append((int) threats.nearestDistance);
+            if (!threats.units.isEmpty()) {
+                RwxLocalGameTypes.ThreatUnit nearest = threats.units.get(0);
+                output.append(" | #").append(nearest.id).append(' ').append(nearest.unitTypeId)
+                        .append(" team=").append(nearest.teamId)
+                        .append(" pos=").append((int) nearest.x).append(',').append((int) nearest.y);
+            }
+        } else {
+            output.append("\nnearestDistance: none");
         }
         Map<String, Integer> byTeamType = new LinkedHashMap<>();
         for (RwxLocalGameTypes.ThreatUnit unit : threats.units) {
@@ -1712,6 +1761,8 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                         .append(" x").append(entry.getValue());
                 first = false;
             }
+        } else {
+            output.append("\n按类型: none");
         }
         if (threats.antiAirCount > 0 && threats.airCount == 0) {
             output.append("\n提示: 范围内没有敌方空中单位，但有 ").append(threats.antiAirCount)

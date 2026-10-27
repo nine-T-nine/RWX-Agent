@@ -12,6 +12,7 @@ final class RwxEventStore {
     private final ArrayDeque<RwxLocalGameTypes.GameEvent> events = new ArrayDeque<>();
     private final Map<Long, Integer> lastDamage = new HashMap<>();
     private int lastThrottlePrune = Integer.MIN_VALUE;
+    private int lastStreamTime = Integer.MIN_VALUE;
 
     boolean append(RwxLocalGameTypes.GameEvent event) {
         if (event.type == RwxLocalGameTypes.EventType.DAMAGED) {
@@ -22,10 +23,12 @@ final class RwxEventStore {
         }
         events.addLast(event);
         maintain(event.gameTimeMillis);
+        publish(event.gameTimeMillis);
         return true;
     }
 
     void maintain(int now) {
+        int before = events.size();
         while (!events.isEmpty() && (events.size() > CAPACITY
                 || (long) now - events.peekFirst().gameTimeMillis > RETENTION_MILLIS)) {
             events.removeFirst();
@@ -34,9 +37,21 @@ final class RwxEventStore {
             lastDamage.values().removeIf(time -> (long) now - time >= 5000);
             lastThrottlePrune = now;
         }
+        if (before != events.size() || (long) now - lastStreamTime >= 1000) publish(now);
+    }
+
+    private void publish(int now) {
+        if (RwxEventStream.isRunning()) {
+            RwxEventStream.publish(snapshot(), now);
+            lastStreamTime = now;
+        }
     }
 
     List<RwxLocalGameTypes.GameEvent> snapshot() { return List.copyOf(events); }
     int size() { return events.size(); }
-    void clear() { events.clear(); lastDamage.clear(); lastThrottlePrune = Integer.MIN_VALUE; }
+    void clear() {
+        events.clear(); lastDamage.clear(); lastThrottlePrune = Integer.MIN_VALUE;
+        lastStreamTime = Integer.MIN_VALUE;
+        if (RwxEventStream.isRunning()) RwxEventStream.reset();
+    }
 }
