@@ -2,6 +2,7 @@
 
 > Full English version of [`help_zh.md`](help_zh.md). **`help_zh.md` is the authoritative document**;
 > this file is synced from it in the final stage of a change, so it can lag behind while text is still moving.
+> `rwx-help` displays this English manual.
 
 This page can be viewed with `rwx-help`.
 
@@ -475,23 +476,15 @@ CLI endpoint and connection-related features.
 
 ### 8.1 Startup and connection
 
-Start the game and the command endpoint with `:desktop:rwxCliRun` (or `:desktop:run --args="--rwx-cli"`). `rwx-ping` returns `pong` and is used for liveness checks.
+Start the game and command endpoint with `:desktop:rwxCliRun`, or `:desktop:run --args="--rwx-cli"`; Java 25 is required. `rwx-ping` returns `pong` for a liveness check.
 
-`--headless`: creates no GUI, window, graphics context, audio device or extra terminal, while keeping the original game tick, pathfinding, networking, CLI and command scheduling; implies `--rwx-cli`. The graphics adapter keeps only exact sizing and on-demand CPU pixel reads, and drawing is a no-op; no hidden window or Xvfb is used. The default GUI startup behaviour is unchanged. Requires Java 25.
+`--headless` implies `--rwx-cli` and creates no GUI, window, graphics context, audio device or extra terminal. Game ticks, pathfinding, networking, CLI and command scheduling remain available; Xvfb is not required.
 
-```powershell
-.\gradlew.bat :desktop:run '--args=--headless --no-steam'
-python agent-operation/tools/rwx-cli.py rwx-connection-status
-```
+`--data-dir=<directory>` sets the instance data and identity directory; `--cli-port-file=<file>` sets its CLI port file. Use separate directories and port files for multiple instances.
 
-```bash
-bash ./gradlew :desktop:run --args='--headless --no-steam'
-python3 agent-operation/tools/rwx-cli.py rwx-connection-status
-```
+Pure headless distribution: `:desktop:headlessArchive`, producing `desktop/build/distributions/rwx-headless.tar.gz`; on Linux run `bash bin/rwx-headless`. See [SERVER.md](SERVER.md) for deployment.
 
-For real-time control prefer persistent TCP; if the host cannot manage sockets conveniently, keep a Python `--stdio` process. One-shot Python / PowerShell calls suit compatibility and debugging, and batches are not atomic transactions. See `agent-operation/tools/README.md` and `agent-operation/START.md` for protocol, examples, exit codes and overhead. Socket round-trip time includes command processing; agent reasoning and tool scheduling are separate. `game-step --seconds` advances game time, while `game-events --seconds` is a window into past events, not a recommended decision interval.
-
-`--data-dir=<directory>` sets the instance's data/identity directory, and `--cli-port-file=<file>` sets the CLI port file explicitly; multiple instances should use separate directories and port files. Pure headless distribution: `:desktop:headlessArchive`, output `desktop/build/distributions/rwx-headless.tar.gz`; on Linux start it with `bash bin/rwx-headless`. Deployment, systemd and network validation are covered in `agent-operation/SERVER.md`.
+Reuse a persistent connection throughout the match: prefer `rwx-cli.py --stdio` when the host can retain the process and its streams, or use persistent TCP if the host already supports it. Otherwise use a one-shot or batch client. See [START.md](START.md) for startup and starting a match; see [tools/README.md](tools/README.md) for other clients and the protocol.
 
 ### 8.2 Some conventions
 

@@ -2,7 +2,7 @@
 
 所有示例默认从**仓库根目录**执行，除非另有说明。
 
-相关文档：[命令手册](../help.md) · [游戏启动](../START.md) · [服务器部署](../SERVER.md)
+相关文档：[中文命令手册](../help_zh.md) · [英文命令手册](../help.md) · [游戏启动](../START.md) · [服务器部署](../SERVER.md)
 
 ## 1. 工具总览
 
@@ -17,81 +17,53 @@
 
 ## 2. 发送 CLI 命令
 
-实时控制优先使用持久 TCP 连接；若 Agent 不方便直接管理 Socket，则优先使用 Python 持久模式。单次 Python/PowerShell 调用用于通用兼容与调试。
+整局复用连接：优先使用宿主可保持的 Python `--stdio`，或宿主已有的持久 TCP；不能保持连接时使用单次或批量客户端。启动、探活和开局见 [START.md](../START.md#21-执行-cli-命令)。
 
-| 方式 | 适用场景 | 主要缺陷 |
+| 方式 | 用途 | 限制 |
 |---|---|---|
-| 直接持久 TCP | 高频实时控制 | 宿主必须正确管理连接和协议 |
-| Python 持久模式 | 支持 stdin/stdout 的 Agent | 需要保留客户端进程 |
-| Python 批量模式 | 已确定的连续命令 | 不能自然支持每步观察后决策 |
-| Python 单次模式 | 调试、偶发调用 | 重复启动解释器和建立连接 |
-| PowerShell 客户端 | Windows 兼容操作 | 单次调用存在进程和连接开销 |
-| Bash 包装 | 便捷调用 | 仍依赖底层 Python 客户端 |
-| 文件邮箱 | 旧版兼容 | 不作为低延迟实时控制入口；本仓库不再提供邮箱守护进程 |
+| Python `--stdio` | Agent 持久通信 | 宿主须保留子进程及标准流 |
+| 直接持久 TCP | 高频交互 | 宿主须管理连接和协议 |
+| Python 批量 | 连续执行预定命令 | 不适合逐步观察后决策 |
+| Python 单次 | 偶发操作、调试 | 每次启动进程并建立连接 |
+| PowerShell / Bash | 系统兼容 | 开销取决于调用方式；Bash 包装 Python |
+| 文件邮箱 | 旧版兼容 | 非实时入口；本仓库不提供邮箱守护进程 |
 
 ### 2.1 启动 RWX
 
-**Windows GUI：**
-
-```powershell
-.\gradlew.bat :desktop:rwxCliRun
-```
-
-**Windows Headless：**
-
-```powershell
-.\gradlew.bat :desktop:run '--args=--headless'
-```
-
-Linux / WSL 将启动器换为 `bash ./gradlew`。
-
-启动与连接的完整说明见 [START.md](../START.md)。
+启动、端口就绪和实例隔离见 [START.md](../START.md#1-启动游戏)。
 
 ### 2.2 Python 客户端
 
-支持单次、批量、人用交互和 Agent 持久标准流。`--stdio` 使用同一连接，启动时仅发现和验证一次端口；stderr 输出 `ready` 表示握手完成。stdin 为 UTF-8，每行使用与 `--line` 相同的 shell 引号规则；空行和以 `#` 开头的行忽略，关闭 stdin 正常退出。stdout 每条命令一行 UTF-8 JSON，包含布尔 `error` 和字符串 `reply`，即使回复为空或含换行也有明确边界，并立即 flush。语法错误产生一条 `error` JSON 后继续；服务端 `error:` 也可继续处理，任一错误使最终退出码为 4。连接、握手、超时或截断错误写 stderr 并以 2 退出；在途命令可能已执行，不自动重发。`--interactive` 保留提示符与 `exit` / `quit` / `:q`；不适合机器解析。
+`--stdio` 复用一个连接，启动时发现并验证端口一次，握手完成后向 stderr 输出 `ready`。宿主必须保留进程及标准流。stdin 每行一个 UTF-8 命令，采用 `--line` 的 shell 引号规则；空行和以 `#` 开头的行忽略。stdout 每条命令输出并 flush 一行 JSON：`error` 为布尔值，`reply` 为字符串，含空回复和多行回复。关闭 stdin 退出。
+
+语法错误输出一条错误 JSON 后继续；服务端 `error:` 也可继续，任一错误使最终退出码为 4。连接、握手、超时或截断错误写 stderr 并以 2 退出；在途命令可能已执行，不自动重发。
 
 ```powershell
-# 查看可用实例
-python agent-operation/tools/rwx-cli.py --list
-
-# 查询游戏状态
-python agent-operation/tools/rwx-cli.py rwx-game-state --summary
-
-# 连接多人服务器
-python agent-operation/tools/rwx-cli.py rwx-connect <server-address>:5123 --name AgentA
-
-# 查看连接状态
-python agent-operation/tools/rwx-cli.py rwx-connection-status
-
-# 批量执行
-python agent-operation/tools/rwx-cli.py --batch-file commands.txt
-
-# Agent 持久模式；输入 rwx-ping，读取一行 JSON，再输入下一条
+# Agent 持久模式；等待 stderr 的 ready，再逐行发送并读取 JSON
 python agent-operation/tools/rwx-cli.py --stdio
 
-# 人工交互模式
+# 人工交互；exit、quit 或 :q 退出
 python agent-operation/tools/rwx-cli.py --interactive
 
-# 带引号的一行命令
+# 已确定的命令批次
+python agent-operation/tools/rwx-cli.py --batch-file commands.txt
+
+# 查看实例；单次命令；带引号的一行命令
+python agent-operation/tools/rwx-cli.py --list
+python agent-operation/tools/rwx-cli.py rwx-game-state --summary
 python agent-operation/tools/rwx-cli.py --line 'rwx-battleroom-select-map --name "Lake (2p)"'
 ```
 
-Linux / WSL 使用 `python3`，也可以通过 Bash 包装脚本执行：
-
-```bash
-bash agent-operation/tools/rwx-cli.sh rwx-game-state --summary
-bash agent-operation/tools/rwx-cli.sh send 'rwx-game-step --seconds N' X
-```
+Linux / WSL 使用 `python3`，也可使用 `bash agent-operation/tools/rwx-cli.sh` 包装。包装的 `send "命令" [超时秒数]` 为单次调用；`status` / `start` 查看端口，`stop` 不停止游戏。
 
 **Windows PowerShell 原生客户端：**
 
 ```powershell
 .\agent-operation\tools\rwx-cli.ps1 -List
-.\agent-operation\tools\rwx-cli.ps1 rwx-game-state --summary
+.\agent-operation\tools\rwx-cli.ps1 -Interactive
 .\agent-operation\tools\rwx-cli.ps1 -Batch 'rwx-game-state --summary','rwx-game-unit-list --owner self --full'
 .\agent-operation\tools\rwx-cli.ps1 -BatchFile .\commands.txt
-.\agent-operation\tools\rwx-cli.ps1 -Interactive
+.\agent-operation\tools\rwx-cli.ps1 rwx-game-state --summary
 ```
 
 ### 2.3 批量、超时与协议
@@ -105,7 +77,44 @@ bash agent-operation/tools/rwx-cli.sh send 'rwx-game-step --seconds N' X
 
 **直接 TCP 协议：** 连接 `127.0.0.1` 的 CLI 端口。标准请求为 UTF-8 `命令名<TAB>参数列表<LF>`，每个参数分别编码为 UTF-8 后 Base64，再以英文逗号连接；无参数仍可发送 `rwx-ping\t\n`。例如 `rwx-game-state --summary` 为 `rwx-game-state\tLS1zdW1tYXJ5\n`。服务端也有人工纯文本回退，但程序应使用上述编码，不要直接发送空格分隔命令。编码表示无法区分唯一的空字符串参数和无参数。
 
-单次请求写入后半关闭写端（`shutdown(SHUT_WR)`），读取直到 EOF；回复为 UTF-8，检查是否以 `error:` 开头。持久连接先发送 `!!framed\n`，读取 `0x1E ready 0x1E`，之后每次发送一条请求并读取完整 `0x1E<UTF-8 回复>0x1E`；服务端会将回复内的 RS 替换为空格。空回复是两个连续 RS，多行回复仍是同一帧。处理 TCP 分片、EOF、超时和 UTF-8 解码错误；不要假定一次 `recv` 就有完整帧。可直接执行的握手、探活和带参示例见 [START.md 第 2.1 节](../START.md#21-执行-cli-命令)。单次探活示例：
+单次请求写入后半关闭写端（`shutdown(SHUT_WR)`），读取直到 EOF；回复为 UTF-8，检查是否以 `error:` 开头。持久连接先发送 `!!framed\n`，读取 `0x1E ready 0x1E`，之后每次发送一条请求并读取完整 `0x1E<UTF-8 回复>0x1E`；服务端会将回复内的 RS 替换为空格。空回复是两个连续 RS，多行回复仍是同一帧。处理 TCP 分片、EOF、超时和 UTF-8 解码错误；不要假定一次 `recv` 就有完整帧。持久握手、探活及带参查询示例（PowerShell，从仓库根目录运行，先启动一局游戏）：
+
+```powershell
+@'
+import base64, socket
+from pathlib import Path
+
+port = int(Path("agent-operation/tmp/port").read_text(encoding="ascii").strip())
+with socket.create_connection(("127.0.0.1", port), timeout=3) as sock:
+    sock.settimeout(60)
+    stream = sock.makefile("rb")
+    def frame():
+        if stream.read(1) != b"\x1e":
+            raise RuntimeError("missing frame start or connection closed")
+        data = bytearray()
+        while True:
+            b = stream.read(1)
+            if not b:
+                raise EOFError("truncated frame")
+            if b == b"\x1e":
+                return data.decode("utf-8")
+            data.extend(b)
+    def call(*args):
+        encoded = ",".join(base64.b64encode(x.encode("utf-8")).decode("ascii") for x in args[1:])
+        sock.sendall((args[0] + "\t" + encoded + "\n").encode("utf-8"))
+        result = frame()
+        if result.startswith("error:"):
+            raise RuntimeError(result)
+        return result
+    sock.sendall(b"!!framed\n")
+    if frame() != "ready" or call("rwx-ping") != "pong":
+        raise RuntimeError("not a live RWX CLI")
+    print(call("rwx-game-state", "--summary"))
+    stream.close()
+'@ | python -
+```
+
+单次探活示例：
 
 ```python
 import socket
@@ -127,7 +136,7 @@ with socket.create_connection(("127.0.0.1", port), timeout=3) as s:
     print(reply)
 ```
 
-每条连接内服务端顺序执行和回复，无请求 ID 或异步多路复用；客户端应等待当前帧再发送下一条。不同客户端可同时连接，但服务端只有四个工作线程，空闲持久连接也占用线程，更多连接可能等待；命令对游戏的实际作用仍受引擎调度控制。Socket 往返包含服务端处理时间，Agent 推理和工具调度另计；`game-step --seconds` 是推进的游戏时间，`game-events --seconds` 是过去事件查询窗口，不是推荐决策周期。
+每条连接内服务端顺序执行和回复，无请求 ID 或异步多路复用；客户端应等待当前帧再发送下一条。不同客户端可同时连接，但服务端只有四个工作线程，空闲持久连接也占用线程，更多连接可能等待；命令对游戏的实际作用仍受引擎调度控制。回执成功不一定表示游戏效果已应用；超时或断线后先查询状态，不要盲目重发可能已执行的命令。时间含义见 [START.md 第 2.1 节](../START.md#21-执行-cli-命令)。
 
 在同一实例和相近游戏状态下复测（仅查询，不改变游戏状态）：
 
@@ -321,4 +330,4 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-opera
 
 ---
 
-相关文档：[命令手册](../help.md) · [游戏启动](../START.md) · [服务器部署](../SERVER.md)
+相关文档：[中文命令手册](../help_zh.md) · [英文命令手册](../help.md) · [游戏启动](../START.md) · [服务器部署](../SERVER.md)

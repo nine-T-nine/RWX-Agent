@@ -1,9 +1,11 @@
 # 进行 RWX 游戏
 
-所有命令均从**仓库根目录**运行，要求 Java 25。
+系统终端示例均从**仓库根目录**运行，要求 Java 25。游戏使用本地 TCP Socket 接收 `rwx-*` 命令。
+
+整局复用持久连接：宿主能保持子进程和标准流时，优先使用现有 Python `--stdio`；宿主已支持持久 TCP 时也可直接使用。两者都不可用时使用单次客户端，预定的连续命令可用批量模式。无需自行开发通信工具。
 
 - [战术指南](../.agents/skills/rwx-cli-tools/strategy.md)
-- [完整命令手册](help.md)
+- [中文命令手册](help_zh.md) · [英文命令手册 / rwx-help](help.md)
 - [工具说明](tools/README.md)
 - [服务器部署](SERVER.md)
 
@@ -46,64 +48,30 @@ CLI 仅监听本机回环地址。端口文件通过原子写入更新，内容�
 
 ### 2.1 执行 CLI 命令
 
-实时控制优先保持 TCP 连接；宿主不便管理 Socket 时，保持 Python `--stdio` 进程。单次调用适合偶发操作。多实例时指定目标端口文件（见第 5 节）。
+命令端口默认写在 `agent-operation/tmp/port`，仅监听本机；它不是多人游戏的 `5123` 端口，也不是事件端口。客户端会用 `rwx-ping` 验证端口。多实例请显式选择端口文件（第 5 节）。
 
-下面的 PowerShell 示例直接连接默认 CLI 端口，先握手和探活，再依次查询；每次等完整回复后才发送下一条。可把端口文件路径替换为目标实例的路径。
-
-```powershell
-@'
-import base64, socket
-from pathlib import Path
-
-port = int(Path("agent-operation/tmp/port").read_text(encoding="ascii").strip())
-with socket.create_connection(("127.0.0.1", port), timeout=3) as sock:
-    sock.settimeout(60)
-    stream = sock.makefile("rb")
-    def frame():
-        if stream.read(1) != b"\x1e":
-            raise RuntimeError("missing frame start or connection closed")
-        data = bytearray()
-        while True:
-            b = stream.read(1)
-            if not b:
-                raise EOFError("truncated frame")
-            if b == b"\x1e":
-                return data.decode("utf-8")
-            data.extend(b)
-    def call(*args):
-        encoded = ",".join(base64.b64encode(x.encode("utf-8")).decode("ascii") for x in args[1:])
-        sock.sendall((args[0] + "\t" + encoded + "\n").encode("utf-8"))
-        result = frame()
-        if result.startswith("error:"):
-            raise RuntimeError(result)
-        return result
-    sock.sendall(b"!!framed\n")
-    if frame() != "ready" or call("rwx-ping") != "pong":
-        raise RuntimeError("not a live RWX CLI")
-    print(call("rwx-game-state", "--summary"))
-    stream.close()
-'@ | python -
-```
-
-若命令返回 `error:`，示例会停止；超时或断线后不要自动重发，先重新连接并查询状态，因为命令可能已执行。[协议与单次 TCP 示例](tools/README.md#23-批量超时与协议)包含边界和限制。
-
-Python 持久客户端可由 Agent 保留进程并逐行写入命令：
+**持久通信流程：**在另一个终端启动以下客户端，或由 Agent 宿主启动并在整局保留子进程及其 stdin、stdout、stderr：
 
 ```powershell
 python agent-operation/tools/rwx-cli.py --stdio
 ```
 
-等待 stderr 的 `ready` 后，在 stdin 输入 `rwx-ping` 或 `rwx-game-state --summary`，每条非空命令对应 stdout 的一行 JSON，例如 `{"error": false, "reply": "pong"}`；多行和空回复也在 `reply` 中。输入结束时关闭 stdin；详细约定见[工具说明](tools/README.md)。人工终端可用 `--interactive`。
+Linux / WSL 使用 `python3`。
 
-最简单的单次兼容操作：
+1. 等待 stderr 输出 `ready`，表示端口验证和连接完成。
+2. 向 stdin 写入 `rwx-ping` 并换行，读取 stdout 的一行 JSON；`reply` 应为 `pong`，`error` 应为 `false`。
+3. 向同一 stdin 写入 `rwx-game-state --summary` 并换行，读取下一行 JSON；查看 `reply` 和 `error`。尚未开始对局时，状态查询可能返回错误；按 3.2 节开局后再查询。每条命令都等对应回复后再发送下一条。
+4. 完成后关闭 stdin。**跨工具调用复用要求宿主保持该进程及标准流**；仅启动一次命令本身不能保证复用。诊断输出在 stderr，多行回复保存在 JSON 的 `reply` 中。
+
+普通终端可按上述步骤逐行输入；不支持保留子进程的宿主可使用单次调用：
 
 ```powershell
-python agent-operation/tools/rwx-cli.py rwx-game-state --summary
+python agent-operation/tools/rwx-cli.py rwx-ping
 ```
 
-Linux / WSL 使用 `python3` 或 `bash agent-operation/tools/rwx-cli.sh <命令与参数>`。
+如果宿主已能可靠管理持久 TCP，可直接连接；协议示例见[工具说明](tools/README.md#23-批量超时与协议)。超时或断线后先重新连接并查询状态，不要盲目重发可能已执行的命令。成功回执也不一定表示游戏效果已应用。
 
-**时间含义：** Socket 通信耗时包括连接、传输和等待完整回复；其中请求到回复的时间也包含游戏命令的处理或等待时间，不能将两者简单相加。游戏命令执行耗时取决于命令及引擎调度；Agent 推理和工具调度另有开销。`rwx-game-step --seconds` 是主动推进的游戏时间（仅单机），`rwx-game-events --seconds` 是查询过去事件的窗口，均不等于通信延迟或推荐决策周期。
+**时间：**Socket 往返包含传输和命令处理或等待；Agent 推理与工具调度另计。`rwx-game-step --seconds` 主动推进单机游戏时间；`rwx-game-events --seconds` 查询过去事件的窗口，不是等待时间或推荐决策周期。
 
 ### 2.2 接收游戏事件
 
@@ -124,10 +92,36 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 
 详见 [工具说明](tools/README.md)。
 
+## 3. 游戏对局
 
-## 3. 多人游戏连接
+目标：消灭所有敌方阵营能生产的单位和建筑，包括指挥中心。可使用各种方式操控游戏和获取信息，但必须遵守对局权限和以下限制。
 
-### 3.1 GUI 连接
+- 正式对局禁止修改源码、禁止暂停；不要随意加速。多人限制见 4.3 节。
+- 建议及时花费资金、关注战报。查询游戏状态与监听事件有助于掌握战局，见第 2 节。
+
+### tip1：使用 rwx_cli_tool
+
+通过 CLI 操作；自动补产和微操等命令见[命令手册](help_zh.md)。`rwx-help` 显示英文手册，`rwx-help --list 2` 列出标题，`rwx-help 5` 查看第 5 章。
+
+### tip2：直接截图观察战局
+
+可选：GUI 窗口使用[截图工具](tools/README.md#51-windows-gui-截图)；Headless 无法截图。可用 `rwx-game-camera` 移动游戏视野；初始缩放为 1，建议不大于 1，移动GUI界面的镜头参见[命令手册](help.md)第2.4节。此方法偏慢且会有延迟，请在合适时机再使用.如要获取部分地图地形信息，参见[命令手册](help.md)第2.3节。
+
+### tip3：写辅助脚本
+
+可选：在仓库根目录的 `agent-tmp/` 维护临时脚本；注意游戏时间与事件触发，避免过度等待或死锁。
+
+### tip4：安排子智能体辅助管理
+
+可选：由 Agent 自行安排子智能体发送命令、辅助决策或监听 JSONL 事件，并自行传递需要的决策信息。
+
+### 其他方式
+
+遵守上述限制，按需使用其他操作方式。
+
+## 4. 多人游戏连接
+
+### 4.1 GUI 连接
 
 真人玩家可以直接通过 GUI 连接，无需启用 CLI。
 
@@ -143,53 +137,38 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 
 GUI 支持正常截图和键鼠操作；如需 Agent 同时控制，添加 `--rwx-cli`。
 
-### 3.2 Agent 连接
+### 4.2 Agent 连接
 
-以下命令使用 `rwx-cli.py`，均从仓库根目录执行。
+以下是 **RWX CLI 命令，不是 Shell 命令**。通过 2.1 节的连接逐条发送并读取回复；单次模式须在每条前加客户端调用。
 
-**连接服务器：**
-
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-connect <server-address>:5123 --name AgentA
+```text
+rwx-connect <server-address>:5123 --name AgentA
+rwx-connection-status
+rwx-game-state --summary
+rwx-game-unit-list --owner self --full --compact
 ```
 
-**查询连接状态：**
+把地址占位符替换为实际服务器地址。`rwx-connect` 的回执仅表示连接请求已提交；查询状态，`joined` 表示已加入房间，`in-game` 表示已开始并载入。房主负责开局。
 
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-connection-status
+本地单机开局也通过同一连接逐条发送：
+
+```text
+rwx-skirmish
+rwx-battleroom-show
 ```
 
-- `joined`：已加入房间。
-- `in-game`：游戏已开始并载入。
+检查地图、对手阵营和出生点；战役室可能已有 AI。需要添加 AI 或调整房间时，先确认地图有可用出生点，命令见[命令手册](help_zh.md)。确认后逐条发送：
 
-**查询对局信息：**
-
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-game-state --summary
-python agent-operation/tools/rwx-cli.py rwx-game-unit-list --owner self --full --compact
+```text
+rwx-battleroom-start
+rwx-game-state --summary
 ```
 
-**断开连接：**
+开局回执表示已请求开始；若尚未载入，稍后再查询状态。
 
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-disconnect
-```
+`rwx-disconnect` 断开多人连接；`rwx-connect --reconnect true` 使用同一进程和身份重连；`rwx-exit` 退出 RWX。关闭 CLI 客户端不会断开游戏连接。
 
-**使用同一进程和身份重连原服务器：**
-
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-connect --reconnect true
-```
-
-**退出 RWX 进程：**
-
-```powershell
-python agent-operation/tools/rwx-cli.py rwx-exit
-```
-
-注意：关闭本地 Python CLI 客户端，不等于断开游戏连接。
-
-### 3.3 多人模式限制
+### 4.3 多人模式限制
 
 普通玩家只能读取其可见信息、控制己方单位。房间设置修改及开始游戏由房主负责。
 
@@ -199,7 +178,7 @@ python agent-operation/tools/rwx-cli.py rwx-exit
 - 本地 `step`。
 - 单机 `restart`。
 
-## 4. 托管服务器与对局生命周期
+## 5. 托管服务器与对局生命周期
 
 常驻服务器使用：
 
@@ -229,7 +208,7 @@ python agent-operation/tools/rwx-cli.py rwx-exit
 
 部署详见 [SERVER.md](SERVER.md)。
 
-## 5. 多 Agent 并行运行
+## 6. 多 Agent 并行运行
 
 每个 Agent 必须使用**独立数据目录和 CLI 端口文件**，以隔离身份和连接状态。
 
@@ -239,11 +218,13 @@ python agent-operation/tools/rwx-cli.py rwx-exit
 .\gradlew.bat :desktop:run '--args=--headless --data-dir=agent-operation/tmp/a --cli-port-file=agent-operation/tmp/a/port'
 ```
 
-连接服务器：
+连接该实例的持久客户端：
 
 ```powershell
-python agent-operation/tools/rwx-cli.py --port-file agent-operation/tmp/a/port rwx-connect <server-address>:5123 --name AgentA
+python agent-operation/tools/rwx-cli.py --port-file agent-operation/tmp/a/port --stdio
 ```
+
+按 2.1 节探活，再通过该连接发送 4.2 节的命令。
 
 AgentB 使用 `agent-operation/tmp/b` 和 `AgentB`，其他操作相同。
 
@@ -254,7 +235,7 @@ AgentB 使用 `agent-operation/tmp/b` 和 `AgentB`，其他操作相同。
 - 主实例退出后，剩余实例自动接替。
 - 必须明确指定目标实例的端口文件，**不得随意选择端口下达命令**。
 
-## 6. WSL 网络注意事项
+## 7. WSL 网络注意事项
 
 WSL 默认 NAT 模式下，Linux 与 Windows 的回环地址不一定互通。
 
@@ -266,31 +247,4 @@ WSL 默认 NAT 模式下，Linux 与 Windows 的回环地址不一定互通。
 2. 通过 `wslpath -w` 转换文件路径。
 3. 不要假定 WSL 的 `127.0.0.1` 可以直接访问 Windows 回环地址。
 
-## 7. 游戏对局
 
-胜利条件：**消灭所有敌方阵营可以生产的单位和建筑(包括指挥中心)**
-要求:
-- 你可以不择手段使用**所有方式**来操控游戏、获取战局信息、取得胜利，不过最好及时花费资金、实时关注战报
-- 进行正式对局任务时，**禁止改动源码、禁止使用游戏暂停**；不要随意加速。
-tips:
-### tip1：使用rwx_cli_tool
-- 支持几乎所有的底层命令，提供最大自由度的操控空间,也支持部分**自动化/智能微操**(参见'automation'类指令)，减少管理负担
-- 游戏启动后，通过本地 CLI 端口发送命令，详情参见 [help.md](help.md)。
-
-- `rwx-help`：显示完整help.md。
-- `rwx-help <标题编号>...`：显示指定标题及其全部子标题下的内容，包含标题本身。如 `rwx-help 5.5` 只显示 5.5，`rwx-help 5` 显示整个第 5 章。可选择多个编号，按文档顺序输出，重叠内容只显示一次。
-- `rwx-help [--session|--observe|--combat|--develop|--automation|--history|--reference|--system]`：保留原来的 8 个大模块筛选，英文名称仅用于这些 h2 标题，可组合选择多个模块。编号筛选与英文模块筛选互斥；传入编号时只按编号筛选，例如 `rwx-help --combat 5.5` 只显示 5.5。
-- `rwx-help --list [depth]`：只列出标题及编号，每行一个，按深度优先顺序输出，子标题缩进。`depth` 为正整数，默认 1（只列 h2）；2 包含 h3，3 包含 h4，以此类推，无最大深度限制。可与筛选组合，如 `rwx-help 5 --list 2`；深度始终从 h2 算起。
-
-### tip2：直接截图观察战局
-已经有封装好的截图工具，在GUI窗口打开的情况下，无视遮挡直接截图到'agent-operation\tmp'目录下。
-- 快速使用：'agent-operation\tools\screenshot.ps1 -Title "RWX Game"'
-- 详情参见 'agent-operation\tools\README.md' 
-注意，想要获得有用的画面信息，你要手动移动窗口到你想要的地方（参见‘本地对局’->'视野'相关命令：'rwx-game-camera' ），游戏开始时的缩放比例为1，推荐不大于1.
-### tip3：写辅助脚本
-允许在'agent-operation\agent-tmp'目录下维护你的脚本工具，但注意关注游戏时间、特定事件触发回调/唤醒，以免过度等待或者死锁
-### tip4：安排子智能体辅助管理
-可以使用子智能体帮助进行发送命令、辅助决策、监听事件。例如，现有工具中已经有现成的监听游戏暴露的Socket实时事件接口，你可以安排一个子智能体实时监控jsonl文件，然后让其判断是否应该向你汇报事件；你的每一个决策也都应该同步抄送给它以便增加增加其判断的依据。
-### 其他方式
-略
- 

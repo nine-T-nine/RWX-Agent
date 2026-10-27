@@ -1,6 +1,6 @@
 # RWX CLI
 
-本页可用 `rwx-help` 查看。
+`rwx-help` 显示[英文手册](help.md)；本页为中文命令手册。
 
 - `rwx-help`：显示完整文档。
 
@@ -553,29 +553,15 @@ CLI 端点与连接相关功能。
 
 ### 8.1 启动与连接
 
-启动游戏与命令端点：`:desktop:rwxCliRun`（或 `:desktop:run --args="--rwx-cli"`）。`rwx-ping` 返回 `pong`，用于探活。
+启动游戏和命令端点：`:desktop:rwxCliRun`，或 `:desktop:run --args="--rwx-cli"`；需要 Java 25。`rwx-ping` 返回 `pong`，用于探活。
 
-`--headless`：不创建 GUI、窗口、图形上下文、音频设备或额外终端；保留原版游戏 Tick、寻路、网络、CLI 和命令调度，隐含 `--rwx-cli`。图像适配器只保留精确尺寸和按需 CPU 像素读取，绘制为空操作；不使用隐藏窗口或 Xvfb。GUI 默认启动行为保持不变。需要 Java 25。
+`--headless` 隐含 `--rwx-cli`，不创建 GUI、窗口、图形上下文、音频设备或额外终端；保留游戏 Tick、寻路、网络、CLI 和命令调度，不需要 Xvfb。
 
-```powershell
+`--data-dir=<目录>` 设置实例数据和身份目录；`--cli-port-file=<文件>` 设置 CLI 端口文件。多实例须分别指定目录和端口文件。
 
-.\gradlew.bat :desktop:run '--args=--headless --no-steam'
+纯 Headless 发行包：`:desktop:headlessArchive`，产物为 `desktop/build/distributions/rwx-headless.tar.gz`；Linux 使用 `bash bin/rwx-headless` 启动。部署见 [SERVER.md](SERVER.md)。
 
-python agent-operation/tools/rwx-cli.py rwx-connection-status
-
-```
-
-```bash
-
-bash ./gradlew :desktop:run --args='--headless --no-steam'
-
-python3 agent-operation/tools/rwx-cli.py rwx-connection-status
-
-```
-
-实时控制优先使用持久 TCP；宿主不便管理 Socket 时使用 Python `--stdio` 持久进程。单次 Python / PowerShell 适合兼容与调试，批量命令并非原子事务。协议、示例、退出码和性能开销见 `agent-operation/tools/README.md` 与 `agent-operation/START.md`。Socket 往返含命令处理时间；Agent 推理和工具调度另计。`game-step --seconds` 是推进的游戏时间，`game-events --seconds` 是过去事件的查询窗口，不是推荐决策周期。
-
-`--data-dir=<目录>` 设置实例的数据/身份目录，`--cli-port-file=<文件>` 显式设置 CLI 端口文件；多个实例应各用独立目录和端口文件。纯 Headless 发行包：`:desktop:headlessArchive`，产物 `desktop/build/distributions/rwx-headless.tar.gz`；Linux 用 `bash bin/rwx-headless` 启动。部署、systemd 与网络验证见 `agent-operation/SERVER.md`。
+整局复用持久连接：宿主可保持子进程和标准流时优先使用 `rwx-cli.py --stdio`；宿主已支持持久 TCP 时也可直接使用。无法保持连接时使用单次或批量客户端。启动和开局见 [START.md](START.md)，其他客户端与协议见 [tools/README.md](tools/README.md)。
 
 ### 8.2 部分约定
 
