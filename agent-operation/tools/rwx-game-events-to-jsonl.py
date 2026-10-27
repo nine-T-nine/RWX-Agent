@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Subscribe to the game's local event socket and keep its newest records as JSONL."""
+"""Subscribe to the game's local event socket and keep its newest records as JSONL.
+
+The socket already applies the subscription filter server-side, but a subscriber still
+receives transport records it does not care about: `hello`, `cursor` placeholders for
+messages outside the subscription, `event`, `remove` and the `gap`/`overflow` markers.
+This receiver applies a second filter on receipt and persists only `kind == "update"`."""
 
 import argparse
 import json
@@ -16,6 +21,8 @@ DEFAULT_OUTPUT = ROOT / 'tmp' / 'game-events.jsonl'
 PROTOCOL = 'rwx-events-v1'
 MAX_LINE = 1024 * 1024
 MAX_RECORDS = 500
+# Second filter applied on receipt: only aggregate updates are written to the JSONL file.
+KEPT_KINDS = frozenset({'update'})
 
 
 class JsonlLog:
@@ -67,7 +74,11 @@ def count_records(path):
 
 
 def last_cursor(path):
-    """Find the last durable sequence from this log, including stream restarts."""
+    """Find the last durable sequence from this log, including stream restarts.
+
+    The log holds updates only, so the resume point is the newest stored update; the
+    sequences after it are re-requested and dropped again by the on-receipt filter.
+    """
     session, seq = None, 0
     if not path.exists():
         return session, seq
@@ -91,9 +102,34 @@ def append(output, record):
     output.flush()
 
 
-def diagnostic(output, kind, message):
-    append(output, {'protocol': PROTOCOL, 'kind': kind, 'message': message})
-    print(message, file=sys.stderr, flush=True)
+def diagnostic(kind, message):
+    """Report a transport problem on stderr only; the file holds updates and nothing else."""
+    print('%s: %s' % (kind, message), file=sys.stderr, flush=True)
+
+
+def catch_up(output, message, session, seq):
+    """Advance the resume cursor over one sequence-bearing message.
+
+    Returns the new sequence, or `None` when the message must not advance it (an older
+    duplicate, a stale session, or a malformed sequence). The cursor follows every
+    sequence, kept or filtered, so a reconnect neither replays nor invents a gap.
+    """
+    number = message.get('seq')
+    if not isinstance(number, int) or number <= 0 or message.get('session') != session:
+        diagnostic('parse_error', 'Invalid event sequence or session')
+        return None
+    if number <= seq:
+        return seq
+    if seq and number > seq + 1:
+        diagnostic('gap', 'Missing event sequence %d..%d' % (seq + 1, number - 1))
+    kind = message.get('kind')
+    if kind in KEPT_KINDS:
+        append(output, message)
+    elif kind in ('reset', 'overflow'):
+        # Not persisted, but the reader must know the stream it is following broke.
+        diagnostic('dropped', 'Stream %s marker not stored: %s'
+                   % (kind, json.dumps(message, ensure_ascii=False)))
+    return number
 
 
 def receive(sock, output, session, seq, include_info=False, allies=False):
@@ -109,43 +145,34 @@ def receive(sock, output, session, seq, include_info=False, allies=False):
             if not line:
                 return session, seq
             if len(line) > MAX_LINE or not line.endswith(b'\n'):
-                diagnostic(output, 'parse_error', 'Incomplete or oversized event message; reconnecting')
+                diagnostic('parse_error', 'Incomplete or oversized event message; reconnecting')
                 return session, seq
             try:
                 message = json.loads(line.decode('utf-8'))
                 if not isinstance(message, dict) or message.get('protocol') != PROTOCOL:
                     raise ValueError('unexpected protocol or non-object message')
             except (ValueError, UnicodeError) as error:
-                diagnostic(output, 'parse_error', 'Invalid event message: ' + str(error))
+                diagnostic('parse_error', 'Invalid event message: ' + str(error))
                 continue
             kind = message.get('kind')
             current = message.get('session')
             if kind == 'hello':
                 if not isinstance(current, str):
-                    diagnostic(output, 'parse_error', 'Hello message missing session')
+                    diagnostic('parse_error', 'Hello message missing session')
                     return session, seq
                 if session is not None and current != session:
-                    diagnostic(output, 'gap', 'Event server restarted; prior session cannot be resumed')
+                    diagnostic('gap', 'Event server restarted; prior session cannot be resumed')
                     seq = 0
                 session = current
-                append(output, message)
                 continue
             if kind in ('event', 'update', 'remove', 'cursor', 'overflow', 'reset') and 'seq' in message:
-                number = message.get('seq')
-                if not isinstance(number, int) or number <= 0 or current != session:
-                    diagnostic(output, 'parse_error', 'Invalid event sequence or session')
-                    continue
-                if number <= seq:
-                    continue
-                if seq and number > seq + 1:
-                    diagnostic(output, 'gap', 'Missing event sequence %d..%d' % (seq + 1, number - 1))
-                append(output, message)
-                seq = number
+                advanced = catch_up(output, message, session, seq)
+                if advanced is not None:
+                    seq = advanced
             elif kind in ('gap', 'overflow', 'error'):
-                append(output, message)
-                print('RWX event stream: ' + json.dumps(message, ensure_ascii=False), file=sys.stderr, flush=True)
+                diagnostic(kind, json.dumps(message, ensure_ascii=False))
             else:
-                diagnostic(output, 'parse_error', 'Unknown event message kind: ' + str(kind))
+                diagnostic('parse_error', 'Unknown event message kind: ' + str(kind))
 
 
 def main():
@@ -163,7 +190,7 @@ def main():
         parser.error('--retry-seconds must be positive')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     session, seq = last_cursor(args.output)
-    print('Appending RWX events to %s (newest %d records); Ctrl+C stops'
+    print('Appending RWX update events to %s (newest %d records); Ctrl+C stops'
           % (args.output, MAX_RECORDS), flush=True)
     try:
         output = JsonlLog(args.output)

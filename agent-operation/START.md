@@ -85,9 +85,10 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 
 `agent-operation/tmp/game-events.jsonl`
 
+- 只记录 `kind` 为 `update` 的消息（接收时二次过滤）；`event`、`remove`、`cursor`、`hello` 都不入文件。
 - 按 `Ctrl+C` 停止接收器。
-- 断线后自动重连，并根据日志末尾的序列号恢复。
-- 缓存过期、服务重启或队列溢出时，通过 `gap` / `overflow` 记录数据缺失。
+- 断线后自动重连，并根据日志末尾的序列号恢复（游标跟住所有序列号）。
+- 缓存过期、服务重启或队列溢出时，缺失只在 stderr 以 `gap` / `overflow` 报告。
 - 多实例可使用 `--port-file` 指定不同事件端口文件。
 
 详见 [工具说明](tools/README.md)。
@@ -105,15 +106,15 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 
 ### tip2：直接截图观察战局
 
-可选：GUI 窗口使用[截图工具](tools/README.md#51-windows-gui-截图)；Headless 无法截图。可用 `rwx-game-camera` 移动游戏视野；初始缩放为 1，建议不大于 1，移动GUI界面的镜头参见[命令手册](help.md)第2.4节。此方法偏慢且会有延迟，请在合适时机再使用.如要获取部分地图地形信息，参见[命令手册](help.md)第2.3节。
+GUI 窗口使用[截图工具](tools/README.md#51-windows-gui-截图)；Headless 无法截图。可用 `rwx-game-camera` 移动游戏视野；初始缩放为 1，建议不大于 1，移动GUI界面的镜头参见[命令手册](help.md)第2.4节。此方法偏慢且会有延迟，请在合适时机再使用.如要获取部分地图地形信息，参见[命令手册](help.md)第2.3节。
 
 ### tip3：写辅助脚本
 
-可选：在仓库根目录的 `agent-tmp/` 维护临时脚本；注意游戏时间与事件触发，避免过度等待或死锁。
+在仓库根目录的 `agent-tmp/` 维护临时脚本；注意游戏时间与事件触发，避免过度等待或死锁。
 
 ### tip4：安排子智能体辅助管理
 
-可选：由 Agent 自行安排子智能体发送命令、辅助决策或监听 JSONL 事件，并自行传递需要的决策信息。
+你自行安排子智能体辅助你管理。例如安排子智能体监控实时事件输出的jsonl文件并智能判断是否要通知你，你也将自己的决策同步给他。
 
 ### 其他方式
 

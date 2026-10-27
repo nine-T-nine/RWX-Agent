@@ -425,9 +425,9 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-The script appends NDJSON to `agent-operation/tmp/game-events.jsonl`, keeping only the newest 500 records (the tail is rewritten when that limit is exceeded); press Ctrl+C to stop. Use `--port` or `--port-file` to choose an instance. Event types default to those of `game-events`; `--info` adds information events, and `--allies` switches kills and losses to the allied scope.
+The script applies a second filter on receipt and appends only `kind == "update"` records to `agent-operation/tmp/game-events.jsonl`, keeping the newest 500 (the tail is rewritten when that limit is exceeded); `hello`, `event`, `remove`, `cursor` and transport diagnostics are not stored, and diagnostics go to stderr instead. Press Ctrl+C to stop. Use `--port` or `--port-file` to choose an instance. Event types default to those of `game-events`; `--info` adds information events, and `--allies` switches kills and losses to the allied scope.
 
-On disconnect the receiver reconnects from the last session and sequence number; the transport cache keeps at most 180 game seconds and 1000 records. An out-of-range cursor or a queue overflow is recorded as `gap` or `overflow`, with no guarantee of completion. A process restart creates a new session, and the old process's in-memory records cannot be recovered.
+On disconnect the receiver reconnects from the last session and sequence number, following every sequence whether or not it was stored, so a reconnect neither replays nor reports a false gap; after a restart the resume point is the newest stored update. The transport cache keeps at most 180 game seconds and 1000 records. An out-of-range cursor or a queue overflow is reported as `gap` or `overflow` on stderr, with no guarantee of completion. A process restart creates a new session, and the old process's in-memory records cannot be recovered.
 
 **Subscription protocol**
 

@@ -497,9 +497,9 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-脚本将 NDJSON 追加至 `agent-operation/tmp/game-events.jsonl`，仅保留最新 500 条（超出时重写尾部记录），按 Ctrl+C 退出。可用 `--port` 或 `--port-file` 选择实例。事件类型默认与 `game-events` 一致；`--info` 加入信息事件，`--allies` 切换击杀与损失的友军范围。
+脚本在接收侧做二次过滤，只把 `kind == "update"` 的记录以 NDJSON 追加至 `agent-operation/tmp/game-events.jsonl`，仅保留最新 500 条（超出时重写尾部记录）；`hello`、`event`、`remove`、`cursor` 与传输诊断不落盘，诊断只输出到 stderr。按 Ctrl+C 退出。可用 `--port` 或 `--port-file` 选择实例。事件类型默认与 `game-events` 一致；`--info` 加入信息事件，`--allies` 切换击杀与损失的友军范围。
 
-断线时接收器依据最后会话和序列号重连；传输缓存最多 180 游戏秒、1000 条。超出缓存或队列溢出时会记录 `gap`、`overflow`，不保证补全。进程重启会产生新会话，无法恢复旧进程的内存记录。
+断线时接收器依据最后会话和序列号重连；游标跟随每一条序列（无论是否落盘），重连不会重放也不会误报缺口，重启后从最后一条已存 `update` 继续。传输缓存最多 180 游戏秒、1000 条。超出缓存或队列溢出会在 stderr 报告 `gap`、`overflow`，不保证补全。进程重启会产生新会话，无法恢复旧进程的内存记录。
 
 **订阅协议**
 

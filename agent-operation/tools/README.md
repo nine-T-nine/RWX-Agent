@@ -9,7 +9,7 @@
 | 工具 | 环境 | 用途 |
 |---|---|---|
 | `rwx-cli.py` | Python 3.9+，跨平台 | 通用客户端，支持单次、批量、交互及持久标准流 |
-| `rwx-game-events-to-jsonl.py` | Python 3 | 订阅实时事件 Socket，写入 JSONL |
+| `rwx-game-events-to-jsonl.py` | Python 3 | 订阅实时事件 Socket，只把 `update` 写入 JSONL |
 | `rwx-cli.sh` | Bash + Python 3 | Python CLI 的 Bash 包装 |
 | `rwx-cli.ps1` / `rwx-cli-lib.ps1` | PowerShell 5.1+ / 7 | Windows 原生 .NET CLI 客户端 |
 | `screenshot.ps1` / `.bat` | Windows GUI | 游戏窗口截图，不支持 Headless |
@@ -258,14 +258,15 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-opera
 
 ### 4.2 日志与断线恢复
 
-接收到的协议消息逐条转换为 JSONL，追加写入并立即 `flush`。
+接收到的协议消息先在本地做二次过滤，**只把 `kind` 为 `update` 的记录**转换为 JSONL，追加写入并立即 `flush`。`hello`、`event`、`remove`、`cursor` 及传输诊断（`gap`、`overflow`、`parse_error`）都不会进入文件；诊断信息只输出到 stderr。
 
 **接收器本地日志：**
 
-- 最多保存最新 500 条记录。
+- 最多保存最新 500 条记录（均为 `update`）。
 - 超出上限后，重写文件并保留尾部 500 条。
 - 重启时扫描日志中的最后会话及序列号，自动请求续传。
 - 已存在的重复序列不会再次追加。
+- 续传游标跟随**所有**序列号（含被过滤的记录），因此重连不会重放，也不会误报 `gap`；重启后游标取最后一条已存 `update` 的序列号，其后的非 `update` 记录会被重新请求后再次丢弃。
 
 **游戏端缓存：**
 
@@ -289,10 +290,10 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-opera
 | `update` | 更新已有聚合事件 |
 | `remove: replaced` | 撤销被重新合并的聚合 |
 | `remove: expired` | 聚合退出查询窗口 |
-| `cursor` | 被订阅条件过滤的序列位置 |
-| `gap` | 事件历史无法完整恢复 |
-| `overflow` | 事件传输队列溢出 |
-| `parse_error` | 接收器无法解析协议消息 |
+| `cursor` | 被订阅条件过滤的序列位置（接收器不落盘） |
+| `gap` | 事件历史无法完整恢复（仅 stderr） |
+| `overflow` | 事件传输队列溢出（仅 stderr） |
+| `parse_error` | 接收器无法解析协议消息（仅 stderr） |
 
 **注意：** `update`、`remove` 是聚合维护操作，不能重复统计为新损失；`expired` 也不代表单位在该时刻被摧毁。
 
