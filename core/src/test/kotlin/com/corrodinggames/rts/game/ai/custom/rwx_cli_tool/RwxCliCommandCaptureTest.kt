@@ -1,6 +1,8 @@
 package com.corrodinggames.rts.game.ai.custom.rwx_cli_tool
 
+import com.corrodinggames.rts.game.GameLogic
 import com.corrodinggames.rts.game.GameTeam
+import com.corrodinggames.rts.gameFramework.GameEngine
 import evaluate.utils.CommandRecorder
 import java.net.Socket
 import java.nio.charset.StandardCharsets.UTF_8
@@ -14,6 +16,13 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.*
 
 class RwxCliCommandCaptureTest {
+    @BeforeTest
+    fun ensureEngine() {
+        // GameTeam's fixtures construct BaseUnit, which reads the engine singleton; this class
+        // must also work when it is the only test class selected by --tests.
+        if (GameEngine.getInstance() == null) GameLogic()
+    }
+
     private fun withDirectory(block: (Path) -> Unit) {
         val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
             .first { Files.exists(it.resolve("settings.gradle.kts")) }
@@ -47,6 +56,51 @@ class RwxCliCommandCaptureTest {
         assertTrue(lines[1].startsWith("[01:05]"))
         assertTrue(lines[2].startsWith("[00:00]"))
         assertTrue(Files.readString(recorder.statisticsPath()).contains("第2局：2026-10-26 14:45:27.123 +08:00"))
+    }
+
+    @Test fun `files are renamed after the first match map and keep the unique id`() = withDirectory { directory ->
+        val recorder = CommandRecorder(directory, 7)
+        recorder.use {
+            it.record(-1, "unassigned", "rwx-help", "rwx-help")
+            val lobbyLog = it.commandsPath()
+            val lobbyStatistics = it.statisticsPath()
+            val id = lobbyLog.fileName.toString().substringAfter("--").removeSuffix(".txt")
+            assertTrue(lobbyLog.fileName.toString().startsWith("commands-lobby-"), lobbyLog.toString())
+
+            it.enterMatch(OffsetDateTime.parse("2026-10-27T16:30:00+08:00"), 1_000,
+                "King of the Middle (3p)", "Alice")
+
+            val log = it.commandsPath()
+            val statistics = it.statisticsPath()
+            assertNotEquals(lobbyLog, log)
+            val name = log.fileName.toString()
+            assertTrue(name.matches(Regex("""commands-King-of-the-Middle-\(3p\)-\d{8}--$id\.txt""")), name)
+            assertEquals(name.removeSuffix(".txt") + "-stats.txt", statistics.fileName.toString())
+            assertFalse(Files.exists(lobbyLog), "lobby log must be moved, not copied")
+            assertFalse(Files.exists(lobbyStatistics), "lobby statistics must be moved too")
+            assertEquals(1, Files.readAllLines(log).size, "lobby command survives the rename")
+
+            // The file is the session log: a later match keeps the first map name.
+            it.enterMatch(OffsetDateTime.parse("2026-10-27T17:30:00+08:00"), 0, "Lake (2p)", "Alice")
+            assertEquals(log, it.commandsPath())
+            it.export()
+            val stats = Files.readString(statistics)
+            assertTrue(stats.contains("地图=King of the Middle (3p)"), stats)
+            assertTrue(stats.contains("地图=Lake (2p)"), stats)
+        }
+    }
+
+    @Test fun `map names become one safe filename token`() = withDirectory { directory ->
+        val recorder = CommandRecorder(directory, 8)
+        recorder.use {
+            // A frame without a map name must not consume the one rename.
+            it.enterMatch(OffsetDateTime.now(), 0, null, "Alice")
+            assertTrue(it.commandsPath().fileName.toString().startsWith("commands-lobby-"))
+            it.enterMatch(OffsetDateTime.parse("2026-10-27T16:30:00+08:00"), 1_000,
+                "湖泊 (2p)/测试:*?", "Alice")
+            val name = it.commandsPath().fileName.toString()
+            assertTrue(name.matches(Regex("""commands-湖泊-\(2p\)-测试-\d{8}--\d+\.txt""")), name)
+        }
     }
 
     @Test fun `counts merge parameters and retain every full command and executor`() = withDirectory { directory ->

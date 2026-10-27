@@ -4,6 +4,8 @@
 
 ## 当前快照
 
+- 2026-10-27：事件 JSONL 接收器文档补全「游戏启动后另开的本机事件 Socket → tmp JSONL」链路，并把日志改为滚动保留最新 500 条（`HISTORY/task-018.md`）。
+- 2026-10-27：命令记录文件改为 `commands-<地图名>-<日期>--<唯一编号>.txt`（统计同名 `-stats.txt`）：启动时先用 `commands-lobby-…` 占位，首个有效对局改名并保留原随机编号；无地图不消耗改名，后续对局沿用首局地图名（`HISTORY/task-017.md`）。
 - 2026-10-27：实体查询与事件流已完成：`--owner any`、共享实时可见性、威胁能力分类与输出补全；事件流（NDJSON、聚合修订、断线续传、gap/overflow 诊断）与 JSONL 接收器完成，真实 Headless 对局验证通过（`HISTORY/task-016.md`）。
 - 2026-10-27：`game-state` 合并宏观统计与共享事件，旧摘要命令已移除；Headless 房主 + Windows GUI 非空事件和历史保留验证通过（`HISTORY/task-015.md`）。
 - 本地 Windows GUI 当前未运行；上次 `水田2P` 对 Very Hard AI 的录制对局已于 06:56 按用户指令投降结束。CLI/事件端口文件在 `agent-operation/tmp/`，失效时以 `rwx-ping` / `RWX_EVENTS_READY` 校验。

@@ -532,14 +532,14 @@ rwx-game-events --types info --seconds 60
 
 `rwx-game-observe-reset [--keep-groups]`：清空事件历史和独立的 `unit-list --delta` 基线。默认同时清空编组；`--keep-groups` 保留编组。默认姿态及其已下发单位集合不受影响。
 
-事件流与 CLI 查询共享同一采集器和聚合器。启用本地 CLI 时自动监听独立回环端口，日志 `RWX_EVENTS_READY` 包含端口；默认发现文件为 `agent-operation/tmp/events-port`，自定义 CLI 端口文件时事件端口文件位于同一目录。命令端口文件保持不变。
+事件流与 CLI 查询共享同一采集器和聚合器。启用本地 CLI 的游戏启动后，除命令端口外还在回环地址另开一个事件 Socket 端口，日志 `RWX_EVENTS_READY` 包含端口；默认发现文件为 `agent-operation/tmp/events-port`，自定义 CLI 端口文件时事件端口文件位于同一目录。命令端口文件保持不变。
 
 ```powershell
 python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-接收器把 NDJSON 消息追加至 `agent-operation/tmp/game-events.jsonl`，Ctrl+C 停止；`--port` 或 `--port-file` 可选择实例。默认事件类型与 `game-events` 一致，`--info` 显式包含信息事件，`--allies` 按查询命令的友军规则切换击杀和损失。断线重连使用日志中最后的会话和序列号；缓存最多 180 游戏秒和 1000 条传输记录，超出范围或队列溢出会记录 `gap` 或 `overflow`，无法保证补全。进程重启产生新会话，无法恢复旧进程的内存记录。
+接收器把 NDJSON 消息追加至 `agent-operation/tmp/game-events.jsonl`，文件只保留最新 500 条记录（超过后重写为尾部 500 条，旧记录丢弃），Ctrl+C 停止；`--port` 或 `--port-file` 可选择实例。默认事件类型与 `game-events` 一致，`--info` 显式包含信息事件，`--allies` 按查询命令的友军规则切换击杀和损失。断线重连使用日志中最后的会话和序列号；缓存最多 180 游戏秒和 1000 条传输记录，超出范围或队列溢出会记录 `gap` 或 `overflow`，无法保证补全。进程重启产生新会话，无法恢复旧进程的内存记录。
 
 协议为 UTF-8 NDJSON：客户端发送 `{"protocol":"rwx-events-v1","kind":"subscribe","session":null,"after":0,"info":false,"allies":false}` 并换行；服务端返回 `hello`，然后发送 `event`、`update`、`remove`、`cursor`、`gap`、`overflow` 或 `reset`。`seq` 是传输序列，`eventId` 和 `revision` 标识同一聚合的修订；`remove` 的 `reason` 为 `replaced` 或 `expired`。`event.type`、`event.description`、`gameTimeMillis` 和 `tick` 源于实际事件，`session`、序列、修订及缺口消息属于传输元数据。聚合消费者须按事件 ID 应用修订与删除，不能将 `update` 另计为新事件。
 

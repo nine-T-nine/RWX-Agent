@@ -1,28 +1,54 @@
-# 进行RWX游戏
+# 进行 RWX 游戏
 
-## 开始前
+所有命令均从**仓库根目录**运行，要求 Java 25。
 
-以下示例均从仓库根目录运行。需要 Java 25；战术参考 [.agents/skills/rwx-cli-tools/strategy.md](../.agents/skills/rwx-cli-tools/strategy.md)。完整命令见 [help.md](help.md)。旧的 `rwx-local-*` 命令已移除。
+- [战术指南](../.agents/skills/rwx-cli-tools/strategy.md)
+- [完整命令手册](help.md)
+- [工具说明](tools/README.md)
+- [服务器部署](SERVER.md)
 
-Windows GUI：`./gradlew.bat :desktop:rwxCliRun`。无 GUI：
+## 1. 启动游戏
+
+**Windows GUI：**
+
+```powershell
+.\gradlew.bat :desktop:rwxCliRun
+```
+
+**Windows Headless（无界面）：**
 
 ```powershell
 .\gradlew.bat :desktop:run '--args=--headless --no-steam'
 ```
 
-Linux / WSL：
+**Linux / WSL Headless：**
 
 ```bash
 bash ./gradlew :desktop:run --args='--headless --no-steam'
 ```
 
-启动进程在前台持续运行；需要后台启动时使用自己平台的进程管理器。Headless 没有窗口、图形上下文或额外终端。
+启动后，游戏进程会持续占用当前终端。后台运行需使用系统进程管理工具。Headless 模式不创建游戏窗口、图形上下文或额外终端。
 
-CLI 监听成功后打印 `RWX_CLI_TOOL_READY` 并原子写入 `agent-operation/tmp/port`。文件只含数字；工具会先读取它并用 `rwx-ping` 验证，忽略异常退出留下的失效端口。CLI 绑定本机回环地址，端口与多人游戏的 `5123` 不同。
+### 服务就绪标志
 
-同一进程还启动本机事件流并打印 `RWX_EVENTS_READY`；事件端口保存在 `agent-operation/tmp/events-port`，不占用 CLI 命令端口。读取该文件可查看端口。运行 `python agent-operation/tools/rwx-game-events-to-jsonl.py` 后，事件追加至 `agent-operation/tmp/game-events.jsonl`，按 Ctrl+C 停止接收器。断线会重连并从日志最后的序列恢复；缓存过期、服务重启或队列溢出会以 `gap` / `overflow` 记录。多实例可用 `--port-file` 选择事件端口文件，详见 [工具说明](tools/README.md)。
+启动成功后，会自动提供以下本地服务：
 
-CLI 在收包入口自动记录完整命令、当前对局分秒及执行者阵营，并将日志和次数统计写入 `evaluate/output/`；统计首部包含每局实际进入时间。文件路径打印在 `RWX_CLI_COMMAND_RECORDING` 行，详见 [命令记录工具](../evaluate/utils/COMMAND_RECORDING.md)。
+| 服务 | 就绪日志 | 端口文件 |
+|---|---|---|
+| CLI 命令接口 | `RWX_CLI_TOOL_READY` | `agent-operation/tmp/port` |
+| 游戏事件流 | `RWX_EVENTS_READY` | `agent-operation/tmp/events-port` |
+
+两个服务使用独立端口，均不占用多人游戏的 `5123` 端口。
+
+CLI 仅监听本机回环地址。端口文件通过原子写入更新，内容只有端口数字。CLI 工具会自动读取端口文件，并通过 `rwx-ping` 验证，忽略异常退出遗留的无效端口。
+
+## 2. CLI 命令与事件流
+
+### 2.1 执行 CLI 命令
+
+使用 `agent-operation/tools/rwx-cli.py` 执行命令。
+
+以下为创建单机对局的完整示例：
 
 ```powershell
 python agent-operation/tools/rwx-cli.py rwx-help 1
@@ -32,50 +58,180 @@ python agent-operation/tools/rwx-cli.py rwx-battleroom-settings --income 2 --aiD
 python agent-operation/tools/rwx-cli.py rwx-battleroom-start
 ```
 
-Linux / WSL 使用 `python3`，或 `bash agent-operation/tools/rwx-cli.sh <命令与参数>`。
+Linux / WSL 将 `python` 替换为 `python3`，也可以使用：
 
-## 多人连接与生命周期
+```bash
+bash agent-operation/tools/rwx-cli.sh <命令与参数>
+```
 
-真人手动启动 GUI 时不需要 CLI：在“多人游戏 → 原版服务器”选择地址直连，输入 `<server-address>:5123`；也可在启动参数中使用 `--join-server=<server-address>:5123`。这两条路径复用原版连接器，支持可达、版本和模组兼容的服务器。GUI 可以正常截图、键鼠操控；需要 Agent 同时控制时加 `--rwx-cli`。
+### 2.2 接收游戏事件
 
-常驻服务器使用 `rwx-host --managed-room true`：首位客户端是大厅管理员，管理员退出后仅在大厅自动接替；对局中不移交。管理员从 GUI 或 CLI 配置后开局。新身份局中加入自动观战，原玩家重连保留原席位；没有在线非旁观玩家时结束本局、保留连接并返回大厅。云端安装使用 `server/rwx.service`，部署记录见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+启动事件接收器：
+
+```powershell
+python agent-operation/tools/rwx-game-events-to-jsonl.py
+```
+
+事件持续追加到：
+
+`agent-operation/tmp/game-events.jsonl`
+
+- 按 `Ctrl+C` 停止接收器。
+- 断线后自动重连，并根据日志末尾的序列号恢复。
+- 缓存过期、服务重启或队列溢出时，通过 `gap` / `overflow` 记录数据缺失。
+- 多实例可使用 `--port-file` 指定不同事件端口文件。
+
+详见 [工具说明](tools/README.md)。
+
+
+## 3. 多人游戏连接
+
+### 3.1 GUI 连接
+
+真人玩家可以直接通过 GUI 连接，无需启用 CLI。
+
+在 **多人游戏 → 原版服务器** 中选择地址直连，输入：
+
+`<server-address>:5123`
+
+也可以使用启动参数：
+
+`--join-server=<server-address>:5123`
+
+两种方式均复用原版连接器，要求服务器可达、游戏版本和模组兼容。
+
+GUI 支持正常截图和键鼠操作；如需 Agent 同时控制，添加 `--rwx-cli`。
+
+### 3.2 Agent 连接
+
+以下命令使用 `rwx-cli.py`，均从仓库根目录执行。
+
+**连接服务器：**
 
 ```powershell
 python agent-operation/tools/rwx-cli.py rwx-connect <server-address>:5123 --name AgentA
+```
+
+**查询连接状态：**
+
+```powershell
 python agent-operation/tools/rwx-cli.py rwx-connection-status
-# joined 表示已经加入房间；in-game 表示游戏已开始并载入。
+```
+
+- `joined`：已加入房间。
+- `in-game`：游戏已开始并载入。
+
+**查询对局信息：**
+
+```powershell
 python agent-operation/tools/rwx-cli.py rwx-game-state --summary
 python agent-operation/tools/rwx-cli.py rwx-game-unit-list --owner self --full --compact
+```
+
+**断开连接：**
+
+```powershell
 python agent-operation/tools/rwx-cli.py rwx-disconnect
-# 保留同一进程/身份重连原地址：
+```
+
+**使用同一进程和身份重连原服务器：**
+
+```powershell
 python agent-operation/tools/rwx-cli.py rwx-connect --reconnect true
-# 退出进程；关闭本地 Python 客户端本身不会断开游戏连接。
+```
+
+**退出 RWX 进程：**
+
+```powershell
 python agent-operation/tools/rwx-cli.py rwx-exit
 ```
 
-普通玩家只能查询可见信息、控制己方单位；开始游戏、修改房间设置由房主执行。多人游戏禁止本地暂停、加速、step 和单机 restart。服务器可在房主明确配置 `rwx-host --auto-start-players 2` 后等待两个非旁观玩家自动开局。
+注意：关闭本地 Python CLI 客户端，不等于断开游戏连接。
 
-多个 Agent 必须使用独立数据目录保留各自身份，并显式选择各自 CLI 文件。例如启动 A 时使用：
+### 3.3 多人模式限制
+
+普通玩家只能读取其可见信息、控制己方单位。房间设置修改及开始游戏由房主负责。
+
+多人模式禁止：
+
+- 本地暂停和加速。
+- 本地 `step`。
+- 单机 `restart`。
+
+## 4. 托管服务器与对局生命周期
+
+常驻服务器使用：
+
+`rwx-host --managed-room true`
+
+### 房间管理员
+
+- 首位连接的客户端成为大厅管理员。
+- 管理员可以通过 GUI 或 CLI 配置房间并开局。
+- 管理员退出后，仅在大厅阶段自动移交权限；对局进行中不移交。
+
+### 玩家加入与离开
+
+- 新身份在对局进行中加入时，自动成为旁观者。
+- 原玩家重连时保留原有席位。
+- 当没有在线的非旁观玩家时，结束当前对局，保留连接并返回大厅。
+
+### 自动开局
+
+房主可以明确配置：
+
+`rwx-host --auto-start-players 2`
+
+服务器将在两名非旁观玩家就绪后自动开局。
+
+云端服务文件：`server/rwx.service`
+
+部署详见 [SERVER.md](SERVER.md)。
+
+## 5. 多 Agent 并行运行
+
+每个 Agent 必须使用**独立数据目录和 CLI 端口文件**，以隔离身份和连接状态。
+
+例如，启动 AgentA 对应的 RWX 实例：
 
 ```powershell
 .\gradlew.bat :desktop:run '--args=--headless --data-dir=agent-operation/tmp/a --cli-port-file=agent-operation/tmp/a/port'
+```
+
+连接服务器：
+
+```powershell
 python agent-operation/tools/rwx-cli.py --port-file agent-operation/tmp/a/port rwx-connect <server-address>:5123 --name AgentA
 ```
 
-B 使用 `b` 目录和 `AgentB`。默认共享端口文件由一个主实例持有；其他实例在日志给出的 `instancePortFile` 独立发布，主实例退出后剩余实例接替。不得从多个端口中随便选一个下达命令。
+AgentB 使用 `agent-operation/tmp/b` 和 `AgentB`，其他操作相同。
 
-WSL 默认 NAT 下的 Linux 回环地址属于 WSL；建议在 WSL 中启动自己的 Linux RWX 实例。若操纵 Windows RWX，使用 Windows PowerShell 客户端通过 WSL interop 调用，路径先用 `wslpath -w` 转换，不能假定 WSL 的 `127.0.0.1` 一定可达 Windows 回环。
+### 多实例端口规则
 
-服务器部署见 [SERVER.md](SERVER.md)，工具细节见 [tools/README.md](tools/README.md)。
+- 默认共享端口文件由一个主实例持有。
+- 其他实例通过日志中的 `instancePortFile` 发布独立端口文件。
+- 主实例退出后，剩余实例自动接替。
+- 必须明确指定目标实例的端口文件，**不得随意选择端口下达命令**。
 
-## 胜利条件
+## 6. WSL 网络注意事项
 
-消灭所有敌方阵营可以生产的单位和建筑(包括指挥中心)
+WSL 默认 NAT 模式下，Linux 与 Windows 的回环地址不一定互通。
 
-## 游戏控制
+推荐直接在 WSL 内运行 Linux 版 RWX。
+
+如果需要从 WSL 控制 Windows 版 RWX：
+
+1. 使用 WSL interop 调用 Windows PowerShell 客户端。
+2. 通过 `wslpath -w` 转换文件路径。
+3. 不要假定 WSL 的 `127.0.0.1` 可以直接访问 Windows 回环地址。
+
+## 7. 游戏对局
+
+胜利条件：**消灭所有敌方阵营可以生产的单位和建筑(包括指挥中心)**
+要求:
 - 你可以不择手段使用**所有方式**来操控游戏、获取战局信息、取得胜利，不过最好及时花费资金、实时关注战报
 - 进行正式对局任务时，**禁止改动源码、禁止使用游戏暂停**；不要随意加速。
-以下是tips：
+tips:
 ### tip1：使用rwx_cli_tool
 - 支持几乎所有的底层命令，提供最大自由度的操控空间,也支持部分**自动化/智能微操**(参见'automation'类指令)，减少管理负担
 - 游戏启动后，通过本地 CLI 端口发送命令，详情参见 [help.md](help.md)。
@@ -96,3 +252,4 @@ WSL 默认 NAT 下的 Linux 回环地址属于 WSL；建议在 WSL 中启动自�
 略
 ### 其他方式
 略
+ 

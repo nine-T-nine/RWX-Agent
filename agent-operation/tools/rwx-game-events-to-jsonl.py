@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Subscribe to the local RWX event stream and append its protocol records to JSONL."""
+"""Subscribe to the game's local event socket and keep its newest records as JSONL."""
 
 import argparse
 import json
+import os
 import socket
 import sys
 import time
+from collections import deque
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -13,6 +15,55 @@ DEFAULT_PORT = ROOT / 'tmp' / 'events-port'
 DEFAULT_OUTPUT = ROOT / 'tmp' / 'game-events.jsonl'
 PROTOCOL = 'rwx-events-v1'
 MAX_LINE = 1024 * 1024
+MAX_RECORDS = 500
+
+
+class JsonlLog:
+    """Append-only JSONL file that keeps only the newest `limit` records."""
+
+    def __init__(self, path, limit=MAX_RECORDS):
+        self.path = path
+        self.limit = limit
+        self.records = count_records(path)
+        self.handle = path.open('a', encoding='utf-8', newline='\n')
+        if self.records > limit:
+            self.compact()
+
+    def write(self, text):
+        self.handle.write(text)
+        self.records += text.count('\n')
+
+    def flush(self):
+        self.handle.flush()
+        if self.records > self.limit:
+            self.compact()
+
+    def compact(self):
+        """Rewrite the file with its newest records; the log only holds recent events."""
+        self.handle.flush()
+        self.handle.close()
+        newest = deque(maxlen=self.limit)
+        if self.path.exists():
+            with self.path.open('r', encoding='utf-8') as source:
+                for line in source:
+                    newest.append(line)
+        temporary = self.path.with_name('.%s.%d.tmp' % (self.path.name, os.getpid()))
+        with temporary.open('w', encoding='utf-8', newline='\n') as target:
+            target.writelines(newest)
+        os.replace(temporary, self.path)
+        self.records = len(newest)
+        self.handle = self.path.open('a', encoding='utf-8', newline='\n')
+
+    def close(self):
+        self.handle.close()
+
+
+def count_records(path):
+    if not path.exists():
+        return 0
+    with path.open('r', encoding='utf-8', errors='replace') as source:
+        return sum(1 for _ in source)
+
 
 
 def last_cursor(path):
@@ -112,27 +163,34 @@ def main():
         parser.error('--retry-seconds must be positive')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     session, seq = last_cursor(args.output)
-    print('Appending RWX events to %s; Ctrl+C stops' % args.output, flush=True)
+    print('Appending RWX events to %s (newest %d records); Ctrl+C stops'
+          % (args.output, MAX_RECORDS), flush=True)
     try:
-        with args.output.open('a', encoding='utf-8', newline='\n') as output:
-            while True:
-                try:
-                    port = args.port if args.port is not None else int(args.port_file.read_text(encoding='ascii').strip())
-                    if not 1 <= port <= 65535:
-                        raise ValueError('port outside 1..65535')
-                    with socket.create_connection(('127.0.0.1', port), timeout=5) as sock:
-                        sock.settimeout(None)
-                        print('Connected to 127.0.0.1:%d' % port, flush=True)
-                        session, seq = receive(sock, output, session, seq, args.info, args.allies)
-                    print('Disconnected; reconnecting', file=sys.stderr, flush=True)
-                except (OSError, ValueError) as error:
-                    print('Event connection unavailable: %s; retrying' % error, file=sys.stderr, flush=True)
-                time.sleep(args.retry_seconds)
+        output = JsonlLog(args.output)
+    except OSError as error:
+        print('Cannot write event log: %s' % error, file=sys.stderr, flush=True)
+        return 1
+    try:
+        while True:
+            try:
+                port = args.port if args.port is not None else int(args.port_file.read_text(encoding='ascii').strip())
+                if not 1 <= port <= 65535:
+                    raise ValueError('port outside 1..65535')
+                with socket.create_connection(('127.0.0.1', port), timeout=5) as sock:
+                    sock.settimeout(None)
+                    print('Connected to 127.0.0.1:%d' % port, flush=True)
+                    session, seq = receive(sock, output, session, seq, args.info, args.allies)
+                print('Disconnected; reconnecting', file=sys.stderr, flush=True)
+            except (OSError, ValueError) as error:
+                print('Event connection unavailable: %s; retrying' % error, file=sys.stderr, flush=True)
+            time.sleep(args.retry_seconds)
     except KeyboardInterrupt:
         print('\nStopped', flush=True)
     except OSError as error:
         print('Cannot write event log: %s' % error, file=sys.stderr, flush=True)
         return 1
+    finally:
+        output.close()
     return 0
 
 

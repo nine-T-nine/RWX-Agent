@@ -7,7 +7,8 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -19,26 +20,39 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/** Thread-safe receipt log and command-name statistics, independent of the game engine. */
+/**
+ * Thread-safe receipt log and command-name statistics, independent of the game engine.
+ *
+ * <p>Files start as {@code commands-lobby-<date>--<id>} because the CLI exists before any match is
+ * loaded. The first match renames them to {@code commands-<map>-<date>--<id>}: commands received in
+ * the lobby stay in the same file, and the unique id is preserved so the pair stays easy to match.</p>
+ */
 public final class CommandRecorder implements AutoCloseable {
-    private final Path commandsPath;
-    private final Path statisticsPath;
-    private final BufferedWriter commands;
+    private final Path outputDirectory;
+    private final String date;
+    private final String id;
     private final Map<String, Long> counts = new TreeMap<>();
     private final Map<String, Map<String, Long>> executorCounts = new TreeMap<>();
     private final List<String> matchEntries = new ArrayList<>();
     private final ScheduledExecutorService exporter;
+    private Path commandsPath;
+    private Path statisticsPath;
+    private BufferedWriter commands;
+    private boolean mapNamed;
     private long total;
     private boolean dirty;
     private boolean closed;
 
     /** Each listener gets separate files, even when several games share the output directory. */
     public CommandRecorder(Path outputDirectory, int port) throws IOException {
+        this.outputDirectory = outputDirectory;
+        this.date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
         Files.createDirectories(outputDirectory);
-        String session = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"))
-                + "-pid" + ProcessHandle.current().pid() + "-port" + port;
-        commandsPath = Files.createTempFile(outputDirectory, "commands-" + session + "-", ".txt");
+        String prefix = "commands-lobby-" + date + "--";
+        commandsPath = Files.createTempFile(outputDirectory, prefix, ".txt");
         String filename = commandsPath.getFileName().toString();
+        // Keep the temp file's random number as the stable session id.
+        id = filename.substring(prefix.length(), filename.length() - ".txt".length());
         statisticsPath = commandsPath.resolveSibling(filename.substring(0, filename.length() - 4) + "-stats.txt");
         commands = Files.newBufferedWriter(commandsPath, StandardCharsets.UTF_8);
         try {
@@ -55,13 +69,84 @@ public final class CommandRecorder implements AutoCloseable {
         exporter.scheduleWithFixedDelay(this::exportIfDirty, 1, 1, TimeUnit.SECONDS);
     }
 
-    public Path commandsPath() { return commandsPath; }
-    public Path statisticsPath() { return statisticsPath; }
+    public synchronized Path commandsPath() { return commandsPath; }
+    public synchronized Path statisticsPath() { return statisticsPath; }
+
+    /**
+     * One safe filename token for a map: whitespace and Windows-reserved characters become single
+     * dashes, trailing dots/dashes are dropped, and the readable part is length-capped.
+     */
+    static String mapSlug(String map) {
+        String value = map == null ? "" : map.trim();
+        StringBuilder out = new StringBuilder();
+        boolean dash = false;
+        for (int index = 0; index < value.length() && out.length() < 48; index++) {
+            char ch = value.charAt(index);
+            boolean unsafe = ch < 0x20 || "<>:\"/\\|?*".indexOf(ch) >= 0;
+            if (Character.isWhitespace(ch) || unsafe) {
+                if (out.length() > 0 && !dash) { out.append('-'); dash = true; }
+            } else {
+                out.append(ch);
+                dash = ch == '-';
+            }
+        }
+        while (out.length() > 0 && (out.charAt(out.length() - 1) == '-'
+                || out.charAt(out.length() - 1) == '.')) out.setLength(out.length() - 1);
+        return out.toString();
+    }
+
+    /** Renames both files once, when the first real match reveals its map. */
+    private boolean renameForMap(String map) {
+        String slug = mapSlug(map);
+        if (slug.isEmpty()) return false;
+        Path target = outputDirectory.resolve("commands-" + slug + "-" + date + "--" + id + ".txt");
+        Path targetStats = outputDirectory.resolve("commands-" + slug + "-" + date + "--" + id + "-stats.txt");
+        if (target.equals(commandsPath)) return true;
+        Path moved = null;
+        try {
+            commands.flush();
+            commands.close();
+            Files.move(commandsPath, target);
+            moved = target;
+            commands = Files.newBufferedWriter(moved, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            Path oldStats = statisticsPath;
+            commandsPath = moved;
+            statisticsPath = targetStats;
+            if (Files.exists(oldStats)) {
+                try {
+                    Files.move(oldStats, targetStats);
+                } catch (IOException moveError) {
+                    // A stale lobby statistics file must not survive next to the renamed log.
+                    Files.deleteIfExists(oldStats);
+                }
+            }
+            export();
+            System.out.println("RWX_CLI_COMMAND_RECORDING log=" + commandsPath.toAbsolutePath()
+                    + " statistics=" + statisticsPath.toAbsolutePath());
+            return true;
+        } catch (IOException error) {
+            Path reopen = moved == null ? commandsPath : moved;
+            try {
+                commands = Files.newBufferedWriter(reopen, StandardCharsets.UTF_8,
+                        StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                commandsPath = reopen;
+                if (moved != null) statisticsPath = targetStats;
+            } catch (IOException ignored) {
+                // Recording already reported the failure; keep the previous name.
+            }
+            System.err.println("RWX command recording could not use map name '" + map + "': "
+                    + error.getMessage());
+            // Do not retry on every later match; the lobby name stays valid for this process.
+            return true;
+        }
+    }
 
     /** Called on the first active game frame, independently of when the next CLI command arrives. */
     public synchronized int enterMatch(OffsetDateTime enteredAt, long gameMillis, String map,
                                        String executor) {
         if (closed) return matchEntries.size();
+        if (!mapNamed) mapNamed = renameForMap(map);
         matchEntries.add("第" + (matchEntries.size() + 1) + "局："
                 + enteredAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS xxx"))
                 + " | 进入时游戏时间=" + timestamp(gameMillis)

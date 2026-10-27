@@ -60,6 +60,33 @@ class ReceiverTests(unittest.TestCase):
         self.assertEqual(cursor, ('s', 0))
         self.assertEqual([row['kind'] for row in records], ['hello', 'parse_error', 'parse_error'])
 
+    def test_log_keeps_only_the_newest_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'events.jsonl'
+            log = receiver.JsonlLog(path, 3)
+            try:
+                for number in range(1, 6):
+                    receiver.append(log, {'protocol': receiver.PROTOCOL, 'kind': 'event',
+                                           'session': 's', 'seq': number})
+            finally:
+                log.close()
+            rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
+            self.assertEqual([3, 4, 5], [row['seq'] for row in rows])
+            self.assertEqual(('s', 5), receiver.last_cursor(path))
+
+    def test_default_limit_is_500_and_oversized_logs_are_trimmed_on_start(self):
+        self.assertEqual(500, receiver.MAX_RECORDS)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'events.jsonl'
+            with path.open('w', encoding='utf-8', newline='\n') as source:
+                for number in range(1, 601):
+                    source.write(json.dumps({'protocol': receiver.PROTOCOL, 'kind': 'event',
+                                             'session': 's', 'seq': number}) + '\n')
+            receiver.JsonlLog(path).close()
+            rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
+            self.assertEqual(500, len(rows))
+            self.assertEqual([101, 600], [rows[0]['seq'], rows[-1]['seq']])
+
     def test_cursor_recovers_from_append_only_log(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'events.jsonl'
