@@ -2,6 +2,7 @@
 """Portable loopback client for RWX's argv/framed CLI protocol (Python 3.9+)."""
 import argparse
 import base64
+import json
 import os
 from pathlib import Path
 import shlex
@@ -63,40 +64,51 @@ def discover(explicit_port=None, port_file=None):
     raise ValueError(f"No live RWX CLI; start with --rwx-cli or --headless (stale file ignored: {primary})")
 
 
-def framed(port, lines, timeout):
+def framed(port, lines, timeout, stdio=False):
     """One persistent TCP connection; no shared request/response mailbox."""
     with socket.create_connection(("127.0.0.1", port), timeout=3) as connection:
         connection.settimeout(timeout)
-        stream = connection.makefile("rwb", buffering=0)
+        connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        pending = bytearray()
 
         def reply():
             while True:
-                byte = stream.read(1)
-                if not byte:
-                    raise EOFError("CLI connection closed")
-                if byte == b"\x1e":
-                    break
-            data = bytearray()
-            while True:
-                byte = stream.read(1)
-                if not byte:
-                    raise EOFError("CLI reply was truncated")
-                if byte == b"\x1e":
+                if pending and pending[0] != 0x1e:
+                    raise ValueError("Unexpected data before CLI reply frame")
+                end = pending.find(b"\x1e", 1)
+                if end >= 0:
+                    data = bytes(pending[1:end])
+                    del pending[:end + 1]
                     return data.decode("utf-8")
-                data.extend(byte)
+                chunk = connection.recv(65536)
+                if not chunk:
+                    raise EOFError("CLI connection closed or reply truncated")
+                pending.extend(chunk)
 
-        stream.write(b"!!framed\n")
+        connection.sendall(b"!!framed\n")
         if reply() != "ready":
             raise ValueError("Unexpected CLI handshake")
+        if stdio:
+            print("ready", file=sys.stderr, flush=True)
         failed = False
         for line in lines:
-            args = shlex.split(line)
+            try:
+                args = shlex.split(line)
+            except ValueError as error:
+                if not stdio:
+                    raise
+                print(json.dumps({"error": True, "reply": f"error: {error}"}, ensure_ascii=False), flush=True)
+                failed = True
+                continue
             if not args or args[0].startswith("#"):
                 continue
             encoded = ",".join(base64.b64encode(a.encode()).decode() for a in args[1:])
-            stream.write((args[0] + "\t" + encoded + "\n").encode())
+            connection.sendall((args[0] + "\t" + encoded + "\n").encode())
             output = reply()
-            print(output, flush=True)
+            if stdio:
+                print(json.dumps({"error": output.startswith("error:"), "reply": output}, ensure_ascii=False), flush=True)
+            else:
+                print(output, flush=True)
             failed |= output.startswith("error:")
         return 4 if failed else 0
 
@@ -110,6 +122,7 @@ def main():
     parser.add_argument("--line")
     parser.add_argument("--batch-file")
     parser.add_argument("--interactive", action="store_true")
+    parser.add_argument("--stdio", action="store_true", help="persistent line input, JSONL replies on stdout")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     opts = parser.parse_args()
     try:
@@ -119,6 +132,8 @@ def main():
             return 0
         if opts.batch_file:
             return framed(port, Path(opts.batch_file).read_text(encoding="utf-8-sig").splitlines(), opts.timeout)
+        if opts.stdio:
+            return framed(port, sys.stdin, opts.timeout, stdio=True)
         if opts.interactive:
             def lines():
                 while True:
@@ -132,7 +147,7 @@ def main():
             return framed(port, lines(), opts.timeout)
         arguments = shlex.split(opts.line) if opts.line else opts.command
         if not arguments:
-            parser.error("supply a command, --batch-file, --line or --interactive")
+            parser.error("supply a command, --batch-file, --line, --interactive or --stdio")
         output = request(port, arguments, opts.timeout)
         print(output)
         return 4 if output.startswith("error:") else 0
@@ -144,4 +159,6 @@ def main():
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdin.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
     raise SystemExit(main())

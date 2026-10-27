@@ -4,6 +4,7 @@
 
 ## 当前快照
 
+- 2026-10-27：CLI `--stdio`、通信文档和基准工具完成；完整 26 套件 226 项通过，真实 Headless 暂停对局的三种通信方式及文档示例已验证，结果见 `HISTORY/task-021.md`。
 - 2026-10-27：清理 `agent-operation/tools`：删除旧版文件邮箱 `rwx-cli-daemon.ps1`、`__pycache__`、空 `tmp/`，并同步 README 与两个 ps1 的引用；`experimental_scripts/` 按用户要求保留（`HISTORY/task-020.md`）。
 - 2026-10-27：英文 `help.md` 按重写后的 `help_zh.md` 全文同步（结构改为加粗小标题、参数子列表、两列优先级表；43 个标题/命令/示例逐条对齐），`rwx-help` 打包内容同步更新（`HISTORY/task-019.md`）。
 - 2026-10-27：事件 JSONL 接收器文档补全「游戏启动后另开的本机事件 Socket → tmp JSONL」链路，并把日志改为滚动保留最新 500 条（`HISTORY/task-018.md`）。

@@ -489,6 +489,8 @@ bash ./gradlew :desktop:run --args='--headless --no-steam'
 python3 agent-operation/tools/rwx-cli.py rwx-connection-status
 ```
 
+For real-time control prefer persistent TCP; if the host cannot manage sockets conveniently, keep a Python `--stdio` process. One-shot Python / PowerShell calls suit compatibility and debugging, and batches are not atomic transactions. See `agent-operation/tools/README.md` and `agent-operation/START.md` for protocol, examples, exit codes and overhead. Socket round-trip time includes command processing; agent reasoning and tool scheduling are separate. `game-step --seconds` advances game time, while `game-events --seconds` is a window into past events, not a recommended decision interval.
+
 `--data-dir=<directory>` sets the instance's data/identity directory, and `--cli-port-file=<file>` sets the CLI port file explicitly; multiple instances should use separate directories and port files. Pure headless distribution: `:desktop:headlessArchive`, output `desktop/build/distributions/rwx-headless.tar.gz`; on Linux start it with `bash bin/rwx-headless`. Deployment, systemd and network validation are covered in `agent-operation/SERVER.md`.
 
 ### 8.2 Some conventions

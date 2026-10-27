@@ -46,23 +46,64 @@ CLI 仅监听本机回环地址。端口文件通过原子写入更新，内容�
 
 ### 2.1 执行 CLI 命令
 
-使用 `agent-operation/tools/rwx-cli.py` 执行命令。
+实时控制优先保持 TCP 连接；宿主不便管理 Socket 时，保持 Python `--stdio` 进程。单次调用适合偶发操作。多实例时指定目标端口文件（见第 5 节）。
 
-以下为创建单机对局的完整示例：
+下面的 PowerShell 示例直接连接默认 CLI 端口，先握手和探活，再依次查询；每次等完整回复后才发送下一条。可把端口文件路径替换为目标实例的路径。
 
 ```powershell
-python agent-operation/tools/rwx-cli.py rwx-help 1
-python agent-operation/tools/rwx-cli.py rwx-skirmish
-python agent-operation/tools/rwx-cli.py rwx-battleroom-select-map --name "Lake (2p)"
-python agent-operation/tools/rwx-cli.py rwx-battleroom-settings --income 2 --aiDifficulty impossible
-python agent-operation/tools/rwx-cli.py rwx-battleroom-start
+@'
+import base64, socket
+from pathlib import Path
+
+port = int(Path("agent-operation/tmp/port").read_text(encoding="ascii").strip())
+with socket.create_connection(("127.0.0.1", port), timeout=3) as sock:
+    sock.settimeout(60)
+    stream = sock.makefile("rb")
+    def frame():
+        if stream.read(1) != b"\x1e":
+            raise RuntimeError("missing frame start or connection closed")
+        data = bytearray()
+        while True:
+            b = stream.read(1)
+            if not b:
+                raise EOFError("truncated frame")
+            if b == b"\x1e":
+                return data.decode("utf-8")
+            data.extend(b)
+    def call(*args):
+        encoded = ",".join(base64.b64encode(x.encode("utf-8")).decode("ascii") for x in args[1:])
+        sock.sendall((args[0] + "\t" + encoded + "\n").encode("utf-8"))
+        result = frame()
+        if result.startswith("error:"):
+            raise RuntimeError(result)
+        return result
+    sock.sendall(b"!!framed\n")
+    if frame() != "ready" or call("rwx-ping") != "pong":
+        raise RuntimeError("not a live RWX CLI")
+    print(call("rwx-game-state", "--summary"))
+    stream.close()
+'@ | python -
 ```
 
-Linux / WSL 将 `python` 替换为 `python3`，也可以使用：
+若命令返回 `error:`，示例会停止；超时或断线后不要自动重发，先重新连接并查询状态，因为命令可能已执行。[协议与单次 TCP 示例](tools/README.md#23-批量超时与协议)包含边界和限制。
 
-```bash
-bash agent-operation/tools/rwx-cli.sh <命令与参数>
+Python 持久客户端可由 Agent 保留进程并逐行写入命令：
+
+```powershell
+python agent-operation/tools/rwx-cli.py --stdio
 ```
+
+等待 stderr 的 `ready` 后，在 stdin 输入 `rwx-ping` 或 `rwx-game-state --summary`，每条非空命令对应 stdout 的一行 JSON，例如 `{"error": false, "reply": "pong"}`；多行和空回复也在 `reply` 中。输入结束时关闭 stdin；详细约定见[工具说明](tools/README.md)。人工终端可用 `--interactive`。
+
+最简单的单次兼容操作：
+
+```powershell
+python agent-operation/tools/rwx-cli.py rwx-game-state --summary
+```
+
+Linux / WSL 使用 `python3` 或 `bash agent-operation/tools/rwx-cli.sh <命令与参数>`。
+
+**时间含义：** Socket 通信耗时包括连接、传输和等待完整回复；其中请求到回复的时间也包含游戏命令的处理或等待时间，不能将两者简单相加。游戏命令执行耗时取决于命令及引擎调度；Agent 推理和工具调度另有开销。`rwx-game-step --seconds` 是主动推进的游戏时间（仅单机），`rwx-game-events --seconds` 是查询过去事件的窗口，均不等于通信延迟或推荐决策周期。
 
 ### 2.2 接收游戏事件
 
@@ -249,7 +290,7 @@ tips:
 ### tip3：写辅助脚本
 允许在'agent-operation\agent-tmp'目录下维护你的脚本工具，但注意关注游戏时间、特定事件触发回调/唤醒，以免过度等待或者死锁
 ### tip4：安排子智能体辅助管理
-略
+可以使用子智能体帮助进行发送命令、辅助决策、监听事件。例如，现有工具中已经有现成的监听游戏暴露的Socket实时事件接口，你可以安排一个子智能体实时监控jsonl文件，然后让其判断是否应该向你汇报事件；你的每一个决策也都应该同步抄送给它以便增加增加其判断的依据。
 ### 其他方式
 略
  

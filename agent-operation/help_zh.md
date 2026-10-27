@@ -573,6 +573,8 @@ python3 agent-operation/tools/rwx-cli.py rwx-connection-status
 
 ```
 
+实时控制优先使用持久 TCP；宿主不便管理 Socket 时使用 Python `--stdio` 持久进程。单次 Python / PowerShell 适合兼容与调试，批量命令并非原子事务。协议、示例、退出码和性能开销见 `agent-operation/tools/README.md` 与 `agent-operation/START.md`。Socket 往返含命令处理时间；Agent 推理和工具调度另计。`game-step --seconds` 是推进的游戏时间，`game-events --seconds` 是过去事件的查询窗口，不是推荐决策周期。
+
 `--data-dir=<目录>` 设置实例的数据/身份目录，`--cli-port-file=<文件>` 显式设置 CLI 端口文件；多个实例应各用独立目录和端口文件。纯 Headless 发行包：`:desktop:headlessArchive`，产物 `desktop/build/distributions/rwx-headless.tar.gz`；Linux 用 `bash bin/rwx-headless` 启动。部署、systemd 与网络验证见 `agent-operation/SERVER.md`。
 
 ### 8.2 部分约定
