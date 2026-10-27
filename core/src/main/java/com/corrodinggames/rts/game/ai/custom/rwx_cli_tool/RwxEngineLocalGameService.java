@@ -641,8 +641,9 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             GameEngine engine = GameEngine.getInstance();
             requireActiveGame(engine);
             PlayerTeam controlled = requireControlledTeam(engine);
-            sample(engine, controlled);
             List<RwxLocalGameTypes.UnitSnapshot> units = new ArrayList<>();
+            List<RwxLocalGameTypes.UnitSnapshot> allies = new ArrayList<>();
+            List<RwxLocalGameTypes.UnitSnapshot> enemies = new ArrayList<>();
             Map<Long, List<RwxLocalGameTypes.ActionSnapshot>> actions = new LinkedHashMap<>();
             int factories = 0;
             int idleFactories = 0;
@@ -650,8 +651,10 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             for (int index = 0; index < BaseUnit.bE.size(); index++) {
                 BaseUnit unit = all[index];
                 if (unit == null || unit.isDead || !isObservable(unit, controlled)) continue;
-                if (!matchesOwner(unit, controlled, requested)) continue;
                 RwxLocalGameTypes.UnitSnapshot row = snapshot(unit, controlled);
+                if ("ally".equals(row.relation)) allies.add(row);
+                else if ("enemy".equals(row.relation)) enemies.add(row);
+                if (!matchesOwner(unit, controlled, requested)) continue;
                 units.add(row);
                 if (row.productionCapable && unit instanceof FactoryQueueInterface && unit.team == controlled
                         && unit instanceof OrderableUnit && !unit.canNotBeGivenOrdersByPlayer()) {
@@ -662,7 +665,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
                 }
             }
             return new RwxLocalGameTypes.GameStateSnapshot(
-                    snapshotGame(engine, controlled), requested, units, actions,
+                    snapshotGame(engine, controlled), requested, units, allies, enemies, actions,
                     factories, idleFactories);
         });
     }
@@ -1350,6 +1353,12 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             GameEngine engine = GameEngine.getInstance();
             requireActiveGame(engine);
             requireControlledTeam(engine);
+            if (observationSampler == null || !observationSampler.isAlive()) {
+                throw new IllegalStateException("Event service unavailable: observation sampler is not running");
+            }
+            if (observationFailure != null) {
+                throw new IllegalStateException("Event service unavailable: " + observationFailure);
+            }
             // No sampling, trimming or cursor advancement inside a query.
             return RwxEventProcessor.query(eventCollector.history(engine, requireControlledTeam(engine)),
                     engine.gameTimeMillis, effective);
@@ -4383,6 +4392,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
     }
 
     private volatile String lastSamplerError;
+    private volatile String observationFailure;
 
     private void observationSampleLoop() {
         while (!Thread.currentThread().isInterrupted()) {
@@ -4398,6 +4408,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
                         }
                         sample(current, current.playerTeam);
                         eventCollector.store.maintain(current.gameTimeMillis);
+                        observationFailure = null;
                         return null;
                     }, SAMPLER_TIMEOUT_MILLIS);
                 }
@@ -4410,6 +4421,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
                 // Log real failures (with stack) once per distinct message so a sampler bug is
                 // visible in rwx-agent-run.log instead of silently breaking every query.
                 String key = error.getClass().getName() + ": " + error.getMessage();
+                observationFailure = key;
                 if (!key.equals(lastSamplerError)) {
                     lastSamplerError = key;
                     System.err.println("RWX observation sampler failed: " + key);

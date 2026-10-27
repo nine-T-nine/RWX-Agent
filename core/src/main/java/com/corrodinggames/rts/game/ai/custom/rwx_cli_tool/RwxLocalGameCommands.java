@@ -29,29 +29,42 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
 
     @Override
     public String execute(RwxCliCommands.Command command, List<String> arguments) {
-        if (command == RwxCliCommands.Command.BRIEF) {
-            return formatBrief(arguments);
-        }
         if (command == RwxCliCommands.Command.STATE) {
-            validateOptions(arguments, new String[] {},
+            validateOptions(arguments, new String[] {"--event-seconds", "--event-types"},
                     "--json", "--summary", "--units-acting", "--units-damaged",
-                    "--building-acting", "--building-actionable");
-            if (optionalFlag(arguments, "--summary")) {
+                    "--building-acting", "--building-actionable", "--event-allies", "--no-events");
+            boolean summary = optionalFlag(arguments, "--summary");
+            if (summary) {
                 for (String flag : new String[] {"--units-acting", "--units-damaged",
                         "--building-acting", "--building-actionable"}) {
                     if (optionalFlag(arguments, flag)) {
                         throw new IllegalArgumentException(flag + " does not apply to --summary");
                     }
                 }
-                return RwxStatusReports.summary(service.game(), optionalFlag(arguments, "--json"));
             }
+            boolean noEvents = optionalFlag(arguments, "--no-events");
+            String rawSeconds = optionalValue(arguments, "--event-seconds");
+            String rawTypes = optionalValue(arguments, "--event-types");
+            boolean allies = optionalFlag(arguments, "--event-allies");
+            if (noEvents && (rawSeconds != null || rawTypes != null || allies))
+                throw new IllegalArgumentException("--no-events conflicts with event filters");
+            double seconds = rawSeconds == null ? 30 : parseDouble("--event-seconds", rawSeconds);
+            if (!Double.isFinite(seconds) || seconds <= 0 || seconds > 180)
+                throw new IllegalArgumentException("--event-seconds must be greater than 0 and at most 180");
+            RwxLocalGameTypes.EventQuery eventQuery = noEvents ? null : new RwxLocalGameTypes.EventQuery(
+                    parseEventTypes(rawTypes, "--event-types"), seconds, allies);
             boolean unitsActing = optionalFlag(arguments, "--units-acting");
             boolean unitsDamaged = optionalFlag(arguments, "--units-damaged");
             boolean buildingActing = optionalFlag(arguments, "--building-acting");
             boolean buildingActionable = optionalFlag(arguments, "--building-actionable");
             boolean defaults = !unitsActing && !unitsDamaged && !buildingActing && !buildingActionable;
-            return RwxStatusReports.state(service.state(RwxLocalGameTypes.UnitOwner.SELF),
-                    optionalFlag(arguments, "--json"), defaults || unitsActing, defaults || unitsDamaged,
+            RwxLocalGameTypes.GameStateSnapshot snapshot = service.state(RwxLocalGameTypes.UnitOwner.SELF);
+            RwxLocalGameTypes.PendingPage pending = null;
+            try { pending = service.pending(); } catch (UnsupportedOperationException ignored) { }
+            RwxLocalGameTypes.EventPage events = noEvents ? null : service.events(eventQuery);
+            if (!noEvents && events == null) throw new IllegalStateException("Event service unavailable");
+            return RwxGameStateReport.render(snapshot, pending, events, seconds,
+                    optionalFlag(arguments, "--json"), summary, defaults || unitsActing, defaults || unitsDamaged,
                     defaults || buildingActing, defaults || buildingActionable);
         }
         if (command == RwxCliCommands.Command.PAUSE) {
@@ -228,7 +241,7 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
             validateOptions(arguments, new String[] {"--types", "--seconds"}, "--allies");
             String seconds = optionalValue(arguments, "--seconds");
             RwxLocalGameTypes.EventQuery query = new RwxLocalGameTypes.EventQuery(
-                    parseEventTypes(optionalValue(arguments, "--types")),
+                    parseEventTypes(optionalValue(arguments, "--types"), "--types"),
                     seconds == null ? 30 : parseDouble("--seconds", seconds), optionalFlag(arguments, "--allies"));
             return String.join("\n", service.events(query).lines);
         }
@@ -640,26 +653,6 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
         return output.toString();
     }
 
-    /**
-     * One command that answers "what is going on right now": economy, army, production, damage,
-     * visible enemies, recent combat and held orders. It is a composition of the existing reads,
-     * so every number can still be drilled into with the command named on its line.
-     */
-    private String formatBrief(List<String> arguments) {
-        validateOptions(arguments, new String[] {"--seconds"}, "--json");
-        String rawSeconds = optionalValue(arguments, "--seconds");
-        double seconds = rawSeconds == null ? 60 : parseDouble("--seconds", rawSeconds);
-        if (seconds <= 0 || seconds > 6000) {
-            throw new IllegalArgumentException("--seconds must be greater than 0 and at most 6000");
-        }
-        RwxLocalGameTypes.GameStateSnapshot snapshot = service.state(RwxLocalGameTypes.UnitOwner.SELF);
-        RwxLocalGameTypes.PendingPage pending = null;
-        try { pending = service.pending(); } catch (UnsupportedOperationException ignored) { }
-        return RwxStatusReports.brief(snapshot.game, snapshot.units,
-                unitsOf(RwxLocalGameTypes.UnitOwner.ALLY), unitsOf(RwxLocalGameTypes.UnitOwner.ENEMY),
-                seconds, pending, optionalFlag(arguments, "--json"));
-    }
-
     /** One unit object, including its queues and (for factories) available actions. */
     private static void appendUnitJson(StringBuilder output, RwxLocalGameTypes.UnitSnapshot unit,
                                        List<RwxLocalGameTypes.ActionSnapshot> actions) {
@@ -750,12 +743,6 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
         output.append(']');
     }
 
-    private List<RwxLocalGameTypes.UnitSnapshot> unitsOf(RwxLocalGameTypes.UnitOwner owner) {
-        return service.units(new RwxLocalGameTypes.UnitQuery(owner,
-                java.util.Collections.<String>emptyList(), null, null, null, false, null,
-                true, false, null, java.util.Collections.<String>emptyList(),
-                java.util.Collections.<String>emptyList(), null)).units;
-    }
 
     private static RwxLocalGameTypes.UnitQuery parseUnitQuery(List<String> arguments) {
         return parseUnitQuery(arguments, false, false);
@@ -1660,7 +1647,7 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
         return parseLong(flag, value);
     }
 
-    private static List<RwxLocalGameTypes.EventType> parseEventTypes(String raw) {
+    private static List<RwxLocalGameTypes.EventType> parseEventTypes(String raw, String option) {
         if (raw == null) return null;
         List<RwxLocalGameTypes.EventType> types = new ArrayList<>();
         for (String token : raw.split(",", -1)) {
@@ -1668,7 +1655,7 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
                 RwxLocalGameTypes.EventType type = RwxLocalGameTypes.EventType.valueOf(token.trim().toUpperCase(Locale.ROOT));
                 if (!types.contains(type)) types.add(type);
             } catch (IllegalArgumentException invalid) {
-                throw new IllegalArgumentException("--types must contain damaged,destroyed,losses,info,new");
+                throw new IllegalArgumentException(option + " must contain damaged,destroyed,losses,info,new");
             }
         }
         return types;

@@ -50,7 +50,6 @@ public final class RwxCliCommands {
         PAUSE("rwx-game-pause", Domain.LOCAL_GAME),
         SPEED("rwx-game-speed", Domain.LOCAL_GAME),
         STATE("rwx-game-state", Domain.LOCAL_GAME),
-        BRIEF("rwx-game-brief", Domain.LOCAL_GAME),
         TEAM_LIST("rwx-game-team-list", Domain.LOCAL_GAME),
         UNIT_LIST("rwx-game-unit-list", Domain.LOCAL_GAME),
         UNIT_SHOW("rwx-game-unit-show", Domain.LOCAL_GAME),

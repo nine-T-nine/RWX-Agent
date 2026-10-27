@@ -62,7 +62,7 @@
     .\rwx-cli.ps1 -Id 40228 rwx-game-order-move --units group:main --x 1400 --y 700
 
 .EXAMPLE
-    .\rwx-cli.ps1 -Batch "rwx-game-brief","rwx-game-unit-list --owner self --compact"
+    .\rwx-cli.ps1 -Batch "rwx-game-state --summary","rwx-game-unit-list --owner self --compact"
 
 .NOTES
     退出码：0 成功；2 找不到可用的 CLI 端点或参数错误；3 连接失败；4 命令返回以 error: 开头。

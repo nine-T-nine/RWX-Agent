@@ -9,7 +9,7 @@ import kotlin.test.assertFalse
 import kotlinx.serialization.json.*
 
 /**
- * `rwx-game-brief` / `unit-list --compact|--json|--full|--delta` / `order-push` / `keep` 的命令层测试。
+ * `rwx-game-state` / `unit-list --compact|--json|--full|--delta` / `order-push` / `keep` 的命令层测试。
  *
  * 这些命令的价值在“一次返回多少有用的东西”，所以用假的 [RwxLocalGameService] 固定输入，
  * 断言输出里该出现什么、不该出现什么，以及参数是否真的传进了服务层。
@@ -51,6 +51,7 @@ class RwxBriefAndKeepCommandsTest {
         var keepCalls = mutableListOf<Triple<Long, String, Int>>()
         var keepPage = RwxLocalGameTypes.KeepPage(100, 6000, emptyList(), emptyList(), "keep rules: 0")
         var pendingPage = RwxLocalGameTypes.PendingPage(100, 6000, emptyList(), emptyList(), "pending: 0")
+        var pendingSupported = true
         /** One entry per `issue` call: either a receipt or a thrown message. */
         var issuePlan = mutableListOf<String>()
 
@@ -67,11 +68,14 @@ class RwxBriefAndKeepCommandsTest {
         }
 
         override fun state(owner: RwxLocalGameTypes.UnitOwner?) =
-            RwxLocalGameTypes.GameStateSnapshot(game(), owner, ownUnits, emptyMap(), 0, 0)
+            RwxLocalGameTypes.GameStateSnapshot(game(), owner, ownUnits, allyUnits, enemyUnits, emptyMap(), 0, 0)
 
 
 
-        override fun pending() = pendingPage
+        override fun pending(): RwxLocalGameTypes.PendingPage {
+            if (!pendingSupported) throw UnsupportedOperationException()
+            return pendingPage
+        }
 
         override fun issue(order: RwxLocalGameTypes.Order): RwxLocalGameTypes.CommandReceipt {
             issues.add(order)
@@ -106,7 +110,14 @@ class RwxBriefAndKeepCommandsTest {
         override fun reach(unitId: Long, x: Float, y: Float) = throw UnsupportedOperationException()
         override fun canPlace(builderId: Long, unitTypeId: String, x: Float, y: Float,
                               searchRadiusTiles: Int) = throw UnsupportedOperationException()
-        override fun events(query: RwxLocalGameTypes.EventQuery) = throw UnsupportedOperationException()
+        var eventHistory = mutableListOf<RwxLocalGameTypes.GameEvent>()
+        var lastEventQuery: RwxLocalGameTypes.EventQuery? = null
+        var eventSupported = true
+        override fun events(query: RwxLocalGameTypes.EventQuery): RwxLocalGameTypes.EventPage {
+            if (!eventSupported) throw UnsupportedOperationException("event service unavailable")
+            lastEventQuery = query
+            return RwxEventProcessor.query(eventHistory, 6000, query)
+        }
         override fun threats(query: RwxLocalGameTypes.ThreatQuery) = throw UnsupportedOperationException()
         override fun armReplay() = throw UnsupportedOperationException()
         override fun startReplay(fileName: String?) = throw UnsupportedOperationException()
@@ -126,104 +137,123 @@ class RwxBriefAndKeepCommandsTest {
     }
 
     private fun run(service: FakeService, vararg arguments: String): String {
-        return RwxLocalGameCommands(service).execute(RwxCliCommands.Command.BRIEF, arguments.toList())
+        return RwxLocalGameCommands(service).execute(RwxCliCommands.Command.STATE, arguments.toList())
     }
 
     private fun runUnitList(service: FakeService, vararg arguments: String): String =
         RwxLocalGameCommands(service).execute(RwxCliCommands.Command.UNIT_LIST, arguments.toList())
 
     @Test
-    fun `brief composes current economy army production and health`() {
+    fun `state summary includes all macro statistics`() {
         val service = FakeService()
-        service.ownUnits = listOf(
-            unit(1, "c_tank"),
-            unit(2, "c_tank", health = 40f),
-            unit(3, "c_artillery", health = 20f),
-            unit(4, "c_builder"),
-            unit(5, "c_landFactory", movement = "BUILDING", queue = 2,
-                production = listOf(RwxLocalGameTypes.QueueItem("produce", "c_tank", "坦克", null, null, null))),
-            unit(6, "c_landFactory", movement = "BUILDING", queue = 1,
-                production = listOf(RwxLocalGameTypes.QueueItem("upgrade", "upgrade", "升级", null, null, null, 0.42f))),
-        )
-        service.enemyUnits = listOf(unit(90, "e_tank", relation = "enemy"), unit(91, "e_tank", relation = "enemy"))
-
-        val text = run(service)
-
-        assertTrue(text.contains("战况 00:06"), text)
-        assertTrue(text.contains("资金 523 (+8.3/s)"), text)
-        assertTrue(text.contains("c_tank x2"), text)
-        assertTrue(text.contains("视野内敌军:"), text)
-        assertTrue(text.contains("e_tank"), text)
-        assertTrue(text.contains("工厂 2（队列占用 2，空闲 0）"), text)
-        assertTrue(text.contains("c_tank 濒死0/残血1/受伤0"), text)
-        assertFalse(text.contains("最近15秒受击"), text)
-        assertFalse(text.contains("击毁 30 | 损失 12"), text)
-    }
-
-    @Test
-    fun `brief reports held orders by what they wait for`() {
-        val service = FakeService()
-        service.ownUnits = listOf(unit(1))
-        service.pendingPage = RwxLocalGameTypes.PendingPage(100, 6000, listOf(
-            RwxLocalGameTypes.PendingOrderSnapshot(1, 10, 100, "action", "c_tank", listOf(1L),
-                null, null, null, "need 500, available 100", "credits"),
-            RwxLocalGameTypes.PendingOrderSnapshot(2, 10, 100, "action", "c_heavyTank", listOf(1L),
-                null, null, null, "upgrading", "upgrade"),
-        ), emptyList(), "pending: 2")
-
-        val text = run(service)
-        assertTrue(text.contains("待发: 2（等待资金 1，等待升级 1）"), text)
-    }
-
-    @Test
-    fun `brief accepts seconds and rejects removed minutes or invalid windows`() {
-        val service = FakeService()
-        service.ownUnits = listOf(unit(1))
-        val defaults = Json.parseToJsonElement(run(service, "--json")).jsonObject
-        assertEquals(60.0, defaults["windowSeconds"]!!.jsonPrimitive.double)
-        val largest = Json.parseToJsonElement(run(service, "--seconds", "6000", "--json")).jsonObject
-        assertEquals(6000.0, largest["windowSeconds"]!!.jsonPrimitive.double)
-        for (args in listOf(listOf("--minutes", "1"), listOf("--seconds", "6001"), listOf("--seconds", "0"))) {
-            assertFailsWith<IllegalArgumentException> { run(service, *args.toTypedArray()) }
-        }
-    }
-
-    @Test
-    fun `brief separates sides real factories upgrades and health severity buckets`() {
-        val service = FakeService()
-        service.ownUnits = listOf(
-            unit(1, "a_tank", health = 9f, queue = 0).apply { productionCapable = true },
-            unit(2, "a_tank", health = 10f),
-            unit(3, "a_tank", health = 50f),
-            unit(4, "a_tank", health = 80f),
-            unit(5, "ignored", health = 80.1f),
-            unit(6, "z_tank", health = 5f), unit(7, "z_tank", health = 5f),
-            unit(8, "turret", health = 49f, movement = "NONE", queue = 1,
-                production = listOf(RwxLocalGameTypes.QueueItem("upgrade", "t2", "T2", null, null, null, .3f)))
-                .apply { productionCapable = false },
-            unit(9, "factory", movement = "NONE", queue = 1,
-                production = listOf(RwxLocalGameTypes.QueueItem("produce", "a_tank", "Tank", null, null, null))),
-        )
-        service.allyUnits = listOf(unit(10, "ally_tank", relation = "ally"),
-            unit(11, "ally_factory", relation = "ally", movement = "NONE"))
-        service.enemyUnits = listOf(unit(12, "enemy_tank", relation = "enemy"))
-        val result = Json.parseToJsonElement(run(service, "--json")).jsonObject
-        assertFalse("unitCount" in result)
-        assertEquals(7, result["self"]!!.jsonObject["unitCount"]!!.jsonPrimitive.int)
-        assertEquals(2, result["self"]!!.jsonObject["buildingCount"]!!.jsonPrimitive.int)
-        assertEquals(1, result["allies"]!!.jsonObject["unitCount"]!!.jsonPrimitive.int)
-        assertEquals(1, result["VisibleEnemies"]!!.jsonObject["enemy_tank"]!!.jsonPrimitive.int)
-        assertEquals(1, result["production"]!!.jsonObject["factoryCount"]!!.jsonPrimitive.int)
+        service.ownUnits = listOf(unit(1, "tank", health = 9f), unit(2, "factory", movement = "NONE", queue = 2,
+            production = listOf(RwxLocalGameTypes.QueueItem("produce", "tank", "Tank", null, null, null),
+                RwxLocalGameTypes.QueueItem("upgrade", "t2", "T2", null, null, null, .3f))))
+        service.allyUnits = listOf(unit(3, "ally", relation = "ally"))
+        service.enemyUnits = listOf(unit(4, "enemy", relation = "enemy"))
+        val result = Json.parseToJsonElement(run(service, "--summary", "--json")).jsonObject
+        assertEquals(523.0, result["economy"]!!.jsonObject["credits"]!!.jsonPrimitive.double)
+        val forces = result["forces"]!!.jsonObject
+        assertEquals(1, forces["self"]!!.jsonObject["unitCount"]!!.jsonPrimitive.int)
+        assertEquals(1, forces["allies"]!!.jsonObject["unitCount"]!!.jsonPrimitive.int)
+        assertEquals(1, forces["visibleEnemies"]!!.jsonObject["unitCount"]!!.jsonPrimitive.int)
+        assertFalse("idleUnitCount" in forces["visibleEnemies"]!!.jsonObject)
+        assertEquals("enemy", forces["visibleEnemies"]!!.jsonObject["typeCounts"]!!.jsonArray[0].jsonObject["type"]!!.jsonPrimitive.content)
+        val production = result["production"]!!.jsonObject
+        assertEquals(1, production["busyFactoryCount"]!!.jsonPrimitive.int)
+        assertEquals(1, production["productionQueueEntryCount"]!!.jsonPrimitive.int)
         assertEquals(1, result["upgrades"]!!.jsonArray.size)
+        assertEquals(1, result["healthStatus"]!!.jsonObject["units"]!!.jsonArray[0].jsonObject["criticalCount"]!!.jsonPrimitive.int)
+        assertEquals(0, result["pending"]!!.jsonObject["pendingOrders"]!!.jsonPrimitive.int)
+        assertTrue(result["notableUnits"]!!.jsonArray.isEmpty())
+        assertTrue(result["notableBuildings"]!!.jsonArray.isEmpty())
+        val text = run(service)
+        for (heading in listOf("Battle State", "Economy:", "Forces:", "Production:", "Upgrades:", "Health:", "Pending:", "Notable Units", "Notable Buildings", "Recent Events")) assertTrue(text.contains(heading), text)
+    }
+
+    @Test
+    fun `event options share the event service without consuming history`() {
+        val service = FakeService()
+        val subject = RwxLocalGameTypes.EventEntity(1, "tank", "Tank", 0, "self", 10f, 20f)
+        service.eventHistory.add(RwxLocalGameTypes.GameEvent(5000, RwxLocalGameTypes.EventType.INFO, subject, null, "Tank created"))
+        val defaults = Json.parseToJsonElement(run(service, "--json")).jsonObject
+        assertEquals(30.0, defaults["events"]!!.jsonObject["windowSeconds"]!!.jsonPrimitive.double)
+        assertTrue(defaults["events"]!!.jsonObject["items"]!!.jsonArray.isEmpty())
+        val info = Json.parseToJsonElement(run(service, "--json", "--event-types", "info", "--event-seconds", "2", "--event-allies")).jsonObject
+        assertEquals("Tank created", info["events"]!!.jsonObject["items"]!!.jsonArray[0].jsonObject["description"]!!.jsonPrimitive.content)
+        assertTrue(service.lastEventQuery!!.allies)
+        assertEquals(1, service.eventHistory.size)
+        assertFalse("events" in Json.parseToJsonElement(run(service, "--json", "--no-events")).jsonObject)
+        assertEquals(1, service.eventHistory.size)
+        for (args in listOf(listOf("--no-events", "--event-allies"), listOf("--no-events", "--event-seconds", "10"), listOf("--event-seconds", "181"), listOf("--event-seconds", "0")))
+            assertFailsWith<IllegalArgumentException> { run(service, *args.toTypedArray()) }
+        assertEquals(null, RwxCliCommands.find("rwx-game-" + "brief"))
+    }
+
+    @Test
+    fun `events match standalone command and use game time and ally filter`() {
+        val service = FakeService()
+        val ally = RwxLocalGameTypes.EventEntity(1, "tank", "Tank", 2, "ally", 10f, 20f)
+        val own = RwxLocalGameTypes.EventEntity(2, "tank", "Tank", 0, "self", 10f, 20f)
+        service.eventHistory.add(RwxLocalGameTypes.GameEvent(1000, RwxLocalGameTypes.EventType.LOSSES, own, null, null))
+        service.eventHistory.add(RwxLocalGameTypes.GameEvent(5000, RwxLocalGameTypes.EventType.LOSSES, ally, null, null))
+        val executor = RwxLocalGameCommands(service)
+        val before = executor.execute(RwxCliCommands.Command.EVENTS, listOf("--types", "losses", "--seconds", "2", "--allies"))
+        val state = executor.execute(RwxCliCommands.Command.STATE, listOf("--event-types", "losses", "--event-seconds", "2", "--event-allies"))
+        val after = executor.execute(RwxCliCommands.Command.EVENTS, listOf("--types", "losses", "--seconds", "2", "--allies"))
+        assertTrue(state.contains(before), state)
+        assertTrue(before.contains("allied-2 lost"), before)
+        assertEquals(before, after)
+        assertEquals(2, service.eventHistory.size)
+    }
+
+    @Test
+    fun `unsupported pending remains unknown in both formats`() {
+        val service = FakeService().apply { pendingSupported = false }
+        val result = Json.parseToJsonElement(run(service, "--json")).jsonObject
+        assertEquals(JsonNull, result["pending"])
+        assertTrue(run(service).contains("Total: unknown"))
+    }
+
+    @Test
+    fun `pending waits are counted separately and event failure is explicit`() {
+        val service = FakeService()
+        service.pendingPage = RwxLocalGameTypes.PendingPage(100, 6000, listOf(
+            RwxLocalGameTypes.PendingOrderSnapshot(1, 10, 100, "action", "tank", listOf(1L),
+                null, null, null, "credits", "credits"),
+            RwxLocalGameTypes.PendingOrderSnapshot(2, 10, 100, "action", "tank", listOf(1L),
+                null, null, null, "upgrade", "upgrade")), emptyList(), "pending: 2")
+        val pending = Json.parseToJsonElement(run(service, "--json")).jsonObject["pending"]!!.jsonObject
+        assertEquals(2, pending["pendingOrders"]!!.jsonPrimitive.int)
+        assertEquals(1, pending["waitingForCreditsCount"]!!.jsonPrimitive.int)
+        assertEquals(1, pending["waitingForUpgradeCount"]!!.jsonPrimitive.int)
+        service.eventSupported = false
+        assertFailsWith<UnsupportedOperationException> { run(service) }
+        assertFalse("events" in Json.parseToJsonElement(run(service, "--json", "--no-events")).jsonObject)
+    }
+
+    @Test
+    fun `health boundaries and upgrade queues remain distinct`() {
+        val service = FakeService()
+        service.ownUnits = listOf(unit(1, "tank", health = 9f), unit(2, "tank", health = 10f),
+            unit(3, "tank", health = 50f), unit(4, "tank", health = 80f), unit(5, "tank", health = 80.1f),
+            unit(6, "factory", movement = "NONE", queue = 1,
+                production = listOf(RwxLocalGameTypes.QueueItem("upgrade", "t2", "T2", null, null, null, .75f))),
+            unit(7, "factory", movement = "NONE", queue = 0),
+            unit(8, "turret", movement = "NONE", health = 49f))
+        val result = Json.parseToJsonElement(run(service, "--summary", "--json")).jsonObject
         val health = result["healthStatus"]!!.jsonObject
-        val rows = health["units"]!!.jsonArray
-        assertEquals("z_tank", rows[0].jsonObject["type"]!!.jsonPrimitive.content)
-        assertEquals("a_tank", rows[1].jsonObject["type"]!!.jsonPrimitive.content)
-        assertEquals(1, rows[1].jsonObject["criticalCount"]!!.jsonPrimitive.int)
-        assertEquals(1, rows[1].jsonObject["lowHealthCount"]!!.jsonPrimitive.int)
-        assertEquals(2, rows[1].jsonObject["injuredCount"]!!.jsonPrimitive.int)
-        assertEquals(1, health["building"]!!.jsonArray.size)
-        assertFalse("pending" in result["production"]!!.jsonObject)
+        val units = health["units"]!!.jsonArray.single().jsonObject
+        assertEquals(1, units["criticalCount"]!!.jsonPrimitive.int)
+        assertEquals(1, units["lowHealthCount"]!!.jsonPrimitive.int)
+        assertEquals(2, units["injuredCount"]!!.jsonPrimitive.int)
+        assertEquals(1, health["buildings"]!!.jsonArray.single().jsonObject["lowHealthCount"]!!.jsonPrimitive.int)
+        val production = result["production"]!!.jsonObject
+        assertEquals(2, production["factoryCount"]!!.jsonPrimitive.int)
+        assertEquals(1, production["busyFactoryCount"]!!.jsonPrimitive.int)
+        assertEquals(1, production["idleFactoryCount"]!!.jsonPrimitive.int)
+        assertEquals(0, production["productionQueueEntryCount"]!!.jsonPrimitive.int)
+        assertEquals(.75, result["upgrades"]!!.jsonArray.single().jsonObject["progress"]!!.jsonPrimitive.double)
     }
 
     @Test
@@ -242,25 +272,25 @@ class RwxBriefAndKeepCommandsTest {
         fun state(vararg args: String) = RwxLocalGameCommands(service)
             .execute(RwxCliCommands.Command.STATE, args.toList())
         val default = Json.parseToJsonElement(state("--json")).jsonObject
-        assertEquals(listOf(1, 2, 8), default["notable Units"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
-        assertEquals(listOf(5, 7, 9), default["notable buildings"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
+        assertEquals(listOf(1, 2, 8), default["notableUnits"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
+        assertEquals(listOf(5, 7, 9), default["notableBuildings"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
         assertFalse("count" in default)
         assertFalse("units" in default)
         assertFalse(state().contains("actions:"))
-        assertEquals(1, state().lineSequence().count { it.startsWith("#7 ") })
-        assertTrue(state().contains("attacking,upgrading"))
+        assertEquals(1, state().lineSequence().count { it.trimStart().startsWith("#7 ") })
+        assertTrue(state().contains("attacking, upgrading"))
         val combined = Json.parseToJsonElement(state("--json", "--units-acting", "--units-damaged")).jsonObject
-        assertEquals(listOf(1, 2, 8), combined["notable Units"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
-        assertTrue(combined["notable buildings"]!!.jsonArray.isEmpty())
-        fun ids(flag: String, field: String = "notable Units") = Json.parseToJsonElement(state("--json", flag)).jsonObject[field]!!
+        assertEquals(listOf(1, 2, 8), combined["notableUnits"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int })
+        assertTrue(combined["notableBuildings"]!!.jsonArray.isEmpty())
+        fun ids(flag: String, field: String = "notableUnits") = Json.parseToJsonElement(state("--json", flag)).jsonObject[field]!!
             .jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.int }
         assertEquals(listOf(1, 8), ids("--units-acting"))
         assertEquals(listOf(2, 8), ids("--units-damaged"))
-        assertEquals(listOf(7, 9), ids("--building-acting", "notable buildings"))
-        assertEquals(listOf(5), ids("--building-actionable", "notable buildings"))
+        assertEquals(listOf(7, 9), ids("--building-acting", "notableBuildings"))
+        assertEquals(listOf(5), ids("--building-actionable", "notableBuildings"))
         assertTrue(ids("--building-acting").isEmpty())
-        assertTrue(state().contains("\nnotable Units:\n#1 "))
-        assertTrue(state().contains("\nnotable buildings:\n#5 "))
+        assertTrue(state().contains("Notable Units (3):\n  #1 "))
+        assertTrue(state().contains("Notable Buildings (3):\n  #5 "))
         assertFailsWith<IllegalArgumentException> { state("--owner", "self") }
         assertFailsWith<IllegalArgumentException> { state("--compact") }
     }
@@ -278,23 +308,10 @@ class RwxBriefAndKeepCommandsTest {
     }
 
     @Test
-    fun `state summary keeps the macro fields and rejects selection flags`() {
+    fun `summary rejects selection flags`() {
         val service = FakeService()
-        fun state(vararg args: String) = RwxLocalGameCommands(service)
-            .execute(RwxCliCommands.Command.STATE, args.toList())
-        val text = state("--summary")
-        assertTrue(text.startsWith("游戏状态\ntick: 100"), text)
-        assertTrue(text.contains("paused: false"), text)
-        assertTrue(text.contains("speed: 1.0"), text)
-        assertTrue(text.contains("map: King of the Middle"), text)
-        assertTrue(text.contains("credits: 523"), text)
-        assertTrue(text.contains("units: 23"), text)
-        assertFalse(text.contains("notable Units"), text)
-        val json = Json.parseToJsonElement(state("--summary", "--json")).jsonObject
-        assertEquals(100, json["tick"]!!.jsonPrimitive.int)
-        assertEquals(23, json["units"]!!.jsonPrimitive.int)
-        assertEquals("King of the Middle", json["map"]!!.jsonPrimitive.content)
-        assertFailsWith<IllegalArgumentException> { state("--summary", "--units-acting") }
+        for (flag in listOf("--units-acting", "--units-damaged", "--building-acting", "--building-actionable"))
+            assertFailsWith<IllegalArgumentException> { run(service, "--summary", flag) }
     }
 
     @Test
@@ -341,8 +358,8 @@ class RwxBriefAndKeepCommandsTest {
         val service = FakeService().apply { ownUnits = listOf(idle) }
         val result = Json.parseToJsonElement(RwxLocalGameCommands(service)
             .execute(RwxCliCommands.Command.STATE, listOf("--json"))).jsonObject
-        assertTrue(result["notable Units"]!!.jsonArray.isEmpty())
-        assertTrue(result["notable buildings"]!!.jsonArray.isEmpty())
+        assertTrue(result["notableUnits"]!!.jsonArray.isEmpty())
+        assertTrue(result["notableBuildings"]!!.jsonArray.isEmpty())
         assertFalse("count" in result)
     }
 

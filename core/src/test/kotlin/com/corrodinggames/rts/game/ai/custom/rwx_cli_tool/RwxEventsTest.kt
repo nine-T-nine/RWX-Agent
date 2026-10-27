@@ -29,6 +29,18 @@ class RwxEventsTest {
                       seconds: Double = 30.0, allies: Boolean = false) =
         RwxEventProcessor.query(raw, now, EventQuery(types, seconds, allies)).lines
 
+    @Test fun `structured results describe the same merged events as text`() {
+        val raw = listOf(event(10_000, id = 1), event(13_000, id = 2))
+        val page = RwxEventProcessor.query(raw, 30_000, EventQuery(null, 30.0, false))
+        assertEquals(1, page.items.size)
+        assertEquals(10_000, page.items[0].gameTimeMillis)
+        assertEquals(EventType.LOSSES, page.items[0].type)
+        assertEquals("we lost Tank x2 by Heavy Tank(120,210)x2", page.items[0].description)
+        assertEquals("[00:10][losses] ${page.items[0].description}", page.lines.single())
+        assertEquals(2, raw.size)
+        assertEquals("[61:01][info] ready", RwxEventProcessor.format(3_661_000, "info", "ready"))
+    }
+
     @Test fun `defaults omit info and format only event lines`() {
         val raw = listOf(
             event(572_000, EventType.DAMAGED, 123),

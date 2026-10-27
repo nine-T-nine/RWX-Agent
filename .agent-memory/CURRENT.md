@@ -1,10 +1,11 @@
 # CURRENT
 
-更新时间：2026-10-26
+更新时间：2026-10-27
 
 ## 当前快照
 
-- 本地 Windows GUI（带 RWX CLI）仍在运行；`水田2P` 对 Very Hard AI 的录制对局于 08:05 判负（敌方重型地面/空军集群摧毁指挥中心），CLI 端口见 `agent-operation/tmp/port`。
+- 2026-10-27：`game-state` 合并宏观统计与共享事件，旧摘要命令已移除；完整测试 24 套件、209 项通过，Headless 房主 + Windows GUI 非空事件和历史保留验证通过（`HISTORY/task-015.md`）。联机验证中曾出现游戏线程查询超时，重跑通过。
+- 本地 Windows GUI（带 RWX CLI）仍在运行；`水田2P` 对 Very Hard AI 的录制对局已于 06:56 按用户指令投降结束，CLI 端口见 `agent-operation/tmp/port`。
 - 项目网站：https://nine-t-nine.github.io/RWX-Agent/ ，源码在 `web/`；`web/**` 通过 Actions 自动校验并部署 Pages，维护见 `web/README.md`。
 - 已移除有问题的核弹录像展示、原片、网页副本及封面；现保留三场录像，生成配置和文档同步更新（`HISTORY/task-012.md`）。
 - 独立公开仓库 `nine-T-nine/RWX-Agent` ID 为 `1434131753`，Contributors 已验证公开维护身份。

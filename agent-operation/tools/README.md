@@ -36,7 +36,7 @@ PowerShell 原生客户端：
 ```powershell
 .\agent-operation\tools\rwx-cli.ps1 -List
 .\agent-operation\tools\rwx-cli.ps1 rwx-game-state --summary
-.\agent-operation\tools\rwx-cli.ps1 -Batch 'rwx-game-brief','rwx-game-unit-list --owner self --full'
+.\agent-operation\tools\rwx-cli.ps1 -Batch 'rwx-game-state --summary','rwx-game-unit-list --owner self --full'
 .\agent-operation\tools\rwx-cli.ps1 -BatchFile .\commands.txt
 .\agent-operation\tools\rwx-cli.ps1 -Interactive
 ```

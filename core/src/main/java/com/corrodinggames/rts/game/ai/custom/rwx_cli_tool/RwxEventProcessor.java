@@ -16,10 +16,14 @@ final class RwxEventProcessor {
     private record Indexed(GameEvent event, int order) { }
     private record Line(int time, int order, EventType type, String description) {
         String text() {
-            int seconds = Math.max(0, time) / 1000;
-            return String.format(Locale.ROOT, "[%02d:%02d][%s] %s", seconds / 60, seconds % 60,
-                    type.name().toLowerCase(Locale.ROOT), description);
+            return format(time, type.name().toLowerCase(Locale.ROOT), description);
         }
+    }
+
+    static String format(int time, String type, String description) {
+        int seconds = Math.max(0, time) / 1000;
+        return String.format(Locale.ROOT, "[%02d:%02d][%s] %s", seconds / 60, seconds % 60,
+                type, description);
     }
 
     static EventPage query(List<GameEvent> raw, int now, EventQuery query) {
@@ -82,8 +86,13 @@ final class RwxEventProcessor {
         lines.sort(Comparator.comparingInt(Line::time).thenComparingInt(Line::order));
         int start = Math.max(0, lines.size() - 50);
         List<String> output = new ArrayList<>();
-        for (int i = start; i < lines.size(); i++) output.add(lines.get(i).text());
-        return new EventPage(output);
+        List<EventRecord> items = new ArrayList<>();
+        for (int i = start; i < lines.size(); i++) {
+            Line line = lines.get(i);
+            output.add(line.text());
+            items.add(new EventRecord(line.time(), line.type(), line.description()));
+        }
+        return new EventPage(output, items);
     }
 
     private static boolean matchesSide(GameEvent event, boolean allies) {

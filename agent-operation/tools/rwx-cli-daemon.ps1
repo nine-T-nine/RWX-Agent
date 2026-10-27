@@ -14,7 +14,7 @@
 
     判断“这条回复是不是我这次请求的”：写请求后比较两个文件的修改时间——
     resp.txt 比 req.txt 新，就说明 daemon 已经处理完。
-    `tools\rwx-cli.sh` 封装了这套等待逻辑，bash 里直接 `./rwx-cli.sh send "rwx-game-brief"`。
+    `tools\rwx-cli.sh` 封装了这套等待逻辑，bash 里直接 `./rwx-cli.sh send "rwx-game-state --summary"`。
 
     连接断了（游戏重开、游戏退出）会自动重连；重连期间收到的请求会立刻回一条 error，
     不会让调用方一直等。连续 -IdleMinutes 分钟没有请求就自己退出。

@@ -314,7 +314,25 @@ public final class RwxLocalGameTypes {
 
     public static final class EventPage {
         public final List<String> lines;
-        public EventPage(List<String> lines) { this.lines = List.copyOf(lines); }
+        /** Processed, merged events in the same order as lines. */
+        public final List<EventRecord> items;
+        public EventPage(List<String> lines) { this(lines, Collections.emptyList()); }
+        public EventPage(List<String> lines, List<EventRecord> items) {
+            this.lines = List.copyOf(lines);
+            this.items = List.copyOf(items);
+        }
+    }
+
+    /** A query result after the shared event processor's filtering and aggregation. */
+    public static final class EventRecord {
+        public final int gameTimeMillis;
+        public final EventType type;
+        public final String description;
+        public EventRecord(int gameTimeMillis, EventType type, String description) {
+            this.gameTimeMillis = gameTimeMillis;
+            this.type = type;
+            this.description = description;
+        }
     }
 
     /** A separate unit-list snapshot comparison, without an event cursor or retained event history. */
@@ -374,6 +392,8 @@ public final class RwxLocalGameTypes {
         public final GameSnapshot game;
         public final UnitOwner owner;
         public final List<UnitSnapshot> units;
+        public final List<UnitSnapshot> allies;
+        public final List<UnitSnapshot> visibleEnemies;
         /** Legacy action-menu slot; engine state reads leave it empty. Use actions(unitId) for menus. */
         public final java.util.Map<Long, List<ActionSnapshot>> actions;
         public final int factoryCount;
@@ -382,9 +402,18 @@ public final class RwxLocalGameTypes {
         public GameStateSnapshot(GameSnapshot game, UnitOwner owner, List<UnitSnapshot> units,
                                  java.util.Map<Long, List<ActionSnapshot>> actions,
                                  int factoryCount, int idleFactoryCount) {
+            this(game, owner, units, Collections.emptyList(), Collections.emptyList(), actions, factoryCount, idleFactoryCount);
+        }
+
+        public GameStateSnapshot(GameSnapshot game, UnitOwner owner, List<UnitSnapshot> units,
+                                 List<UnitSnapshot> allies, List<UnitSnapshot> visibleEnemies,
+                                 java.util.Map<Long, List<ActionSnapshot>> actions,
+                                 int factoryCount, int idleFactoryCount) {
             this.game = game;
             this.owner = owner;
             this.units = immutable(units);
+            this.allies = immutable(allies);
+            this.visibleEnemies = immutable(visibleEnemies);
             this.actions = Collections.unmodifiableMap(
                     new java.util.LinkedHashMap<Long, List<ActionSnapshot>>(actions));
             this.factoryCount = factoryCount;

@@ -80,43 +80,56 @@ rwx-game-state --summary
 rwx-game-unit-list --owner self --full --compact
 ```
 
-## 2. Observe — 信息观测
+## 2. Observe — 信息统计
 
-查询游戏当前状态，原则上不改变游戏状态。
+查询游戏当前状态大致统计。
 
 ### 2.1 对局状态
 
-- `rwx-game-state [--summary] [--json] [--units-acting] [--units-damaged] [--building-acting] [--building-actionable]`：默认一次引擎线程读取我方经济和需要关注的单位/建筑；文本每个实体一行，不列可执行动作菜单。不支持 `--owner`、`--compact`。
-- `rwx-game-state --summary`：宏观摘要，只给 tick、时间、暂停、速度、地图、控制队伍、结果、资金、收入、单位数；不能与四个筛选开关同用。
-- `rwx-game-brief [--seconds 60] [--json]`：当前全局摘要，区分我方/友军兵力、视野内敌军、生产、升级、血量分档和待发项。`--seconds` 为后续历史内容预留的游戏秒窗口，取值大于 0、最大 6000，默认 60；本版摘要仅展示当前快照，不统计历史警报或战果。
-- `rwx-game-team-list`：全部队伍、阵营、AI、active/defeated、己方资金与净收入；己方单位数不含生产队列。
+`rwx-game-state [--summary] [--json] [--units-acting] [--units-damaged] [--building-acting] [--building-actionable] [--event-seconds N] [--event-types type1,type2,...] [--event-allies] [--no-events]`
 
-`game-state --summary --json` 字段：`tick`、`time`、`gameTimeMillis`、`paused`、`speed`、`map`、`controlledTeam`、`outcome`、`credits`、`incomePerSecond`、`units`。
+默认按固定顺序显示战局、经济、我方/友军/当前视野内敌军的兵力、生产、升级、我方血量分档、CLI 待发项、需关注的单位与建筑，以及最近 30 游戏秒的重要事件。空区块显示 `none`。`--summary` 保留全部宏观统计和事件，不显示逐实体明细；它与四个实体筛选开关互斥。
 
-`brief --json` 字段详情：
+- `--units-acting`：正在移动、交战、建造、生产、修理、巡逻、守卫或跟随等的非建筑单位。
+- `--units-damaged`：HP 严格低于 70% 的非建筑单位。
+- `--building-acting`：正在施工、生产、升级、修理、攻击或防御的建筑。
+- `--building-actionable`：当前资金与条件满足、可以升级或生产的建筑。
 
-- `self` / `allies`：我方/友军合计。`unitCount` 不含建筑，`buildingCount` 只含建筑，`idleUnitCount` 是没有指令、攻击目标或生产队列的非建筑单位数，`typeCounts` 按类型汇总单位和建筑；不含生产队列中的未生成单位。
-- `VisibleEnemies`：仅当前视野内敌军，按类型计数，不保留视野外记忆。
-- `production`：仅我方已完工、能够生产单位的建筑。`factoryCount` 为工厂总数，`busyFactoryCount` 为队列非空的工厂数（含升级占用），`idleFactoryCount` 为队列为空的工厂数；`productionQueueEntryCount` 为生产队列条目数，不包含升级，也不代表有队列的工厂数。
-- `upgrades`：我方队列中的升级项，含 `id`、`type`、`upgrade`、`progress`（0..1，尚无进度为 null），与生产分开。
-- `healthStatus.units` / `healthStatus.building`：仅我方受损单位/建筑；每种类型一项，含 `type`、`criticalCount`（<10%，濒死）、`lowHealthCount`（10%–<50%，残血）、`injuredCount`（50%–80%，受伤）。忽略 >80%；依次按濒死数、残血数、受伤数降序，同分按类型名排序。
-- `pending`：CLI 命令待发项。`pendingOrders` 为项数，`waitingForCreditsCount` / `waitingForUpgradeCount` 分别为等待资金/前置升级的项数，不是金额或正在升级数。支持建造、生产、升级与技能；服务不支持待发查询时为 null。
+四个筛选可组合，取并集并去重；不传时启用全部四类。筛选只影响实体明细，不影响统计。状态取引擎实际活动；详情包含 ID、坐标、血量、当前指令、目标和 waypoint，建筑附科技等级及生产队列摘要。
 
-`game-state` 的四个开关可组合，取并集并去重；不传时启用全部四类：
+- `--event-seconds N`：游戏时间窗口，默认 30，必须大于 0 且不超过 180。
+- `--event-types`：逗号分隔，默认 `damaged,destroyed,losses,new`；`info` 仅显式指定时显示。
+- `--event-allies`：`destroyed` 和 `losses` 仅显示友军；其他类型规则不变，见 6.1。
+- `--no-events`：不查询或显示事件；不能与其他事件参数同用，不清除历史。
+- `--json`：输出标准 JSON，与文本使用相同报告数据。
 
-- `--units-acting`：正在移动、交战、建造、生产、修理、巡逻、守卫、跟随等的非建筑单位。
-- `--units-damaged`：HP <70% 的非建筑单位；恰好 70% 不算。
-- `--building-acting`：正在被建造、生产、升级、修理、攻击或防御的建筑。
-- `--building-actionable`：当前资金和条件都满足、可升级或可生产单位的建筑；不包含仅可设置集结点等操作。
+JSON 顶层分为 `battle`、`economy`、`forces`、`production`、`upgrades`、`healthStatus`、`pending`、`notableUnits`、`notableBuildings` 和 `events`。`--summary` 的两个实体数组为空；`--no-events` 省略 `events`。`battle` 包含 `tick`、`time`、`gameTimeMillis`、`paused`、`speed`、`map`、`controlledTeam`、`outcome`；经济为 `credits`、`incomePerSecond`。
 
-每行用单词表示状态，可并列，如 `moving`、`producing`、`upgrading`、`constructing`、`repairing`、`guarding`、`attacking`、`defending`、`damaged`、`upgradeable`、`producible`。攻击/防御表示最近 1 游戏秒实际开火/拦截；修理未完工目标显示 `constructing target=#54`，修理已完工目标显示 `repairing target=#54`。JSON 使用相同筛选，`statuses` 为状态列表。
+- `forces.self` / `allies` / `visibleEnemies` 分别包含 `unitCount`（不含建筑）、`buildingCount` 和结构化的 `typeCounts`（每项 `type`、`count`）；我方和友军另含 `idleUnitCount`。友军不包含我方，敌军仅为当前可见实体，生产队列不计入兵力。
+- `production.factoryCount` 为我方已完工且能生产单位的建筑数；`busyFactoryCount` / `idleFactoryCount` 按队列是否为空统计，升级占用算忙碌；`productionQueueEntryCount` 只计生产条目，不计升级。
+- `upgrades` 包含 `id`、`type`、`upgrade`、`progress`；进度为 0..1，未知为 null。
+- `healthStatus.units` / `buildings` 按类型统计 `criticalCount`（HP <10%）、`lowHealthCount`（10% ≤ HP <50%）、`injuredCount`（50% ≤ HP ≤80%）。
+- `pending` 包含 `pendingOrders`、`waitingForCreditsCount`、`waitingForUpgradeCount`；不支持待发查询时为 null。
+- `events.items` 包含共享查询处理后的 `gameTimeMillis`、`type`、`description`；窗口为 `windowSeconds`。事件使用游戏时间，查询不消费历史。
 
-输出分为 `notable Units`（仅非建筑单位）和 `notable buildings`（仅建筑），按上述开关筛选，并非全军清单。JSON 始终保留这两个数组，没有匹配时为 `[]`；不再输出可由数组长度计算的 `count`。
+例如：
+
+```text
+rwx-game-state
+rwx-game-state --summary --json
+rwx-game-state --units-damaged --building-acting --event-seconds 60
+rwx-game-state --event-types info --event-allies
+rwx-game-state --no-events
+```
+
+- `rwx-game-team-list`：全部队伍、阵营、AI、active/defeated、本队资金与净收入；非本队不暴露经济。
 
 ### 2.2 单位列表与详情
 
+`game-state` 只给需关注实体的简要状态；完整清单、单个实体的深入信息和可用动作分别使用以下命令。
+
 - `rwx-game-unit-list [--owner self|ally|enemy|neutral] [--type <id或名称,...>] [--group <name>] [--units <ids|选择器>] [--x X --y Y --radius R] [--hp <百分比>|--full] [--idle] [--exclude-builders] [--exclude <id|名称,...>] [--summary] [--delta] [--compact] [--json]`：单位列表，默认只列血量低于 80% 的实体。
-- `rwx-game-unit-show --id <id>`：单单位详情，含阵营、T 级、升级等级、攻击模式、生产队列、完整 waypoint 队列；被暂存的指令会列在 `cliPending`。
+- `rwx-game-unit-show --id <id>`：单个单位详情，含阵营、T 级、升级等级、攻击模式、生产队列、完整 waypoint 队列；被暂存的指令会列在 `cliPending`。
 - `rwx-game-unit-actions --unit <id> [--json]`：该单位当前可执行的动作，含动作 id、价格、是否可下、排队数、不可用原因；`queued` 是真实生产队列里该动作的数量（含正在生产的那个），`available` 表示现在真的买得起至少一个。
 
 `unit-list` 的常用开关：
@@ -126,17 +139,7 @@ rwx-game-unit-list --owner self --full --compact
 - `--owner self|ally|enemy|neutral`：所属关系；省略时只包含我方和当前可见敌方，排除盟友和中立实体；`ally` 仅盟友。默认变化记录采用相同的阵营范围。
 - `--type <id或名称,...>`：按单位类型筛选，内部 id 精确匹配，找不到时按本地化名称匹配（支持“重型坦克”这种部分名）。这是唯一的类型筛选入口。
 - `--units <ids|选择器>` / `--group <name>`：按实体 ID、类型、编组或区域进一步筛选，选择器见 3.4。
-- `--x X --y Y --radius R`：世界坐标圆形范围，中心坐标必须成对给出，半径非负；此处的 `--radius` 保留，不受 `map-show` 参数变更影响。
-- `--hp N`：仅保留血量低于 N% 的实体（1..100）；省略时默认 80，即只列 <80% 的实体。
-- `--full`：取消血量筛选，列出全部实体（包括 >80% 的），不能与 `--hp` 同用。
-- `--exclude-builders`：排除建造者。
-- `--exclude <id|名称,...>`：数字按实体 id 排除，名称按类型排除，可混写。
-
-- `--summary`：按队伍和类型计数，不推进变化游标；与 `--delta`、`--compact`、`--json`、`--hp`、`--full` 互斥。
-- `--idle`：只看没有 waypoint、工厂队列为空的单位。
-- `--delta`：额外输出相对上次 `--delta` 查询的变化；不加时不显示变化、也不消费变化游标。
-- `--compact`：每个单位一行，适合快速扫屏。
-- `--json`：机器可读，只读且不消费变化游标。
+- `--x X --y Y --radius R`：世界坐标圆形范围，中心坐标必须成对给出，半径非负；此处的 `--radius` 保留，不受 
 
 ### 2.3 地图与地形信息
 
@@ -167,7 +170,7 @@ rwx-game-unit-list --owner self --full --compact
 
 ### 2.4 敌情与镜头
 
-- `rwx-game-threat-list --x X --y Y [--radius 300] [--cluster [--cluster-radius 120]] [--json]`：查看范围内当前可见的敌方单位，包含总数、兵种/攻击能力统计、最近距离和逐单位明细；`--cluster` 合并为集群，`--cluster-radius` 设置合并半径。
+- `rwx-game-threat-list --x X --y Y [--radius 300] [--cluster [--cluster-radius 120]] [--json]`：查看非迷雾区范围内的敌方单位，包含总数、兵种/攻击能力统计、最近距离和逐单位明细；`--cluster` 合并为集群，`--cluster-radius` 设置合并半径。
 - `rwx-game-camera [--x X --y Y] [--center|--top-left] [--zoom Z | --zoom-by 倍率]`：读取或移动 GUI 视野，不暂停游戏。`--x/--y` 默认按中心定位，`--top-left` 改为左上角；`--zoom` 是绝对值，`--zoom-by` 是相对当前缩放；越界会钳制并回报调整。
 
 ## 3. Combat — 战斗指挥
@@ -484,11 +487,13 @@ rwx-game-auto-set --rule assist-counter
 rwx-game-auto-set --rule assist-counter --enabled false
 ```
 
-## 6. History — 事件历史
+## 6. History — 实时事件
 
 ### 6.1 统一事件查询
 
 `rwx-game-events [--types <type1,type2,...>] [--seconds N] [--allies]`
+
+`game-state` 与 `game-events` 共享同一事件采集器、缓存和查询处理器；查询不会消费或重置历史。
 
 - `--types`：多个类型取并集；默认固定为 `damaged,destroyed,losses,new`。`info` 仅在显式指定时输出。
 - `--seconds`：最近 N 游戏秒，默认 30，最大 180，必须大于 0。
