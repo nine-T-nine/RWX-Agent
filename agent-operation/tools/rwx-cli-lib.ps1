@@ -1,4 +1,4 @@
-﻿# rwx-cli-lib.ps1 — rwx-cli.ps1 / rwx-cli-daemon.ps1 共用的端点发现与连接代码。
+# rwx-cli-lib.ps1 — rwx-cli.ps1 与 .agents 技能脚本共用的端点发现与连接代码。
 #
 # 协议要点（与 game 里的 RwxCliTool 对应）：
 #   * 一次性客户端：发一行 `<命令><TAB><base64 参数逗号分隔>`，半关闭写端，读到 EOF。

@@ -1,0 +1,241 @@
+{
+  "format": "rw-strategy/1",
+  "engine": "generic-v1",
+  "id": "combat.minigun-shield-kite-return-live",
+  "name": "机枪机甲低盾被锁撤退与回归",
+  "description": "机枪机甲护盾低于 50 点且正被敌方武器锁定时，远离锁定者中心 280；护盾恢复到 50 点及以上或不再被锁定时，用攻击移动回到战斗方向：仍被锁定时沿锁定者中心反向 280，未被锁定时沿全场敌方单位中心反向 280。省略 dryRun 表示真实执行。",
+  "author": "StrategyDSL",
+  "version": "1.0.0",
+  "enabled": true,
+  "order": 100,
+  "scope": "localPlayer",
+  "requires": [
+    "units.read.all",
+    "units.command.self"
+  ],
+  "rules": [
+    {
+      "id": "retreat-low-shield-targeted",
+      "description": "护盾低于 50 且被敌方武器当前锁定：远离锁定者中心 280。",
+      "cooldownMs": 1000,
+      "on": {
+        "event": "interval",
+        "everyMs": 100
+      },
+      "select": [
+        {
+          "from": "units",
+          "as": "actors",
+          "where": {
+            "owner": "self",
+            "name": "mechMinigun",
+            "alive": true,
+            "completed": true
+          },
+          "result": "many",
+          "limit": 32
+        }
+      ],
+      "forEach": {
+        "from": "$actors",
+        "as": "actor"
+      },
+      "if": {
+        "all": [
+          {
+            "left": {
+              "call": "unit.field",
+              "unit": "$actor",
+              "field": "shield"
+            },
+            "op": "lt",
+            "right": 50
+          },
+          {
+            "left": {
+              "call": "collection.count",
+              "items": {
+                "call": "units.targeting",
+                "unit": "$actor",
+                "owner": "enemy",
+                "current": true,
+                "project": "attacker"
+              }
+            },
+            "op": "gt",
+            "right": 0
+          }
+        ]
+      },
+      "do": [
+        {
+          "op": "command.move",
+          "units": "$actor",
+          "to": {
+            "call": "geometry.awayFrom",
+            "unit": "$actor",
+            "threatUnits": {
+              "call": "units.targeting",
+              "unit": "$actor",
+              "owner": "enemy",
+              "current": true,
+              "project": "attacker"
+            },
+            "distance": 280
+          },
+          "queue": "replace"
+        }
+      ]
+    },
+    {
+      "id": "reengage-shield-recovered",
+      "description": "护盾已恢复到 50 点及以上但仍被锁定：沿锁定者中心反向攻击移动 280。",
+      "cooldownMs": 1500,
+      "on": {
+        "event": "interval",
+        "everyMs": 100
+      },
+      "select": [
+        {
+          "from": "units",
+          "as": "actors",
+          "where": {
+            "owner": "self",
+            "name": "mechMinigun",
+            "alive": true,
+            "completed": true
+          },
+          "result": "many",
+          "limit": 32
+        }
+      ],
+      "forEach": {
+        "from": "$actors",
+        "as": "actor"
+      },
+      "if": {
+        "all": [
+          {
+            "left": {
+              "call": "unit.field",
+              "unit": "$actor",
+              "field": "shield"
+            },
+            "op": "gte",
+            "right": 50
+          },
+          {
+            "left": {
+              "call": "collection.count",
+              "items": {
+                "call": "units.targeting",
+                "unit": "$actor",
+                "owner": "enemy",
+                "current": true,
+                "project": "attacker"
+              }
+            },
+            "op": "gt",
+            "right": 0
+          }
+        ]
+      },
+      "do": [
+        {
+          "op": "command.attackMove",
+          "units": "$actor",
+          "to": {
+            "call": "geometry.awayFrom",
+            "unit": "$actor",
+            "threatUnits": {
+              "call": "units.targeting",
+              "unit": "$actor",
+              "owner": "enemy",
+              "current": true,
+              "project": "attacker"
+            },
+            "distance": -280
+          },
+          "queue": "replace"
+        }
+      ]
+    },
+    {
+      "id": "reengage-unlocked",
+      "description": "不再被瞄准：以全场敌方单位中心为参照反向攻击移动 280；场上没有敌方单位时不行动。",
+      "cooldownMs": 2000,
+      "on": {
+        "event": "interval",
+        "everyMs": 100
+      },
+      "select": [
+        {
+          "from": "units",
+          "as": "actors",
+          "where": {
+            "owner": "self",
+            "name": "mechMinigun",
+            "alive": true,
+            "completed": true
+          },
+          "result": "many",
+          "limit": 32
+        },
+        {
+          "from": "units",
+          "as": "enemies",
+          "where": {
+            "owner": "enemy",
+            "alive": true,
+            "completed": true
+          },
+          "result": "many",
+          "limit": 256
+        }
+      ],
+      "forEach": {
+        "from": "$actors",
+        "as": "actor"
+      },
+      "if": {
+        "all": [
+          {
+            "left": {
+              "call": "collection.count",
+              "items": {
+                "call": "units.targeting",
+                "unit": "$actor",
+                "owner": "enemy",
+                "current": true,
+                "project": "attacker"
+              }
+            },
+            "op": "lte",
+            "right": 0
+          },
+          {
+            "left": {
+              "call": "collection.count",
+              "items": "$enemies"
+            },
+            "op": "gt",
+            "right": 0
+          }
+        ]
+      },
+      "do": [
+        {
+          "op": "command.attackMove",
+          "units": "$actor",
+          "to": {
+            "call": "geometry.awayFrom",
+            "unit": "$actor",
+            "threatUnits": "$enemies",
+            "distance": -280
+          },
+          "queue": "replace"
+        }
+      ]
+    }
+  ]
+}

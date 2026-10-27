@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     在游戏外面给 RWX 发送 CLI 命令（不需要、也不依赖游戏启动时弹出的那个命令终端）。
 
@@ -66,7 +66,7 @@
 
 .NOTES
     退出码：0 成功；2 找不到可用的 CLI 端点或参数错误；3 连接失败；4 命令返回以 error: 开头。
-    常驻连接可用 -Interactive / -BatchFile；Windows 文件邮箱可用 rwx-cli-daemon.ps1。
+    常驻连接可用 -Interactive / -BatchFile。
 #>
 [CmdletBinding()]
 param(

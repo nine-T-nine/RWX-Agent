@@ -62,19 +62,18 @@ rwx-server-list [--refresh true]
 rwx-exit
 ```
 
-- `connect` establishes the game connection asynchronously, defaulting to the original TCP port `5123`. Accepts original direct addresses, `host:port/room-code`, short relay codes and `get|...` master-server descriptors. `--room` appends the original query string for direct relays; a `get|...` descriptor already identifies a room and cannot take `--room`. Player names are 2..20 characters.
-- `RELAY-CN` is looked up through the current public master-server list by publisher/room identifier, with no hard-coded address; an unreachable list, no match, or a failed protocol handshake are all reported explicitly. An entry name alone does not prove the service is usable. For creating/joining on a public relay, follow what the entry itself reports.
-- A connection receipt only means the connection was requested; `joined` in `connection-status` requires the original room configuration plus a local team assignment, and `in-game` additionally requires the map to be loaded. The status also carries `resolving`, `connecting`, `hosting`, `disconnected`, `error`, and shows the game port, team and errors.
-- The timeout covers TCP connect and room registration, range 1000..120000 ms. On timeout the attempt is cancelled and the game connection closed; late sockets are closed too. A password prompt can be answered with `--password` or with an RWX process environment variable via `--password-env`; a wrong password is not retried indefinitely.
-- `--reconnect true` reuses the last address and the same client identity. The host decides whether the original team can be restored; matches already in progress normally refuse brand-new players. Multiple agents should each use their own `--data-dir` and must not share one persistent client identity.
-- `disconnect` closes the game network connection and returns to the menu, keeping the RWX process and the local CLI; closing a Python/PowerShell CLI client does not exit the game either. `exit` closes the RWX process and its CLI.
-- `host` reuses the original hosting: it listens on the given TCP and reliable-UDP game ports and does not publish to the public master server by default. `--spectator true` makes the server's local player a spectator; `--auto-start-players 2` explicitly authorises the host to start once at least two non-spectator human clients are present, and `0` disables auto-start. AI does not count towards that threshold.
-- `--managed-room true` enables the persistent-room policy, which implies a server spectator seat and is mutually exclusive with auto-start by player count. The first client receives the original proxy-host authority; after it leaves, authority passes on in join order, and the election happens only in the lobby, frozen during a match. A proxy host's GUI/CLI management requests are sent to the server through original chat packets for validation and execution; a CLI receipt means the request was submitted, so query the room to confirm the result.
-- In a managed match, new identities join as spectators automatically and a reconnecting original player keeps their seat. When every online non-spectator player has left or been defeated, the server forces the match to end and returns to the lobby through original packets, keeping clients that are still online. Spectating clients and game AI do not block the end; no winner is assigned. Proxy authority never grants control over other teams' units.
-- `connection-status` adds `roomAdmin` (this client's proxy management rights), `roomManager` (the admin name when queried locally on the server) and `spectator`. An ordinary client can only learn its rights from the original room state and the proxy-authority bit.
-- An ordinary player can view the room, chat, adjust their own spawn point/faction under the original rules, and in a match query visible information and control their own units. Only the host/original proxy host may change the room, map or AI, or start the game. Agents have no extra privileges; their commands go through the original `Command` network queue.
+- **Connecting**: `rwx-connect` establishes the connection asynchronously, defaulting to TCP port `5123`; it accepts original direct addresses, `host:port/room-code`, short relay codes and `get|...` master-server descriptors. `--room` appends the original query string for direct relays and cannot be combined with `get|...`. Player names are 2..20 characters.
+- **Public relay**: `RELAY-CN` is looked up by publisher/room identifier in the public master-server list, with no hard-coded address. An unreachable list, no match or a failed handshake are all reported; an entry name alone does not guarantee that the service works. For creating or joining, follow what the entry itself reports.
+- **Connection state**: a connection receipt only means the request was submitted. `joined` in `rwx-connection-status` means the room configuration was received and a local team assigned; `in-game` additionally requires the game to be loaded. The other states are `resolving`, `connecting`, `hosting`, `disconnected` and `error`; the port, team and error are shown too.
+- **Timeout and password**: the connection timeout covers TCP connect and room registration, range 1000..120000 ms; on timeout the attempt is cancelled and the socket closed, including connections that arrive late. The password can be supplied with `--password` or through the RWX process environment variable named by `--password-env`; a wrong password is not retried indefinitely.
+- **Reconnect**: `--reconnect true` uses the last address and the same client identity; whether the original team can be restored is up to the host, and a match already in progress normally refuses new players. Multiple agents must use their own `--data-dir` and must not share one persistent client identity.
+- **Disconnect and exit**: `rwx-disconnect` returns to the game menu but keeps the RWX process and the local CLI; closing a Python/PowerShell CLI client does not exit the game either. `rwx-exit` closes the process and its CLI.
+- **Hosting**: `rwx-host` listens on the given TCP and reliable-UDP game ports and does not publish publicly by default. `--spectator true` makes the server's local player a spectator; `--auto-start-players 2` authorises the host to start automatically once at least two non-spectator human clients are present, and `0` disables it; AI does not count towards the threshold.
+- **Managed room**: `--managed-room true` implies a server spectator seat and is mutually exclusive with starting by player count. The first client receives the original proxy-host authority; after it leaves, authority passes on in join order, elected in the lobby only and frozen during a match. Proxy management requests go through original chat packets for the server to validate and execute; a CLI receipt only means the request was submitted, so query the room to confirm the result.
+- **Seats and ending in a managed match**: a new identity joining a match already in progress becomes a spectator automatically, and a reconnecting original player keeps their seat. Once every online non-spectator player has left or been defeated, the server forces the match to end through original packets and returns to the lobby, keeping online clients and assigning no winner; spectators and AI do not block the end. A proxy host cannot control other teams' units.
+- **Permissions**: `rwx-connection-status` includes `roomAdmin` (this client's proxy rights), `roomManager` (the admin name when queried locally on the server) and `spectator`; an ordinary client can only judge its rights from the original room state and the proxy-authority bit. An ordinary player can view the room, chat, adjust their own spawn point/faction under the original rules, and in a match view visible information and control their own units; only the host or the original proxy host can change the room, map or AI, or start the match. Agents have no extra privileges; their commands go through the original `Command` network queue.
 
-Example: an agent runs its own RWX locally and then has the local CLI connect to a cloud server's game port:
+Example (local RWX connecting to a cloud server's game port):
 
 ```text
 rwx-connect <server>:5123 --name AgentA
@@ -91,60 +90,56 @@ Queries the current game state and summary statistics.
 
 `rwx-game-state [--summary] [--json] [--units-acting] [--units-damaged] [--building-acting] [--building-actionable] [--event-seconds N] [--event-types type1,type2,...] [--event-allies] [--no-events]`
 
-By default it shows, in a fixed order, the battle situation, the economy, the strength of our/allied/currently visible enemy forces, production, upgrades, our health buckets, CLI pending items, units and buildings that need attention, and notable events of the last 30 game seconds. An empty block shows `none`. `--summary` keeps all macro statistics and events without per-entity detail; it is mutually exclusive with the four entity filter switches.
+By default it shows, in order, the battle situation, the economy, our/allied/visible enemy strength, production, upgrades, our health buckets, CLI pending items, units and buildings that need attention, and notable events of the last 30 game seconds; an empty block shows `none`. `--summary` keeps the macro statistics and events and hides per-entity detail, and is mutually exclusive with the four entity filter switches below:
 
 - `--units-acting`: non-building units that are moving, engaging, building, producing, repairing, patrolling, guarding, following, and so on.
-- `--units-damaged`: non-building units whose HP is strictly below 70%.
+- `--units-damaged`: non-building units with HP <70%.
 - `--building-acting`: buildings that are constructing, producing, upgrading, repairing, attacking or defending.
-- `--building-actionable`: buildings that could upgrade or produce right now given credits and conditions.
+- `--building-actionable`: buildings that could upgrade or produce right now, with credits and conditions satisfied.
 
-The four filters can be combined (union, de-duplicated); when none is passed all four are enabled. Filters affect only entity detail, never the statistics. State comes from actual engine activity; detail includes ID, coordinates, HP, current order, target and waypoints, and buildings add their tech level and a production-queue summary.
+All four are selected by default; an explicit selection is unioned and de-duplicated, and only affects entity detail, never the statistics. Activity comes from engine state; detail includes ID, coordinates, HP, current order, target and waypoints, and buildings add their tech level and a production-queue summary.
 
-- `--event-seconds N`: game-time window, default 30, must be greater than 0 and no more than 180.
-- `--event-types`: comma-separated, default `damaged,destroyed,losses,new`; `info` is shown only when named explicitly.
-- `--event-allies`: `destroyed` and `losses` only show allies; other types keep their rules, see 6.1.
-- `--no-events`: do not query or show events; cannot be combined with other event parameters and does not clear history.
-- `--json`: emit standard JSON using the same report data as the text output.
+- `--event-seconds N`: event window, default 30 game seconds, range (0, 180].
+- `--event-types`: comma-separated, default `damaged,destroyed,losses,new`; `info` must be named explicitly.
+- `--event-allies`: `destroyed` and `losses` only show allies; other events keep their rules (see 6.1).
+- `--no-events`: do not query or show events, and do not clear history; cannot be combined with other event parameters.
+- `--json`: emit standard JSON sharing the report data with the text output.
 
-JSON top level is split into `battle`, `economy`, `forces`, `production`, `upgrades`, `healthStatus`, `pending`, `notableUnits`, `notableBuildings` and `events`. With `--summary` the two entity arrays are empty; with `--no-events` the `events` key is omitted. `battle` contains `tick`, `time`, `gameTimeMillis`, `paused`, `speed`, `map`, `controlledTeam`, `outcome`; the economy is `credits`, `incomePerSecond`.
+JSON fields:
 
-- `forces.self` / `allies` / `visibleEnemies` each contain `unitCount` (excluding buildings), `buildingCount` and structured `typeCounts` (each with `type`, `count`); self and allies also contain `idleUnitCount`. Allies exclude our own forces, enemies are only currently visible entities, and production queues do not count towards strength.
-- `production.factoryCount` is the number of our completed buildings that can produce units; `busyFactoryCount` / `idleFactoryCount` count by whether the queue is empty, with an upgrade occupying the factory counting as busy; `productionQueueEntryCount` counts production entries only, not upgrades.
-- `upgrades` contains `id`, `type`, `upgrade`, `progress`; progress is 0..1, unknown is null.
-- `healthStatus.units` / `buildings` count per type: `criticalCount` (HP <10%), `lowHealthCount` (10% ≤ HP <50%), `injuredCount` (50% ≤ HP ≤80%).
-- `pending` contains `pendingOrders`, `waitingForCreditsCount`, `waitingForUpgradeCount`; it is null when pending queries are unsupported.
-- `events.items` contains `gameTimeMillis`, `type`, `description` after shared query processing; the window is `windowSeconds`. Events use game time and querying does not consume history.
-
-For example:
+- Top level: `battle`, `economy`, `forces`, `production`, `upgrades`, `healthStatus`, `pending`, `notableUnits`, `notableBuildings`, `events`. With `--summary` the two entity arrays are empty; with `--no-events` `events` is omitted.
+- `battle`: `tick`, `time`, `gameTimeMillis`, `paused`, `speed`, `map`, `controlledTeam`, `outcome`; `economy`: `credits`, `incomePerSecond`.
+- `forces.self` / `allies` / `visibleEnemies`: `unitCount` (excluding buildings), `buildingCount`, `typeCounts` (each with `type`, `count`). Self and allies also carry `idleUnitCount`; allies exclude our own forces, enemies are only currently visible entities, and production queues do not count towards strength.
+- `production`: `factoryCount` is the number of our completed buildings that can produce units; `busyFactoryCount` / `idleFactoryCount` count by whether the queue is empty (an upgrade counts as busy); `productionQueueEntryCount` counts production only, not upgrades.
+- `upgrades`: `id`, `type`, `upgrade`, `progress` (0..1, null when unknown).
+- `healthStatus.units` / `buildings`: per-type counts of `criticalCount` (HP <10%), `lowHealthCount` (10% ≤ HP <50%), `injuredCount` (50% ≤ HP ≤80%).
+- `pending`: `pendingOrders`, `waitingForCreditsCount`, `waitingForUpgradeCount`; null when pending queries are unsupported.
+- `events`: `windowSeconds`, `items` (each with `gameTimeMillis`, `type`, `description`). Events use game time and querying does not consume history.
 
 ```text
-rwx-game-state
 rwx-game-state --summary --json
 rwx-game-state --units-damaged --building-acting --event-seconds 60
-rwx-game-state --event-types info --event-allies
-rwx-game-state --no-events
 ```
 
-- `rwx-game-team-list`: all teams, factions, AI, active/defeated state, this team's credits and net income; the economy of other teams is not exposed.
+- `rwx-game-team-list`: list all teams, factions, AI, active/defeated state, this team's credits and net income; other teams' economy is not exposed.
 
 ### 2.2 Unit list and detail
 
-`game-state` only gives a short state for entities that need attention; the full list, in-depth information per entity and available actions use the commands below.
+- `rwx-game-unit-list [--owner self|ally|enemy|neutral|any] [--type <id or name,...>] [--group <name>] [--units <ids|selector>] [--x X --y Y --radius R] [--hp <percentage>|--full] [--idle] [--exclude-builders] [--exclude <id|name,...>] [--summary] [--delta] [--compact] [--json]`: list units and buildings with ID, world coordinates, HP, orders and queues. By default only matching entities with HP <80% are listed, and enemy entities are returned only while currently visible.
+- `rwx-game-unit-show --id <id>`: detail for a single entity, including faction, T level, upgrade level, attack mode, production queue, the full waypoint queue and orders held back by the CLI in `cliPending`.
+- `rwx-game-unit-actions --unit <id> [--json]`: show action id, price, whether it can be issued, queued count and the reason it is unavailable. `queued` includes the action being produced; `available` means at least one is affordable right now.
 
-- `rwx-game-unit-list [--owner self|ally|enemy|neutral|any] [--type <id or name,...>] [--group <name>] [--units <ids|selector>] [--x X --y Y --radius R] [--hp <percentage>|--full] [--idle] [--exclude-builders] [--exclude <id|name,...>] [--summary] [--delta] [--compact] [--json]`: unit list, by default only entities below 80% HP.
-- `rwx-game-unit-show --id <id>`: detail for a single unit, including faction, T level, upgrade level, attack mode, production queue and the full waypoint queue; orders held back by the CLI are listed in `cliPending`.
-- `rwx-game-unit-actions --unit <id> [--json]`: actions the unit can currently perform, with action id, price, whether it can be issued, queued count and the reason it is unavailable; `queued` is how many of that action are in the real production queue (including the one being produced), and `available` means at least one is genuinely affordable now.
+`unit-list` parameters:
 
-Common switches for `unit-list`:
-
-This command lists matching entities (units and buildings) to obtain IDs, world coordinates, HP, orders and queues; enemy entities are returned only while currently visible. The default view is "needs attention": only entities below 80% HP; `--hp N` moves that line and `--full` removes the filter and lists everything. Output carries no change section by default — only an explicit `--delta` reports differences against the previous `--delta` query and advances the baseline; `--json` is always read-only.
-
-- `--owner self|ally|enemy|neutral|any`: ownership; when omitted only our own and currently visible enemy entities are included, excluding allies and neutral entities; `ally` means allies only. The default change baseline uses the same faction scope.
-- `--type <id or name,...>`: filter by unit type; internal ids are matched exactly, and when nothing matches, localised names are tried (partial names such as "heavy tank" work). This is the only type-filter entry point.
-- `--units <ids|selector>` / `--group <name>`: further filter by entity ID, type, group or area; selectors are described in 3.4.
-- `--x X --y Y --radius R`: circular area in world coordinates; the centre must be given as a pair and the radius must be non-negative; the `--radius` here is retained and is not subject to *(source `help.md` truncates this sentence)*
-
-`--owner any` includes all observable factions; the default remains self and currently visible enemies. `--idle` selects entities without a current waypoint or production queue; `--exclude-builders` and `--exclude` exclude builders or named types. `--summary` counts all matches without accepting `--hp`, `--full`, `--compact`, `--delta` or `--json`. `--compact` only changes text presentation; `--delta` compares with and updates the previous `--delta` baseline, detecting additions, departures, health decreases and tech increases; `--json` cannot be combined with `--delta` and does not update the baseline.
+- `--owner self|ally|enemy|neutral|any`: ownership; by default only our own and currently visible enemy entities, excluding allies and neutral ones. `ally` means allies only; `any` means every observable faction. The default change baseline uses the same faction scope.
+- `--type <id or name,...>`: type filter; internal ids are matched exactly, otherwise localised names are matched and partial names work. This is the only type-filter entry point.
+- `--units <ids|selector>` / `--group <name>`: filter by ID, group or area; selectors are described in 3.4.
+- `--x X --y Y --radius R`: circular area in world coordinates; the centre must be given as a pair and the radius must be non-negative.
+- `--hp N`: keep only entities below N% HP; `--full`: drop the default HP filter and list every match.
+- `--idle`: keep only entities with no current waypoint and an empty production queue; `--exclude-builders` / `--exclude`: exclude builders, or the given units and types.
+- `--summary`: count matches only; cannot be combined with `--hp`, `--full`, `--compact`, `--delta` or `--json`.
+- `--compact`: changes the text format only; `--delta`: reports additions, departures, HP drops and tech-level increases against the previous `--delta` query and advances the baseline. An ordinary query shows no change section.
+- `--json`: read-only, does not advance the `--delta` baseline; mutually exclusive with `--delta`.
 
 ### 2.3 Map and terrain information
 
@@ -262,16 +257,9 @@ Directly changes buildings, production, construction and upgrade state.
 
 ## 5. Automation — Automatic control
 
-**Agent commands always take priority over every automation rule.** Issuing a move, attack, `attack-move`, stop, patrol, guard, queued task, action or stance command to a unit cancels that unit's not-yet-executed micro-management and keeps returning control; the old rule will not take the unit back on the next sample, when the task ends, or when the unit becomes idle again. Only the selected units are affected; other units stay automated.
+**Manual orders take priority over every automation rule.** Issuing a move, attack, `attack-move`, stop, patrol, guard, queued task, action or stance command to the selected units withdraws their not-yet-executed micro orders and keeps returning control; an old rule does not come back because of the next sample, the end of a task or a unit becoming idle again. Other units are unaffected.
 
-To re-authorise a micro rule, explicitly run that rule's `auto-set` enable command; authority is restored only within that rule's configured scope and does not enable other rules. For example:
-
-```text
-rwx-game-order-attack-move --units 123 --x 1800 --y 900
-rwx-game-auto-set --rule guard --units 123 --x 1200 --y 900 --radius 260
-```
-
-The first command makes #123 execute a manual push and the old guard no longer pulls it back; the second explicitly hands #123 back to area defence. `--queue` first withdraws temporary micro orders, keeps the complete task queue from before the takeover, then appends the manual task; pure action and stance commands keep the original tasks.
+Authority is restored only by explicitly running the corresponding rule's `auto-set` enable command again, within that rule's configured scope, and other rules are not enabled. With `--queue`, temporary micro orders are withdrawn first and the complete task queue from before the takeover is kept, then the manual task is appended; pure action and stance commands keep the original tasks.
 
 ### 5.1 Automatic production ("keep")
 
@@ -296,123 +284,64 @@ A pending request always uses the units selected when it was accepted and does n
 
 ### 5.3 Micro-management rules
 
-Micro-management is off by default, each rule has exactly one configuration, setting it again updates it, and everything resets when the match changes.
+Micro-management is off by default. Each rule has exactly one configuration, setting it again updates that configuration, and everything resets when the match changes.
 
-- `rwx-game-auto-set --rule <id> --enabled false`: disable a feature and release the units it took over, keeping the configuration. Re-enable with `--enabled true`, or by omitting `--enabled`.
-- `rwx-game-auto-list`: show every feature's switch, current configuration, candidate count, taken-over count, trigger count and recent records.
-- `rwx-game-auto-show --rule <id>`: show one feature's configuration, the ids of units it holds and its trigger records.
-- `rwx-game-auto-clear --rule <id>`: disable a feature and restore its default configuration.
-- `rwx-game-auto-reset`: disable all micro rules, release the held units and restore every default configuration.
+- `rwx-game-auto-set --rule <id> --enabled false`: disable a rule and release the units it took over, keeping the configuration; re-enable with `--enabled true` or by omitting `--enabled`.
+- `rwx-game-auto-list`: list every rule's switch, configuration, candidate count, taken-over count, trigger count and recent records.
+- `rwx-game-auto-show --rule <id>`: show one rule's configuration, the ids of units it holds and its trigger records.
+- `rwx-game-auto-clear --rule <id>`: disable a rule and restore its default configuration.
+- `rwx-game-auto-reset`: disable every rule, release the units and restore all default configurations.
 
-For example, disable only the artillery micro rule and inspect the state:
+A rule applies to qualifying units of our own by default. When enabling it, the common filters below can narrow the scope (`turret` and `assist-counter` accept no filters):
 
-```text
-rwx-game-auto-set --rule artillery --enabled false
-rwx-game-auto-show --rule artillery
-```
+- `--units <ids|all-army|all-units>`: comma-separated unit ids, or `all-army` for non-building units and `all-units` to include buildings; the rule's own conditions still apply.
+- `--group <group name>`: use a saved group, updated automatically when its members change; mutually exclusive with `--units`.
+- `--type <id or name,...>`: the given types only.
+- `--exclude <id or name,...>` / `--exclude-builders`: exclude given ids, types or builders.
 
-Each feature applies to qualifying units of our own by default. To narrow the scope, append the following common filters to the enable command; when no filter is needed just use the minimal command from each section (`turret` and `assist-counter` accept no filters, see 5.3.8 and 5.3.10).
+An authorised rule may work on the allowed `attack-move`, `guard-at`, `patrol` or idle tasks; the per-rule sections describe the specific limits. Tasks such as direct move, attack on a specific target, follow and build are not overridden by combat micro rules; even `unstuck` must be authorised before it may re-issue tasks or side-step. When a temporary micro task ends the original task and its remaining queue are restored, unless a new manual order has already arrived. No new decisions are made while paused, at speed 0 or during replay playback; `auto-list` / `auto-show` keep at most the latest 60 trigger, restore and failure records.
 
-- `--units <ids|all-army|all-units>`: comma-separated unit ids; `all-army` selects non-building units, `all-units` includes buildings. The feature's own conditions still apply.
-- `--group <group name>`: use a group saved by `group-save`, e.g. `--group 3`; it follows membership changes automatically. Alternative to `--units`.
-- `--type <id or name,...>`: only select the given types.
-- `--exclude <id or name,...>` / `--exclude-builders`: exclude given units, types or builders.
+Automation conflicts are ordered by the priority below: higher wins, but all are below manual orders. `dive` only issues actions, and `idle-alert` only reminds without taking over tasks.
 
-Once a micro rule is explicitly enabled it can work on the allowed `attack-move`, `guard-at`, `patrol` or idle tasks; extra restrictions for artillery, repair and similar features are described in their own sections. Any later manual command keeps yielding authority, and authority only returns after another `auto-set`. Tasks such as direct move, attack on a specific target, follow and build are not overridden by combat micro rules; even `unstuck` must be authorised before it may re-issue tasks or side-step.
-
-When a temporary micro task ends, the original task and its remaining queue are restored; if you have already issued a new command, the new command wins. No new decisions are made while paused, at speed 0, or during replay playback. Trigger, restore and failure records are visible through `auto-list` / `auto-show`, keeping at most the latest 60.
-
-The numbers below only order automation-to-automation takeover conflicts; higher wins, and all are below manual commands. `dive` only issues actions and `idle-alert` only reminds, so neither holds task ownership.
-
-| Priority | Rule | Behaviour after a manual command |
-|---:|---|---|
-| 100 | `retreat` | stop automatic retreat |
-| 90 | `unstuck` | stop re-issuing tasks and side-stepping |
-| 80 | `assist-counter` | stop automatic assist, counter-attack and retreat |
-| 70 | `dive` | withdraw the pending action, stop automatic diving/surfacing |
-| 60 | `mech` | stop automatic retreat |
-| 50 | `kite` | stop rewriting position and targets |
-| 40 | `artillery` | stop artillery micro |
-| 35 | `turret` | stop automatic target assignment |
-| 30 | `focus-fire` | stop automatic target switching |
-| 20 | `guard` | stop engaging and pulling back to the old defence area |
-| 15 | `assist-build` | stop automatic construction assistance |
-| 10 | `repair` | stop automatic repair |
-| 0 | `idle-alert` | keep reminding read-only, issue no commands |
+| Priority | Rule |
+|---:|---|
+| 100 | `retreat` |
+| 90 | `unstuck` |
+| 80 | `assist-counter` |
+| 70 | `dive` |
+| 60 | `mech` |
+| 50 | `kite` |
+| 40 | `artillery` |
+| 35 | `turret` |
+| 30 | `focus-fire` |
+| 20 | `guard` |
+| 15 | `assist-build` |
+| 10 | `repair` |
+| 0 | `idle-alert` |
 
 #### 5.3.1 Ranged-unit micro
 
-- `rwx-game-auto-set --rule artillery`: all our artillery units whose name contains `artillery`; takes over only during attack-move, guard-at or idle, never during patrol. While guarding or idle they fight near the original guard point, drifting no more than 120 world units.
-- `rwx-game-auto-set --rule kite [--radius R]`: applies to our completed, mobile, non-building attack units regardless of land, sea or air; land artillery uses the `artillery` rule. The unit's range against currently visible, attackable targets must reach `--radius` (default 400 world units). It holds position and fires when the weapon is ready, and opens distance during cooldown.
+- `rwx-game-auto-set --rule artillery`: applies to our artillery whose name contains `artillery`; it takes over only during `attack-move`, guard or idle, never during patrol. While guarding or idle, units fight near the original guard point, drifting no more than 120 world units.
+- `rwx-game-auto-set --rule kite [--radius R]`: applies to our completed, mobile, non-building attack units (land, sea or air; land artillery uses `artillery`). It only takes over units whose range against a currently visible, attackable target reaches `--radius`; default 400 world units, and this parameter is a **minimum-range threshold**. Units hold position and fire when the weapon is ready, and open distance during cooldown.
 
-- `--radius R`: the minimum range against the enemy required for takeover, default 400 world units. Here it is a range threshold.
-
-`kite` only takes over during attack-move, guard-at, patrol or idle; units inside transports, or with hold-fire or return-fire-only stance, are excluded. There is no need to name unit types one by one — qualifying units join automatically, and the common filters may narrow them.
-
-For example, only let units with at least 350 range against the enemy kite:
-
-```text
-rwx-game-auto-set --rule kite --radius 350
-```
+`kite` only takes over during `attack-move`, guard, patrol or idle; units inside transports, or with hold-fire or return-fire-only stance, do not take part. Qualifying units join automatically, and the common filters can narrow the scope.
 
 #### 5.3.2 Low-HP retreat (retreat)
 
-`rwx-game-auto-set --rule retreat [--hp N] [--radius R]`: makes mobile attack units retreat at low HP, otherwise they continue their task. It only performs short-range evasion; returning to base or finding a repair facility still needs a separate order.
-
-- `--hp N`: the HP trigger line, 1..100, default 20; triggers when HP ≤ N%.
-- `--radius R`: threat search radius, default 300 world units. Each retreat moves 40% of the radius, minimum 90 and maximum 200 world units.
-
-For example, retreat when HP is at most 25% and a threat is within 320:
-
-```text
-rwx-game-auto-set --rule retreat --hp 25 --radius 320
-```
-
-`rwx-game-auto-set --rule mech [--hp N] [--radius R]`: aggressive mech units move about 60 world units away from a threat when they took damage in the last 2 seconds or when an attackable enemy is found nearby, then resume their task after breaking away.
-
-- `--hp N`: retreat only when HP ≤ N%, 1..100; default 40, i.e. only at 40% HP or below. Set 100 to remove the HP limit.
-- `--radius R`: search radius for nearby enemies, default 320 world units; a recent attacker can also trigger the retreat.
-
-For example, let only mechs at half HP or below retreat:
-
-```text
-rwx-game-auto-set --rule mech --hp 50
-```
+- `rwx-game-auto-set --rule retreat [--hp N] [--radius R]`: makes mobile attack units evade over a short distance while HP ≤ N%, otherwise they continue their task; it does not return to base or look for repair facilities. `--hp` ranges 1..100, default 20; `--radius` is the threat search radius, default 300 world units. Each retreat covers 40% of the radius, but no less than 90 and no more than 200 world units.
+- `rwx-game-auto-set --rule mech [--hp N] [--radius R]`: an aggressive mech with HP ≤ N% moves about 60 world units away from the threat when it was attacked in the last 2 seconds or an attackable enemy is nearby, and resumes its task once clear. `--hp` ranges 1..100, default 40, and 100 removes the HP limit; `--radius` is the enemy search radius, default 320 world units, and a recent attacker can also trigger the retreat.
 
 #### 5.3.3 Smart diving (dive)
 
-Switches between diving and surfacing according to the engagement target within range: dive when the target is underwater, surface otherwise.
-
-`rwx-game-auto-set --rule dive`
-
-Applies to ordinary submarines, the Nautilus, amphibious jets and similar mod units that have both the `Dive` and `Surface` actions.
-
-```text
-rwx-game-auto-set --rule dive
-```
+`rwx-game-auto-set --rule dive`: switches diving and surfacing according to the engagement target within range — dive when the target is underwater, surface otherwise. Applies to ordinary submarines, the Nautilus, amphibious jets and similar mod units that have both the `Dive` and `Surface` actions.
 
 #### 5.3.4 Focus fire (focus-fire)
 
-`rwx-game-auto-set --rule focus-fire`: while engaged, units allocate fire intelligently by attacker count, and keep finishing off targets at or below 40% HP.
-
-For example, enable focus fire on group 3 only:
-
-```text
-rwx-game-auto-set --rule focus-fire --group 3
-```
+`rwx-game-auto-set --rule focus-fire`: while engaged, allocates fire by attacker count and keeps finishing off targets at HP ≤40%. Common filters such as `--group` can narrow the scope.
 
 #### 5.3.5 Area defence (guard)
 
-Makes mobile attack units hold a circular area: they engage enemies inside it and otherwise return to the centre. Units still within twice the radius are pulled back; beyond that the rule no longer takes them over.
-
-The pull only applies to units still authorised. Manual `attack-move`, `move`, `stop`, `guard-at`, `patrol` and similar commands take priority immediately and are not repeatedly pulled back by the old guard just because the unit is still inside twice the radius.
-
-`rwx-game-auto-set --rule guard --x X --y Y [--radius R]`
-
-- `--x X --y Y`: required; world coordinates of the defence centre, which is also the rally point to return to.
-- `--radius R`: defence radius, default 300 world units.
-
-For example, have group 3 defend a 260-radius area centred on (1200, 900):
+`rwx-game-auto-set --rule guard --x X --y Y [--radius R]`: makes mobile attack units defend a circular area, engaging enemies that enter and otherwise returning to the centre. `--x` and `--y` are the required world coordinates of the centre, which is also the rally point to return to; `--radius` defaults to 300 world units. A unit up to twice the radius from the centre can be pulled back, and beyond that the rule no longer takes it over. It only applies to units still authorised, and manual orders take priority.
 
 ```text
 rwx-game-auto-set --rule guard --group 3 --x 1200 --y 900 --radius 260
@@ -420,79 +349,36 @@ rwx-game-auto-set --rule guard --group 3 --x 1200 --y 900 --radius 260
 
 #### 5.3.6 Idle auto-repair and construction assistance (repair/assist-build)
 
-Idle builders or engineers look for nearby completed damaged friendly buildings, unfinished construction or units and repair them, returning to their original position afterwards. Which targets a unit can repair depends on its own abilities.
+- `rwx-game-auto-set --rule repair [--radius R]`
+- `rwx-game-auto-set --rule assist-build [--radius R]`
 
-`rwx-game-auto-set --rule repair [--radius R]`
-`rwx-game-auto-set --rule assist-build [--radius R]`
-- `--radius R`: target search radius centred on the repairer, default 220 world units.
-
-Applies to idle builder units only. Builders normally repair buildings only; engineers that can repair units also repair friendly units.
-
-```text
-rwx-game-auto-set --rule repair --radius 180
-rwx-game-auto-set --rule assist-build --radius 200
-```
+It only applies to idle builder units, searching nearby for damaged completed friendly buildings, unfinished construction or units to repair/assist, and returning to the original position afterwards. Whether a specific target can be repaired depends on the unit's abilities: builders normally repair buildings only, while some engineers can also repair units. `--radius` is the search radius centred on the repairer, default 220 world units.
 
 #### 5.3.7 Getting unstuck (unstuck)
 
-`rwx-game-auto-set --rule unstuck`: frees a stuck unit intelligently; after repeated failures it records "cannot get unstuck" and pauses attempts for a while.
-
-```text
-rwx-game-auto-set --rule unstuck
-```
+`rwx-game-auto-set --rule unstuck`: tries to free a stuck unit; after repeated failures it records "cannot get unstuck" and stops trying for a while.
 
 #### 5.3.8 Smart turrets (turret)
 
-`rwx-game-auto-set --rule turret`
-
-Makes all our turrets attack more intelligently, excluding turrets that do not fire on their own. When you assign an attack target manually, your order takes priority.
-
-Enable, disable and inspect:
-
-```text
-rwx-game-auto-set --rule turret
-rwx-game-auto-set --rule turret --enabled false
-rwx-game-auto-show --rule turret
-```
+`rwx-game-auto-set --rule turret`: makes our turrets attack more intelligently, excluding turrets that do not fire on their own; a manually assigned target takes priority. Accepts no common filters.
 
 #### 5.3.9 Idle notifications for factories and units (idle-alert)
 
-By default it only writes a reminder when a completed factory of ours has an empty production queue. Idle-unit reminders can be enabled too, which helps spot attack units without a task. It only reminds and never issues commands.
+`rwx-game-auto-set --rule idle-alert [--include-units <true|false>]`: by default it only reminds when a completed factory of ours has an empty production queue, and issues no commands.
 
-`rwx-game-auto-set --rule idle-alert [--include-units <true|false>]`
-
-- `--include-units <true|false>`: unit reminder switch, default `false`, keeping factory reminders.
-- Passing common filters (such as `--group`, `--units`, `--type`, `--exclude`) also enables unit reminders automatically and only reminds about matching idle attack units; builders are excluded.
+- `--include-units true`: also remind about idle attack units; default `false`, and factory reminders are always kept.
+- Adding common filters (such as `--group`, `--units`, `--type`, `--exclude`) enables unit reminders automatically and only for matching idle attack units, excluding builders.
 - Setting it again keeps the existing configuration.
-
-Enable factory reminders only:
-
-```text
-rwx-game-auto-set --rule idle-alert
-```
-
-Enable unit reminders, then narrow them to group 3:
 
 ```text
 rwx-game-auto-set --rule idle-alert --include-units true
 rwx-game-auto-set --rule idle-alert --group 3
-```
-
-Disable unit reminders and inspect the state:
-
-```text
 rwx-game-auto-set --rule idle-alert --include-units false
-rwx-game-auto-show --rule idle-alert
 ```
 
 #### 5.3.10 Assist and counter-attack (assist-counter)
 
-Let all our idle attack units and aggressive buildings assist allies, counter-attack enemies and keep evading intelligently.
-
-```text
-rwx-game-auto-set --rule assist-counter
-rwx-game-auto-set --rule assist-counter --enabled false
-```
+`rwx-game-auto-set --rule assist-counter`: lets all our idle attack units and aggressive buildings assist allies, counter-attack enemies and keep evading intelligently. Accepts no common filters; disable it with `--enabled false`.
 
 ## 6. History — Real-time events
 
@@ -500,51 +386,57 @@ rwx-game-auto-set --rule assist-counter --enabled false
 
 `rwx-game-events [--types <type1,type2,...>] [--seconds N] [--allies]`
 
-`game-state` and `game-events` share the same event collector, cache and query handler; a query neither consumes nor resets history.
+It shares the event collector, cache and query handler with `game-state`; a query neither consumes nor resets history.
 
-- `--types`: several types are unioned; the default is fixed to `damaged,destroyed,losses,new`. `info` is output only when named explicitly.
-- `--seconds`: the last N game seconds, default 30, maximum 180, must be greater than 0.
-- `--allies`: switches `destroyed` and `losses` to allies only, excluding our own. `damaged`, `info` and `new` always refer to our own side.
+- `--types`: types are unioned; the default is `damaged,destroyed,losses,new`, and `info` must be named explicitly.
+- `--seconds N`: the last N game seconds, default 30, range (0, 180].
+- `--allies`: `destroyed` and `losses` only cover allies (excluding our own), while `damaged`, `info` and `new` still cover our own side only.
 
-| Type | Content |
+| Type | Content and aggregation |
 |---|---|
-| `damaged` | one of our units or buildings took effective damage; consecutive records for the same damaged ID are at least 5 game seconds apart, regardless of whether the attacker changed. |
-| `destroyed` | we destroyed an enemy target; with `--allies` only allied kills. De-duplicated by the enemy's real ID, keeping the earliest effective record in the window. |
-| `losses` | our losses; with `--allies` only allied losses. After de-duplication by ID they are grouped by team and loss type, and losses no more than 3 game seconds apart are merged into one run. |
-| `info` | our unit creation, production, construction start/finish, upgrade start/finish; only real stages that have happened are described. |
-| `new` | enemies first or newly discovered within our vision. The latest discovery in the query window is used for one ID; continuous visibility does not refresh it. Discoveries no more than 3 game seconds apart are merged into one run. |
+| `damaged` | one of our units or buildings took effective damage; the same damaged ID is recorded again only after at least 5 game seconds, regardless of whether the attacker changed. |
+| `destroyed` | we destroyed an enemy, or with `--allies` an ally did; de-duplicated by the enemy's real ID, keeping the earliest effective record in the window. |
+| `losses` | our losses, or an ally's with `--allies`; de-duplicated by ID, then grouped by team and loss type, with losses no more than 3 game seconds apart merged into a run. |
+| `info` | our unit creation, production, construction start/finish and upgrade start/finish; only stages that really happened are reported. |
+| `new` | enemies first or newly discovered in our vision; the latest discovery in the window is used for one ID, continuous visibility does not refresh it, and discoveries no more than 3 game seconds apart are merged. |
 
-Each output line is fixed as `[MM:SS][type] description`, names and text in English, with no heading, cursor or summary. With no matching events the output is empty text.
+Each line is formatted as `[MM:SS][type] description`, using English names and text, with no heading, cursor or summary; with no matches the output is empty text. The raw cache keeps at most 180 game seconds and 1000 entries.
 
 ```text
-rwx-game-events
 rwx-game-events --types losses,destroyed --seconds 90
 rwx-game-events --types losses --allies
 rwx-game-events --types info --seconds 60
 ```
 
 ```text
-[09:32][damaged] Tank,123(100,200) was damaged by Heavy Tank(120,210)
-[09:33][destroyed] our Tank,123 has destroyed Turret(120,240)
 [09:35][losses] we lost Tank x8 by Heavy Tank(120,220)x5, Tank(100,200)x3
-[09:36][info] Factory,123 produced Tank,456
 [09:37][new] found Tank x3, Turret T1 x1 around (100,200)
 ```
 
-The raw cache keeps at most 180 game seconds and 1000 entries.
+`rwx-game-observe-reset [--keep-groups]`: clears event history and the separate `unit-list --delta` baseline, and by default clears groups too; `--keep-groups` keeps them. Default stances and the set of units they were already issued to are unaffected.
 
-`rwx-game-observe-reset [--keep-groups]`: clears event history and the separate `unit-list --delta` baseline. By default it also clears groups; `--keep-groups` keeps them. Default stances and the set of units they were already applied to are unaffected.
+**Live event stream**
 
-The event stream and CLI queries share one collector and aggregator. A local game started with the CLI enabled opens a separate event socket port on loopback in addition to the command port; the `RWX_EVENTS_READY` log line carries the port, and the default discovery file is `agent-operation/tmp/events-port`. With a custom CLI port file the event port file sits in the same directory; the command port file is unchanged.
+A game started with the local CLI enabled opens an event socket on loopback; the `RWX_EVENTS_READY` log line reports the port, and the default port file is `agent-operation/tmp/events-port`. With a custom CLI port file the event port file sits in the same directory; the CLI command port file is unchanged. Use the existing receiver script:
 
 ```powershell
 python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-The receiver appends the NDJSON messages to `agent-operation/tmp/game-events.jsonl`, keeping only the newest 500 records (older lines are dropped when the file is rewritten past that limit); press Ctrl+C to stop, and use `--port` or `--port-file` to choose another instance. Its default event types match `game-events`, `--info` explicitly includes information events, and `--allies` applies the query command's allied rule to kills and losses. Reconnects resume at the last session and sequence in the log; the cache keeps at most 180 game seconds and 1000 transport records, so an out-of-range cursor or a queue overflow is reported as `gap` or `overflow` and cannot be guaranteed to be complete. A process restart creates a new session and old in-memory records cannot be recovered.
+The script appends NDJSON to `agent-operation/tmp/game-events.jsonl`, keeping only the newest 500 records (the tail is rewritten when that limit is exceeded); press Ctrl+C to stop. Use `--port` or `--port-file` to choose an instance. Event types default to those of `game-events`; `--info` adds information events, and `--allies` switches kills and losses to the allied scope.
 
-The protocol is UTF-8 NDJSON: the client sends `{"protocol":"rwx-events-v1","kind":"subscribe","session":null,"after":0,"info":false,"allies":false}` followed by a newline; the server replies with `hello` and then `event`, `update`, `remove`, `cursor`, `gap`, `overflow` or `reset`. `seq` is the transport sequence, while `eventId` and `revision` identify revisions of one aggregate; a `remove` carries reason `replaced` or `expired`. `event.type`, `event.description`, `gameTimeMillis` and `tick` come from real events; `session`, sequences, revisions and gap messages are transport metadata. Aggregate consumers must apply revisions and removals by event ID and must not count an `update` as a new event.
+On disconnect the receiver reconnects from the last session and sequence number; the transport cache keeps at most 180 game seconds and 1000 records. An out-of-range cursor or a queue overflow is recorded as `gap` or `overflow`, with no guarantee of completion. A process restart creates a new session, and the old process's in-memory records cannot be recovered.
+
+**Subscription protocol**
+
+UTF-8 NDJSON: the client sends the following line followed by a newline:
+
+```json
+{"protocol":"rwx-events-v1","kind":"subscribe","session":null,"after":0,"info":false,"allies":false}
+```
+
+The server replies with `hello` and then sends `event`, `update`, `remove`, `cursor`, `gap`, `overflow` or `reset`. `seq` is the transport sequence; `eventId` and `revision` identify aggregate revisions; `remove.reason` is `replaced` or `expired`. `event.type`, `event.description`, `gameTimeMillis` and `tick` come from real events, while `session`, sequences, revisions and gap messages are transport metadata. Aggregate consumers must apply revisions and removals by `eventId` and must not count an `update` as a new event.
 
 ### 6.2 Replay
 
@@ -601,17 +493,16 @@ python3 agent-operation/tools/rwx-cli.py rwx-connection-status
 
 ### 8.2 Some conventions
 
-- The CLI listens on a random port at every start and, once listening succeeds, atomically writes `<repo root>/agent-operation/tmp/port` containing only the port number; it can also be set with `--cli-port-file=<path>`, `-Drwx.cli.portFile=<path>` or `RWX_CLI_PORT_FILE`. This is the local CLI port, not the multiplayer game port.
-- The same default file is published by the primary instance holding the process lock; other instances never overwrite it. Each instance additionally has `port.instances/<PID>-<port>.port`, whose full path is printed in the `instancePortFile` field of `RWX_CLI_TOOL_READY`. When the primary instance exits, another instance takes over; exiting cleanup still holds the file lock, so a successor's record cannot be deleted by mistake.
-- An abnormal exit may leave a stale file; clients must verify with `rwx-ping`, and an invalid port must not be used directly. The Python tool prefers an explicit port/file, then the environment variable, then the primary file, and finally the per-instance files; with several candidates it requires an explicit choice. The port-record directory is already in `.gitignore`.
-- All text sent and received is **UTF-8**. Server replies are always UTF-8; if an older client sends a command line in GBK, the server decodes that line compatibly.
-- When started with `--rwx-cli`, the game process's stdout/stderr also switch to UTF-8, so log files are UTF-8 as well; if your terminal itself is on the GBK code page, Chinese text viewed directly in the terminal may appear garbled, but file contents and loopback replies are unaffected.
-- Quote parameter values containing spaces with double or single quotes, e.g. `--name "Lake (2p)"`; the server also accepts plain-text command lines.
-- Coordinates are world coordinates by default; in a real match 1 tile = 20. Only range parameters explicitly documented as tiles use tiles, e.g. `map-place --radius`, `map-show --terrain --half-width/--half-height`; other range parameters such as `unit-list --radius` use world coordinates.
+- **Port file**: the CLI listens on a random port at start and, once listening succeeds, atomically writes `<repo root>/agent-operation/tmp/port` (the port number only). The path can also be set with `--cli-port-file=<path>`, `-Drwx.cli.portFile=<path>` or `RWX_CLI_PORT_FILE`. This port is for the local CLI only and is not the multiplayer game port.
+- **Multiple instances**: the default port file is published by the primary instance holding the process lock, and other instances never overwrite it. Each instance also has `port.instances/<PID>-<port>.port`, with the path in the `instancePortFile` field of `RWX_CLI_TOOL_READY`. When the primary instance exits another takes over; exit cleanup still holds the file lock, so a new primary's record is not deleted by mistake.
+- **Port validation**: an abnormal exit may leave the file behind, so clients must verify the port with `rwx-ping`. The Python tool discovers the port from an explicit port/file, then the environment variable, then the primary file, then per-instance files; with several candidates an explicit choice is required. The port-record directory is already in `.gitignore`.
+- **Encoding**: all text sent and received is UTF-8 and server replies are always UTF-8; a command line sent in GBK by an older client is decoded compatibly. With `--rwx-cli` the process's stdout/stderr and logs are UTF-8 as well; a GBK terminal may show Chinese garbled, which affects neither files nor loopback replies.
+- **Command arguments**: quote values containing spaces with single or double quotes, e.g. `--name "Lake (2p)"`; the server accepts plain-text command lines.
+- **Coordinates**: world coordinates by default, and in a real match 1 tile = 20 world units. Only range parameters explicitly documented as tiles use tiles (e.g. `map-place --radius`, `map-show --terrain --half-width/--half-height`); other range parameters such as `unit-list --radius` use world coordinates.
 
 ### 8.3 Command receipt semantics and the command queue
 
-- `submitted`: the command was handed to the engine; it takes effect immediately while paused, otherwise on the next tick.
+- `submitted`: the command was handed to the engine; whether it applies immediately depends on pause and replay-recording state, see below.
 - `pending`: the command was held by the CLI and is dispatched automatically once credits or the upgrade are ready.
 - `partial`: `--count N` submitted only part of the order, and the receipt carries `requested/submitted/pending/failed`.
 - `error:`: the whole command failed and nothing was issued.

@@ -4,6 +4,8 @@
 
 ## 当前快照
 
+- 2026-10-27：清理 `agent-operation/tools`：删除旧版文件邮箱 `rwx-cli-daemon.ps1`、`__pycache__`、空 `tmp/`，并同步 README 与两个 ps1 的引用；`experimental_scripts/` 按用户要求保留（`HISTORY/task-020.md`）。
+- 2026-10-27：英文 `help.md` 按重写后的 `help_zh.md` 全文同步（结构改为加粗小标题、参数子列表、两列优先级表；43 个标题/命令/示例逐条对齐），`rwx-help` 打包内容同步更新（`HISTORY/task-019.md`）。
 - 2026-10-27：事件 JSONL 接收器文档补全「游戏启动后另开的本机事件 Socket → tmp JSONL」链路，并把日志改为滚动保留最新 500 条（`HISTORY/task-018.md`）。
 - 2026-10-27：命令记录文件改为 `commands-<地图名>-<日期>--<唯一编号>.txt`（统计同名 `-stats.txt`）：启动时先用 `commands-lobby-…` 占位，首个有效对局改名并保留原随机编号；无地图不消耗改名，后续对局沿用首局地图名（`HISTORY/task-017.md`）。
 - 2026-10-27：实体查询与事件流已完成：`--owner any`、共享实时可见性、威胁能力分类与输出补全；事件流（NDJSON、聚合修订、断线续传、gap/overflow 诊断）与 JSONL 接收器完成，真实 Headless 对局验证通过（`HISTORY/task-016.md`）。
@@ -23,6 +25,7 @@
 
 ## 验证基线
 
+- 2026-10-27：完整 `:core:test` 26 套件、226 项、零失败（`help.md` 同步后复跑，`RwxHelpSectionsTest` 通过）。
 - 2026-10-27：完整 `:core:test :desktop:headlessArchive` 26 套件、224 项、零失败；真实 Headless 对局验证事件 JSONL 连续、续传不重复（`HISTORY/task-016.md`）。
 - 2026-10-26：完整 `:core:test` 24 套件、206 项、零失败；Headless 发行包构建通过。
 - 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端连续两局通过，39 条命令及分类统计一致。
