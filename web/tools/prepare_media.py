@@ -12,12 +12,12 @@ RECORDINGS = [
     {'id': 'very-hard', 'source': 'gpt6.1solvsVeryHard.mp4', 'title': '与 Very Hard AI 正面交锋',
      'category': 'AGENT VS BUILT-IN AI', 'tag': '经典对抗',
      'description': '从基地经营到部队推进，观察智能体如何在实时战局中分配资源、组织生产与执行作战指令。'},
-    {'id': 'income', 'source': 'gpt6.1solvsVeryHardxiincome.mp4', 'title': '经济与兵力之间的取舍',
-     'category': 'ECONOMY & STRATEGY', 'tag': '经济博弈',
-     'description': '另一场 Very Hard AI 对局。把注意力放在资源收入、兵力补充与推进节奏，观察经济决策如何落到战场。'},
     {'id': 'agent-vs-agent', 'source': 'gpt6.1solvsClaudeOpus5.5-水田.mp4', 'title': '两位智能体，一张水田地图',
      'category': 'AGENT VS AGENT', 'tag': '智能体对战',
      'description': 'GPT-6.1 Sol 与 Claude Opus 5.5 的水田对局。不同决策方式，在同一套游戏规则下展开交锋。'},
+    {'id': 'claude-pause', 'source': 'claudevsveryHard-利用暂停.mp4', 'title': 'Claude 利用暂停对战 Very Hard AI',
+     'category': 'AGENT VS BUILT-IN AI', 'tag': '暂停战术',
+     'description': 'Claude 对战 Very Hard AI，利用暂停观察战局并安排下一步行动。'},
 ]
 
 

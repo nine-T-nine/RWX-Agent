@@ -14,20 +14,6 @@
     "sha256": "3885ef717adc591d24a28113d6a297201c6e4af20f028542e619a0a66c192083"
   },
   {
-    "id": "income",
-    "source": "gpt6.1solvsVeryHardxiincome.mp4",
-    "title": "经济与兵力之间的取舍",
-    "category": "ECONOMY & STRATEGY",
-    "tag": "经济博弈",
-    "description": "另一场 Very Hard AI 对局。把注意力放在资源收入、兵力补充与推进节奏，观察经济决策如何落到战场。",
-    "video": "resource/matches/income.mp4",
-    "poster": "resource/posters/income.webp",
-    "duration": 46.133333,
-    "durationLabel": "0:46",
-    "bytes": 13057372,
-    "sha256": "d3e267c757d6e70513bda86af808ca783e43820d754905de8e0cb29dd28b6989"
-  },
-  {
     "id": "agent-vs-agent",
     "source": "gpt6.1solvsClaudeOpus5.5-水田.mp4",
     "title": "两位智能体，一张水田地图",
@@ -40,5 +26,19 @@
     "durationLabel": "1:15",
     "bytes": 15835965,
     "sha256": "547a5284bfad87d4dcc93d4a4998b7fc7c803a6fc3b87e97889b96fdce74f268"
+  },
+  {
+    "id": "claude-pause",
+    "source": "claudevsveryHard-利用暂停.mp4",
+    "title": "Claude 利用暂停对战 Very Hard AI",
+    "category": "AGENT VS BUILT-IN AI",
+    "tag": "暂停战术",
+    "description": "Claude 对战 Very Hard AI，利用暂停观察战局并安排下一步行动。",
+    "video": "resource/matches/claude-pause.mp4",
+    "poster": "resource/posters/claude-pause.webp",
+    "duration": 111.633333,
+    "durationLabel": "1:52",
+    "bytes": 31196332,
+    "sha256": "8176dbf035ffe97b12d5678fecbe983e31f703fe0b25880779a53c936c111a9f"
   }
 ]

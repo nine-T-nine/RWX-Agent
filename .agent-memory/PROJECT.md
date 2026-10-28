@@ -15,7 +15,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
 | `slick2d-lwjgl3/` | 图形/输入后端 |
 | `mod-api/`、`mods/`、`mod-tools/` | 模组 API 与工具 |
 | `android/` | Android 壳 |
-| `web/` | RWX-Agent 静态项目网站、三场网页录像、媒体生成与资源校验脚本；GitHub Pages 部署见 `web/README.md` |
+| `web/` | RWX-Agent 静态项目网站、三场网页录像（含 Claude 利用暂停对战 Very Hard AI）、媒体生成与资源校验脚本；GitHub Pages 部署见 `web/README.md` |
 | `agent-operation/` | Agent 文档与工具：`START.md`、`help.md`、`tools/rwx-cli.py`、`server/`（systemd、host-service）、`VALIDATION.md` |
 | `evaluate/utils/` | 评估工具；`CommandRecorder.java` 随 core 打包，在 CLI 收包时记录完整命令、游戏时间与执行者，导出日志及命令名次数统计到 `evaluate/output/` |
 | `.agents/skills/rwx-cli-tools/` | 战术参考与 PowerShell 批处理辅助脚本 |

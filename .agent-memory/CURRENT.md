@@ -4,6 +4,7 @@
 
 ## 当前快照
 
+- 2026-10-28：网站新增 Claude 利用暂停对战 Very Hard AI 录像，清理清单中已不存在的旧录像；按用户要求未编译验证（`HISTORY/task-025.md`）。
 - 2026-10-28：事件订阅按复盘需要重做三处：`new` 合并窗口 3s→5s（跨帧修订与 CLI 分组同一窗口，`losses` 仍 3s）；接收器把 `update` 按类型拆成两个各 500 条的日志（`game-events-observe.jsonl` = new/info，`game-events-combat.jsonl` = damaged/destroyed/losses）；默认订阅仍 `info=false, allies=false`，但 `new`/`info` 不再受 `allies` 收窄。同时修掉 `compact()` 在 `os.replace` 失败后句柄一直关闭、整局静默停写的问题（`HISTORY/task-024.md`）。
 - 2026-10-27：事件 JSONL 接收器加接收侧二次过滤，只落盘 `kind == "update"`；`hello`/`event`/`remove`/`cursor`/诊断不再进文件，诊断只走 stderr；续传游标仍跟住所有序列号。真实抓包 500 条回放验证存 181 条全为 `update`、重连 `after=930` 不重复（`HISTORY/task-023.md`）。
 - 2026-10-27：CLI `--stdio`、通信文档和基准工具完成；完整 26 套件 226 项通过，真实 Headless 暂停对局的三种通信方式及文档示例已验证，结果见 `HISTORY/task-021.md`。
@@ -15,7 +16,7 @@
 - 2026-10-27：`game-state` 合并宏观统计与共享事件，旧摘要命令已移除；Headless 房主 + Windows GUI 非空事件和历史保留验证通过（`HISTORY/task-015.md`）。
 - 2026-10-27：macOS Headless 2v2 录制对局（4P绿洲湖畔byConfetti，Very Hard x3，income x2）我方约 21:20 战败，盟友 AI 仍在；命令记录导出 `observe4.txt`，回放在 `replays/`。游戏进程仍在运行（录制中）。CLI/事件端口文件在 `agent-operation/tmp/`，失效时以 `rwx-ping` / `RWX_EVENTS_READY` 校验。
 - 项目网站：https://nine-t-nine.github.io/RWX-Agent/ ，源码在 `web/`；`web/**` 通过 Actions 自动校验并部署 Pages，维护见 `web/README.md`。
-- 已移除有问题的核弹录像展示、原片、网页副本及封面；现保留三场录像，生成配置和文档同步更新（`HISTORY/task-012.md`）。
+- 已移除有问题的核弹录像展示、原片、网页副本及封面（`HISTORY/task-012.md`）。
 - 独立公开仓库 `nine-T-nine/RWX-Agent` ID 为 `1434131753`，Contributors 已验证公开维护身份。
 - 本地 `replays/` 最近核对为 10 个完整样本；19:59 的清理（22 → 10）非 Agent 工具所为。
 - 回放反解析与命令记录工具在 `evaluate/utils/`；验证与复现见 `HISTORY/task-010.md`、`HISTORY/task-011.md`。
@@ -34,7 +35,7 @@
 - 2026-10-27：完整 `:core:test :desktop:headlessArchive` 26 套件、224 项、零失败；真实 Headless 对局验证事件 JSONL 连续、续传不重复（`HISTORY/task-016.md`）。
 - 2026-10-26：完整 `:core:test` 24 套件、206 项、零失败；Headless 发行包构建通过。
 - 命令记录器：真实 Headless 房主 + 两个 Windows CLI 客户端连续两局通过，39 条命令及分类统计一致。
-- 网站：三场录像、13 个发布文件、117.2 MiB；本地链接、视频 SHA-256、JS 语法及清单一致性通过；`b4effcd` 已推送 `publish/main`，Pages 部署成功（运行 `40323714015`）。
+- 网站历史验证：`b4effcd` 时本地链接、视频 SHA-256、JS 语法及清单一致性通过，Pages 部署成功（运行 `40323714015`）；新增录像后按要求未验证。
 
 ## 下一步
 
@@ -43,4 +44,4 @@
 
 ## 媒体
 
-- 三个保留原片位于 `web/resource/` 并忽略入库；网页副本位于 `web/resource/matches/`，完整站点约 117.2 MiB。
+- 三个原片位于 `web/resource/` 并忽略入库；网页副本位于 `web/resource/matches/`。
