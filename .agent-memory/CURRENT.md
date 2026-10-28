@@ -4,6 +4,7 @@
 
 ## 当前快照
 
+- 2026-10-28：命令记录文件名尾部由随机编号改为 `HH-mm`（记录器启动的本地时间），结构仍是 `commands-<地图>-<日期>--<时分>[-stats].txt`；同一分钟重名自动加 `-2`、`-3`，改名后时分保持不变（`HISTORY/task-026.md`）。
 - 2026-10-28：网站新增 Claude 利用暂停对战 Very Hard AI 录像，清理清单中已不存在的旧录像；按用户要求未编译验证（`HISTORY/task-025.md`）。
 - 2026-10-28：事件订阅按复盘需要重做三处：`new` 合并窗口 3s→5s（跨帧修订与 CLI 分组同一窗口，`losses` 仍 3s）；接收器把 `update` 按类型拆成两个各 500 条的日志（`game-events-observe.jsonl` = new/info，`game-events-combat.jsonl` = damaged/destroyed/losses）；默认订阅仍 `info=false, allies=false`，但 `new`/`info` 不再受 `allies` 收窄。同时修掉 `compact()` 在 `os.replace` 失败后句柄一直关闭、整局静默停写的问题（`HISTORY/task-024.md`）。
 - 2026-10-27：事件 JSONL 接收器加接收侧二次过滤，只落盘 `kind == "update"`；`hello`/`event`/`remove`/`cursor`/诊断不再进文件，诊断只走 stderr；续传游标仍跟住所有序列号。真实抓包 500 条回放验证存 181 条全为 `update`、重连 `after=930` 不重复（`HISTORY/task-023.md`）。

@@ -1,107 +1,5 @@
-"""RWX 回放（.replay）反解析工具。
-
-把游戏内部录制格式 reverse 解析成"命令执行文本"，用于评测、复盘和 RL 数据抽取。
-
-用法
-====
-
-命令行（三种模式，可叠加；多文件时配 --out 落盘）::
-
-    # 1) 概要：地图、队伍、帧数、各队命令数、块统计、文件健康度
-    python evaluate/utils/replay.py replays/xxx.replay --summary
-
-    # 2) 命令文本：一行一条命令，可直接阅读/对比
-    python evaluate/utils/replay.py replays/xxx.replay --text
-
-    # 3) JSONL：一行一个 JSON 对象，便于喂给数据集/评测脚本
-    python evaluate/utils/replay.py replays/xxx.replay --jsonl
-
-    # 批量落盘（--out 时默认文件名 = 清洗后的回放名；--name 可覆盖）
-    python evaluate/utils/replay.py replays/*.replay --summary --text --out evaluate/output
-
-    # 给样例产物起可读别名（避免与 CommandRecorder 的 commands-*.txt 混淆）
-    python evaluate/utils/replay.py replays/xxx.replay --text --jsonl \
-        --out evaluate/output --name replay-xxx
-
-    # 多文件概要汇总成 <out>/replays.index.txt
-    python evaluate/utils/replay.py replays/*.replay --summary --out evaluate/output --index
-
-    # 只关心某个队伍 / 某个时间窗，并限制行数
-    python evaluate/utils/replay.py replays/xxx.replay --text --team 1 \
-        --from-tick 600 --to-tick 3000 --limit 200
-
-    # 文本里附带 [分:秒.十分位] 游戏时间（换算口径见表头 # clock / 概要"时间口径"）
-    python evaluate/utils/replay.py replays/xxx.replay --text --clock
-
-    # 在文本里夹带 es/cs 校验行（默认不显示）
-    python evaluate/utils/replay.py replays/xxx.replay --text --checksums
-
-    # 严格模式：任何结构异常直接抛异常（默认容错，截断/损坏文件也能出部分结果）
-    python evaluate/utils/replay.py replays/xxx.replay --summary --strict
-
-库调用::
-
-    from replay import Replay
-
-    replay = Replay.load("replays/xxx.replay")
-    replay.header.version_string        # "1.15"
-    replay.meta.map_path                # "maps/skirmish/[p2]Lake (2p).tmx"
-    replay.meta.teams[1].name           # "Remote-B"
-    for cmd in replay.commands:
-        cmd.tick, cmd.team_id, cmd.unit_command.type
-    print(replay.render_text())
-    rows = replay.order_rows()          # 结构化命令（可直接 json.dumps）
-    print(replay.summary())
-
-    # 只想要块级访问（超大文件流式扫）
-    for block_name, payload in Replay.iter_blocks("replays/xxx.replay"):
-        ...
-
-格式要点（详见同目录 ``replay.md``）
-====================================
-
-容器::
-
-    UTF  "rustedWarfareReplay" | int versionCode | int protocol(96) | UTF version | bool demo
-    之后是连续的块: UTF blockName | int payloadLen | payload[payloadLen]
-
-块可能被 gzip 压缩（Java 侧建块时决定），这里按 ``1f 8b`` magic 自动识别。
-
-``rc`` 块 = ``int tick`` + 内嵌块 ``c``（命令本体，见 ``_read_command``）；
-``gamesave`` 块 = 一份完整初始存档（内层 gzip），可从中取出地图路径、队伍表、
-初始单位 ``objectId -> 单位类型`` 表。
-
-输出文件命名（``--out`` 时）::
-
-    <stem>.txt           命令文本（--text）
-    <stem>.jsonl         每行一个 JSON（--jsonl）
-    <stem>.summary.txt   概要（--summary）
-    replays.index.txt    多文件概要汇总（--summary + --index）
-
-``<stem>`` 默认取回放文件名清洗后的结果，可用 ``--name`` 覆盖。
-
-已知限制
-========
-
-* 命令里的单位是**运行期 objectId**，跨对局不复用；只有开局单位能从 ``gamesave``
-  的初始对象表映射到类型，之后新造的单位只能显示 ``#123``。
-* 回放不记录"建造产生的新 id"，无法反推每个新单位是什么。
-* 截断或损坏的录制（仓库历史样本里出现过）只能解析到出错处，``partial`` 为真。
-* 时间换算：``gameTimeMillis`` 每 tick 推进约 16 ms（本地样本实测 ``frames × 16 == time``
-  精确成立，见 ``Replay.ms_per_tick``）。所以 tick × 16 ms 在"整局 1× 速度"时精确；一旦有
-  改速度命令（系统命令或联机步进），每 tick 的毫秒数会变，工具按 ``resync``/结尾锚点分段线性
-  估算，并在文本表头 ``# clock``、概要"时间口径"里标明是精确还是估算。
-  真实墙钟时间无法还原：暂停、加速、掉帧都不进 tick。
-
-相关工具
-========
-
-同目录 ``CommandRecorder.java`` 从本机 CLI Socket 在线记录**外部下发**的命令；
-本工具离线解析 ``.replay``，能还原对局里执行过的**全部**命令（含 AI 与内置 UI 操作）。
-"""
-
+"""RWX .replay parser. One-path CLI writes summary, text and JSONL."""
 from __future__ import annotations
-
 import argparse
 import dataclasses
 import gzip
@@ -138,26 +36,22 @@ __all__ = [
 # ---------------------------------------------------------------------------
 # 常量表（必须与引擎一致，顺序即序列化序号）
 # ---------------------------------------------------------------------------
-
 #: 标称模拟频率；回放只记 tick，毫秒时长会受游戏速度命令影响。
 TICKS_PER_SECOND = 62.5
 TICK_SECONDS = 1.0 / TICKS_PER_SECOND
 #: 实测标称值：edGameLogic.update 里 gameTimeMillis 每 tick 推进约 16 ms。
 NOMINAL_MS_PER_TICK = 16.0
-
 #: core/src/main/java/com/corrodinggames/rts/game/units/UnitCommandType.java
 UNIT_COMMAND_TYPES: Tuple[str, ...] = (
     "move", "attack", "build", "repair", "loadInto", "unloadAt", "reclaim",
     "attackMove", "loadUp", "patrol", "guard", "guardAt", "touchTarget",
     "follow", "triggerAction", "triggerActionWhenInRange", "setPassiveTarget",
 )
-
 #: core/src/main/java/com/corrodinggames/rts/game/units/AttackMode.java
 ATTACK_MODES: Tuple[str, ...] = (
     "outOfRange", "onlyInRange", "returnFire", "holdFire", "guardArea",
     "aggressive", "mixed",
 )
-
 #: core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java 声明顺序
 UNIT_TYPE_NAMES: Tuple[str, ...] = (
     "extractor", "landFactory", "airFactory", "seaFactory", "commandCenter", "turret",
@@ -170,7 +64,6 @@ UNIT_TYPE_NAMES: Tuple[str, ...] = (
     "turret_flamethrower", "fogRevealer", "spreadingFire", "antiAirTurretT2", "turretT2",
     "turretT3", "damagingBorder", "zoneMarker", "editorOrBuilder", "dummyNonUnitWithTeam",
 )
-
 #: Command.systemActionType 语义（见 Command.executeCommand）
 SYSTEM_ACTIONS: Dict[int, str] = {
     1: "debug:desync-detector",
@@ -179,11 +72,9 @@ SYSTEM_ACTIONS: Dict[int, str] = {
     100: "surrender",
     200: "quick-resync",
 }
-
 #: 回放里的对象表 kind（GameSaver 的 unit shells 段）
 SHELL_KINDS = {1: "unit", 2: "object", 3: "custom-unit"}
 OBJECT_SUBKINDS = {1: "scorch", 2: "projectile", 3: "effect"}
-
 REPLAY_MAGIC = "rustedWarfareReplay"
 SAVE_MAGIC = "rustedWarfareSave"
 SUPPORTED_PROTOCOL = 96
@@ -191,29 +82,21 @@ MAGIC_SHORT = 12345
 TEAM_NEUTRAL_DEFAULT = 10
 GZIP_MAGIC = b"\x1f\x8b"
 
-
 # ---------------------------------------------------------------------------
 # 异常
 # ---------------------------------------------------------------------------
-
-
 class ReplayError(Exception):
     """回放结构错误（头部、块框架、命令载荷）。"""
-
 
 class UnsupportedFormat(ReplayError):
     """结构合法但当前实现不支持（例如带区域控制/传送门快照的地图）。"""
 
-
 class TruncatedData(ReplayError):
     """数据在中途截断（未完成录制或文件损坏）。"""
-
 
 # ---------------------------------------------------------------------------
 # Java DataOutputStream.writeUTF 兼容编解码（modified UTF-8）
 # ---------------------------------------------------------------------------
-
-
 def decode_modified_utf8(raw: bytes) -> str:
     """解码 Java ``writeUTF`` 的 modified UTF-8。
 
@@ -247,7 +130,6 @@ def decode_modified_utf8(raw: bytes) -> str:
         packed += struct.pack(">H", unit & 0xFFFF)
     return packed.decode("utf-16-be", "replace")
 
-
 def encode_modified_utf8(text: str) -> bytes:
     """写侧实现（测试与合成样本用），与 ``decode_modified_utf8`` 对称。"""
     out = bytearray()
@@ -274,22 +156,17 @@ def encode_modified_utf8(text: str) -> bytes:
                 out.append(0x80 | (unit & 0x3F))
     return bytes(out)
 
-
 # ---------------------------------------------------------------------------
 # 字节读取器
 # ---------------------------------------------------------------------------
-
-
 class _Reader:
     """带边界检查的大端读取器（对应 Java DataInputStream）。"""
-
     __slots__ = ("buf", "pos")
 
     def __init__(self, buf: bytes):
         self.buf = buf
         self.pos = 0
 
-    # -- 基础状态 -----------------------------------------------------
     def __len__(self) -> int:
         return len(self.buf)
 
@@ -300,7 +177,6 @@ class _Reader:
     def eof(self) -> bool:
         return self.pos >= len(self.buf)
 
-    # -- 原始读取 -----------------------------------------------------
     def take(self, n: int) -> bytes:
         if n < 0:
             raise ReplayError(f"读取长度为负数: {n}")
@@ -350,7 +226,6 @@ class _Reader:
     def bytes_with_length(self) -> bytes:
         return self.take(self.int())
 
-
 def _maybe_gunzip(payload: bytes) -> Tuple[bytes, bool]:
     """块载荷可能是 gzip；按 magic 判断，失败时保留原样。"""
     if payload[:2] == GZIP_MAGIC:
@@ -360,7 +235,6 @@ def _maybe_gunzip(payload: bytes) -> Tuple[bytes, bool]:
             raise UnsupportedFormat(f"gzip 载荷不完整: {exc}") from exc
     return payload, False
 
-
 def _read_block(reader: _Reader, what: str = "block") -> Tuple[str, bytes]:
     name = reader.utf()
     size = reader.int()
@@ -368,19 +242,15 @@ def _read_block(reader: _Reader, what: str = "block") -> Tuple[str, bytes]:
         raise ReplayError(f"{what}: 块 {name!r} 长度非法 {size}")
     return name, reader.take(size)
 
-
 # ---------------------------------------------------------------------------
 # 数据模型
 # ---------------------------------------------------------------------------
-
-
 @dataclasses.dataclass(frozen=True)
 class ReplayHeader:
     version_code: int
     protocol: int
     version_string: str
     demo: bool
-
 
 @dataclasses.dataclass(frozen=True)
 class TeamInfo:
@@ -397,11 +267,9 @@ class TeamInfo:
     ai_hint: Optional[str]
     network_id: int
 
-
 @dataclasses.dataclass
 class ReplayMeta:
     """内嵌 gamesave 里能稳定取出的元数据（解析失败时字段为默认值）。"""
-
     map_path: Optional[str] = None
     game_time_ms: int = 0
     view: Tuple[float, float, float] = (0.0, 0.0, 0.0)
@@ -427,7 +295,6 @@ class ReplayMeta:
         kind = self.unit_shells.get(unit_id)
         return f"#{unit_id}({kind})" if kind else f"#{unit_id}"
 
-
 @dataclasses.dataclass(frozen=True)
 class UnitCommandData:
     type: Optional[str]
@@ -443,7 +310,6 @@ class UnitCommandData:
     is_force_move: bool
     action_id: Optional[str]
 
-
 @dataclasses.dataclass(frozen=True)
 class CommandTargetData:
     unit_id: int
@@ -452,7 +318,6 @@ class CommandTargetData:
     created_tick: int
     movement_type: Optional[int]
     path_points: int
-
 
 @dataclasses.dataclass
 class ReplayCommand:
@@ -479,7 +344,6 @@ class ReplayCommand:
     is_high_priority: bool
     payload_size: int
 
-    # -- 语义辅助 -----------------------------------------------------
     @property
     def system_action_name(self) -> Optional[str]:
         if not self.is_system_action:
@@ -491,7 +355,6 @@ class ReplayCommand:
         """既没有单位指令也没有动作（纯 attackMode / 清空命令）。"""
         return self.unit_command is None and self.action_id in ("", "-1")
 
-
 @dataclasses.dataclass(frozen=True)
 class ChatLine:
     tick: int
@@ -499,13 +362,11 @@ class ChatLine:
     sender_name: Optional[str]
     message: Optional[str]
 
-
 @dataclasses.dataclass(frozen=True)
 class Checkpoint:
     tick: int
-    kind: str  # "es" | "cs" | "resync"
+    kind: str  # "es" | "cs" | "resync"*
     detail: object
-
 
 @dataclasses.dataclass(frozen=True)
 class EndMeta:
@@ -515,12 +376,9 @@ class EndMeta:
     resync_count: int
     raw: str
 
-
 # ---------------------------------------------------------------------------
 # 命令载荷解析（对应 Command.deserializeCommand，protocol 96）
 # ---------------------------------------------------------------------------
-
-
 def _read_unit_type(reader: _Reader) -> Optional[str]:
     value = reader.int()
     if value == -1:
@@ -530,7 +388,6 @@ def _read_unit_type(reader: _Reader) -> Optional[str]:
     if 0 <= value < len(UNIT_TYPE_NAMES):
         return UNIT_TYPE_NAMES[value]
     return f"type#{value}"
-
 
 def _read_unit_command(reader: _Reader) -> UnitCommandData:
     raw_type = reader.int()
@@ -565,7 +422,6 @@ def _read_unit_command(reader: _Reader) -> UnitCommandData:
         action_id=action_id,
     )
 
-
 def _read_path(reader: _Reader) -> int:
     """Path 序列化：bool(pathPoints!=null) + [块 "p"（gzip）]。返航点数。"""
     if not reader.boolean():
@@ -580,7 +436,6 @@ def _read_path(reader: _Reader) -> int:
         raise ReplayError(f"路径点数量异常: {count}")
     return count
 
-
 def _read_command_target(reader: _Reader) -> CommandTargetData:
     unit_id = reader.long()
     start = (reader.float(), reader.float())
@@ -588,7 +443,7 @@ def _read_command_target(reader: _Reader) -> CommandTargetData:
     created_tick = reader.int()
     movement_type = reader.int()
     path_points = 0
-    if reader.boolean():  # hasPath
+    if reader.boolean():  # hasPath*
         path_points = _read_path(reader)
     return CommandTargetData(
         unit_id=unit_id,
@@ -599,7 +454,6 @@ def _read_command_target(reader: _Reader) -> CommandTargetData:
         path_points=path_points,
     )
 
-
 def _read_attack_mode(reader: _Reader) -> Optional[str]:
     value = reader.int()
     if value == -1:
@@ -608,7 +462,6 @@ def _read_attack_mode(reader: _Reader) -> Optional[str]:
         return ATTACK_MODES[value]
     return f"#{value}"
 
-
 def _read_command(reader: _Reader, tick: int, payload_size: int) -> ReplayCommand:
     """解析内嵌块 ``c`` 的载荷（调用方已完成 startBlockNamed("c")）。"""
     team_id = reader.byte()
@@ -616,7 +469,7 @@ def _read_command(reader: _Reader, tick: int, payload_size: int) -> ReplayComman
     unit_command = _read_unit_command(reader) if has_unit_command else None
     is_queued = reader.boolean()
     stop_current_action = reader.boolean()
-    reader.int()  # 遗留的 actionId 整型，恒 -1；protocol>=33 后由末尾 UTF 覆盖
+    reader.int()  # 遗留的 actionId 整型，恒 -1；protocol>=33 后由末尾 UTF 覆盖*
     attack_mode = _read_attack_mode(reader)
     rally_point = (reader.float(), reader.float()) if reader.boolean() else None
     clear_existing_orders = reader.boolean()
@@ -669,38 +522,34 @@ def _read_command(reader: _Reader, tick: int, payload_size: int) -> ReplayComman
         payload_size=payload_size,
     )
 
-
 # ---------------------------------------------------------------------------
 # 内嵌存档元数据
 # ---------------------------------------------------------------------------
-
 _UNSUPPORTED_MISSION_SNAPSHOT = "地图包含区域控制/传送门快照，元数据解析到此为止"
-
 
 def _skip_mission(reader: _Reader) -> int:
     """跳过 MissionEngine 状态块。返回 missionStateVersion。"""
-    reader.boolean()                       # showIntro
-    for _ in range(5):                     # r,u,v,w,x
+    reader.boolean()                       # showIntro*
+    for _ in range(5):                     # r,u,v,w,x*
         reader.int()
-    for _ in range(3):                     # z,A,B
+    for _ in range(3):                     # z,A,B*
         reader.float()
-    reader.boolean()                       # isDefeatWave
+    reader.boolean()                       # isDefeatWave*
     state_version = reader.int()
-    for _ in range(reader.int()):          # mapTrigger 列表
+    for _ in range(reader.int()):          # mapTrigger 列表*
         reader.utf()
         reader.boolean()
         reader.int()
         reader.int()
         reader.boolean()
         reader.int()
-    reader.int()                           # y
-    reader.boolean()                       # survivalWavesClassic
-    if state_version >= 7 and reader.boolean():   # hasAreaControlMode
+    reader.int()                           # y*
+    reader.boolean()                       # survivalWavesClassic*
+    if state_version >= 7 and reader.boolean():   # hasAreaControlMode*
         raise UnsupportedFormat(_UNSUPPORTED_MISSION_SNAPSHOT)
-    if state_version >= 8 and reader.boolean():   # hasMapPortalMode
+    if state_version >= 8 and reader.boolean():   # hasMapPortalMode*
         raise UnsupportedFormat(_UNSUPPORTED_MISSION_SNAPSHOT)
     return state_version
-
 
 def _read_team(reader: _Reader) -> TeamInfo:
     team_id = reader.byte()
@@ -709,23 +558,23 @@ def _read_team(reader: _Reader) -> TeamInfo:
     name = reader.nullable_utf()
     is_observer = reader.boolean()
     network_id = reader.int()
-    reader.long()                            # teamLastPingTime
+    reader.long()                            # teamLastPingTime*
     is_spectator = reader.boolean()
-    reader.int()                             # teamPingTime
+    reader.int()                             # teamPingTime*
     sort_index = reader.int()
     reader.byte()
-    reader.boolean()                         # isTeamConnectionActive
-    reader.boolean()                         # isTeamNetworkActive
+    reader.boolean()                         # isTeamConnectionActive*
+    reader.boolean()                         # isTeamNetworkActive*
     is_victory = reader.boolean()
-    reader.boolean()                         # teamSurrenderTriggered
-    reader.int()                             # surrenderVoteTimeMillis
+    reader.boolean()                         # teamSurrenderTriggered*
+    reader.int()                             # surrenderVoteTimeMillis*
     ai_hint = reader.nullable_utf()
-    reader.int()                             # hostTeamFlag
-    reader.nullable_int()                    # aiDifficultyOverride
-    reader.nullable_int()                    # startingUnitsOverride
-    reader.nullable_int()                    # aiLevelOverride
-    reader.nullable_int()                    # playerColorOverride
-    reader.int()                             # assignedTeamColorIndex
+    reader.int()                             # hostTeamFlag*
+    reader.nullable_int()                    # aiDifficultyOverride*
+    reader.nullable_int()                    # startingUnitsOverride*
+    reader.nullable_int()                    # aiLevelOverride*
+    reader.nullable_int()                    # playerColorOverride*
+    reader.int()                             # assignedTeamColorIndex*
     return TeamInfo(
         team_id=team_id,
         name=name,
@@ -741,25 +590,22 @@ def _read_team(reader: _Reader) -> TeamInfo:
         network_id=network_id,
     )
 
-
 def _parse_save_meta(payload: bytes, meta: ReplayMeta) -> ReplayMeta:
     """从 ``gamesave`` 块里取出地图、队伍、初始单位表。失败时尽量保留已有字段。"""
     reader = _Reader(payload)
     if reader.utf() != SAVE_MAGIC:
         raise ReplayError(f"内嵌存档头不是 {SAVE_MAGIC!r}")
-    reader.int()                             # versionCode
+    reader.int()                             # versionCode*
     protocol = reader.int()
     if protocol != SUPPORTED_PROTOCOL:
         raise UnsupportedFormat(f"内嵌存档 protocol={protocol}，仅支持 {SUPPORTED_PROTOCOL}")
-    reader.boolean()                         # demo
-
+    reader.boolean()                         # demo*
     name, comp = _read_block(reader, "save")
     if name != "saveCompression":
         raise ReplayError(f"存档块名异常: 期望 'saveCompression'，实际 {name!r}")
     inner, compressed = _maybe_gunzip(comp)
     if not compressed:
         raise UnsupportedFormat("saveCompression 未被压缩，格式与预期不符")
-
     body = _Reader(inner)
     for expected in ("customUnitsBlock", "gameSetup"):
         block_name, block_payload = _read_block(body, "save")
@@ -770,29 +616,27 @@ def _parse_save_meta(payload: bytes, meta: ReplayMeta) -> ReplayMeta:
         else:
             setup = _Reader(block_payload)
             networked = setup.boolean()
-            setup.boolean()                  # singleplayerServer
-            setup.boolean()                  # z（房间设置是否随包，本工具不需要内容）
+            setup.boolean()                  # singleplayerServer*
+            setup.boolean()                  # z（房间设置是否随包，本工具不需要内容）*
             meta.setup_networked = networked
-
     meta.map_path = body.utf()
-    if body.boolean():                       # 内嵌地图
+    if body.boolean():                       # 内嵌地图*
         meta.embedded_map_bytes = len(body.take(body.int()))
     meta.game_time_ms = body.int()
     meta.view = (body.float(), body.float(), body.float())
-    body.int()                               # nextFormationId
-    body.int()                               # 保留字段
+    body.int()                               # nextFormationId*
+    body.int()                               # 保留字段*
     magic = body.short()
     if magic != MAGIC_SHORT:
         raise ReplayError(f"存档段标记异常: {magic} != {MAGIC_SHORT}")
-    body.boolean()                           # 光标选择是否存在（当前恒 false）
+    body.boolean()                           # 光标选择是否存在（当前恒 false）*
     meta.is_game_started = body.boolean()
     meta.fog_flags = (body.boolean(), body.boolean(), body.boolean())
-    if body.boolean():                       # missionEngine != null
+    if body.boolean():                       # missionEngine != null*
         _skip_mission(body)
     magic = body.short()
     if magic != MAGIC_SHORT:
         raise ReplayError(f"存档段标记异常: {magic} != {MAGIC_SHORT}")
-
     meta.player_team_id = body.int()
     team_count = body.int()
     if not 0 <= team_count <= 32:
@@ -805,7 +649,6 @@ def _parse_save_meta(payload: bytes, meta: ReplayMeta) -> ReplayMeta:
         meta.teams[info.team_id] = dataclasses.replace(
             info, is_ai=is_ai, is_ai_player=is_ai_player
         )
-
     shell_count = body.int()
     if not 0 <= shell_count <= 5_000_000:
         raise ReplayError(f"初始对象数量异常: {shell_count}")
@@ -827,19 +670,15 @@ def _parse_save_meta(payload: bytes, meta: ReplayMeta) -> ReplayMeta:
         meta.unit_shells[body.long()] = label
     return meta
 
-
 # ---------------------------------------------------------------------------
 # 回放解析
 # ---------------------------------------------------------------------------
-
-
 class Replay:
     """一份解析后的回放。
 
     默认容错：截断/损坏的文件会解析到出错处，``errors`` 记录原因、``partial`` 为真。
     ``strict=True`` 时改为抛异常。
     """
-
     def __init__(self, path: str):
         self.path = path
         self.strict = False
@@ -856,7 +695,6 @@ class Replay:
         self.file_size = 0
         self.consumed_bytes = 0
 
-    # -- 载入 ---------------------------------------------------------
     @classmethod
     def load(cls, path: str, strict: bool = False) -> "Replay":
         replay = cls(path)
@@ -907,12 +745,10 @@ class Replay:
             self.errors.append(f"头部解析失败: {exc}")
             self.partial = True
             return
-
         if self.header.protocol != SUPPORTED_PROTOCOL and self.strict:
             raise UnsupportedFormat(
                 f"protocol={self.header.protocol}，本工具按 {SUPPORTED_PROTOCOL} 解析"
             )
-
         while not reader.eof():
             try:
                 name, payload = _read_block(reader, "replay")
@@ -1035,7 +871,6 @@ class Replay:
             )
         )
 
-    # -- 派生信息 -----------------------------------------------------
     @property
     def ok(self) -> bool:
         """结构完整：无异常、未截断、且读到了结尾元数据。"""
@@ -1061,7 +896,6 @@ class Replay:
     def resync_count(self) -> int:
         return sum(1 for item in self.checkpoints if item.kind == "resync")
 
-    # -- tick 与游戏时间换算 ------------------------------------------
     @property
     def anchors(self) -> List[Tuple[int, int]]:
         """`(tick, gameTimeMillis)` 锚点：起点 + resync 快照 + 结尾元数据。"""
@@ -1149,7 +983,6 @@ class Replay:
             return "未完成录制（缺少 end/meta 块）"
         return "完整"
 
-    # -- 渲染 ---------------------------------------------------------
     def describe_order(self, command: ReplayCommand) -> str:
         """把一条命令渲染成一段人类可读的动词短语。"""
         units = command.unit_ids
@@ -1222,7 +1055,6 @@ class Replay:
         lines: List[str] = []
         if header:
             lines.append(self._text_header())
-
         # (tick, 类型序号, 行) 后统一按 tick 排序，保证命令/聊天/校验行时序正确
         entries: List[Tuple[int, int, str]] = []
         for command in self.commands:
@@ -1261,7 +1093,6 @@ class Replay:
                     )
                 )
         entries.sort(key=lambda entry: (entry[0], entry[1]))
-
         if limit is not None and len(entries) > limit:
             entries = entries[:limit] + [(entries[limit - 1][0], 3, f"... (达到 --limit {limit} 条，后续省略)")]
         lines.extend(entry[2] for entry in entries)
@@ -1468,14 +1299,10 @@ class Replay:
                 lines.append(f"  …其余 {len(self.errors) - 6} 条")
         return "\n".join(lines)
 
-
 # ---------------------------------------------------------------------------
 # 文件名与落盘
 # ---------------------------------------------------------------------------
-
-
-_ILLEGAL_FILENAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
-
+_ILLEGAL_FILENAME = re.compile(r'[<>:"/\\\\|?*\x00-\x1f]')
 
 def safe_stem(path: str) -> str:
     """把回放文件名变成安全的输出文件主名。"""
@@ -1483,7 +1310,6 @@ def safe_stem(path: str) -> str:
     stem = _ILLEGAL_FILENAME.sub("_", stem)
     stem = re.sub(r"\s+", "_", stem).strip("._")
     return stem or "replay"
-
 
 def write_outputs(
     replay: Replay,
@@ -1514,141 +1340,33 @@ def write_outputs(
         written.append(target)
     return written
 
-
 # ---------------------------------------------------------------------------
 # 命令行
 # ---------------------------------------------------------------------------
-
-
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="replay.py",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description="RWX .replay 反解析：输出概要与命令执行文本。",
-        epilog=(
-            "示例:\n"
-            "  python evaluate/utils/replay.py replays/xxx.replay --summary\n"
-            "  python evaluate/utils/replay.py replays/xxx.replay --text --limit 50\n"
-            "  python evaluate/utils/replay.py replays/*.replay --summary --text --out evaluate/output\n"
-        ),
-    )
-    parser.add_argument("paths", nargs="+", help="一个或多个 .replay 文件")
-    parser.add_argument("--summary", action="store_true", help="输出概要")
-    parser.add_argument("--text", action="store_true", help="输出命令文本")
-    parser.add_argument("--jsonl", action="store_true", help="输出 JSONL（一行一条命令）")
-    parser.add_argument("--out", metavar="DIR", help="写入目录；不给则打印到标准输出")
-    parser.add_argument(
-        "--name", metavar="STEM", help="配合 --out：覆盖输出文件主名（只允许单文件）"
-    )
-    parser.add_argument("--team", type=int, metavar="ID", help="只看该队伍（或下发给它的命令）")
-    parser.add_argument("--from-tick", type=int, metavar="N", help="起始 tick（含）")
-    parser.add_argument("--to-tick", type=int, metavar="N", help="结束 tick（含）")
-    parser.add_argument("--limit", type=int, metavar="N", help="文本输出最多 N 行")
-    parser.add_argument("--checksums", action="store_true", help="文本中夹带 es/cs/resync 行")
-    parser.add_argument(
-        "--clock", action="store_true", help="文本中额外显示 [分:秒.十分位] 游戏时间"
-    )
-    parser.add_argument("--strict", action="store_true", help="结构异常直接报错")
-    parser.add_argument(
-        "--index",
-        action="store_true",
-        help="配合 --out：把多个文件的概要汇总写成 <out>/replays.index.txt",
-    )
-    return parser
-
-
-def _configure_stdout() -> None:
-    """Windows 控制台默认 cp936，遇到某些字符会直接抛 UnicodeEncodeError。"""
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        if reconfigure is not None:
-            try:
-                reconfigure(encoding="utf-8", errors="replace")
-            except (ValueError, OSError):
-                pass
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    _configure_stdout()
-    args = _build_parser().parse_args(argv)
-    modes = [mode for mode, enabled in (
-        ("summary", args.summary), ("text", args.text), ("jsonl", args.jsonl)
-    ) if enabled]
-    if not modes:
-        modes = ["summary"]
-    if args.out is None and len(args.paths) > 1 and len(modes) > 1:
-        print("多个文件 + 多种输出请配合 --out 使用", file=sys.stderr)
-        return 2
+    """Parse one replay and write summary/text/JSONL under evaluate/output/<stem>."""
+    parser = argparse.ArgumentParser(description="RWX 回放解析（只需传入 .replay 路径）")
+    parser.add_argument("path", help=".replay 文件路径")
+    args = parser.parse_args(argv)
 
-    exit_code = 0
-    index_entries: List[str] = []
-    for path in args.paths:
-        if not os.path.isfile(path):
-            print(f"跳过（不是文件）: {path}", file=sys.stderr)
-            exit_code = 2
-            continue
-        try:
-            replay = Replay.load(path, strict=args.strict)
-        except (ReplayError, TruncatedData) as exc:
-            print(f"解析失败 {path}: {exc}", file=sys.stderr)
-            exit_code = 1
-            continue
+    if not os.path.isfile(args.path):
+        parser.error(f"文件不存在: {args.path}")
+    if not args.path.lower().endswith(".replay"):
+        parser.error("需要 .replay 文件")
 
-        if args.out is not None:
-            stem = None
-            if args.name:
-                if len(args.paths) > 1:
-                    print("--name 只能配合单个文件使用", file=sys.stderr)
-                    return 2
-                stem = safe_stem(args.name)
-            written = write_outputs(
-                replay, args.out, modes, limit=args.limit, stem=stem, clock=args.clock
-            )
-            print(f"{path}: {replay.status()}，写出 {len(written)} 个文件")
-            for target in written:
-                print(f"  -> {target}")
-            if args.index and "summary" in modes:
-                index_entries.append(replay.summary())
-            continue
+    try:
+        replay = Replay.load(args.path)
+        stem = safe_stem(args.path)
+        out_dir = os.path.join("evaluate", "output", stem)
+        written = write_outputs(replay, out_dir, ("summary", "jsonl", "text"), clock=True)
+    except (ReplayError, OSError, ValueError) as exc:
+        print(f"解析失败: {exc}", file=sys.stderr)
+        return 1
 
-        for mode in modes:
-            if mode == "summary":
-                print(replay.summary())
-            elif mode == "text":
-                print(
-                    replay.render_text(
-                        team=args.team,
-                        from_tick=args.from_tick,
-                        to_tick=args.to_tick,
-                        limit=args.limit,
-                        checksums=args.checksums,
-                        clock=args.clock,
-                    )
-                )
-            else:
-                rows = replay.order_rows()
-                if args.team is not None:
-                    rows = [
-                        row for row in rows
-                        if row["team"] == args.team or row["source_team"] == args.team
-                    ]
-                if args.from_tick is not None:
-                    rows = [row for row in rows if row["tick"] >= args.from_tick]
-                if args.to_tick is not None:
-                    rows = [row for row in rows if row["tick"] <= args.to_tick]
-                if args.limit is not None:
-                    rows = rows[: args.limit]
-                for row in rows:
-                    print(json.dumps(row, ensure_ascii=False))
-            if mode != modes[-1]:
-                print()
-    if index_entries and args.out is not None:
-        target = os.path.join(args.out, "replays.index.txt")
-        with open(target, "w", encoding="utf-8", newline="\n") as handle:
-            handle.write("\n".join(f"{'=' * 78}\n{entry}" for entry in index_entries) + "\n")
-        print(f"汇总索引: {target}（{len(index_entries)} 个文件）")
-    return exit_code
-
+    print(f"{args.path}: {replay.status()}")
+    for path in written:
+        print(f"  -> {path}")
+    return 0
 
 if __name__ == "__main__":
     raise SystemExit(main())

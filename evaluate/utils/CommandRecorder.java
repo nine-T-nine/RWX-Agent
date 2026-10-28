@@ -4,11 +4,13 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
@@ -23,11 +25,18 @@ import java.util.concurrent.TimeUnit;
 /**
  * Thread-safe receipt log and command-name statistics, independent of the game engine.
  *
- * <p>Files start as {@code commands-lobby-<date>--<id>} because the CLI exists before any match is
- * loaded. The first match renames them to {@code commands-<map>-<date>--<id>}: commands received in
- * the lobby stay in the same file, and the unique id is preserved so the pair stays easy to match.</p>
+ * <p>Files start as {@code commands-lobby-<date>--<HH-mm>} because the CLI exists before any match
+ * is loaded. The first match renames them to {@code commands-<map>-<date>--<HH-mm>}: commands
+ * received in the lobby stay in the same file, and the time token — the local wall clock when the
+ * recorder started — is preserved so the log and its {@code -stats} sibling stay easy to pair.
+ * Because a minute is not a unique name, a second recorder or a same-minute rename appends
+ * {@code -2}, {@code -3}, ... instead of overwriting the earlier file.</p>
  */
 public final class CommandRecorder implements AutoCloseable {
+    /** Minute-accurate wall clock used as the file token, e.g. {@code 19-30}. */
+    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH-mm");
+    private static final int NAME_ATTEMPTS = 100;
+
     private final Path outputDirectory;
     private final String date;
     private final String id;
@@ -39,6 +48,7 @@ public final class CommandRecorder implements AutoCloseable {
     private Path statisticsPath;
     private BufferedWriter commands;
     private boolean mapNamed;
+    private int nameAttempt = 1;
     private long total;
     private boolean dirty;
     private boolean closed;
@@ -47,13 +57,11 @@ public final class CommandRecorder implements AutoCloseable {
     public CommandRecorder(Path outputDirectory, int port) throws IOException {
         this.outputDirectory = outputDirectory;
         this.date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        // Wall clock when recording started; it replaces the random suffix the old rule carried.
+        this.id = LocalTime.now().format(CLOCK);
         Files.createDirectories(outputDirectory);
-        String prefix = "commands-lobby-" + date + "--";
-        commandsPath = Files.createTempFile(outputDirectory, prefix, ".txt");
-        String filename = commandsPath.getFileName().toString();
-        // Keep the temp file's random number as the stable session id.
-        id = filename.substring(prefix.length(), filename.length() - ".txt".length());
-        statisticsPath = commandsPath.resolveSibling(filename.substring(0, filename.length() - 4) + "-stats.txt");
+        commandsPath = createNamed("commands-lobby-" + date + "--", ".txt");
+        statisticsPath = statsOf(commandsPath);
         commands = Files.newBufferedWriter(commandsPath, StandardCharsets.UTF_8);
         try {
             export();
@@ -95,13 +103,49 @@ public final class CommandRecorder implements AutoCloseable {
         return out.toString();
     }
 
+    /** One candidate name for the current time token: {@code <prefix><HH-mm>[-n]<suffix>}. */
+    private Path candidate(String prefix, int attempt, String suffix) {
+        return outputDirectory.resolve(prefix + id + (attempt == 1 ? "" : "-" + attempt) + suffix);
+    }
+
+    /** Creates the log, so two instances starting in the same minute cannot share one name. */
+    private Path createNamed(String prefix, String suffix) throws IOException {
+        for (int attempt = 1; attempt <= NAME_ATTEMPTS; attempt++) {
+            Path path = candidate(prefix, attempt, suffix);
+            try {
+                Files.createFile(path);
+                nameAttempt = attempt;
+                return path;
+            } catch (FileAlreadyExistsException taken) {
+                // Another run already owns this minute; take the next suffix.
+            }
+        }
+        throw new IOException("cannot allocate a unique command log name in " + outputDirectory);
+    }
+
+    /** First free name for the sequence, preferring the suffix this session started with. */
+    private Path freeName(String prefix, String suffix) {
+        Path preferred = candidate(prefix, nameAttempt, suffix);
+        if (!Files.exists(preferred)) return preferred;
+        for (int attempt = 1; attempt <= NAME_ATTEMPTS; attempt++) {
+            Path path = candidate(prefix, attempt, suffix);
+            if (!Files.exists(path)) return path;
+        }
+        return outputDirectory.resolve(prefix + id + "-" + System.nanoTime() + suffix);
+    }
+
+    /** The {@code -stats} sibling of a command log, sharing its time token. */
+    static Path statsOf(Path commands) {
+        String name = commands.getFileName().toString();
+        return commands.resolveSibling(name.substring(0, name.length() - 4) + "-stats.txt");
+    }
+
     /** Renames both files once, when the first real match reveals its map. */
     private boolean renameForMap(String map) {
         String slug = mapSlug(map);
         if (slug.isEmpty()) return false;
-        Path target = outputDirectory.resolve("commands-" + slug + "-" + date + "--" + id + ".txt");
-        Path targetStats = outputDirectory.resolve("commands-" + slug + "-" + date + "--" + id + "-stats.txt");
-        if (target.equals(commandsPath)) return true;
+        Path target = freeName("commands-" + slug + "-" + date + "--", ".txt");
+        Path targetStats = statsOf(target);
         Path moved = null;
         try {
             commands.flush();

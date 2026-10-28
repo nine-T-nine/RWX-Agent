@@ -58,14 +58,15 @@ class RwxCliCommandCaptureTest {
         assertTrue(Files.readString(recorder.statisticsPath()).contains("第2局：2026-10-26 14:45:27.123 +08:00"))
     }
 
-    @Test fun `files are renamed after the first match map and keep the unique id`() = withDirectory { directory ->
+    @Test fun `files are renamed after the first match map and keep the time token`() = withDirectory { directory ->
         val recorder = CommandRecorder(directory, 7)
         recorder.use {
             it.record(-1, "unassigned", "rwx-help", "rwx-help")
             val lobbyLog = it.commandsPath()
             val lobbyStatistics = it.statisticsPath()
-            val id = lobbyLog.fileName.toString().substringAfter("--").removeSuffix(".txt")
+            val token = lobbyLog.fileName.toString().substringAfter("--").removeSuffix(".txt")
             assertTrue(lobbyLog.fileName.toString().startsWith("commands-lobby-"), lobbyLog.toString())
+            assertTrue(token.matches(Regex("""\d{2}-\d{2}(?:-\d+)?""")), lobbyLog.toString())
 
             it.enterMatch(OffsetDateTime.parse("2026-10-27T16:30:00+08:00"), 1_000,
                 "King of the Middle (3p)", "Alice")
@@ -74,7 +75,7 @@ class RwxCliCommandCaptureTest {
             val statistics = it.statisticsPath()
             assertNotEquals(lobbyLog, log)
             val name = log.fileName.toString()
-            assertTrue(name.matches(Regex("""commands-King-of-the-Middle-\(3p\)-\d{8}--$id\.txt""")), name)
+            assertTrue(name.matches(Regex("""commands-King-of-the-Middle-\(3p\)-\d{8}--$token\.txt""")), name)
             assertEquals(name.removeSuffix(".txt") + "-stats.txt", statistics.fileName.toString())
             assertFalse(Files.exists(lobbyLog), "lobby log must be moved, not copied")
             assertFalse(Files.exists(lobbyStatistics), "lobby statistics must be moved too")
@@ -99,7 +100,19 @@ class RwxCliCommandCaptureTest {
             it.enterMatch(OffsetDateTime.parse("2026-10-27T16:30:00+08:00"), 1_000,
                 "湖泊 (2p)/测试:*?", "Alice")
             val name = it.commandsPath().fileName.toString()
-            assertTrue(name.matches(Regex("""commands-湖泊-\(2p\)-测试-\d{8}--\d+\.txt""")), name)
+            assertTrue(name.matches(Regex("""commands-湖泊-\(2p\)-测试-\d{8}--\d{2}-\d{2}(?:-\d+)?\.txt""")), name)
+        }
+    }
+
+    @Test fun `two recorders starting in the same minute get separate files`() = withDirectory { directory ->
+        CommandRecorder(directory, 4).use { first ->
+            CommandRecorder(directory, 5).use { second ->
+                val one = first.commandsPath().fileName.toString()
+                val two = second.commandsPath().fileName.toString()
+                assertTrue(one.matches(Regex("""commands-lobby-\d{8}--\d{2}-\d{2}(?:-\d+)?\.txt""")), one)
+                assertTrue(two.matches(Regex("""commands-lobby-\d{8}--\d{2}-\d{2}(?:-\d+)?\.txt""")), two)
+                assertNotEquals(one, two)
+            }
         }
     }
 
