@@ -1,6 +1,6 @@
 RWX command execution latency evaluator (Node.js, no npm packages)
 
-Files: evaluate.js and evaluate_1.js must reside in the same directory.
+Files: evaluate.js, evaluate_1.js and execution-mapping.js must reside in the same directory.
 
 Usage:
   node evaluate.js "path/to/commands.txt" "path/to/replay.jsonl"
@@ -25,16 +25,44 @@ current working directory).
 
 X = first matching native engine command in replay JSONL.
 Y = last matching native engine command from the same high-level request.
-Latency = X - port command time (port MM:SS treated as exact integer second).
+New receipt logs use [MM:SS:mmm], preserving gameTimeMillis to milliseconds.
+Both evaluators also read legacy [MM:SS] logs. Existing integer-second logs
+cannot recover the original receipt milliseconds and are never rewritten.
+Latency = X - receipt game time. New logs have delayMin=delayMax=latency;
+for legacy logs latency is an upper bound, with delayMin=max(0,latency-1).
 Execution span = Y - X.  A/B cycle & wait analytics remain unchanged.
 
-Matching: team, command mapping, numeric unit IDs (or selectors), target,
-build type, coordinates, chronological order. Batch --count can match
-multiple native rows; --auto-place allows placement shifts; deferred commands
-(--allow-unaffordable / --after-upgrade) can produce longer latency.
-Native rows are not reused. Missing/partial native execution is explicitly
-reported and excluded from any fictitious latency values. Unsupported
-high-level order types or incompatible input structures cause an error.
+All 19 order commands are mapped, including stop, rally, cancel and stance.
+Eight group/keep/pending/auto commands configure local or indirect behavior;
+they are listed in the report and excluded from direct execution latency.
+Default-only stance updates are also indirect. Numeric IDs, targets, exact
+action IDs, queue flags and coordinates constrain matches. Building placement
+uses the engine's 20-unit tile grid and shipped building aliases. Production
+count is checked per factory; build --count N is one native row with a
+build_count field. Push has one attackMove, or move + queued attackMove when
+an explicit staging point is given. Dynamic selector coverage is unverified.
+Immediate requests use a 5-second window, plus 1 second for old log precision.
+Deferred requests use the engine's 600-second lifetime, plus old precision.
+Native rows are not reused. Competing requests with insufficient evidence
+are marked ambiguous without assigning a latency. Partial means incomplete
+numeric ID/count coverage; it does not prove CLI failure. Missing native
+evidence cannot reveal the rejection reason because receipt logs omit replies.
+
+Regenerate Replay JSONL using the current parser before evaluating old exports:
+  python evaluate/utils/replay.py "replays/match.replay"
+New JSONL includes command_queued, waypoint_queued, build_count, rally,
+target_point, stop_current_action, clear_existing_orders and is_high_priority.
+Legacy queued is retained; it is not Command.isQueued. Affected commands in
+old JSONL are marked unobservable, with instructions to regenerate.
+
+Regression checks (from repository root):
+  node --test evaluate/test-evaluate.js
+  python -W error::ResourceWarning evaluate/utils/test_replay.py
+
+The three supplied samples now share matching suffixes between commands and
+replays: _gpt_未完, _claudevsVeryHard_1_一半, _claudevsVeryHard_2_投降.
+Commands ...5613052610805639813..._1_一半 pairs with replay ...21.27.25..._1_一半;
+commands ...9568037334084955616..._2_投降 pairs with replay ...23.28.41..._2_投降.
 
 Native replay command execution is NOT the same as unit movement / production
 completion; game time is NOT necessarily wall-clock time.

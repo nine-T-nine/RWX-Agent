@@ -17,7 +17,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
 | `android/` | Android 壳 |
 | `web/` | RWX-Agent 静态项目网站、三场网页录像（含 Claude 利用暂停对战 Very Hard AI）、媒体生成与资源校验脚本；GitHub Pages 部署见 `web/README.md` |
 | `agent-operation/` | Agent 文档与工具：`START.md`、`help.md`、`tools/rwx-cli.py`、`server/`（systemd、host-service）、`VALIDATION.md` |
-| `evaluate/utils/` | 评估工具；`CommandRecorder.java` 随 core 打包，在 CLI 收包时记录完整命令、游戏时间与执行者，导出日志及命令名次数统计到 `evaluate/output/` |
+| `evaluate/` | `evaluate.js` 复用 `evaluate_1.js` 做 A/B 统计，并用 `execution-mapping.js` 匹配 19 种直接 order、区分间接管理命令和归属歧义；`utils/replay.py <replay>` 输出底层记录；`CommandRecorder.java` 随 core 打包，收包时间保留 `[MM:SS:mmm]`，日志/统计在 `evaluate/output/` |
 | `.agents/skills/rwx-cli-tools/` | 战术参考与 PowerShell 批处理辅助脚本 |
 
 ## 关键实现点
@@ -38,7 +38,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
   --no-configuration-cache '-Pkotlin.incremental=false' '-Pkotlin.compiler.execution.strategy=in-process' --console=plain
 ```
 
-需要 Java 25。最近完整验证：24 个套件、206 项单测通过（2026-10-26，含命令记录器）；Headless 发行包构建通过。
+需要 Java 25。最近完整验证：26 个套件、230 项单测通过（2026-10-28，含毫秒命令记录器）；Headless 发行包构建通过。评测另运行 `node --test evaluate/test-evaluate.js`（35 项）和 `python -W error::ResourceWarning evaluate/utils/test_replay.py`（27 项）。
 
 ## 本地联机验证（当前手工流程）
 

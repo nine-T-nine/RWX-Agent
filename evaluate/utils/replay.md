@@ -13,25 +13,10 @@ RL 数据抽取。纯 Python 标准库，不需要启动游戏或 JVM。
 ## 用法
 
 ```powershell
-# 概要：地图、队伍、帧数、各队/各指令命令数、文件健康度
-python evaluate/utils/replay.py "replays/xxx.replay" --summary
-
-# 命令文本（一行一条命令；--clock 附带 [分:秒.十分位] 游戏时间）
-python evaluate/utils/replay.py "replays/xxx.replay" --text --clock --limit 50
-
-# JSONL（一行一个 JSON 对象，喂数据集）
-python evaluate/utils/replay.py "replays/xxx.replay" --jsonl
-
-# 只关心某个队伍 / 某个时间窗
-python evaluate/utils/replay.py "replays/xxx.replay" --text --team 1 --from-tick 600 --to-tick 3000
-
-# 落盘到 evaluate/output（--name 覆盖输出主名）
-python evaluate/utils/replay.py "replays/xxx.replay" --text --jsonl --clock `
-  --out evaluate/output --name replay-xxx
-
-# 多文件概要汇总成 evaluate/output/replays.index.txt
-python evaluate/utils/replay.py <多个文件> --summary --out evaluate/output --index
+python evaluate/utils/replay.py "replays/xxx.replay"
 ```
+
+从仓库根目录运行，只传一个 `.replay` 路径；自动生成 `evaluate/output/<安全文件名>/` 下的 `.summary.txt`、`.txt`、`.jsonl` 三个文件。命令文本附带游戏时间。当前 CLI 不接收 `--summary`、`--jsonl` 等选项；需要队伍、时间窗或条数过滤时使用下面的 Python API。
 
 ```python
 from replay import Replay            # 或 from utils.replay import Replay
@@ -42,7 +27,7 @@ r.meta.map_path                      # "maps/skirmish/[p2]Lake (2p).tmx"
 r.meta.teams[0].name                 # 队伍名（来自内嵌存档）
 for cmd in r.commands:
     print(cmd.tick, cmd.team_id, cmd.unit_command and cmd.unit_command.type)
-print(r.render_text(limit=20))
+print(r.render_text(team=1, from_tick=600, to_tick=3000, limit=20, clock=True))
 rows = r.order_rows()                # 结构化命令（JSON 友好）
 ```
 
@@ -105,13 +90,28 @@ r.clock(14027)           # "3:44.4"
 r.time_basis             # "16.000 ms/tick（…），整局速率恒定，换算精确"
 ```
 
-JSONL 一行示例（`--jsonl`）：
+JSONL 一行示例：
 
 ```json
 {"tick": 52, "time_s": 0.832, "team": 0, "team_name": "AI - Hard(t0)",
  "type": "build", "build": "custom:extractorT1", "x": 170.0, "y": 170.0,
  "units": [288], "unit_types": ["builder"], "noop": false, ...}
 ```
+
+用于双源评测的附加字段：
+
+| 字段 | 引擎含义 |
+|---|---|
+| `command_queued` | `Command.isQueued`，CLI `--queue` 的真正标志 |
+| `waypoint_queued` | `UnitCommand.isQueued`，独立于外层队列；旧 `queued` 保持历史含义 |
+| `build_count` | `UnitCommand.buildQueueSize`；`build --count N` 是一条记录 |
+| `rally` | `Command.rallyPoint` 的 `[x,y]`；没有 waypoint 时 `type=null` |
+| `target_point` | `Command.targetPoint`，如核弹/技能的目标坐标 |
+| `stop_current_action` | 取消生产/升级的标志，需要与普通 action 区分 |
+| `clear_existing_orders` | `order-stop` 的清空 waypoint 标志 |
+| `is_high_priority` | CLI move/attackMove 的原生命令标志 |
+
+字段不适用时为 `null` 或 `false`。旧 JSONL 缺少这些字段时应重新解析原 Replay，再运行 `evaluate.js`。端口日志新增的 `[MM:SS:mmm]` 是收包游戏时间；Replay 文本的十分位显示只是展示，JSONL 的 `time_s` 保留毫秒。
 
 ## 格式要点
 

@@ -226,7 +226,7 @@ public final class CommandRecorder implements AutoCloseable {
             for (String entry : matchEntries) text.append(entry).append('\n');
         }
         text.append("\n统计口径：端口收到的命令；同名命令的不同参数合并；包含被拒绝的命令。\n")
-                .append("时间格式：[分:秒]，使用收到命令时的对局游戏时间；大厅/未进入对局为 [--:--]。\n")
+                .append("时间格式：[分:秒:毫秒]（MM:SS:mmm），使用收到命令时的对局游戏时间；大厅/未进入对局为 [--:--:---]。\n")
                 .append("命令总数：").append(total).append('\n')
                 .append("命令种类：").append(counts.size()).append("\n\n每种命令的使用次数\n");
         appendCounts(text, counts);
@@ -266,9 +266,9 @@ public final class CommandRecorder implements AutoCloseable {
     }
 
     private static String timestamp(long gameMillis) {
-        if (gameMillis < 0) return "--:--";
+        if (gameMillis < 0) return "--:--:---";
         long seconds = gameMillis / 1000;
-        return String.format(Locale.ROOT, "%02d:%02d", seconds / 60, seconds % 60);
+        return String.format(Locale.ROOT, "%02d:%02d:%03d", seconds / 60, seconds % 60, gameMillis % 1000);
     }
 
     /** Keeps one receipt per line and makes delimiters and control characters reversible. */

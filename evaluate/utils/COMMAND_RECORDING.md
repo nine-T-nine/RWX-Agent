@@ -22,12 +22,14 @@ Java 调用方可以通过 `export()` 立即导出统计，`close()` 完成最�
 ## 读取命令与时间
 
 ```text
-[01:05]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-attack-mode --apply-to-new --mode off>
-[01:06]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-attack-mode --units 42 --mode holdFire>
-[01:08]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-push --units 42 --x 300 --y 400>
+[01:05:432]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-attack-mode --apply-to-new --mode off>
+[01:06:001]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-attack-mode --units 42 --mode holdFire>
+[01:08:000]<name=AgentA;player=0;faction=A(0);role=player;match=1><rwx-game-order-push --units 42 --x 300 --y 400>
 ```
 
-`[分:秒]` 是收到命令时的当前对局时间，直接读取 `GameEngine.gameTimeMillis`，在命令执行前冻结；暂停时不前进，加速时跟随游戏时间。超过一小时显示 `[60:00]`，分钟不归零。大厅或尚未进入对局的命令显示 `[--:--]`，`match=none`。
+`[分:秒:毫秒]`（`[MM:SS:mmm]`）是收到命令时的当前对局时间，直接读取并完整保留 `GameEngine.gameTimeMillis`，在命令执行前冻结；毫秒固定三位，例如 `[00:04:007]`。暂停时不前进，加速时跟随游戏时间；这是游戏时钟，精度受模拟步进限制，并非墙钟。超过一小时显示 `[60:00:000]`，分钟不归零。大厅或尚未进入对局的命令显示 `[--:--:---]`，`match=none`。
+
+2026-10-28 起的新日志使用毫秒格式，统计首部的「进入时游戏时间」也使用这一格式；`evaluate.js` 和 `evaluate_1.js` 同时兼容旧 `[MM:SS]` 与新 `[MM:SS:mmm]`。已有日志丢失的毫秒无法还原，不会用回放执行时间或补零冒充真实收包时间。
 
 执行者取该端口所属游戏实例的当前控制玩家：对局中取 `engine.playerTeam`，大厅中取网络本地玩家。`player` 是引擎的玩家槽 ID，`faction` 是联盟阵营及其原始 ID，两者可以不同。旁观者标为 `role=spectator`，尚未分配玩家时标为 `unassigned`，不根据命令的 `--units` 或目标参数猜测执行者。
 

@@ -968,7 +968,7 @@ class Replay:
         return self.tick_to_ms(tick) / 1000.0
 
     def clock(self, tick: int) -> str:
-        """把 tick 渲染成 `MM:SS.s`（分钟不归零，和 CLI 记录器的口径一致）。"""
+        """把 tick 渲染成 `MM:SS.s`（分钟不归零；JSONL 另保留毫秒时间）。"""
         tenths = int(round(self.tick_to_ms(tick) / 100.0))
         minutes, remainder = divmod(tenths, 600)
         seconds, tenth = divmod(remainder, 10)
@@ -1182,7 +1182,17 @@ class Replay:
                     else (command.action_id if command.action_id not in ("", "-1") else None)
                 ),
                 "attack_mode": command.attack_mode,
+                # Command-level queueing and waypoint queueing are independent engine flags.
+                # Keep the legacy field below; consumers matching --queue need command_queued.
                 "queued": unit_cmd.is_queued if unit_cmd else command.is_queued,
+                "command_queued": command.is_queued,
+                "waypoint_queued": unit_cmd.is_queued if unit_cmd else None,
+                "build_count": unit_cmd.build_queue_size if unit_cmd and unit_cmd.type == "build" else None,
+                "rally": list(command.rally_point) if command.rally_point else None,
+                "target_point": list(command.target_point) if command.target_point else None,
+                "stop_current_action": command.stop_current_action,
+                "clear_existing_orders": command.clear_existing_orders,
+                "is_high_priority": command.is_high_priority,
                 "units": command.unit_ids,
                 "unit_types": [self.meta.unit_shells.get(unit) for unit in command.unit_ids],
                 "game_speed": command.game_speed_change or None,

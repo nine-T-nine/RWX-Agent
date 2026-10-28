@@ -44,7 +44,7 @@ class RwxCliCommandCaptureTest {
             it.export()
             val header = Files.readString(it.statisticsPath())
             assertTrue(header.startsWith("实际进入对局时间（本地时区）：\n第1局：2026-10-26 14:35:27.123 +08:00"), header)
-            assertTrue(header.contains("进入时游戏时间=01:05"), header)
+            assertTrue(header.contains("进入时游戏时间=01:05:000"), header)
             assertTrue(header.contains("命令总数：0"), header)
             it.record(-1, "unassigned", "rwx-help", "rwx-help")
             it.record(65_000, "Alice;faction=A;match=1", "rwx-game-state", "rwx-game-state")
@@ -52,9 +52,9 @@ class RwxCliCommandCaptureTest {
             it.record(0, "Alice;faction=B;match=2", "rwx-game-state", "rwx-game-state --summary")
         }
         val lines = Files.readAllLines(recorder.commandsPath())
-        assertTrue(lines[0].startsWith("[--:--]"))
-        assertTrue(lines[1].startsWith("[01:05]"))
-        assertTrue(lines[2].startsWith("[00:00]"))
+        assertTrue(lines[0].startsWith("[--:--:---]"))
+        assertTrue(lines[1].startsWith("[01:05:000]"))
+        assertTrue(lines[2].startsWith("[00:00:000]"))
         assertTrue(Files.readString(recorder.statisticsPath()).contains("第2局：2026-10-26 14:45:27.123 +08:00"))
     }
 
@@ -119,7 +119,7 @@ class RwxCliCommandCaptureTest {
     @Test fun `counts merge parameters and retain every full command and executor`() = withDirectory { directory ->
         val recorder = CommandRecorder(directory, 1)
         recorder.use {
-            it.record(65_000, "Alice;faction=A", "rwx-game-order-attack-mode",
+            it.record(65_432, "Alice;faction=A", "rwx-game-order-attack-mode",
                 "rwx-game-order-attack-mode --apply-to-new --mode off")
             it.record(66_000, "Bob;faction=B", "RWX-GAME-ORDER-ATTACK-MODE",
                 "rwx-game-order-attack-mode --units 42")
@@ -127,14 +127,23 @@ class RwxCliCommandCaptureTest {
             it.export()
             val log = Files.readAllLines(it.commandsPath())
             assertEquals(3, log.size)
-            assertEquals("[01:05]<Alice;faction=A><rwx-game-order-attack-mode --apply-to-new --mode off>", log[0])
+            assertEquals("[01:05:432]<Alice;faction=A><rwx-game-order-attack-mode --apply-to-new --mode off>", log[0])
             assertTrue(log[1].contains("<Bob;faction=B><rwx-game-order-attack-mode --units 42>"))
-            assertTrue(log[2].startsWith("[60:01]"))
+            assertTrue(log[2].startsWith("[60:01:000]"))
         }
         val statistics = Files.readString(recorder.statisticsPath())
         assertTrue(statistics.contains("命令总数：3\n命令种类：2"), statistics)
         assertTrue(statistics.contains("rwx-game-order-attack-mode\t2\nrwx-game-order-push\t1"), statistics)
         recorder.close() // Shutdown hooks may close the same instance twice.
+    }
+
+    @Test fun `receipt milliseconds preserve zero padding and minute boundaries`() = withDirectory { directory ->
+        CommandRecorder(directory, 9).use { recorder ->
+            val times = listOf(0L, 4_001L, 4_123L, 59_999L, 60_000L, 3_600_007L)
+            times.forEach { recorder.record(it, "Alice", "rwx-ping", "rwx-ping") }
+            assertEquals(listOf("00:00:000", "00:04:001", "00:04:123", "00:59:999", "01:00:000", "60:00:007"),
+                Files.readAllLines(recorder.commandsPath()).map { it.substringAfter('[').substringBefore(']') })
+        }
     }
 
     @Test fun `concurrent records are complete and statistics sum without lost increments`() = withDirectory { directory ->

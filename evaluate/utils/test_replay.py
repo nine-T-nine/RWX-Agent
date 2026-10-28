@@ -173,17 +173,21 @@ def _unit_command(writer, cmd_type, x, y, build_ordinal=-1, target_unit=-1,
 
 def _command_body(team_id, unit_command=None, units=(), attack_mode=-1,
                   action_id="-1", system=None, target_point=None,
-                  source_team=None, clear_orders=False, high_priority=False):
+                  source_team=None, clear_orders=False, high_priority=False,
+                  queued=False, stop_action=False, rally=None, target_unit=-1):
     body = _Writer()
     body.byte(team_id)
     body.boolean(unit_command is not None)
     if unit_command is not None:
         unit_command(body)
-    body.boolean(False)            # isQueued
-    body.boolean(False)            # stopCurrentAction
+    body.boolean(queued)           # Command.isQueued
+    body.boolean(stop_action)      # stopCurrentAction
     body.int(-1)                   # 遗留 actionId
     body.int(attack_mode)
-    body.boolean(False)            # 无 rallyPoint
+    body.boolean(rally is not None)
+    if rally is not None:
+        body.float(rally[0])
+        body.float(rally[1])
     body.boolean(clear_orders)
     body.int(len(units))
     for unit in units:
@@ -195,7 +199,7 @@ def _command_body(team_id, unit_command=None, units=(), attack_mode=-1,
     if target_point is not None:
         body.float(target_point[0])
         body.float(target_point[1])
-    body.long(-1)                  # targetUnit
+    body.long(target_unit)         # targetUnit
     body.utf(action_id)
     body.boolean(False)            # isInstantCommand
     body.short(0)                  # allowedTeamMask
@@ -454,6 +458,32 @@ class SyntheticReplayTest(unittest.TestCase):
         self.assertEqual(rows[0]["team_name"], "测试玩家(t0)")
         self.assertEqual(rows[1]["system_action"], "system:0")
         json.loads(json.dumps(rows, ensure_ascii=False))
+
+    def test_execution_mapping_fields_survive_binary_to_jsonl(self):
+        # Independent native fields that the previous JSONL export silently discarded.
+        bodies = [
+            _command_body(0, units=[5], rally=(100, 120)),
+            _command_body(0, units=[5], clear_orders=True),
+            _command_body(0, units=[5], action_id="u_builder", stop_action=True),
+            _command_body(0, units=[5], action_id="launch", target_point=(300, 400)),
+            _command_body(0, units=[5], action_id="ability", target_unit=42),
+            _command_body(0, units=[5], queued=True, unit_command=lambda w: _unit_command(
+                w, "build", 110, 130, build_ordinal=0, build_queue=3)),
+        ]
+        replay = rp.Replay("synthetic")
+        for tick, body in enumerate(bodies):
+            replay.commands.append(rp._read_command(rp._Reader(body), tick, len(body)))
+        rows = replay.order_rows()
+        self.assertEqual(rows[0]["rally"], [100, 120])
+        self.assertTrue(rows[1]["clear_existing_orders"])
+        self.assertTrue(rows[2]["stop_current_action"])
+        self.assertEqual(rows[2]["action"], "u_builder")
+        self.assertEqual(rows[3]["target_point"], [300, 400])
+        self.assertEqual(rows[4]["target_unit"], 42)
+        self.assertEqual(rows[5]["build_count"], 3)
+        self.assertTrue(rows[5]["command_queued"])
+        self.assertFalse(rows[5]["waypoint_queued"])
+        self.assertTrue(all(not row["noop"] for row in rows))
 
     def test_summary(self):
         summary = self.replay.summary()

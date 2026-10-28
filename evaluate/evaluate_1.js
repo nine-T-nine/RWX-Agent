@@ -10,8 +10,12 @@ const B = new Set(`rwx-game-group-save rwx-game-group-delete rwx-game-keep-set r
 const C = new Set(`rwx-help rwx-ping rwx-skirmish rwx-battleroom-show rwx-battleroom-add-ai rwx-battleroom-show-ai rwx-battleroom-set-player rwx-battleroom-select-map rwx-battleroom-settings rwx-battleroom-chat rwx-battleroom-start rwx-battleroom-quit rwx-connect rwx-connection-status rwx-disconnect rwx-host rwx-server-list rwx-exit rwx-game-pause rwx-game-speed rwx-game-step rwx-game-restart rwx-game-surrender rwx-game-camera rwx-game-replay-start rwx-game-replay-stop rwx-game-replay-status rwx-game-observe-reset`.split(' '));
 const TYPES = ['A-A', 'A-B', 'B-A', 'B-B'];
 const COLORS = {'A-A':'#437bb6','A-B':'#e28b37','B-A':'#3c9973','B-B':'#996cbd'};
-const LOG = /^\[(\d+):([0-5]\d)\]<([^<>]*)><([^<>]*)>\s*$/;
-const stamp = s => `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+const LOG = /^\[(\d+):([0-5]\d)(?::(\d{3}))?\]<([^<>]*)><([^<>]*)>\s*$/;
+const stamp = s => {
+  const ms=Math.round(s*1000),base=`${String(Math.floor(ms/60000)).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`;
+  return ms%1000?`${base}:${String(ms%1000).padStart(3,'0')}`:base;
+};
+const delta = (end,start) => Math.round((end-start)*1000)/1000;
 const fmt = x => x == null ? 'N/A' : x.toFixed(2);
 const esc = x => String(x).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const average = xs => xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null;
@@ -27,7 +31,7 @@ function readLog(file, overrides={}) {
     const match=raw.match(LOG);
     if (!started) { if (!match) continue; started=true; }
     if (!match) { stop={line:i+1,content:raw,reason:'invalid_format'}; break; }
-    const [,minutes,seconds,meta,rawCommand]=match;
+    const [,minutes,seconds,milliseconds,meta,rawCommand]=match;
     const command=rawCommand.replace(/\\t/g,' ').trim(), token=command.split(/\s+/)[0]?.toLowerCase()||'';
     const fields=new Set(meta.split(';').map(s=>s.split('=')[0]));
     if (!['name','player','faction','role','match'].every(k=>fields.has(k)) || !token.startsWith('rwx-')) {
@@ -35,7 +39,7 @@ function readLog(file, overrides={}) {
     }
     const type=kindOf(token,overrides);
     if (type==='C' && !C.has(token) && !token.startsWith('rwx-battleroom-') && !(token in overrides)) unknown[token]=(unknown[token]||0)+1;
-    commands.push({line:i+1,time:Number(minutes)*60+Number(seconds),type,command,token,index:commands.length});
+    commands.push({line:i+1,time:Number(minutes)*60+Number(seconds)+Number(milliseconds||0)/1000,type,command,token,index:commands.length});
   }
   return {commands,stop,unknown};
 }
@@ -56,7 +60,7 @@ function analyze(segments) {
   segments.forEach((seq,si)=>{
     for (let i=1;i<seq.length;i++) {
       const l=seq[i-1],r=seq[i];
-      gaps.push({segment:si+1,type:`${l.type}-${r.type}`,time:l.time,start:stamp(l.time),end:stamp(r.time),seconds:r.time-l.time,firstLine:l.line,lastLine:r.line,firstCommand:l.command,lastCommand:r.command,filteredC:r.index-l.index-1});
+      gaps.push({segment:si+1,type:`${l.type}-${r.type}`,time:l.time,start:stamp(l.time),end:stamp(r.time),seconds:delta(r.time,l.time),firstLine:l.line,lastLine:r.line,firstCommand:l.command,lastCommand:r.command,filteredC:r.index-l.index-1});
     }
     const blocks=[];
     for (const cmd of seq) {
@@ -69,7 +73,7 @@ function analyze(segments) {
       const first=block.items[0], next=blocks[i+1];
       if (!next) { incomplete.push({segment:si+1,type:'trailing_A',start:stamp(first.time)}); return; }
       const firstB=next.items[0],lastB=next.items.at(-1);
-      cycles.push({segment:si+1,time:first.time,start:stamp(first.time),end:stamp(lastB.time),firstAction:stamp(firstB.time),seconds:lastB.time-first.time,observeToAction:firstB.time-first.time,A_count:block.items.length,B_count:next.items.length,firstLine:first.line,lastLine:lastB.line});
+      cycles.push({segment:si+1,time:first.time,start:stamp(first.time),end:stamp(lastB.time),firstAction:stamp(firstB.time),seconds:delta(lastB.time,first.time),observeToAction:delta(firstB.time,first.time),A_count:block.items.length,B_count:next.items.length,firstLine:first.line,lastLine:lastB.line});
     });
   });
   return {cycles,gaps,incomplete};
@@ -189,7 +193,7 @@ async function evaluate_1(fileName, {outputRoot='./output',minOutlierSeconds=5,o
   const cycleStats=stats(cycles,'seconds'),gapStats=Object.fromEntries(TYPES.map(k=>[k,stats(gaps.filter(x=>x.type===k),'seconds')]));
   const waits=gaps.filter(x=>x.type==='B-A'),waitStats=gapStats['B-A'];
   const firstA=ab.findIndex(c=>c.type==='A'),nextB=ab.slice(firstA+1).find(c=>c.type==='B');
-  const reaction=firstA<0||!nextB?null:nextB.time-ab[firstA].time;
+  const reaction=firstA<0||!nextB?null:delta(nextB.time,ab[firstA].time);
   const out=path.resolve(outputRoot,path.parse(fileName).name+'_analysis');fs.mkdirSync(out,{recursive:true});
   const report=renderReport(fileName,stop,unknown,resets,counts,ab[0].time,reaction,cycles,gaps,incomplete,cycleLimit,limits,cycleStats,gapStats,waits,waitStats);
   const summary={file:path.resolve(fileName),durationSeconds:duration,scanStoppedAt:stop,commandCounts:counts,unknownCommands:unknown,timeResets:resets,startupDelaySeconds:ab[0].time,startupReactionSeconds:reaction,cycleDefinition:'首条 A → 后续相邻 B 段最后一条 B',cycleOutlierLimit:cycleLimit,cycleStats,waitDefinition:'末条 B → 下一条 A（同一个有效时间序列中）',waitOutlierLimit:limits['B-A'],waitStats,incompleteBlocks:incomplete,gapOutlierLimits:limits,gapStats,minOutlierSeconds};
@@ -213,4 +217,4 @@ const tip=document.querySelector('#tooltip');document.querySelectorAll('[data-ti
 }
 
 if(require.main===module){const argv=process.argv.slice(2);const file=argv[0];if(!file){console.error('用法: node evaluate_1.js <replay.txt> [--output-root DIR] [--min-outlier-seconds N] [--overrides FILE.json]');process.exitCode=1;}else{const args={};for(let i=1;i<argv.length;i+=2){const key=argv[i],val=argv[i+1];if(key==='--output-root')args.outputRoot=val;else if(key==='--min-outlier-seconds')args.minOutlierSeconds=Number(val);else if(key==='--overrides')args.overridesPath=val;else{console.error(`未知参数: ${key}`);process.exitCode=1;break;}}if(!process.exitCode)evaluate_1(file,args).catch(e=>{console.error(e.message);process.exitCode=1;});}}
-module.exports={evaluate_1};
+module.exports={evaluate_1,readLog};
