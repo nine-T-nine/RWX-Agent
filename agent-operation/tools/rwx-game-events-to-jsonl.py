@@ -4,7 +4,17 @@
 The socket already applies the subscription filter server-side, but a subscriber still
 receives transport records it does not care about: `hello`, `cursor` placeholders for
 messages outside the subscription, `event`, `remove` and the `gap`/`overflow` markers.
-This receiver applies a second filter on receipt and persists only `kind == "update"`."""
+This receiver applies a second filter on receipt (only `kind == "update"` survives) and
+splits the survivors by event type into two rolling logs, so that routine re-discovery
+updates cannot push combat history out of the window:
+
+* `game-events-observe.jsonl`: `new` (discoveries) and `info` (own production/upgrades).
+* `game-events-combat.jsonl`: `damaged`, `destroyed` and `losses`.
+
+The default subscription is `info=false, allies=false`: the `new`/`info` side carries both
+our own and allied records (the scope flag never hides observations), while the combat side
+stays on our own faction unless `--allies` asks for allied kills and losses.
+"""
 
 import argparse
 import json
@@ -17,12 +27,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PORT = ROOT / 'tmp' / 'events-port'
-DEFAULT_OUTPUT = ROOT / 'tmp' / 'game-events.jsonl'
+DEFAULT_OBSERVE = ROOT / 'tmp' / 'game-events-observe.jsonl'
+DEFAULT_COMBAT = ROOT / 'tmp' / 'game-events-combat.jsonl'
 PROTOCOL = 'rwx-events-v1'
 MAX_LINE = 1024 * 1024
 MAX_RECORDS = 500
-# Second filter applied on receipt: only aggregate updates are written to the JSONL file.
+# Second filter applied on receipt: only aggregate updates are written to the JSONL files.
 KEPT_KINDS = frozenset({'update'})
+# Event types that belong to the observation log rather than the combat log.
+OBSERVE_TYPES = frozenset({'new', 'info'})
+COMPACT_RETRY_SECONDS = 5.0
 
 
 class JsonlLog:
@@ -32,6 +46,7 @@ class JsonlLog:
         self.path = path
         self.limit = limit
         self.records = count_records(path)
+        self.retry_at = 0.0
         self.handle = path.open('a', encoding='utf-8', newline='\n')
         if self.records > limit:
             self.compact()
@@ -42,24 +57,47 @@ class JsonlLog:
 
     def flush(self):
         self.handle.flush()
-        if self.records > self.limit:
+        if self.records > self.limit and time.monotonic() >= self.retry_at:
             self.compact()
 
     def compact(self):
-        """Rewrite the file with its newest records; the log only holds recent events."""
+        """Rewrite the file with its newest records, and keep writing whatever happens.
+
+        A rename over the log fails while another process holds it open (Windows share
+        violation). The handle used to stay closed after that failure, so every later write
+        raised into the reconnect loop and the log silently stopped growing while the process
+        looked healthy. The handle is now reopened in every outcome and the next flush retries
+        after a short backoff.
+        """
         self.handle.flush()
-        self.handle.close()
         newest = deque(maxlen=self.limit)
-        if self.path.exists():
-            with self.path.open('r', encoding='utf-8') as source:
-                for line in source:
-                    newest.append(line)
+        with self.path.open('r', encoding='utf-8') as source:
+            for line in source:
+                newest.append(line)
         temporary = self.path.with_name('.%s.%d.tmp' % (self.path.name, os.getpid()))
         with temporary.open('w', encoding='utf-8', newline='\n') as target:
             target.writelines(newest)
-        os.replace(temporary, self.path)
-        self.records = len(newest)
-        self.handle = self.path.open('a', encoding='utf-8', newline='\n')
+        self.handle.close()
+        try:
+            for attempt in range(3):
+                try:
+                    os.replace(temporary, self.path)
+                    break
+                except OSError:
+                    if attempt == 2:
+                        raise
+                    time.sleep(0.1)
+        except OSError as error:
+            self.retry_at = time.monotonic() + COMPACT_RETRY_SECONDS
+            print('Cannot compact %s: %s; still appending, retrying later'
+                  % (self.path, error), file=sys.stderr, flush=True)
+            try:
+                os.unlink(temporary)
+            except OSError:
+                pass
+        finally:
+            self.handle = self.path.open('a', encoding='utf-8', newline='\n')
+        self.records = count_records(self.path)
 
     def close(self):
         self.handle.close()
@@ -72,13 +110,8 @@ def count_records(path):
         return sum(1 for _ in source)
 
 
-
-def last_cursor(path):
-    """Find the last durable sequence from this log, including stream restarts.
-
-    The log holds updates only, so the resume point is the newest stored update; the
-    sequences after it are re-requested and dropped again by the on-receipt filter.
-    """
+def cursor_of(path):
+    """Last durable session and sequence of one log file."""
     session, seq = None, 0
     if not path.exists():
         return session, seq
@@ -97,17 +130,38 @@ def last_cursor(path):
     return session, seq
 
 
+def last_cursor(*paths):
+    """Newest durable sequence across the split logs, including stream restarts.
+
+    The logs hold updates only, so the resume point is the newest stored update; the
+    sequences after it are re-requested and dropped again by the on-receipt filter.
+    """
+    session, seq = None, 0
+    for path in paths:
+        found_session, found_seq = cursor_of(path)
+        if found_session is not None and (session is None or found_seq > seq):
+            session, seq = found_session, found_seq
+    return session, seq
+
+
 def append(output, record):
     output.write(json.dumps(record, ensure_ascii=False, separators=(',', ':')) + '\n')
     output.flush()
 
 
 def diagnostic(kind, message):
-    """Report a transport problem on stderr only; the file holds updates and nothing else."""
+    """Report a transport problem on stderr only; the files hold updates and nothing else."""
     print('%s: %s' % (kind, message), file=sys.stderr, flush=True)
 
 
-def catch_up(output, message, session, seq):
+def destination(logs, message):
+    """Pick the log for one message: observations first, everything else is combat."""
+    event = message.get('event')
+    event_type = event.get('type') if isinstance(event, dict) else None
+    return logs[0] if event_type in OBSERVE_TYPES else logs[1]
+
+
+def catch_up(logs, message, session, seq):
     """Advance the resume cursor over one sequence-bearing message.
 
     Returns the new sequence, or `None` when the message must not advance it (an older
@@ -124,7 +178,7 @@ def catch_up(output, message, session, seq):
         diagnostic('gap', 'Missing event sequence %d..%d' % (seq + 1, number - 1))
     kind = message.get('kind')
     if kind in KEPT_KINDS:
-        append(output, message)
+        append(destination(logs, message), message)
     elif kind in ('reset', 'overflow'):
         # Not persisted, but the reader must know the stream it is following broke.
         diagnostic('dropped', 'Stream %s marker not stored: %s'
@@ -132,7 +186,7 @@ def catch_up(output, message, session, seq):
     return number
 
 
-def receive(sock, output, session, seq, include_info=False, allies=False):
+def receive(sock, logs, session, seq, include_info=False, allies=False):
     request = {'protocol': PROTOCOL, 'kind': 'subscribe', 'after': seq,
                'session': session, 'info': include_info, 'allies': allies}
     sock.sendall((json.dumps(request, separators=(',', ':')) + '\n').encode('utf-8'))
@@ -166,7 +220,7 @@ def receive(sock, output, session, seq, include_info=False, allies=False):
                 session = current
                 continue
             if kind in ('event', 'update', 'remove', 'cursor', 'overflow', 'reset') and 'seq' in message:
-                advanced = catch_up(output, message, session, seq)
+                advanced = catch_up(logs, message, session, seq)
                 if advanced is not None:
                     seq = advanced
             elif kind in ('gap', 'overflow', 'error'):
@@ -179,7 +233,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, help='event port (overrides the discovery file)')
     parser.add_argument('--port-file', type=Path, default=DEFAULT_PORT)
-    parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument('--observe-output', type=Path, default=DEFAULT_OBSERVE,
+                        help='new/info log (default: %(default)s)')
+    parser.add_argument('--combat-output', type=Path, default=DEFAULT_COMBAT,
+                        help='damaged/destroyed/losses log (default: %(default)s)')
     parser.add_argument('--retry-seconds', type=float, default=1.0)
     parser.add_argument('--info', action='store_true', help='also subscribe to info events')
     parser.add_argument('--allies', action='store_true', help='use allied destroyed and losses events')
@@ -188,12 +245,16 @@ def main():
         parser.error('--port must be between 1 and 65535')
     if args.retry_seconds <= 0:
         parser.error('--retry-seconds must be positive')
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    session, seq = last_cursor(args.output)
-    print('Appending RWX update events to %s (newest %d records); Ctrl+C stops'
-          % (args.output, MAX_RECORDS), flush=True)
+    outputs = (args.observe_output, args.combat_output)
+    if outputs[0].resolve() == outputs[1].resolve():
+        parser.error('--observe-output and --combat-output must be different files')
+    for path in outputs:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    session, seq = last_cursor(*outputs)
+    print('Appending RWX update events to %s and %s (newest %d records each); Ctrl+C stops'
+          % (outputs[0], outputs[1], MAX_RECORDS), flush=True)
     try:
-        output = JsonlLog(args.output)
+        logs = (JsonlLog(outputs[0]), JsonlLog(outputs[1]))
     except OSError as error:
         print('Cannot write event log: %s' % error, file=sys.stderr, flush=True)
         return 1
@@ -206,7 +267,7 @@ def main():
                 with socket.create_connection(('127.0.0.1', port), timeout=5) as sock:
                     sock.settimeout(None)
                     print('Connected to 127.0.0.1:%d' % port, flush=True)
-                    session, seq = receive(sock, output, session, seq, args.info, args.allies)
+                    session, seq = receive(sock, logs, session, seq, args.info, args.allies)
                 print('Disconnected; reconnecting', file=sys.stderr, flush=True)
             except (OSError, ValueError) as error:
                 print('Event connection unavailable: %s; retrying' % error, file=sys.stderr, flush=True)
@@ -217,7 +278,8 @@ def main():
         print('Cannot write event log: %s' % error, file=sys.stderr, flush=True)
         return 1
     finally:
-        output.close()
+        for log in logs:
+            log.close()
     return 0
 
 

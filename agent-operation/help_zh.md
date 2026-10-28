@@ -471,7 +471,7 @@ rwx-game-auto-set --rule idle-alert --include-units false
 | `destroyed` | 我方击毁敌军，或 `--allies` 时友军击毁敌军；按敌方真实 ID 去重，保留窗口内最早有效记录。 |
 | `losses` | 我方（`--allies` 时为友军）损失；按 ID 去重，再按队伍和损失类型分组，相邻损失间隔 ≤3 游戏秒时连续合并。 |
 | `info` | 我方单位创建、生产、施工开始/完成、升级开始/完成，只报告真实发生的阶段。 |
-| `new` | 我方视野首次或重新发现敌军；同一 ID 在窗口中采用最近一次发现，持续可见不刷新；相邻发现间隔 ≤3 游戏秒时合并。 |
+| `new` | 我方视野首次或重新发现敌军；同一 ID 在窗口中采用最近一次发现，持续可见不刷新；相邻发现间隔 ≤5 游戏秒时合并（同一单位 5 秒内反复出现只算一次，跨帧修订也用 5 秒窗口）。 |
 
 每行格式为 `[MM:SS][type] description`，使用英文名称和文本，无标题、游标或汇总；无匹配时返回空文本。原始缓存最多保存 180 游戏秒、1000 条。
 
@@ -497,7 +497,9 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-脚本在接收侧做二次过滤，只把 `kind == "update"` 的记录以 NDJSON 追加至 `agent-operation/tmp/game-events.jsonl`，仅保留最新 500 条（超出时重写尾部记录）；`hello`、`event`、`remove`、`cursor` 与传输诊断不落盘，诊断只输出到 stderr。按 Ctrl+C 退出。可用 `--port` 或 `--port-file` 选择实例。事件类型默认与 `game-events` 一致；`--info` 加入信息事件，`--allies` 切换击杀与损失的友军范围。
+脚本在接收侧做二次过滤，只把 `kind == "update"` 记录按事件类型分成两个各滚动 500 条的日志：`agent-operation/tmp/game-events-observe.jsonl` 存 `new`（发现敌军）与 `info`（我方生产/升级），`agent-operation/tmp/game-events-combat.jsonl` 存 `damaged`、`destroyed`、`losses`。分开存放可避免反复的重新发现把战损记录挤出窗口。`hello`、`event`、`remove`、`cursor` 与传输诊断不落盘，诊断只输出到 stderr。用 `--observe-output` / `--combat-output` 指定两个日志，`--port` 或 `--port-file` 选择实例，按 Ctrl+C 退出。
+
+默认订阅为 `info=false, allies=false`：`new`、`info` 始终保留我方与盟友记录（阵营范围不会隐藏观察类事件），而 `damaged`、`destroyed`、`losses` 只订阅我方阵营。`--info` 加入信息事件，`--allies` 把击杀与损失切到友军。
 
 断线时接收器依据最后会话和序列号重连；游标跟随每一条序列（无论是否落盘），重连不会重放也不会误报缺口，重启后从最后一条已存 `update` 继续。传输缓存最多 180 游戏秒、1000 条。超出缓存或队列溢出会在 stderr 报告 `gap`、`overflow`，不保证补全。进程重启会产生新会话，无法恢复旧进程的内存记录。
 
@@ -509,7 +511,7 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 {"protocol":"rwx-events-v1","kind":"subscribe","session":null,"after":0,"info":false,"allies":false}
 ```
 
-服务端先返回 `hello`，随后发送 `event`、`update`、`remove`、`cursor`、`gap`、`overflow` 或 `reset`。`seq` 为传输序列；`eventId` 和 `revision` 标识聚合修订；`remove.reason` 为 `replaced` 或 `expired`。`event.type`、`event.description`、`gameTimeMillis`、`tick` 来自真实事件，`session`、序列、修订、缺口消息属于传输元数据。聚合消费者必须按 `eventId` 应用修订和删除，不得把 `update` 算作新事件。
+服务端先返回 `hello`，随后发送 `event`、`update`、`remove`、`cursor`、`gap`、`overflow` 或 `reset`。`seq` 为传输序列；`eventId` 和 `revision` 标识聚合修订；`remove.reason` 为 `replaced` 或 `expired`。`event.type`、`event.description`、`gameTimeMillis`、`tick` 来自真实事件，`session`、序列、修订、缺口消息属于传输元数据。`allies` 只管 `destroyed` 与 `losses`（取友军而非我方），`damaged`、`new`、`info` 不因此收窄，信息事件只由 `info` 决定。聚合消费者必须按 `eventId` 应用修订和删除，不得把 `update` 算作新事件。
 
 ### 6.2 回放
 

@@ -81,13 +81,15 @@ python agent-operation/tools/rwx-cli.py rwx-ping
 python agent-operation/tools/rwx-game-events-to-jsonl.py
 ```
 
-事件持续追加到：
+事件按类型分两个日志持续追加，各滚动保留最新 500 条：
 
-`agent-operation/tmp/game-events.jsonl`
+- `agent-operation/tmp/game-events-observe.jsonl`：`new`（发现敌军）与 `info`（我方生产/升级）。
+- `agent-operation/tmp/game-events-combat.jsonl`：`damaged`、`destroyed`、`losses`。
 
 - 只记录 `kind` 为 `update` 的消息（接收时二次过滤）；`event`、`remove`、`cursor`、`hello` 都不入文件。
+- 默认订阅 `info=false, allies=false`：`new`/`info` 含我方与盟友记录，交战类型只含我方阵营。
 - 按 `Ctrl+C` 停止接收器。
-- 断线后自动重连，并根据日志末尾的序列号恢复（游标跟住所有序列号）。
+- 断线后自动重连，并根据两个日志中的最新序列号恢复（游标跟住所有序列号）。
 - 缓存过期、服务重启或队列溢出时，缺失只在 stderr 以 `gap` / `overflow` 报告。
 - 多实例可使用 `--port-file` 指定不同事件端口文件。
 

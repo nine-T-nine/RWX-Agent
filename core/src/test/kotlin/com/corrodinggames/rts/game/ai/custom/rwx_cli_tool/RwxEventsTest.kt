@@ -159,6 +159,18 @@ class RwxEventsTest {
         assertEquals(4, reappeared.size)
     }
 
+    @Test fun `discoveries chain across five seconds but never beyond`() {
+        val raw = listOf(
+            event(10_000, EventType.NEW, subject = entity(1, "Tank", 1, "enemy", 0f, 0f)),
+            event(14_900, EventType.NEW, subject = entity(2, "Tank", 1, "enemy", 100f, 100f)),
+            event(20_000, EventType.NEW, subject = entity(3, "Tank", 1, "enemy", 200f, 200f)),
+        )
+        val lines = query(raw, types = listOf(EventType.NEW))
+        assertEquals(2, lines.size)
+        assertTrue(lines[0].contains("found Tank x2"), lines[0])
+        assertEquals("[00:20][new] found Tank at (200,200)", lines[1])
+    }
+
     @Test fun `all raw events are aggregated before fifty display rows are selected`() {
         val raw = (1L..100L).map { event(1000, id = it) } +
             (101L..149L).map { event(2000, EventType.DAMAGED, it) }

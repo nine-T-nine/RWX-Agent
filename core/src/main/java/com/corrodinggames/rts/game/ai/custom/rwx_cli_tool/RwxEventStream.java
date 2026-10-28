@@ -168,7 +168,9 @@ final class RwxEventStream implements AutoCloseable {
         for (GameEvent old : prior.record.contributors) for (GameEvent fresh : next.contributors) {
             if (old == fresh) return true;
         }
-        if ((long) next.gameTimeMillis - prior.lastTime > 3000) return false;
+        int window = next.type == EventType.NEW ? RwxEventProcessor.DISCOVERY_WINDOW_MILLIS
+                : RwxEventProcessor.LOSS_WINDOW_MILLIS;
+        if ((long) next.gameTimeMillis - prior.lastTime > window) return false;
         for (GameEvent old : prior.record.contributors) for (GameEvent fresh : next.contributors) {
             if ((next.type == EventType.NEW || next.type == EventType.DESTROYED || next.type == EventType.LOSSES)
                     && old.subject != null && fresh.subject != null && old.subject.id == fresh.subject.id) {
@@ -247,9 +249,7 @@ final class RwxEventStream implements AutoCloseable {
                 for (Message message : batch) {
                     if (message.seq <= cursor) continue;
                     boolean filtered = ("info".equals(message.type) && !info)
-                            || (message.side != null && ((allies && "self".equals(message.side)
-                            && ("losses".equals(message.type) || "destroyed".equals(message.type)))
-                            || (!allies && "ally".equals(message.side))));
+                            || outsideScope(message.type, message.side, allies);
                     write(output, filtered ? control("cursor", "\"seq\":" + message.seq) : message.json);
                     cursor = message.seq;
                 }
@@ -257,6 +257,18 @@ final class RwxEventStream implements AutoCloseable {
         } catch (IOException | InterruptedException | RuntimeException ignored) {
             if (ignored instanceof InterruptedException) Thread.currentThread().interrupt();
         } finally { sockets.remove(socket); }
+    }
+
+    /**
+     * Default scope: discoveries (`new`) and own-side `info` are observations rather than faction
+     * events, so the `allies` flag never hides them; only `losses`/`destroyed` switch faction with
+     * it, and `damaged` always belongs to our own side. Without allies, ally-side combat records
+     * are dropped.
+     */
+    private static boolean outsideScope(String type, String side, boolean allies) {
+        if (side == null || "new".equals(type) || "info".equals(type)) return false;
+        boolean factionSwitch = "losses".equals(type) || "destroyed".equals(type);
+        return allies && factionSwitch ? "self".equals(side) : "ally".equals(side);
     }
 
     private String control(String kind, String fields) {

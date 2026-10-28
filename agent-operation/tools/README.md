@@ -9,7 +9,7 @@
 | 工具 | 环境 | 用途 |
 |---|---|---|
 | `rwx-cli.py` | Python 3.9+，跨平台 | 通用客户端，支持单次、批量、交互及持久标准流 |
-| `rwx-game-events-to-jsonl.py` | Python 3 | 订阅实时事件 Socket，只把 `update` 写入 JSONL |
+| `rwx-game-events-to-jsonl.py` | Python 3 | 订阅实时事件 Socket，只把 `update` 按类型写入两个 JSONL |
 | `rwx-cli.sh` | Bash + Python 3 | Python CLI 的 Bash 包装 |
 | `rwx-cli.ps1` / `rwx-cli-lib.ps1` | PowerShell 5.1+ / 7 | Windows 原生 .NET CLI 客户端 |
 | `screenshot.ps1` / `.bat` | Windows GUI | 游戏窗口截图，不支持 Headless |
@@ -223,8 +223,9 @@ RWX CLI 启动后，会额外开启一个**独立的本地事件 Socket**：
 | 监听地址 | `127.0.0.1` |
 | 就绪日志 | `RWX_EVENTS_READY` |
 | 端口文件 | `agent-operation/tmp/events-port` |
-| 默认输出 | `agent-operation/tmp/game-events.jsonl` |
-| 文件上限 | 最新 500 条记录 |
+| 观察日志 | `agent-operation/tmp/game-events-observe.jsonl`（`new`/`info`） |
+| 交战日志 | `agent-operation/tmp/game-events-combat.jsonl`（`damaged`/`destroyed`/`losses`） |
+| 文件上限 | 每个日志最新 500 条记录 |
 
 事件 Socket 不占用 CLI 命令端口。
 
@@ -248,25 +249,26 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-opera
 |---|---|
 | `--port-file` | 指定事件端口文件 |
 | `--port` | 直接指定事件端口 |
-| `--output` | 自定义 JSONL 输出文件 |
+| `--observe-output` | 自定义观察日志（`new`/`info`） |
+| `--combat-output` | 自定义交战日志（其余类型） |
 | `--info` | 增加信息事件 |
 | `--allies` | 切换友军击杀和损失 |
 
-默认订阅事件：`damaged,destroyed,losses,new`。
+默认订阅事件：`damaged,destroyed,losses,new`。默认订阅范围为 `info=false, allies=false`：`new`、`info` 始终保留我方与盟友记录（观察类事件不受阵营范围收窄），`damaged`、`destroyed`、`losses` 只订阅我方阵营。
 
 按 `Ctrl+C` 停止接收器。接收器只负责事件接收、转换和存储，**不判断事件重要性**。
 
 ### 4.2 日志与断线恢复
 
-接收到的协议消息先在本地做二次过滤，**只把 `kind` 为 `update` 的记录**转换为 JSONL，追加写入并立即 `flush`。`hello`、`event`、`remove`、`cursor` 及传输诊断（`gap`、`overflow`、`parse_error`）都不会进入文件；诊断信息只输出到 stderr。
+接收到的协议消息先在本地做二次过滤，**只把 `kind` 为 `update` 的记录**转换为 JSONL，追加写入并立即 `flush`，再按 `event.type` 分到两个日志：`new`/`info` 进观察日志，`damaged`/`destroyed`/`losses` 进交战日志。分开存放是为了让反复的重新发现（同一事件最多可产生上百次修订）挤不掉交战记录。`hello`、`event`、`remove`、`cursor` 及传输诊断（`gap`、`overflow`、`parse_error`）都不会进入文件；诊断信息只输出到 stderr。
 
 **接收器本地日志：**
 
-- 最多保存最新 500 条记录（均为 `update`）。
-- 超出上限后，重写文件并保留尾部 500 条。
-- 重启时扫描日志中的最后会话及序列号，自动请求续传。
+- 每个日志最多保存最新 500 条记录（均为 `update`）。
+- 超出上限后，重写该文件并保留尾部 500 条；若重写时目标文件被其他进程占用（Windows 上 `os.replace` 会失败），句柄仍会重新打开并继续追加，5 秒后自动重试，不再静默停写。
+- 重启时扫描两个日志中的最后会话及序列号，自动请求续传。
 - 已存在的重复序列不会再次追加。
-- 续传游标跟随**所有**序列号（含被过滤的记录），因此重连不会重放，也不会误报 `gap`；重启后游标取最后一条已存 `update` 的序列号，其后的非 `update` 记录会被重新请求后再次丢弃。
+- 续传游标跟随**所有**序列号（含被过滤的记录），因此重连不会重放，也不会误报 `gap`；重启后游标取两个日志中最新的已存 `update` 序列号，其后的非 `update` 记录会被重新请求后再次丢弃。
 
 **游戏端缓存：**
 
@@ -294,6 +296,10 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py --port-file agent-opera
 | `gap` | 事件历史无法完整恢复（仅 stderr） |
 | `overflow` | 事件传输队列溢出（仅 stderr） |
 | `parse_error` | 接收器无法解析协议消息（仅 stderr） |
+
+**订阅范围：** `info` 决定是否发送 `info` 事件；`allies` 只切换 `destroyed` 与 `losses` 的阵营（友军而非我方），`damaged`、`new`、`info` 不会被它收窄。
+
+**合并窗口：** `new` 相邻发现间隔 ≤5 游戏秒合并为一段，同一单位 5 秒内反复出现只算一次，跨帧修订也用同一个 5 秒窗口；`losses` 的连续合并窗口仍是 3 游戏秒。
 
 **注意：** `update`、`remove` 是聚合维护操作，不能重复统计为新损失；`expired` 也不代表单位在该时刻被摧毁。
 

@@ -13,6 +13,11 @@ import static com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameTyp
 
 /** Pure filtering/aggregation/formatting over immutable occurrence-time snapshots. */
 final class RwxEventProcessor {
+    /** Adjacent discoveries chain into one run; the stream shares this window for revisions. */
+    static final int DISCOVERY_WINDOW_MILLIS = 5000;
+    /** Adjacent losses chain per victim type; untouched by the discovery window. */
+    static final int LOSS_WINDOW_MILLIS = 3000;
+
     private record Indexed(GameEvent event, int order) { }
     private record Line(int time, int order, EventType type, String description, List<GameEvent> contributors) {
         String text() {
@@ -63,13 +68,13 @@ final class RwxEventProcessor {
             if (event.type == EventType.LOSSES) {
                 String key = event.subject.teamId + "|" + event.subject.typeId;
                 Group group = losses.get(key);
-                if (group == null || (long) event.gameTimeMillis - group.lastTime > 3000) {
+                if (group == null || (long) event.gameTimeMillis - group.lastTime > LOSS_WINDOW_MILLIS) {
                     if (group != null) lines.add(lossLine(group));
                     group = new Group(row);
                     losses.put(key, group);
                 } else group.add(row);
             } else if (event.type == EventType.NEW) {
-                if (found == null || (long) event.gameTimeMillis - found.lastTime > 3000) {
+                if (found == null || (long) event.gameTimeMillis - found.lastTime > DISCOVERY_WINDOW_MILLIS) {
                     if (found != null) lines.add(newLine(found));
                     found = new Group(row);
                 } else found.add(row);

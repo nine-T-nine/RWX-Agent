@@ -132,6 +132,27 @@ class RwxEventStreamTest {
     }
 
     @Test
+    fun `a rediscovery after three seconds still revises the same aggregate`() {
+        withStream { portFile ->
+            Client(port(portFile)).use { client ->
+                client.kind()
+                val earlier = discovery(1000, 5)
+                RwxEventStream.publish(listOf(earlier), 1000)
+                val initial = client.message()
+                val id = initial["eventId"]!!.jsonPrimitive.long
+
+                // 4.5s later: outside the old three second window, inside the five second one.
+                val later = discovery(5500, 5, x = 600f, y = 800f)
+                RwxEventStream.publish(listOf(earlier, later), 5500)
+                val revised = client.message()
+                assertEquals("update", text(revised, "kind"))
+                assertEquals(id, revised["eventId"]!!.jsonPrimitive.long)
+                assertEquals(2, revised["revision"]!!.jsonPrimitive.int)
+            }
+        }
+    }
+
+    @Test
     fun `aggregate leaving the query window is removed and a later encounter gets a new id`() {
         withStream { portFile ->
             Client(port(portFile)).use { client ->
@@ -238,9 +259,10 @@ class RwxEventStreamTest {
         withStream { portFile ->
             val port = port(portFile)
             val first = discovery(1000, 1)
-            val second = discovery(5000, 2)
+            // Spaced beyond the five second discovery window so each one stays its own aggregate.
+            val second = discovery(7000, 2)
             RwxEventStream.publish(listOf(first), 1000)
-            RwxEventStream.publish(listOf(first, second), 5000)
+            RwxEventStream.publish(listOf(first, second), 7000)
             Client(port, after = 0).use { full ->
                 assertEquals("hello", full.kind())
                 assertEquals("event", full.kind())
@@ -248,8 +270,8 @@ class RwxEventStreamTest {
                 assertEquals("event", text(latest, "kind"))
                 Client(port, after = latest["seq"]!!.jsonPrimitive.int).use { tail ->
                     assertEquals("hello", tail.kind())
-                    val third = discovery(9000, 3)
-                    RwxEventStream.publish(listOf(first, second, third), 9000)
+                    val third = discovery(14_000, 3)
+                    RwxEventStream.publish(listOf(first, second, third), 14_000)
                     val next = tail.message()
                     assertEquals("event", text(next, "kind"))
                     assertNotEquals(latest["eventId"], next["eventId"])

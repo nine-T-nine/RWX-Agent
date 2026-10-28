@@ -4,6 +4,7 @@
 
 ## 当前快照
 
+- 2026-10-28：事件订阅按复盘需要重做三处：`new` 合并窗口 3s→5s（跨帧修订与 CLI 分组同一窗口，`losses` 仍 3s）；接收器把 `update` 按类型拆成两个各 500 条的日志（`game-events-observe.jsonl` = new/info，`game-events-combat.jsonl` = damaged/destroyed/losses）；默认订阅仍 `info=false, allies=false`，但 `new`/`info` 不再受 `allies` 收窄。同时修掉 `compact()` 在 `os.replace` 失败后句柄一直关闭、整局静默停写的问题（`HISTORY/task-024.md`）。
 - 2026-10-27：事件 JSONL 接收器加接收侧二次过滤，只落盘 `kind == "update"`；`hello`/`event`/`remove`/`cursor`/诊断不再进文件，诊断只走 stderr；续传游标仍跟住所有序列号。真实抓包 500 条回放验证存 181 条全为 `update`、重连 `after=930` 不重复（`HISTORY/task-023.md`）。
 - 2026-10-27：CLI `--stdio`、通信文档和基准工具完成；完整 26 套件 226 项通过，真实 Headless 暂停对局的三种通信方式及文档示例已验证，结果见 `HISTORY/task-021.md`。
 - 2026-10-27：清理 `agent-operation/tools`：删除旧版文件邮箱 `rwx-cli-daemon.ps1`、`__pycache__`、空 `tmp/`，并同步 README 与两个 ps1 的引用；`experimental_scripts/` 按用户要求保留（`HISTORY/task-020.md`）。
@@ -27,6 +28,7 @@
 
 ## 验证基线
 
+- 2026-10-28：完整 `:core:test` 26 套件、228 项、零失败；事件接收器 Python 单测 14 项通过；双日志分流与 `compact()` 失败自愈的端到端用例通过（`HISTORY/task-024.md`）。
 - 2026-10-27：接收器二次过滤用真实抓包（500 条：181 `update`/237 `cursor`/56 `event`/26 `remove`）回放验证：落盘 181 条且全为 `update`、序列与抓包一致；复用同一输出文件二次连接时 `after=930`、无重复（`agent-tmp` 临时脚本，验证后已删）。
 - 2026-10-27：完整 `:core:test` 26 套件、226 项、零失败（`help.md` 同步后复跑，`RwxHelpSectionsTest` 通过）。
 - 2026-10-27：完整 `:core:test :desktop:headlessArchive` 26 套件、224 项、零失败；真实 Headless 对局验证事件 JSONL 连续、续传不重复（`HISTORY/task-016.md`）。

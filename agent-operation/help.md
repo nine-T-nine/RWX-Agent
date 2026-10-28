@@ -399,7 +399,7 @@ It shares the event collector, cache and query handler with `game-state`; a quer
 | `destroyed` | we destroyed an enemy, or with `--allies` an ally did; de-duplicated by the enemy's real ID, keeping the earliest effective record in the window. |
 | `losses` | our losses, or an ally's with `--allies`; de-duplicated by ID, then grouped by team and loss type, with losses no more than 3 game seconds apart merged into a run. |
 | `info` | our unit creation, production, construction start/finish and upgrade start/finish; only stages that really happened are reported. |
-| `new` | enemies first or newly discovered in our vision; the latest discovery in the window is used for one ID, continuous visibility does not refresh it, and discoveries no more than 3 game seconds apart are merged. |
+| `new` | enemies first or newly discovered in our vision; the latest discovery in the window is used for one ID, continuous visibility does not refresh it, and discoveries no more than 5 game seconds apart are merged (one unit re-appearing within 5s counts once, and cross-frame revisions use the same 5-second window). |
 
 Each line is formatted as `[MM:SS][type] description`, using English names and text, with no heading, cursor or summary; with no matches the output is empty text. The raw cache keeps at most 180 game seconds and 1000 entries.
 
@@ -425,7 +425,9 @@ python agent-operation/tools/rwx-game-events-to-jsonl.py
 python agent-operation/tools/rwx-game-events-to-jsonl.py --info --allies
 ```
 
-The script applies a second filter on receipt and appends only `kind == "update"` records to `agent-operation/tmp/game-events.jsonl`, keeping the newest 500 (the tail is rewritten when that limit is exceeded); `hello`, `event`, `remove`, `cursor` and transport diagnostics are not stored, and diagnostics go to stderr instead. Press Ctrl+C to stop. Use `--port` or `--port-file` to choose an instance. Event types default to those of `game-events`; `--info` adds information events, and `--allies` switches kills and losses to the allied scope.
+The script applies a second filter on receipt — only `kind == "update"` records are stored — and splits them by event type into two rolling logs of 500 records each: `agent-operation/tmp/game-events-observe.jsonl` for `new` discoveries and `info`, and `agent-operation/tmp/game-events-combat.jsonl` for `damaged`, `destroyed` and `losses`. Keeping them apart stops routine re-discovery updates from pushing combat history out of its window. `hello`, `event`, `remove`, `cursor` and transport diagnostics are not stored; diagnostics go to stderr. Use `--observe-output` and `--combat-output` to place the two logs, and `--port` or `--port-file` to choose an instance; press Ctrl+C to stop.
+
+The default subscription is `info=false, allies=false`: `new` and `info` always keep both our own and allied records, because the faction scope never hides observations, while `damaged`, `destroyed` and `losses` stay on our own faction. `--info` adds information events and `--allies` switches kills and losses to allies.
 
 On disconnect the receiver reconnects from the last session and sequence number, following every sequence whether or not it was stored, so a reconnect neither replays nor reports a false gap; after a restart the resume point is the newest stored update. The transport cache keeps at most 180 game seconds and 1000 records. An out-of-range cursor or a queue overflow is reported as `gap` or `overflow` on stderr, with no guarantee of completion. A process restart creates a new session, and the old process's in-memory records cannot be recovered.
 
@@ -437,7 +439,7 @@ UTF-8 NDJSON: the client sends the following line followed by a newline:
 {"protocol":"rwx-events-v1","kind":"subscribe","session":null,"after":0,"info":false,"allies":false}
 ```
 
-The server replies with `hello` and then sends `event`, `update`, `remove`, `cursor`, `gap`, `overflow` or `reset`. `seq` is the transport sequence; `eventId` and `revision` identify aggregate revisions; `remove.reason` is `replaced` or `expired`. `event.type`, `event.description`, `gameTimeMillis` and `tick` come from real events, while `session`, sequences, revisions and gap messages are transport metadata. Aggregate consumers must apply revisions and removals by `eventId` and must not count an `update` as a new event.
+The server replies with `hello` and then sends `event`, `update`, `remove`, `cursor`, `gap`, `overflow` or `reset`. `seq` is the transport sequence; `eventId` and `revision` identify aggregate revisions; `remove.reason` is `replaced` or `expired`. `event.type`, `event.description`, `gameTimeMillis` and `tick` come from real events, while `session`, sequences, revisions and gap messages are transport metadata. `allies` only governs `destroyed` and `losses` (allied instead of our own); `damaged`, `new` and `info` are never narrowed by it, and `info` alone decides whether information events are delivered. Aggregate consumers must apply revisions and removals by `eventId` and must not count an `update` as a new event.
 
 ### 6.2 Replay
 
