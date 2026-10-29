@@ -486,6 +486,8 @@ Start the game and command endpoint with `:desktop:rwxCliRun`, or `:desktop:run 
 
 Pure headless distribution: `:desktop:headlessArchive`, producing `desktop/build/distributions/rwx-headless.tar.gz`; on Linux run `bash bin/rwx-headless`. See [SERVER.md](SERVER.md) for deployment.
 
+`--evaluate` turns on every built-in evaluation program at once (engine evidence collection, automatic command recording, the event stream) and makes each match start recording automatically. Without it all of those stay off, so a normal match is never slowed by sampling or socket recording. Evidence goes to `evaluate/output/events-live` by default; override with `-Drwx.evaluate.dir=<directory>`.
+
 Reuse a persistent connection throughout the match: prefer `rwx-cli.py --stdio` when the host can retain the process and its streams, or use persistent TCP if the host already supports it. Otherwise use a one-shot or batch client. See [START.md](START.md) for startup and starting a match; see [tools/README.md](tools/README.md) for other clients and the protocol.
 
 ### 8.2 Some conventions

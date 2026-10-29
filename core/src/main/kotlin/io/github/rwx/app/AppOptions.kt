@@ -1,5 +1,6 @@
 package io.github.rwx.app
 
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxCliTool
 import io.github.rwx.ui.*
 import io.github.rwx.ui.model.LevelSelectMode
 import io.github.rwx.ui.model.SettingsPage
@@ -20,10 +21,23 @@ data class AppOptions(
     val backendId: String? = null,
     val autoReplay: String? = null,
     val rwxCliEnabled: Boolean = false,
+    val evaluate: Boolean = false,
     val headless: Boolean = false,
     val dataDir: String? = null,
     val cliPortFile: String? = null,
 ) {
+    /**
+     * `--evaluate` turns the built-in instrumentation on for one measured match: engine evidence collection for the
+     * second-round detectors and, through [rwxCliEnabled], the CLI command recorder. Normal play keeps every hook off,
+     * because per-frame sampling and socket recording cost frames. An explicit `-Drwx.evaluate.dir` still wins.
+     */
+    fun applyEvaluationDefaults() {
+        if (!evaluate || System.getProperty(EVALUATE_DIR_PROPERTY) != null) return
+        val directory = RwxCliTool.repoRoot().resolve(EVALUATE_EVIDENCE_DIR)
+        System.setProperty(EVALUATE_DIR_PROPERTY, directory.toString())
+        println("RWX_EVALUATION enabled evidence=$directory")
+    }
+
     companion object {
         private const val SCREEN_PREFIX = "--screen="
         private const val COLOR_SCHEME_PREFIX = "--color-scheme="
@@ -39,6 +53,9 @@ data class AppOptions(
         private const val BACKEND_PREFIX = "--render-backend="
         private const val AUTO_REPLAY_PREFIX = "--auto-replay="
         private const val RWX_CLI_ARG = "--rwx-cli"
+        private const val EVALUATE_ARG = "--evaluate"
+        private const val EVALUATE_DIR_PROPERTY = "rwx.evaluate.dir"
+        private const val EVALUATE_EVIDENCE_DIR = "evaluate/output/events-live"
 
         private val screensByArgument = mapOf(
             "main-menu" to AppScreen.MainMenu,
@@ -89,6 +106,7 @@ data class AppOptions(
             var rendererId: String? = null
             var autoReplay: String? = null
             var rwxCliEnabled = false
+            var evaluate = false
             var headless = false
             var dataDir: String? = null
             var cliPortFile: String? = null
@@ -135,6 +153,7 @@ data class AppOptions(
                     }
 
                     arg == RWX_CLI_ARG -> rwxCliEnabled = true
+                    arg == EVALUATE_ARG -> evaluate = true
                     arg == "--headless" -> headless = true
                     arg.startsWith("--data-dir=") -> dataDir = arg.substringAfter('=').also { require(it.isNotBlank()) }
                     arg.startsWith("--cli-port-file=") -> cliPortFile = arg.substringAfter('=').also { require(it.isNotBlank()) }
@@ -158,7 +177,8 @@ data class AppOptions(
                 noSteam = noSteam,
                 backendId = rendererId,
                 autoReplay = autoReplay,
-                rwxCliEnabled = rwxCliEnabled || headless,
+                rwxCliEnabled = rwxCliEnabled || evaluate || headless,
+                evaluate = evaluate,
                 headless = headless,
                 dataDir = dataDir,
                 cliPortFile = cliPortFile,

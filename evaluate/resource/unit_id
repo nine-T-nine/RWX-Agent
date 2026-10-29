@@ -1,0 +1,136 @@
+# RWX 单位 ID 表（unit_id）
+#
+# 版本：本表对应仓库当前源码（assets/units + UnitTypeEnum.java），alias 列保留被覆盖的旧版 id。
+#
+# 数据来源（全部取自源码原文，未做单位换算或估计）：
+#   assets/units/**/*.ini ........................ [core] name / price / displayLocaleKey / displayText /
+#                                                   isBuilding / builtFrom_N_name / canBuild_N / action_*_convertTo
+#   core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java ... 内置单位 id 与 c() 价格
+#   core/src/main/java/com/corrodinggames/rts/game/units/**                     内置工厂/建造者的生产与建造列表
+#   assets/translations/Strings.properties ........ 英文名 units.<displayLocaleKey|id>.name
+#   assets/translations/Strings_zh_cn.properties ... 中文名 units.<displayLocaleKey|id>.name
+#
+# 列：id | alias | en | zh | cost | source | upgrade | file | note
+#   id      引擎内部 id：[core] name；内置单位（无 ini 覆盖）为 Java 枚举名
+#   alias   同一单位的其他 id 写法：被覆盖的旧 Java 枚举名（overrideAndReplace）与 ini 文件名
+#   en/zh   英文名 / 中文名；缺译文时 en 回退为内部 id、zh 记 -
+#   cost    建造价格，credits（不含升级或形态切换的费用）
+#   source  能生产该单位的单位/建筑（内置工厂 + ini 的 builtFrom/canBuild 合并结果），多个用逗号分隔
+#   upgrade 形态/升级关系：← 表示由谁转换而来，→ 表示可转换到的目标（括号内为动作价格）
+#   file    定义文件（相对仓库根，正斜杠）
+#   note    内部单位、隐藏形态、虫族阵营、模块化蜘蛛部件、无生产来源等标注：
+#           internal=内部/不可玩单位，hidden-form=形态切换用的隐藏单位，unused=ini 注释说明未启用，
+#           bug-faction=经典虫族单位，modular-spider=模块化蜘蛛部件，starting-*=开局自带，
+#           spawned-by:X=由单位/弹体生成，no-producer=源码里没有工厂或建造者能直接生产它
+#           （仍可能通过升级/变形、地图放置或触发器获得，见 upgrade 列）。
+#
+aaBeamGunship | aa_beam_gunship | AA Beam Gunship | AA激光射束战机 | 6000 | airFactory | <-aaBeamGunship_afterburn; ->aaBeamGunship_afterburn | assets/units/aa_beam_gunship/aa_beam_gunship.ini | -
+aaBeamGunship_afterburn | aa_beam_gunship_afterburn,aaBeamGunship | AA Beam Gunship | AA激光射束战机 | 6000 | - | <-aaBeamGunship; ->aaBeamGunship | assets/units/aa_beam_gunship/aa_beam_gunship_afterburn.ini | hidden-form
+amphibiousJet | - | Amphibious Jet | 两栖喷气机 | 2000 | airFactory,combatEngineer | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+attackSubmarine | - | Attack Submarine | 潜水艇 | 800 | seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+battleShip | - | Battle Ship | 战列舰 | 1500 | seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+bomber | - | Bomber | 轰炸机 | 4000 | airFactory,experimentalSpider,modularSpider | - | assets/units/bomber/bomber.ini | -
+bugBee | bug_bee | bugBee | - | 700 | bugNest | - | assets/units/classic_bugs/bug_bee/bug_bee.ini | bug-faction
+bugFly | bug_fly | bugFly | - | 400 | bugNest | - | assets/units/classic_bugs/bug_fly/bug_fly.ini | bug-faction
+bugGeneratorN | - | Generator | - | 4000 | - | ->bugGeneratorNT2(16000) | assets/units/bug_base/bug_generator/bug_generator.ini | bug-faction,no-producer
+bugGeneratorNT2 | - | Generator | - | 16000 | - | <-bugGeneratorN | assets/units/bug_base/bug_generator/bug_generatorT2.ini | bug-faction,no-producer
+bugGeneratorT2 | - | Generator | - | 2000 | - | <-bugGenerator | assets/units/classic_bugs/bug_generator/bug_generatorT2.ini | bug-faction,no-producer
+bugMelee | bug_melee | bugMelee | - | 300 | bugNest | - | assets/units/classic_bugs/bug_melee/bug_melee.ini | bug-faction
+bugMeleeLarge | bug_melee_large | bugMeleeLarge | - | 1200 | - | - | assets/units/classic_bugs/bug_melee/bug_melee_large.ini | bug-faction,no-producer
+bugMeleeSmall | bug_melee_small | bugMeleeSmall | - | 200 | - | - | assets/units/classic_bugs/bug_melee/bug_melee_small.ini | bug-faction,no-producer
+bugMeleeT31 | bug_melee_t31 | Killer alpha | - | 21000 | - | - | assets/units/bug_melee/bug_melee_t31.ini | bug-faction,no-producer
+bugPickup | bug_pickup | bugPickup | - | 600 | bugNest | - | assets/units/classic_bugs/bugs/bug_pickup.ini | bug-faction
+bugRanged | bug_ranged | bugRanged | - | 650 | bugNest | - | assets/units/classic_bugs/bug_ranged/bug_ranged.ini | bug-faction
+bugRangedT2 | bug_ranged_t2 | bugRangedT2 | - | 7000 | bugNest | - | assets/units/classic_bugs/bugs_t2/bug_ranged_t2.ini | bug-faction
+bugSpore | bug_spore | bugSpore | - | 100 | bugNest | - | assets/units/classic_bugs/bug_spore/bug_spore.ini | bug-faction
+bugWasp | bug_wasp | bugWasp | - | 800 | bugNest | - | assets/units/classic_bugs/bugs/bug_wasp.ini | bug-faction
+builder | - | Builder | 建造者 | 500 | combatEngineer,commandCenter,experimentalGunship,experimentalSpider,landFactory,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | starting-unit
+builderShip | - | Builder Ship | 海上建造者 | 500 | mechEngineer,modularSpider,seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+c_amphibiousJet | amphibious_jet | c_amphibiousJet | - | 1800 | - | <-c_amphibiousJet_underwater; ->c_amphibiousJet_underwater(0) | assets/units/amphibious_jet/amphibious_jet.ini | unused
+c_amphibiousJet_transition | amphibious_jet_transition | c_amphibiousJet_transition | - | 1800 | - | - | assets/units/amphibious_jet/amphibious_jet_transition.ini | hidden-form,unused
+c_amphibiousJet_underwater | amphibious_jet_underwater | c_amphibiousJet_underwater | - | 1800 | - | <-c_amphibiousJet; ->c_amphibiousJet(0) | assets/units/amphibious_jet/amphibious_jet_underwater.ini | hidden-form,unused
+c_artillery | artillery | Artillery | 自行火炮 | 900 | experimentalSpider,landFactory,modularSpider | - | assets/units/tanks/artillery.ini | -
+c_experimentalTank | experimental_tank,experimentalTank | Experimental Tank | 实验坦克 | 14000 | experimentalLandFactory | - | assets/units/experimental_tank/experimental_tank.ini | -
+c_helicopter | helicopter | Helicopter | 直升机 | 700 | airFactory | - | assets/units/helicopter/helicopter.ini | -
+c_interceptor | airShip,interceptor | Interceptor | 拦截机 | 600 | airFactory | - | assets/units/interceptor/interceptor.ini | -
+c_laserTank | laser_tank,laserTank | Laser Tank | 激光坦克 | 1600 | landFactory | - | assets/units/laser_tank/laser_tank.ini | -
+c_mammothTank | mammoth_tank,mammothTank | Mammoth Tank | 猛犸坦克 | 3900 | landFactory | - | assets/units/mammoth_tank/mammoth_tank.ini | -
+c_tank | tank | Tank | 坦克 | 350 | landFactory | - | assets/units/tanks/tank.ini | -
+combatEngineer | combat_engineer | Combat Engineer | 战斗工程师 | 3500 | experimentalGunship,experimentalLandFactory,experimentalSpider,landFactory,modularSpider | - | assets/units/combat_engineer/combat_engineer.ini | -
+custom_tank | - | Test Tank | - | 350 | - | - | assets/units/test_tank/tank.ini | internal
+damagingBorder | - | damagingBorder | - | 1000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+dropship | - | Dropship | 运输机 | 800 | airFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+dummyNonUnitWithTeam | - | dummyNonUnitWithTeam | - | 9999 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+editorOrBuilder | - | editorOrBuilder | - | 500 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+experiementalCarrier | Experiemental_carrier | Carrier | 航空母舰 | 30000 | seaFactory | - | assets/units/experimental_carrier/Experiemental_carrier.ini | -
+experimentalDropship | experimental_dropship | Flying Fortress | 飞行堡垒 | 30000 | experimentalLandFactory | - | assets/units/experimental_dropship/experimental_dropship.ini | -
+experimentalGunship | experimental_gunship | Support Hovertank | 实验悬浮型气垫船 | 140000 | - | <-experimentalGunshipLanded; ->experimentalGunshipLanded(0) | assets/units/experimental_gunship/experimental_gunship.ini | no-producer
+experimentalGunshipLanded | experimental_gunship_landed | experimentalGunshipLanded | 实验悬浮型气垫船 | 140000 | - | <-experimentalGunship; ->experimentalGunship(0) | assets/units/experimental_gunship/experimental_gunship_landed.ini | hidden-form
+experimentalHoverTank | - | Shielded Hovertank | 概念型悬浮坦克 | 21000 | experimentalLandFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+experimentalSpider | experimental_spider | Experimental Spider | 实验型战斗蜘蛛 | 70000 | experimentalLandFactory | - | assets/units/experimental_spider/experimental_spider.ini | -
+fireBee | fire_bee | Fire Bee | 火蜂战机 | 12000 | experimentalLandFactory | - | assets/units/fire_bee/fire_bee.ini | -
+fogRevealer | - | system_fogRevealer | system_fogRevealer | 1000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+gunBoat | - | Gun Boat | 机枪艇 | 300 | seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+gunShip | - | Gun Ship | 武装直升机 | 800 | airFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+heavyAAShip | heavy_aa_ship | Heavy AA Ship | 重型防空舰 | 3500 | seaFactory | - | assets/units/heavy_aa_ship/heavy_aa_ship.ini | -
+heavyArtillery | heavy_artillery | Heavy Artillery | 重型火炮 | 3100 | landFactory | - | assets/units/tanks/heavy_artillery.ini | -
+heavyBattleship | heavy_battleship | Heavy Battleship | 重型战舰 | 6000 | seaFactory | - | assets/units/heavy_battleship/heavy_battleship.ini | -
+heavyHoverTank | - | Heavy Hovertank | 重型气垫坦克 | 1000 | experimentalGunship,experimentalSpider,landFactory,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+heavyInterceptor | - | Heavy Interceptor | 重型拦截机 | 1200 | airFactory | - | assets/units/heavy_interceptor/heavyInterceptor.ini | -
+heavyMissileShip | heavy_missile_ship | Heavy Missile Ship | 重型导弹舰 | 18000 | seaFactory | - | assets/units/heavy_missile_ship/heavy_missile_ship.ini | -
+heavySub | heavy_sub | Heavy Sub | 重型潜艇 | 5500 | seaFactory | - | assets/units/heavy_sub/heavy_sub.ini | -
+heavyTank | - | Heavy Tank | 重型坦克 | 800 | combatEngineer,experimentalSpider,landFactory,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+hovercraft | - | Landing Craft | 登陆艇 | 600 | landFactory,modularSpider,seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+hoverTank | - | Hovertank | 悬浮坦克 | 450 | experimentalGunship,landFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+ladybug | - | Ladybug | 瓢虫 | 400 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | no-producer
+lightGunship | light_gunship | Light Gun Ship | 轻型武装直升机 | 250 | airFactory | - | assets/units/light_gunship/light_gunship.ini | -
+lightSub | light_sub | Underwater Probe | 水下探测器 | 450 | seaFactory | - | assets/units/light_sub/light_sub.ini | -
+mechArtillery | mech_artillery | Artillery Mech | 火炮机甲 | 1400 | mechFactory,mechFactoryT2 | - | assets/units/mechs_large/mech_artillery.ini | -
+mechBunker | mech_bunker | Mobile Turret | 移动炮塔 | 4500 | mechFactory,mechFactoryT2 | <-mechBunkerDeployed; ->mechBunkerDeployed(0) | assets/units/mechs_large/mech_bunker.ini | -
+mechEngineer | mech_engineer | Mech Engineer | 机械师 | 5000 | mechFactoryT2 | - | assets/units/mech_engineer/mech_engineer.ini | -
+mechFlame | mech_flame | Flame Mech | 喷火机甲 | 12000 | mechFactoryT2 | - | assets/units/mechs_large/mech_flame.ini | -
+mechFlyingLanded | mech_flying_landed | mechFlyingLanded | - | 8000 | - | <-mechFlyingTakeoff; ->mechFlyingTakeoff(0) | assets/units/mechs_large/mech_flying_landed.ini | hidden-form
+mechFlyingTakeoff | mech_flying_takeoff | mechFlyingTakeoff | - | 8000 | - | <-mechFlyingLanded; ->mechFlyingLanded(0) | assets/units/mechs_large/mech_flying_takeoff.ini | hidden-form
+mechGun | mech_gun | Basic Mech | 基础机甲 | 600 | mechEngineer | - | assets/units/mechs_small/mech_gun.ini | -
+mechHeavyMissile | mech_heavyMissile | Heavy Anti-Air Mech | 重型防空机械装甲 | 8500 | mechFactoryT2 | - | assets/units/mechs_large/mech_heavyMissile.ini | -
+mechLaser | mech_laser | Plasma Mech | 等离子机甲 | 7000 | mechFactoryT2 | - | assets/units/mechs_large/mech_laser.ini | -
+mechLightning | mech_lightning | Tesla Mech | 特斯拉机甲 | 5200 | mechFactoryT2 | - | assets/units/mechs_large/mech_lightning.ini | -
+mechMinigun | mech_minigun | Minigun Mech | 机枪机甲 | 5000 | mechFactoryT2 | - | assets/units/mechs_large/mech_minigun.ini | -
+mechMissile | mech_missile | Anti-Air Mech | 防空机甲 | 900 | mechEngineer | - | assets/units/mechs_small/mech_missile.ini | -
+megaTank | - | Mega Tank | 超级坦克 | 800 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | no-producer
+missileAirship | missile_airship | Missile Airship | 导弹飞艇 | 3900 | airFactory | - | assets/units/missile_airship/missile_airship.ini | -
+missileShip | - | Missile Ship | 导弹舰 | 900 | seaFactory | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+missileTank | missile_tank | AA Missile Tank | 防空导弹坦克 | 2500 | landFactory | - | assets/units/missile_tank/missile_tank.ini | -
+missing | - | missing | - | 1000 | - | - | assets/units/missing_unit/missing.ini | internal
+modularSpider | modular_spider | Modular Spider | 模块化蜘蛛 | 90000 | - | - | assets/units/modular_spider/modular_spider.ini | modular-spider
+modularSpider_antiair | antiair | Sam T1 | 萨姆防空炮T1 | 1000 | - | <-modularSpider_emptySlot; ->modularSpider_antiairFlak(10000); ->modularSpider_antiairT2(16000) | assets/units/modular_spider/antiair.ini | modular-spider
+modularSpider_antiairFlak | antiairFlak | Flak T2 | 高射炮T2 | 12000 | - | <-modularSpider_antiair | assets/units/modular_spider/antiairFlak.ini | modular-spider
+modularSpider_antiairT2 | antiairT2 | Sam T2 | 萨姆防空炮T2 | 18000 | - | <-modularSpider_antiair | assets/units/modular_spider/antiairT2.ini | modular-spider
+modularSpider_antinuke | antinuke | Anti-Nuke | 反核装置 | 7000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/antinuke.ini | modular-spider
+modularSpider_artillery | - | Artillery T1 | 火炮装置T1 | 5000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/artillery.ini | modular-spider
+modularSpider_blink | blink | Blink | 瞬移模块 | 15000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/blink.ini | modular-spider
+modularSpider_emptySlot | emptySlot | Empty | 闲置中... | 1000 | - | ->modularSpider_antiair(2000); ->modularSpider_antinuke(7000); ->modularSpider_artillery(5000); ->modularSpider_blink(15000); ->modularSpider_fabricator(3000); ->modularSpider_gunturret(2000); ->modularSpider_laserdefense(3000); ->modularSpider_lightning(6000); ->modularSpider_shieldGen(6000); ->modularSpider_smallgunturret(700) | assets/units/modular_spider/emptySlot.ini | modular-spider
+modularSpider_fabricator | - | Fabricator T1 | 资源制造装置T1 | 3000 | - | <-modularSpider_emptySlot; ->modularSpider_fabricatorT2(5000) | assets/units/modular_spider/fabricator.ini | modular-spider
+modularSpider_fabricatorT2 | - | Fabricator T2 | 资源制造装置T2 | 7000 | - | <-modularSpider_fabricator | assets/units/modular_spider/fabricatorT2.ini | modular-spider
+modularSpider_gunturret | gunturret | Gun T1 | 机枪T1 | 2000 | - | <-modularSpider_emptySlot; ->modularSpider_gunturretT2(16000) | assets/units/modular_spider/gunturret.ini | modular-spider
+modularSpider_gunturretT2 | gunturretT2 | Gun T2 | 机枪T2 | 18000 | - | <-modularSpider_gunturret | assets/units/modular_spider/gunturretT2.ini | modular-spider
+modularSpider_laserdefense | laser_defense | Laser Defense | 激光防御装置 | 3000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/laser_defense.ini | modular-spider
+modularSpider_lightning | lightning | Lightning T1 | 闪电炮塔T1 | 6000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/lightning.ini | modular-spider
+modularSpider_nonEmpty | modular_spider_nonEmpty,modularSpider | Modular Spider | 模块化蜘蛛 | 90000 | - | - | assets/units/modular_spider/modular_spider_nonEmpty.ini | internal,modular-spider
+modularSpider_shieldGen | shieldGen | Shield Gen | 护盾核心 | 6000 | - | <-modularSpider_emptySlot | assets/units/modular_spider/shieldGen.ini | modular-spider
+modularSpider_smallgunturret | smallgun | Plasma T1 | 等离子装置T1 | 700 | - | <-modularSpider_emptySlot; ->modularSpider_smallgunturretT2(3000) | assets/units/modular_spider/smallgun.ini | modular-spider
+modularSpider_smallgunturretT2 | smallgunT2 | Plasma T2 | 等离子装置T2 | 3700 | - | <-modularSpider_smallgunturret | assets/units/modular_spider/smallgunT2.ini | modular-spider
+modularSpider_speed | speed | Speed | 速度模块 | 6000 | - | - | assets/units/modular_spider/speed.ini | modular-spider
+modularSpider_speedIncomplete | modularSpider_speed,speed_incomplete | Speed | 速度模块 | 6000 | - | - | assets/units/modular_spider/speed_incomplete.ini | internal,modular-spider
+nautilusSubmarine | nautilus | Nautilus | 鹦鹉螺号 | 18000 | seaFactory | ->nautilusSubmarineLand; ->nautilusSubmarineSurface(0) | assets/units/nautilus/nautilus.ini | -
+nautilusSubmarineLand | nautilusLand,nautilusSubmarine | Nautilus | 鹦鹉螺号 | 18000 | experimentalLandFactory | <-nautilusSubmarine; ->nautilusSubmarineSurface | assets/units/nautilus/nautilusLand.ini | hidden-form
+nautilusSubmarineSurface | nautilusSurface | Nautilus | 鹦鹉螺号 | 18000 | - | <-nautilusSubmarine; <-nautilusSubmarineLand | assets/units/nautilus/nautilusSurface.ini | hidden-form
+plasmaTank | plasma_tank | Plasma Tank | 等离子坦克 | 1000 | landFactory | - | assets/units/plasma_tank/plasma_tank.ini | -
+robotCrab | - | Scout bot | - | 700 | - | <-robotCrabWater; ->robotCrabWater | assets/units/nautilus/robotCrab/robotCrab.ini | spawned-by:nautilusSubmarine
+robotCrabWater | - | Scout bot | - | 700 | - | <-robotCrab; ->robotCrab | assets/units/nautilus/robotCrab/robotCrabWater.ini | hidden-form
+scout | - | Scout | 侦察者 | 700 | commandCenter,experimentalGunship,experimentalSpider,landFactory,modularSpider | - | assets/units/scout/scout.ini | -
+spreadingFire | - | fire | 火 | 1000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+spyDrone | spy_drone | Spy Drone | 间谍无人机 | 1500 | airFactory | - | assets/units/spy_drone/spy_drone.ini | -
+tankDestroyer | - | Tank Destroyer | 坦克杀手 | 800 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | no-producer
+tree | - | Tree | 树 | 0 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+zoneMarker | - | zoneMarker | - | 1000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal

@@ -260,4 +260,33 @@ class RwxCliCommandCaptureTest {
         assertTrue(statistics.contains("rwx-game-order-attack-mode\t2"), statistics)
         assertTrue(statistics.contains("命令总数：9"), statistics)
     }
+
+    @Test fun `command recording stays off unless evaluation is enabled`() = withDirectory { directory ->
+        withProperties(mapOf("rwx.cli.recordingDir" to null, "rwx.evaluate.dir" to null)) {
+            RwxCliCommandCapture.open(directory, 1).close()
+            val files = Files.list(directory).use { stream -> stream.map { it.fileName.toString() }.toList() }
+            assertTrue(files.isEmpty(), files.toString())
+        }
+    }
+
+    @Test fun `evaluation mode records commands without an explicit directory`() = withDirectory { directory ->
+        withProperties(mapOf("rwx.cli.recordingDir" to null, "rwx.evaluate.dir" to directory.resolve("evidence").toString())) {
+            RwxCliCommandCapture.open(directory, 1).close()
+            val recorded = directory.resolve("evaluate/output")
+            val files = Files.list(recorded).use { stream -> stream.map { it.fileName.toString() }.toList() }
+            assertTrue(files.any { it.startsWith("commands-lobby-") && it.endsWith(".txt") && !it.endsWith("-stats.txt") }, files.toString())
+        }
+    }
+
+    private fun withProperties(values: Map<String, String?>, block: () -> Unit) {
+        val previous = values.keys.associateWith { System.getProperty(it) }
+        try {
+            values.forEach { (key, value) -> if (value == null) System.clearProperty(key) else System.setProperty(key, value) }
+            block()
+        } finally {
+            previous.forEach { (key, value) ->
+                if (value == null) System.clearProperty(key) else System.setProperty(key, value)
+            }
+        }
+    }
 }

@@ -2,12 +2,14 @@
 
 [`CommandRecorder.java`](CommandRecorder.java) 从游戏的本机 CLI Socket 收包入口记录完整命令，在 `evaluate/output/` 自动生成 UTF-8 文本日志和统计文件。重新编译并启动游戏即可使用，无需替换发送命令的客户端。
 
+录制只在评测模式开启：启动参数加 `--evaluate`（等价于 `-Drwx.evaluate.dir=…`），或显式给出 `-Drwx.cli.recordingDir=<目录>`。普通对局即使开着 CLI 也不录制，避免把每条收包复制到磁盘拖慢帧率。
+
 ## 获取输出
 
 ```powershell
-.\gradlew.bat :desktop:rwxCliRun
-# 或无窗口运行：
-.\gradlew.bat :desktop:run '--args=--headless --no-steam'
+.\gradlew.bat :desktop:run '--args=--evaluate'
+# 无窗口评测：
+.\gradlew.bat :desktop:run '--args=--evaluate --headless --no-steam'
 ```
 
 启动日志的 `RWX_CLI_COMMAND_RECORDING` 行给出两个文件的绝对路径。默认在仓库的 `evaluate/output/` 中，每个监听实例独立生成：

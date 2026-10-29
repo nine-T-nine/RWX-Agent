@@ -1,0 +1,73 @@
+# RWX 建筑 ID 表（building_id）
+#
+# 版本：本表对应仓库当前源码（assets/units + UnitTypeEnum.java），alias 列保留被覆盖的旧版 id。
+#
+# 数据来源（全部取自源码原文，未做单位换算或估计）：
+#   assets/units/**/*.ini ........................ [core] name / price / displayLocaleKey / displayText /
+#                                                   isBuilding / builtFrom_N_name / canBuild_N / action_*_convertTo
+#   core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java ... 内置单位 id 与 c() 价格
+#   core/src/main/java/com/corrodinggames/rts/game/units/**                     内置工厂/建造者的生产与建造列表
+#   assets/translations/Strings.properties ........ 英文名 units.<displayLocaleKey|id>.name
+#   assets/translations/Strings_zh_cn.properties ... 中文名 units.<displayLocaleKey|id>.name
+#
+# 列：id | alias | en | zh | cost | source | upgrade | file | note
+#   id      引擎内部 id：[core] name；内置单位（无 ini 覆盖）为 Java 枚举名
+#   alias   同一单位的其他 id 写法：被覆盖的旧 Java 枚举名（overrideAndReplace）与 ini 文件名
+#   en/zh   英文名 / 中文名；缺译文时 en 回退为内部 id、zh 记 -
+#   cost    建造价格，credits（不含升级或形态切换的费用）
+#   source  能生产该单位的单位/建筑（内置工厂 + ini 的 builtFrom/canBuild 合并结果），多个用逗号分隔
+#   upgrade 形态/升级关系：← 表示由谁转换而来，→ 表示可转换到的目标（括号内为动作价格）
+#   file    定义文件（相对仓库根，正斜杠）
+#   note    内部单位、隐藏形态、虫族阵营、模块化蜘蛛部件、无生产来源等标注：
+#           internal=内部/不可玩单位，hidden-form=形态切换用的隐藏单位，unused=ini 注释说明未启用，
+#           bug-faction=经典虫族单位，modular-spider=模块化蜘蛛部件，starting-*=开局自带，
+#           spawned-by:X=由单位/弹体生成，no-producer=源码里没有工厂或建造者能直接生产它
+#           （仍可能通过升级/变形、地图放置或触发器获得，见 upgrade 列）。
+#
+airFactory | - | Air Factory | 空军基地 | 1000 | builder,combatEngineer,experimentalSpider,mechEngineer,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+antiAirTurretFlak | turret_antiair_flakgun | Anti-air Flak | T2 - 高射炮 | 4600 | - | <-c_antiAirTurret | assets/units/turrets/turret_antiair_flakgun.ini | no-producer
+antiNukeLauncherC | antinuke_launcher,AntiNukeLaucher | Anti-Nuke Defence | 反核防御 | 15000 | builder,combatEngineer,mechEngineer | - | assets/units/nukes/antinuke_launcher.ini | -
+bugExtractor | bug_extractor | bugExtractor | - | 1200 | - | ->bugExtractorT2(1000) | assets/units/classic_bugs/bug_extractor/bug_extractor.ini | bug-faction,no-producer
+bugExtractorT2 | bug_extractorT2 | bugExtractorT2 | - | 2000 | - | <-bugExtractor | assets/units/classic_bugs/bug_extractor/bug_extractorT2.ini | bug-faction,no-producer
+bugGenerator | - | bugGenerator | - | 1000 | - | ->bugGeneratorT2(1400) | assets/units/classic_bugs/bug_generator/bug_generator.ini | bug-faction,no-producer
+bugNest | bug_nest | bugNest | - | 600 | - | - | assets/units/classic_bugs/bug_nest/bug_nest.ini | bug-faction,no-producer
+bugTurret | bug_turret | bugTurret | - | 1000 | - | - | assets/units/classic_bugs/bug_turret/bug_turret.ini | bug-faction,no-producer
+c_antiAirTurret | antiAirTurret,turret_antiair | Anti-air Turret | 防空炮塔 | 600 | builder,combatEngineer,experimentalGunship,experimentalSpider,mechEngineer,modularSpider | ->antiAirTurretFlak(4000); ->c_antiAirTurretT2(1200) | assets/units/turrets/turret_antiair.ini | -
+c_antiAirTurretT2 | antiAirTurretT2,turret_antiair_t2 | Anti-air T2 | T2 - 防空炮塔 | 1800 | experimentalGunship | <-c_antiAirTurret; ->c_antiAirTurretT3(11000) | assets/units/turrets/turret_antiair_t2.ini | -
+c_antiAirTurretT3 | antiAirTurretT3,turret_antiair_t3 | Anti-air T3 | T3 - 防空炮塔 | 12800 | - | <-c_antiAirTurretT2 | assets/units/turrets/turret_antiair_t3.ini | no-producer
+c_turret_t1 | turret,turret_t1 | Turret | 炮塔 | 500 | builder,combatEngineer,experimentalGunship,experimentalSpider,mechEngineer,modularSpider | ->c_turret_t1_artillery(1600); ->c_turret_t1_lightning(2200); ->c_turret_t2_flame(700); ->c_turret_t2_gun(1000) | assets/units/turrets/turret_t1.ini | -
+c_turret_t1_artillery | turret_artillery,turret_t1_artillery | Artillery | 火炮 | 2100 | experimentalGunship,experimentalSpider,modularSpider | <-c_turret_t1; ->c_turret_t2_artillery(9000) | assets/units/turrets/turret_t1_artillery.ini | -
+c_turret_t1_lightning | turret_lightning,turret_t1_lightning | Lightning | 闪电炮塔 | 2700 | combatEngineer | <-c_turret_t1; ->c_turret_t2_lightning(8000) | assets/units/turrets/turret_t1_lightning.ini | -
+c_turret_t2_artillery | turret_artilleryT2,turret_t2_artillery | Artillery T2 | 火炮 T2 | 11100 | - | <-c_turret_t1_artillery | assets/units/turrets/turret_t2_artillery.ini | no-producer
+c_turret_t2_flame | turret_flamethrower,turret_t2_flame | Flamethrower | 火焰喷射器 | 1200 | - | <-c_turret_t1 | assets/units/turrets/turret_t2_flame.ini | no-producer
+c_turret_t2_gun | turret_t2_gun,turretT2 | Turret T2 | 机枪 T2 | 1500 | combatEngineer,experimentalGunship | <-c_turret_t1; ->c_turret_t3_gun(11000) | assets/units/turrets/turret_t2_gun.ini | -
+c_turret_t2_lightning | turret_lightningT2,turret_t2_lightning | Lightning T2 | 闪电炮塔 T2 | 10700 | - | <-c_turret_t1_lightning | assets/units/turrets/turret_t2_lightning.ini | no-producer
+c_turret_t3_gun | turret_t3_gun,turretT3 | Turret T3 | 重机枪塔 T3 | 12500 | - | <-c_turret_t2_gun | assets/units/turrets/turret_t3_gun.ini | no-producer
+commandCenter | - | Command | 指挥中心 | 3000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | starting-building,no-producer
+creditsCrates | creditsCrate | Credits crate | 资金箱子 | 800 | - | - | assets/units/resource_deposits/creditsCrate.ini | internal
+crystal_mid | - | crystal_mid | - | 5000 | - | - | assets/units/resource_deposits/crystal_mid.ini | internal
+crystalResource | - | Crystal | 水晶 | 5000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | internal
+example_faction_picker | - | Faction Picker | - | 500 | - | - | assets/units/miscellaneous/example_faction_picker.ini | internal
+experimentalLandFactory | - | Experimental Factory | 实验工厂 | 11000 | builder,combatEngineer,mechEngineer | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+extractorT1 | extractor | Extractor | 资源抽取器 | 700 | builder,combatEngineer,experimentalGunship,experimentalSpider,mechEngineer,modularSpider | ->extractorT2(1400) | assets/units/extractor/extractor.ini | -
+extractorT2 | - | Extractor | 资源抽取器 | 2100 | combatEngineer,mechEngineer | <-extractorT1; ->extractorT3(4000) | assets/units/extractor/extractorT2.ini | -
+extractorT3 | - | Extractor | 资源抽取器 | 6100 | - | <-extractorT2; <-extractorT3_overclocked; <-extractorT3_reinforced; ->extractorT3_overclocked(8000); ->extractorT3_reinforced(3000) | assets/units/extractor/extractorT3.ini | no-producer
+extractorT3_overclocked | - | Extractor | 资源抽取器 | 14100 | - | <-extractorT3; ->extractorT3(0) | assets/units/extractor/extractorT3_overclocked.ini | no-producer
+extractorT3_reinforced | - | Extractor | 资源抽取器 | 10100 | - | <-extractorT3; ->extractorT3(0) | assets/units/extractor/extractorT3_reinforced.ini | no-producer
+fabricatorT1 | fabricator | Fabricator | 资源制造仪 | 2200 | builder,combatEngineer,mechEngineer,modularSpider | ->fabricatorT2(4400) | assets/units/fabricator/fabricatorT1.ini | -
+fabricatorT2 | - | Fabricator | 资源制造仪 | 6600 | - | <-fabricatorT1; ->fabricatorT3(7500) | assets/units/fabricator/fabricatorT2.ini | no-producer
+fabricatorT3 | - | Fabricator | 资源制造仪 | 14100 | - | <-fabricatorT2 | assets/units/fabricator/fabricatorT3.ini | no-producer
+flare_10s | - | Flare | - | 10 | - | - | assets/units/miscellaneous/flare_10s.ini | internal
+laboratory | - | Laboratory | - | 4000 | - | - | assets/units/laboratory/laboratory.ini | no-producer
+landFactory | - | Land Factory | 陆军工厂 | 700 | builder,combatEngineer,experimentalGunship,experimentalSpider,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+laserDefence | - | Laser Shield | 激光防御塔 | 1200 | builder,combatEngineer,experimentalGunship,experimentalSpider,mechEngineer,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+mechBunkerDeployed | mech_bunker_deployed | Mobile Turret | 移动炮塔 | 4500 | mechEngineer | <-mechBunker; ->mechBunker(0) | assets/units/mechs_large/mech_bunker_deployed.ini | hidden-form
+mechFactory | - | Mech Factory | 机械工厂 | 1000 | builder,experimentalSpider,mechEngineer,modularSpider | ->mechFactoryT2(4000) | assets/units/mech_factory/mechFactory.ini | -
+mechFactoryT2 | - | Mech Factory T2 | T2 - 机械工厂 | 5000 | combatEngineer,mechEngineer | <-mechFactory | assets/units/mech_factory/mechFactoryT2.ini | -
+nukeLauncherC | nuke_launcher,NukeLaucher | Nuke Launcher | 核弹发射井 | 45000 | builder,combatEngineer,mechEngineer | - | assets/units/nukes/nuke_launcher.ini | -
+outpostT1 | outpost | Watch Tower | 瞭望塔 | 1500 | combatEngineer,experimentalGunship,mechEngineer | ->outpostT2(2000) | assets/units/outpost/outpost.ini | -
+outpostT2 | - | Watch Tower T2 | 瞭望塔 T2 | 3500 | - | <-outpostT1 | assets/units/outpost/outpostT2.ini | no-producer
+repairbay | - | Repair Bay | 修复湾 | 1500 | builder,combatEngineer,experimentalSpider,mechEngineer,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+seaFactory | - | Sea Factory | 海军基地 | 1000 | builder,combatEngineer,experimentalGunship,mechEngineer,modularSpider | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | -
+supplyDepot | - | Supply Depot | 供应站 | 1000 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | no-producer
+wall_v | - | Wall (V) | 墙 (V) | 100 | - | - | core/src/main/java/com/corrodinggames/rts/game/units/UnitTypeEnum.java | no-producer

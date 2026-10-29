@@ -46,6 +46,10 @@ final class RwxCliCommandCapture implements AutoCloseable {
     static RwxCliCommandCapture open(Path root, int port) {
         try {
             String override = System.getProperty("rwx.cli.recordingDir");
+            if ((override == null || override.isBlank()) && System.getProperty("rwx.evaluate.dir") == null) {
+                // Recording is evaluation-only: an ordinary match must not copy every socket receipt to disk.
+                return new RwxCliCommandCapture(null);
+            }
             Path directory = override == null || override.isBlank()
                     ? root.resolve("evaluate/output") : Path.of(override);
             CommandRecorder recorder = new CommandRecorder(directory, port);

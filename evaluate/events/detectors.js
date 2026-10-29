@@ -143,6 +143,11 @@ class ProductionGapDetector extends Detector {
       const commands=this.s.matcher.between(gap.start,row.timeMs);
       let feasible=action?!!(action.kind==='produce'&&action.available&&action.affordable
         &&gap.funds>=action.cost*count&&(gap.snapshot.capRemaining??Infinity)>=count):null;
+      // Being unable to queue even one unit is a fact about the gap start, not about whoever ordered later,
+      // so it explains the idle time without knowing the order origin.
+      const cannotOrder=action?!(
+        action.kind==='produce'&&action.available&&gap.funds>=action.cost
+        &&(gap.snapshot.capRemaining??Infinity)>=1):null;
       const coverage=this.s.covers(gap.start,row.timeMs);
       const linked=this.s.matcher.commands.find(c=>c.id===row.commandId||(c.applications||[]).some(a=>a.nativeId===row.nativeId));
       const proactive=row.source==='agent'||linked!=null;
@@ -152,11 +157,15 @@ class ProductionGapDetector extends Detector {
       const uncertainOrigin=!proactive&&!['keep','pending','engine'].includes(row.source);
       const event=this.event('PRODUCTION_GAP',gap.start,{t_confirm:row.timeMs,gapMs:duration,unit:old.unit,
         next:result.queueAdded,batchCount:count,funds:gap.funds,cost:action? action.cost*count:null,
-        B_count:commands.length,B_ids:commands.map(c=>c.id),feasible,
+        B_count:commands.length,B_ids:commands.map(c=>c.id),feasible,cannotOrder,
         t_first_B:linked?.timeMs??null,t_first_applied:row.timeMs,
-        reason:!coverage?'CLI_command_coverage_unavailable':uncertainOrigin?'production_order_origin_unavailable':!proactive||arranged?'automation_or_prearranged_order':sharedFunds?'multi_factory_shared_funds_not_reconstructed':feasible==null?'historical_action_unavailable':!feasible?'production_not_feasible_at_start':commands.length?'global_B_during_gap':'verified',
+        reason:!coverage?'CLI_command_coverage_unavailable':cannotOrder===true?'production_not_feasible_at_start'
+          :uncertainOrigin?'production_order_origin_unavailable':!proactive||arranged?'automation_or_prearranged_order'
+          :sharedFunds?'multi_factory_shared_funds_not_reconstructed':feasible==null?'historical_action_unavailable'
+          :!feasible?'production_not_feasible_at_start':commands.length?'global_B_during_gap':'verified',
         strict:coverage&&proactive&&!arranged&&feasible===true&&!commands.length,
-        status:!coverage||uncertainOrigin||feasible==null?'UNCERTAIN':!proactive||arranged||!feasible||commands.length?'EXPLAINED':'UNANSWERED'});
+        status:!coverage||cannotOrder==null?'UNCERTAIN':cannotOrder===true?'EXPLAINED'
+          :uncertainOrigin?'UNCERTAIN':!proactive||arranged||!feasible||commands.length?'EXPLAINED':'UNANSWERED'});
       this.emit(event,row.timeMs);
     }
   }
@@ -213,11 +222,14 @@ class FeedDetector extends Detector {
     const repeated=r.losses.slice(2),segments=[];
     for(const loss of repeated){const last=segments.at(-1);if(last&&loss.timeMs-last.at(-1).timeMs<=this.c.T_FEED_MERGE)last.push(loss);else segments.push([loss]);}
     for(const [index,losses]of segments.entries()){
+      // A later burst in the same engagement cannot be answered by a command issued before it began,
+      // so both the response window and the confirmation stay inside this segment.
       const start=index===0?r.losses[0].timeMs:losses[0].timeMs,end=losses.at(-1).timeMs;
-      const commands=r.commands.filter(c=>c.timeMs>=r.created&&c.timeMs<=end);
+      const windowStart=index===0?r.created:start;
+      const commands=r.commands.filter(c=>c.timeMs>=windowStart&&c.timeMs<=end);
       const assault=commands.some(c=>['attack','attackMove','guard'].includes(c.kind));
       const exposure=commands.some(c=>c.kind==='move_in'&&c.timeMs>=r.losses[1].timeMs&&losses.some(l=>l.timeMs>c.timeMs));
-      const event=this.event('FEED',start,{region_id:r.id,t_confirm:r.losses[1].timeMs,
+      const event=this.event('FEED',start,{region_id:r.id,t_confirm:index===0?r.losses[1].timeMs:start,
         t_first_B:commands[0]?.timeMs??null,
         t_first_applied:commands.flatMap(c=>c.applications||[]).filter(a=>a.applied===true&&a.timeMs<=end).reduce((t,a)=>Math.min(t??Infinity,a.timeMs),null),
         t_first_repeat:r.losses[2].timeMs,region_end:now,location:location(r.circles),state:r.state,

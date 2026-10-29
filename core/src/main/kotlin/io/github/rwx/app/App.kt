@@ -149,6 +149,7 @@ fun installApp(
     options: AppOptions = AppOptions(),
     onQuit: () -> Unit = {},
 ): AppSession {
+    options.applyEvaluationDefaults()
     val bootstrap = createAppBootstrap(options)
     val platformBridge = bootstrap.platformBridge
     val appMetadata = bootstrap.appMetadata

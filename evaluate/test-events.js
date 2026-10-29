@@ -110,6 +110,24 @@ test('factory entire production batch must have been affordable with capacity at
 test('upgrade endpoints cannot become production orders',()=>{
   assert.equal(productionGap(5000,[],{}, {queueAdded:[{action:'T2',kind:'upgrade_or_action',count:1}]}).events.length,0);
 });
+function productionGapAt(funds,batchCount,affordable=true) {
+  const h=harness(),base=unit(7,{type:'landFactory',factory:true,building:true,mobile:false});
+  h.row('unit',0,{funds,unit:{...base,idle:false,queue:[{action:'tank',kind:'produce',count:1}]}});
+  h.row('unit',1000,{funds,unit:{...base,actions:{tank:{kind:'produce',type:'tank',cost:300,available:true,affordable}},capRemaining:50}});
+  h.row('native',6000,{phase:'after',source:'replay_unknown',results:[{unitId:7,life:0,batchCount,
+    queueAdded:[{action:'tank',kind:'produce',type:'tank',count:batchCount}]}]});
+  return h.end(6000).find(e=>e.type==='PRODUCTION_GAP');
+}
+test('unaffordable production at gap start explains idle time even when the order origin is unknown',()=>{
+  const e=productionGapAt(200,1,false);
+  assert.equal(e.cannotOrder,true);assert.equal(e.reason,'production_not_feasible_at_start');
+  assert.equal(e.status,'EXPLAINED');assert.equal(e.strict,false);
+});
+test('affording one unit keeps an unattributable production gap uncertain',()=>{
+  const e=productionGapAt(400,2);
+  assert.equal(e.cannotOrder,false);assert.equal(e.feasible,false);
+  assert.equal(e.status,'UNCERTAIN');assert.equal(e.reason,'production_order_origin_unavailable');
+});
 test('initial never-used factory and moving mobile factory are not production gaps',()=>{
   const h=harness();h.row('unit',0,{unit:unit(7,{factory:true})});
   h.row('native',5000,{phase:'after',results:[{unitId:7,queueAdded:[{action:'a',kind:'produce',count:1}]}]});assert.equal(h.end(5000).length,0);
@@ -133,6 +151,18 @@ test('attackMove losses, living allies nearby, and missing attacker proof are ex
 test('feed transitive merge and separated repeated-loss segments share a region id',()=>{
   const h=harness();feedDeath(h,0,1,{x:0});feedDeath(h,1000,2,{x:300});feedDeath(h,2000,3,{x:600});feedDeath(h,9000,4,{x:300});
   const rows=h.end(10000).filter(e=>e.type==='FEED');assert.equal(rows.length,2);assert.equal(rows[0].region_id,rows[1].region_id);
+  assert.equal(rows[0].t_confirm,1000);
+  assert.equal(rows[1].t_start,9000);assert.equal(rows[1].t_confirm,9000);
+});
+test('a retaliation issued before a later loss burst cannot answer that burst',()=>{
+  const command=b(1,500),h=harness([command]);
+  feedDeath(h,0,1,{x:0});feedDeath(h,1000,2,{x:300});h.row('command',500,{command});feedDeath(h,2000,3,{x:600});
+  feedDeath(h,9000,4,{x:300});
+  const rows=h.end(10000).filter(e=>e.type==='FEED');
+  assert.equal(rows.length,2);
+  assert.equal(rows[0].t_first_B,500);assert.equal(rows[0].reactionMs,500);
+  assert.equal(rows[1].t_first_B,null);assert.equal(rows[1].reactionMs,undefined);
+  assert.ok(rows.every(row=>row.t_confirm>=row.t_start&&(row.reactionMs??0)>=0));
 });
 test('feed region closes after its minimum hold when friends enter',()=>{
   const h=harness();feedDeath(h,0,1);feedDeath(h,1000,2);feedDeath(h,2000,3);

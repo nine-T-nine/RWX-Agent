@@ -563,6 +563,8 @@ CLI 端点与连接相关功能。
 
 纯 Headless 发行包：`:desktop:headlessArchive`，产物为 `desktop/build/distributions/rwx-headless.tar.gz`；Linux 使用 `bash bin/rwx-headless` 启动。部署见 [SERVER.md](SERVER.md)。
 
+`--evaluate` 一次打开所有内置评估程序（引擎证据采集、命令自动录制、事件流），并设置对局开始自动录制；不加该参数时这些功能全部关闭，正式对局不会被采样和录包拖慢。证据默认写入 `evaluate/output/events-live`，可用 `-Drwx.evaluate.dir=<目录>` 覆盖。
+
 整局复用持久连接：宿主可保持子进程和标准流时优先使用 `rwx-cli.py --stdio`；宿主已支持持久 TCP 时也可直接使用。无法保持连接时使用单次或批量客户端。启动和开局见 [START.md](START.md)，其他客户端与协议见 [tools/README.md](tools/README.md)。
 
 ### 8.2 部分约定

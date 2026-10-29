@@ -18,10 +18,10 @@ async function *records(file) {
   }}finally{lines.close();stream.destroy();}
 }
 async function indexCommands(file) {
-  const commands=new Map(),batches=new Map(),nativeBefore=new Map(),nativeAfter=new Map();let meta=null,ended=false;
+  const commands=new Map(),batches=new Map(),nativeBefore=new Map(),nativeAfter=new Map();let meta=null,ended=false,endReason=null;
   for await(const row of records(file)){
     if(row.kind==='meta'){if(meta)throw Error('Only one match is allowed per evidence file');meta=row;}
-    if(row.kind==='end')ended=row.reason!=='observation_error';
+    if(row.kind==='end'){ended=row.reason!=='observation_error';endReason=row.reason??null;}
     if(row.kind==='native'&&row.replayOrdinal!=null){
       (row.phase==='before'?nativeBefore:nativeAfter).set(row.replayOrdinal,row);
     }
@@ -49,7 +49,7 @@ async function indexCommands(file) {
     }
   }
   if(!meta||meta.schema!==1)throw Error('Engine evidence schema 1 metadata is required; Replay command JSONL is not state evidence');
-  return {commands,batches,meta,ended,nativeBefore,nativeAfter};
+  return {commands,batches,meta,ended,endReason,nativeBefore,nativeAfter};
 }
 function legacyCommands(index,commandsFile,replayFile) {
   const {readHigh,readLow,matchAll}=require('./evaluate');
@@ -117,7 +117,7 @@ class Session {
     if(row.kind==='frame')for(const detector of this.detectors)detector.advance?.(row.timeMs);
   }
   finish(){for(const detector of this.detectors)detector.finish(this.now);}
-  summary(complete) {
+  summary(complete,endReason=null) {
     const sweep=this.builderIntervals.flatMap(i=>[{time:i.start,delta:1},{time:i.end,delta:-1}]).sort((a,b)=>a.time-b.time||a.delta-b.delta);
     let active=0,last=0,overlap=0,max=0;
     for(const point of sweep){if(active>=2)overlap+=point.time-last;active+=point.delta;max=Math.max(max,active);last=point.time;}
@@ -131,7 +131,8 @@ class Session {
         'Agent observation history is not recoverable from world visibility alone.',
         'Historical build placement is UNCERTAIN unless a matching placement proof was captured.',
         ...(this.meta.source==='replay'?['Replay does not contain CLI origin or rejected requests; supply original command evidence for attribution.']:[]),
-        ...(!complete?['Evidence has no clean end marker; active events are truncated.']:[])]};
+        ...(!complete?['Evidence has no clean end marker; active events are truncated.']:[]),
+        ...(endReason==='truncated_after_interference'?['Evidence stops at the recorded interference boundary; later game time has no evidence.']:[])]};
   }
 }
 function eventText(e) {
@@ -166,7 +167,7 @@ async function evaluateEvents(file,{out,config={},commands:commandsFile,replay:r
       session.consume(row,index.commands.get(row.id));
     }
     session.finish();
-    const summary=session.summary(index.ended);
+    const summary=session.summary(index.ended,index.endReason);
     fs.writeFileSync(path.join(out,'summary.json'),JSON.stringify(summary,null,2)+'\n');
     fs.writeFileSync(path.join(out,'economy.log'),session.economy.text());
     return {out,summary};

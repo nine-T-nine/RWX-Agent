@@ -44,6 +44,12 @@ bash ./gradlew :desktop:run --args='--headless --no-steam'
 
 CLI 仅监听本机回环地址。端口文件通过原子写入更新，内容只有端口数字。CLI 工具会自动读取端口文件，并通过 `rwx-ping` 验证，忽略异常退出遗留的无效端口。
 
+**评测开关 `--evaluate`：**加在启动参数里即可一次打开所有内置评估程序（引擎证据采集、命令自动录制、事件流），并设置对局开始自动录制；不添加时这些功能全部关闭，正式对局不会被采样与录包拖慢。证据默认写入 `evaluate/output/events-live`，可用 `-Drwx.evaluate.dir=…` 覆盖。
+
+```powershell
+.\gradlew.bat :desktop:run '--args=--evaluate'
+```
+
 ## 2. CLI 命令与事件流
 
 ### 2.1 执行 CLI 命令

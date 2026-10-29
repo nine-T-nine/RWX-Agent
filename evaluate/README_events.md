@@ -26,7 +26,9 @@ python evaluate/utils/evaluate_replay.py 'replays/你的对局.replay' --team 0 
 node evaluate/events.js 'evaluate/output/你的对局_events/engine/match-001-team0/telemetry.jsonl' --out 'evaluate/output/你的对局_events/analysis'
 ```
 
-实时对局在启动 Java 时添加 `-Drwx.evaluate.dir=evaluate/output/events-live`，可选 `-Drwx.evaluate.team=0`。默认不启用采集。每局自动分文件夹；同目录已经存在的局不会覆盖。正常离开、退出和 Replay 结束都会 flush。实时证据关闭后运行同一 Node 入口。
+引擎证据每局约 0.3–1.5 GB。Claude 两局录像在玩家失去行动后仍由 AI 继续对局，对应的命令日志里用 `----以下是意外或者人为干涉情况----` 标出了边界；证据已按该边界截断，文件最后一行是 `reason=truncated_after_interference` 的结束记录，报告的限制里会注明这一点。截断后仍可按上面的命令重新分析；删除证据后只能按重放命令重新采集。
+
+实时对局在启动游戏时加 `--evaluate`（等价于设置 `-Drwx.evaluate.dir=evaluate/output/events-live`，并同时打开 CLI 与命令录制）；要换目录或队伍仍可直接用 `-Drwx.evaluate.dir=…`、`-Drwx.evaluate.team=0` 覆盖。默认不启用采集。每局自动分文件夹；同目录已经存在的局不会覆盖。正常离开、退出和 Replay 结束都会 flush。实时证据关闭后运行同一 Node 入口。
 
 ## 输出与证据
 
@@ -65,9 +67,9 @@ node evaluate/events.js 'evaluate/output/你的对局_events/engine/match-001-te
 |---|---|---|
 | AMBUSH | 敌人实际伤害 idle 我方单位；至少一条相同攻击关系的实际记录跨满 5s，连续记录间隔不超过 3s。单位周围半径 X 的圆按相交传递合并。首次相关主动 B 后再收集 3s 命令 | 自动反击不是主动响应；攻击者受伤立即失活，受害者非 idle 达 3s 后失活。无武器的普通建筑不无条件计为偷袭。区域分裂沿用稳定 ID，防止重复结算。仅命中/伤害证据，未命中和免伤射击不算 |
 | BUILDER_GAP | 上一 build/repair 任务已结束、期间无其他任务，下一任务成功成为当前任务；严格 `3s < gap < 10s`；全局主动 B 检查 `[t0,t1)` | 寻路、移动、已有队列不是 idle。维修目标在 t0 必须可维修。建造须有当时动作/资金，缺少目标位置在 t0 的可靠放置证明时为 UNCERTAIN。存在其他 B 时仅 `BUILDER_INACTIVE` |
-| FEED | 非 attackMove 的我方损失，实际近期敌方伤害来源可证、X 内有敌人且无其他友军。第一次 UNKNOWN、第二次 DANGER、第三次及以后形成正式重复损失；损失间隔 ≤5s 聚合 | 圆集合传递合并，不用日志平均半径做碰撞。最短保持 5s；友军进入或敌方威胁消失并满足保持条件后结束。明确 attack/attackMove/guard 与普通 move 进入分别记录；战损本身不构成战术错误结论 |
+| FEED | 非 attackMove 的我方损失，实际近期敌方伤害来源可证、X 内有敌人且无其他友军。第一次 UNKNOWN、第二次 DANGER、第三次及以后形成正式重复损失；损失间隔 ≤5s 聚合 | 圆集合传递合并，不用日志平均半径做碰撞。最短保持 5s；友军进入或敌方威胁消失并满足保持条件后结束。明确 attack/attackMove/guard 与普通 move 进入分别记录；战损本身不构成战术错误结论。同一区域内与上一段相隔超过 5s 的后续损失另起一条事件，该段的确认时间与响应窗口都从段首损失开始，早于段首的命令不计为对该段的响应 |
 | STALE_COMMAND | 仅主动直接 B；收包时对象已死亡、删除或失去操控归属，按对象生命周期去重，同条命令同对象最多一次 | 资金、队列、路径、射程、隐藏、后续死亡不是过期。仅在后续展开时无效而无法证明收包时已无效，或对象类型/生命周期未知，为 UNCERTAIN。Map 对局末输出 |
-| PRODUCTION_GAP | 曾有实际生产的工厂生产结束并完全空闲；下一次成功新增单位生产队列时回查。严格 `3s < gap < 10s`，检查开区间 `(t_idle,t_order)` 的全局 B 和工厂状态 | 队列、升级、任务、移动工厂的移动/攻击均中止空闲。升级不是生产端点。核对 t0 的实际动作、资金、单位上限及整个该工厂下单批次；多工厂共享预算未完整重建时为 UNCERTAIN。自动化/提前安排的下单不作主动迟到响应 |
+| PRODUCTION_GAP | 曾有实际生产的工厂生产结束并完全空闲；下一次成功新增单位生产队列时回查。严格 `3s < gap < 10s`，检查开区间 `(t_idle,t_order)` 的全局 B 和工厂状态 | 队列、升级、任务、移动工厂的移动/攻击均中止空闲。升级不是生产端点。核对 t0 的实际动作、资金、单位上限及整个该工厂下单批次；多工厂共享预算未完整重建时为 UNCERTAIN。自动化/提前安排的下单不作主动迟到响应。若 t0 连一个单位都下不了单（动作不可用、资金不足或已达单位上限），空窗直接判 EXPLAINED，不因下单来源未知改判 UNCERTAIN |
 
 建造者名单按原版实际类型：`builder`、`builderShip`、`mechEngineer`、`combatEngineer`、`experimentalSpider`、`experimentalGunship`/`experimentalGunshipLanded`、`modularSpider`/`modularSpider_nonEmpty`。中文“实验悬浮型气垫船”是 `experimentalGunship`，并不是 `experimentalHoverTank`。只会维修的单位不加入。
 

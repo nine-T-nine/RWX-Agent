@@ -123,7 +123,8 @@ public final class RwxCliTool implements AutoCloseable {
     }
 
     /** Walks up from the working directory to the checkout root (marker: settings.gradle.kts). */
-    private static java.nio.file.Path repoRoot() {
+    /** Repository root used for port files, recordings and default evaluation evidence. */
+    public static java.nio.file.Path repoRoot() {
         java.nio.file.Path current = java.nio.file.Path.of(System.getProperty("launch.dir", "")).toAbsolutePath().normalize();
         for (int depth = 0; depth < 8 && current != null; depth++) {
             if (java.nio.file.Files.isRegularFile(current.resolve("settings.gradle.kts"))) {

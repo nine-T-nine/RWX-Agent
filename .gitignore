@@ -71,9 +71,10 @@ agent-tmp/*
 mods/*
 logs/*
 evaluate/output/*
-AGENTS.md
-.agent-memory/*
-evaluate/output/*
+
+# Agent-local notes and instructions; each checkout keeps its own copy out of version control.
+/AGENTS.md
+/.agent-memory/
 
 # Original showcase recordings; browser-ready copies are tracked under matches/.
 /web/resource/gpt*.mp4
