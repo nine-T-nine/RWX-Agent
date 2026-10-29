@@ -485,6 +485,21 @@ public class Command {
 
     /* JADX INFO: renamed from: k */
     public void executeCommand() {
+        evaluate.utils.EngineEvidence.Application observation = null;
+        if (System.getProperty("rwx.evaluate.dir") != null) {
+            java.util.List<Long> ids = new java.util.ArrayList<>();
+            for (OrderableUnit unit : this.selectedUnits) ids.add(unit.objectId);
+            for (Object id : this.pendingUnitIds) if (!ids.contains((Long) id)) ids.add((Long) id);
+            observation = evaluate.utils.EngineEvidence.beforeCommand(this, ids);
+        }
+        try {
+            executeObservedCommand();
+        } finally {
+            evaluate.utils.EngineEvidence.afterCommand(this, observation);
+        }
+    }
+
+    private void executeObservedCommand() {
         UnitCommand lastWaypoint;
         String str;
         GameEngine gameEngine = GameEngine.getInstance();

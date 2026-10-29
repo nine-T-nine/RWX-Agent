@@ -738,6 +738,7 @@ public class ReplayEngine {
             return true;
         }
         if ("end".equals(strStartBlockAndGetName)) {
+            evaluate.utils.EngineEvidence.replayEnded();
             GameEngine.log("replay:updateGameFrame", "end of replay block found");
             gameEngine.gameUI.messageManager.addMessage(VariableScope.nullOrMissingString, "Replay has ended");
             if (!gameEngine.isGameStarted) {
@@ -818,6 +819,7 @@ public class ReplayEngine {
                                 if (this.nextCommand.command.isSystemAction && this.nextCommand.command.systemActionType != 0) {
                                     GameEngine.log("replay:issueCommand", "systemAction_action:" + this.nextCommand.command.systemActionType);
                                 }
+                                evaluate.utils.EngineEvidence.replayCommand(this.nextCommand.command, this.executedCommandCount + 1);
                                 this.nextCommand.command.executeCommand();
                                 if (d) {
                                     if (this.nextCommand.command.sourceTeam != null) {

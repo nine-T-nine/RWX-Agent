@@ -4,8 +4,8 @@
  * node evaluate.js <commands.txt> <replay.jsonl>
  * 与 evaluate_1.js、execution-mapping.js 放在同一目录；无第三方依赖。
  *
- * 原 evaluate_1.js 全部报告/图表原样生成；此脚本向 report.html 追加双源分析，
- * 并写入 execution_*.{txt,json,csv,jsonl} 与 mapping_rules.json。
+ * 保留 evaluate_1.js 的 A/B 分析；补充 Replay 相邻底层间隔和高低层映射，
+ * 并写入 native_command_intervals.csv、execution_* 与 mapping_rules.json。
  */
 'use strict';
 const fs = require('node:fs');
@@ -78,6 +78,83 @@ function readLow(file,team){
   if(!all.length)throw Error(`Replay 没有 team=${team} 的有效命令；核对端口日志 player 字段`);
   return all;
 }
+function nativeDescription(row){
+  const parts=[];
+  if(row.type)parts.push(row.type);
+  if(row.build)parts.push('build='+row.build+(row.build_count!=null?' ×'+row.build_count:''));
+  if(row.action)parts.push((row.stop_current_action?'cancel=':'action=')+row.action);
+  if(row.type&&row.build==null&&row.target_unit===-1&&Number.isFinite(row.x)&&Number.isFinite(row.y))parts.push(`@(${row.x},${row.y})`);
+  if(row.type==='build')parts.push(`@(${row.x},${row.y})`);
+  if(row.target_unit!=null&&row.target_unit!==-1)parts.push('target=#'+row.target_unit);
+  if(row.target_point)parts.push('point='+JSON.stringify(row.target_point));
+  if(row.rally)parts.push('rally='+JSON.stringify(row.rally));
+  if(row.attack_mode)parts.push('attackMode='+row.attack_mode);
+  if(row.clear_existing_orders)parts.push('clear-orders');
+  if(row.system_action)parts.push('system='+row.system_action);
+  if(row.command_queued)parts.push('[queue]');
+  return `${parts.join(' ')||'command'} units=${JSON.stringify(row.units)}`;
+}
+function nativeIntervalsOf(low){
+  // readLow already filters team/noop and orders equal-time rows by original JSONL order.
+  // Each row is one command, regardless of its unit count; same-tick rows remain distinct.
+  const intervals=[];
+  for(let i=1;i<low.length;i++){
+    const first=low[i-1],last=low[i];
+    if(last.time_s<first.time_s)throw Error('底层间隔输入必须按执行时间排序');
+    intervals.push({index:i,team:first.team,firstTime:first.time_s,lastTime:last.time_s,
+      start:stamp(first.time_s),end:stamp(last.time_s),
+      seconds:Math.round((last.time_s-first.time_s)*1000)/1000,
+      firstTick:first.tick,lastTick:last.tick,firstLine:first.line,lastLine:last.line,
+      firstCommand:nativeDescription(first),lastCommand:nativeDescription(last)});
+  }
+  return intervals;
+}
+function nativeIntervalReport(native){
+  const {intervals,summary}=native,s=summary.stats;
+  return [
+    '', '【我方相邻底层命令执行间隔（Replay）】',
+    `Agent team=${summary.team}；整份 Replay 有效底层命令 ${summary.commandCount} 条；相邻间隔 ${intervals.length} 个；零间隔 ${summary.zeroIntervals} 个。`,
+    '口径：先过滤到当前玩家 team 并排除 noop；包含该 team 的手动、自动微操和 UI 命令，不依赖高低层匹配结果。',
+    '每条底层记录算一条命令，多单位不展开；同 tick 的真实命令不去重，保留 0 秒间隔。',
+    '间隔 = 后一条 time_s − 前一条 time_s；折线图横坐标 = 前一条命令执行时间（区间左端点）。',
+    `样本 ${s.count}；原始均值 ${fmt(s.mean)}s；去离群均值 ${fmt(s.cleanMean)}s；P50 ${fmt(s.median)}s；P90 ${fmt(s.p90)}s；P95 ${fmt(s.p95)}s；最大 ${fmt(s.max)}s；离群 ${s.outliers} 个。`,
+    `离群阈值 ${fmt(s.threshold)}s；算法：max(Q3+1.5×IQR, 中位数+3×1.4826×MAD, 中位数+${summary.minOutlierSeconds}s)；不足4个样本不判离群。`,
+    ...intervals.filter(row=>row.secondsOutlier).flatMap(row=>[
+      `  [底层间隔离群] ${row.start} → ${row.end}：${fmt(row.seconds)}s（Replay JSONL 行 ${row.firstLine}–${row.lastLine}；tick ${row.firstTick}–${row.lastTick}）`,
+      '      前：'+row.firstCommand,'      后：'+row.lastCommand,
+    ]),
+    '完整序列：native_command_intervals.csv；统计摘要：summary.json 的 nativeCommandIntervals。',
+    '以上为游戏时间中的命令记录间隔，不代表墙钟耗时，也不代表生产/移动完成时间。',
+  ].join('\n')+'\n';
+}
+function plotNativeIntervals(native){
+  const {intervals,summary}=native,s=summary.stats;
+  const W=1120,H=390,L=76,R=28,T=45,B=90,w=W-L-R,h=H-T-B;
+  const maxX=Math.max(1,...intervals.map(row=>row.firstTime)),maxY=Math.max(1,...intervals.map(row=>row.seconds))*1.12;
+  const X=t=>L+w*t/maxX,Y=value=>T+h*(1-value/maxY);
+  let svg=`<svg id="native-interval-chart" class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="我方相邻底层命令执行间隔；横坐标为前一条命令执行时间"><text x="${L}" y="25" font-size="19" font-weight="bold">我方相邻底层命令执行间隔</text>`;
+  for(let i=0;i<=5;i++){
+    const value=maxY*i/5,y=Y(value);
+    svg+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#dfe5ed"/><text x="${L-9}" y="${y+4}" text-anchor="end" font-size="12">${value.toFixed(2)}s</text>`;
+  }
+  for(let i=0;i<=6;i++){
+    const time=maxX*i/6;
+    svg+=`<text x="${X(time)}" y="${H-66}" text-anchor="middle" font-size="12">${stamp(time).split('.')[0]}</text>`;
+  }
+  svg+=`<text x="${L+w/2}" y="${H-42}" text-anchor="middle" font-size="12">前一条底层命令执行时间（游戏时间，区间左端点）</text>`;
+  if(intervals.length)svg+=`<polyline points="${intervals.map(row=>`${X(row.firstTime)},${Y(row.seconds)}`).join(' ')}" fill="none" stroke="#3278b8" stroke-width="1.6"/>`;
+  for(const [label,value,color] of [['原始均值',s.mean,'#7b8796'],['去离群均值',s.cleanMean,'#16866c']]){
+    if(value!=null)svg+=`<line x1="${L}" x2="${W-R}" y1="${Y(value)}" y2="${Y(value)}" stroke="${color}" stroke-dasharray="6 5"/>`;
+    const legendX=L+(label==='原始均值'?0:350);
+    svg+=`<line x1="${legendX}" x2="${legendX+24}" y1="${H-16}" y2="${H-16}" stroke="${color}" stroke-width="2" stroke-dasharray="6 5"/><text x="${legendX+32}" y="${H-12}" font-size="12">${label} ${fmt(value)}s</text>`;
+  }
+  for(const row of intervals){
+    const tip=`底层间隔 #${row.index}：${fmt(row.seconds)}s${row.secondsOutlier?' [离群]':''}\n横坐标（左端点）：${row.start}\n前：${row.start} / tick ${row.firstTick} / Replay 行 ${row.firstLine}\n${row.firstCommand}\n后：${row.end} / tick ${row.lastTick} / Replay 行 ${row.lastLine}\n${row.lastCommand}`;
+    svg+=`<circle class="data-point" cx="${X(row.firstTime)}" cy="${Y(row.seconds)}" r="${row.secondsOutlier?6:3.5}" fill="${row.secondsOutlier?'#d93042':'#3278b8'}" stroke="white" stroke-width=".5" data-tip="${esc(tip)}"><title>${esc(tip)}</title></circle>`;
+  }
+  if(!intervals.length)svg+=`<text x="${L+w/2}" y="${T+h/2}" text-anchor="middle">有效底层命令不足两条，没有相邻间隔</text>`;
+  return svg+'</svg>';
+}
 function writeCSV(file,rows,fields){
   const q=v=>'"'+String(v==null?'':typeof v==='object'?JSON.stringify(v):v).replace(/"/g,'""')+'"';
   fs.writeFileSync(file,'\uFEFF'+[fields.join(','),...rows.map(row=>fields.map(k=>q(row[k])).join(','))].join('\n')+'\n','utf8');
@@ -139,11 +216,14 @@ function reportText(port,low,rows,delay,span){
     '仅衡量底层指令进入游戏记录的时间，不等于生产完成、移动到达等状态效果。',
   ].join('\n')+'\n';
 }
-function injectHtml(original,report,rows,delay,span,team){
+function injectHtml(original,report,rows,delay,span,team,native){
   const ok=rows.filter(x=>x.delay!=null),unmatched=rows.filter(x=>x.status==='unmatched');
   const table=rows.map(r=>`<tr><td>${r.highLine}</td><td>${r.highClock}</td><td><code>${esc(r.command)}</code></td><td>${r.status}</td><td>${fmt(r.delayMin)}–${fmt(r.delayMax)}</td><td>${fmt(r.span)}</td><td>${esc(r.firstClock||'—')} → ${esc(r.lastClock||'—')}<br>Replay 行 ${esc(r.lowLines.join(',')||r.candidateLowLines.join(',')||'—')}<br>${esc(r.note)}</td></tr>`).join('');
   const rules=Object.entries({...RULES,...Object.fromEntries(Object.entries(INDIRECT_RULES).map(([k,v])=>[k,{low:'间接/本地',match:v}]))}).map(([k,v])=>`<tr><td><code>${esc(k)}</code></td><td>${esc(v.low)}</td><td>${esc(v.match)}</td></tr>`).join('');
-  const section=`<section id="execution"><h2>高层 → 底层命令执行延迟</h2><p class="caption">Agent team=${team}。蓝线横坐标是端口下发时刻，橙线横坐标是对应底层首条执行时刻 X；红点代表各自的离群值。可鼠标悬浮检查映射详情。</p>
+  const nativeSection=`<section id="native-intervals"><h2>我方相邻底层命令执行间隔</h2><p class="caption">整份 Replay 的 team=${team} 有效命令，包含手动、自动微操和 UI，不依赖高低层映射。每个点为相邻两条记录的间隔；横坐标是前条执行时刻，纵坐标是间隔秒数。同 tick 的 0 秒间隔保留，红点表示长间隔离群值。悬浮可查看两条底层命令、tick 和 JSONL 行号。</p>
+  <div class="cards"><div class="card"><small>底层命令 / 相邻间隔</small><strong>${native.summary.commandCount} / ${native.intervals.length}</strong></div><div class="card"><small>原始平均间隔</small><strong>${fmt(native.summary.stats.mean)} 秒</strong></div><div class="card"><small>去离群平均间隔</small><strong>${fmt(native.summary.stats.cleanMean)} 秒</strong></div><div class="card"><small>离群 / 零间隔</small><strong>${native.summary.stats.outliers} / ${native.summary.zeroIntervals}</strong></div></div>
+  ${plotNativeIntervals(native)}</section>`;
+  const section=nativeSection+`<section id="execution"><h2>高层 → 底层命令执行延迟</h2><p class="caption">Agent team=${team}。蓝线横坐标是端口下发时刻，橙线横坐标是对应底层首条执行时刻 X；红点代表各自的离群值。可鼠标悬浮检查映射详情。</p>
   <div class="cards"><div class="card"><small>直接 B 类</small><strong>${rows.length}</strong></div><div class="card"><small>已找到唯一归属执行</small><strong>${ok.length}</strong></div><div class="card"><small>未匹配 / 歧义 / 字段不足</small><strong>${unmatched.length} / ${rows.filter(r=>r.status==='ambiguous').length} / ${rows.filter(r=>r.status==='unobservable').length}</strong></div><div class="card"><small>延迟上界 / 执行跨度（去离群均值）</small><strong>${fmt(delay.cleanMean)} / ${fmt(span.cleanMean)} 秒</strong></div></div>
   ${plot(ok,delay,span)}</section>
   <section><h2>高层→底层执行报告</h2><pre>${esc(report)}</pre></section>
@@ -162,6 +242,21 @@ async function evaluate(file1,file2,options={}){
   // 复用 evaluate_1.js 而不是复制其实现，保持原来 A/B、周期、B→A、四类间隔、直方图和准入条件不变。
   const out=await evaluate_1(file1,options);
   if(out==null)throw Error('evaluate_1.js 的 5 分钟 / 50 条 A+B 准入检查未通过');
+  const nativeIntervals=nativeIntervalsOf(low),minOutlierSeconds=options.minOutlierSeconds??5;
+  const nativeIntervalStats=stats(nativeIntervals,'seconds',minOutlierSeconds);
+  const native={intervals:nativeIntervals,summary:{sourceFile:path.resolve(file2),team:port.team,
+    scope:'entire Replay; controlled team only; noop excluded; includes manual/automation/UI commands',
+    definition:'next time_s minus previous time_s; X=previous time_s; one row per command; same-tick zero intervals retained',
+    commandCount:low.length,firstTime:low[0]?.time_s??null,lastTime:low.at(-1)?.time_s??null,
+    zeroIntervals:nativeIntervals.filter(row=>row.seconds===0).length,minOutlierSeconds,stats:nativeIntervalStats,
+    sequenceFile:'native_command_intervals.csv'}};
+  const baseReportFile=path.join(out,'report.txt'),baseReport=fs.readFileSync(baseReportFile,'utf8');
+  const combinedReport=baseReport+nativeIntervalReport(native);
+  fs.writeFileSync(baseReportFile,combinedReport,'utf8');
+  const baseSummaryFile=path.join(out,'summary.json'),baseSummary=JSON.parse(fs.readFileSync(baseSummaryFile,'utf8'));
+  baseSummary.nativeCommandIntervals=native.summary;
+  fs.writeFileSync(baseSummaryFile,JSON.stringify(baseSummary,null,2),'utf8');
+  writeCSV(path.join(out,'native_command_intervals.csv'),nativeIntervals,['index','team','firstTime','lastTime','start','end','seconds','firstTick','lastTick','firstLine','lastLine','firstCommand','lastCommand','secondsOutlier']);
   const report=reportText(port,low,rows,delay,span);
   fs.writeFileSync(path.join(out,'execution_report.txt'),report,'utf8');
   fs.writeFileSync(path.join(out,'execution_summary.json'),JSON.stringify({file1:path.resolve(file1),file2:path.resolve(file2),team:port.team,highCount:rows.length,lowCount:low.length,excludedCount:port.excluded.length,inputStopped:port.stopped,statusCounts:Object.fromEntries(['matched','partial','unmatched','ambiguous','unobservable'].map(s=>[s,rows.filter(r=>r.status===s).length])),delayBasis:'X minus receipt game time; millisecond logs exact, legacy integer seconds are upper bounds',delay,span},null,2),'utf8');
@@ -169,13 +264,17 @@ async function evaluate(file1,file2,options={}){
   fs.writeFileSync(path.join(out,'execution_matches.jsonl'),rows.map(r=>JSON.stringify(r)).join('\n')+'\n','utf8');
   writeCSV(path.join(out,'execution_matches.csv'),rows,['highLine','highClock','timePrecision','highTeam','command','rule','status','expectedCount','matchedCount','matchedOperations','operationsByUnit','requestedUnits','coveredUnits','missingUnits','coverageVerifiable','firstTick','lastTick','firstClock','lastClock','delay','delayMin','delayMax','span','delayOutlier','spanOutlier','lowLines','candidateLowLines','competingHighLines','note']);
   const htmlFile=path.join(out,'report.html');
-  fs.writeFileSync(htmlFile,injectHtml(fs.readFileSync(htmlFile,'utf8'),report,rows,delay,span,port.team),'utf8');
+  const originalHtml=fs.readFileSync(htmlFile,'utf8'),baseReportBlock=`<pre>${esc(baseReport)}</pre>`;
+  if(!originalHtml.includes(baseReportBlock))throw Error('基础 HTML 缺少文字报告，无法追加底层间隔统计');
+  const combinedHtml=originalHtml.replace(baseReportBlock,`<pre>${esc(combinedReport)}</pre>`);
+  fs.writeFileSync(htmlFile,injectHtml(combinedHtml,report,rows,delay,span,port.team,native),'utf8');
   console.log(`\n双源评测完成：${htmlFile}`);
   console.log(`team=${port.team}：直接 B=${rows.length}，唯一归属执行=${matched.length}，未匹配=${rows.filter(r=>r.status==='unmatched').length}，歧义=${rows.filter(r=>r.status==='ambiguous').length}；首次延迟上界=${fmt(delay.cleanMean)}s，执行跨度=${fmt(span.cleanMean)}s`);
-  return {out,rows,delay,span};
+  console.log(`底层相邻间隔=${nativeIntervals.length}，原始均值=${fmt(nativeIntervalStats.mean)}s，去离群均值=${fmt(nativeIntervalStats.cleanMean)}s，离群=${nativeIntervalStats.outliers}，横坐标=前条底层执行时间`);
+  return {out,rows,delay,span,nativeIntervals,nativeIntervalStats};
 }
 if(require.main===module){
   if(process.argv.length!==4){console.error('用法: node evaluate.js <commands.txt> <replay.jsonl>');process.exitCode=1;}
   else evaluate(process.argv[2],process.argv[3]).catch(e=>{console.error('评测失败：'+e.message);process.exitCode=1;});
 }
-module.exports={evaluate,RULES,readHigh,readLow,matchAll,stats};
+module.exports={evaluate,RULES,readHigh,readLow,matchAll,stats,nativeIntervalsOf};

@@ -134,6 +134,7 @@ final class RwxCliCommandCapture implements AutoCloseable {
 
     private synchronized void observeGame(GameEngine engine) {
         if (closed) return;
+        evaluate.utils.EngineEvidence.lifecycle();
         boolean active = activeGame(engine);
         if (active) {
             int gameMillis = engine.gameTimeMillis;

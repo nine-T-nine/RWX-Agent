@@ -1483,6 +1483,7 @@ public class GameLogic extends GameEngine {
         float f = deltaSpeed * this.speedMultiplier;
         this.I = f + 2.0f;
         this.lastDelta = f;
+        evaluate.utils.EngineEvidence.beforeTick();
         this.networkEngine.update(f);
         this.gameTimeMillis = (int) (this.gameTimeMillis + (f * 16.666666f));
         CommandQueue.drain();
@@ -1509,6 +1510,7 @@ public class GameLogic extends GameEngine {
                 f = this.lastDelta;
             }
             gameObject.update(f);
+            evaluate.utils.EngineEvidence.observeObject(gameObject);
         }
         if (isInNetworkOrReplay() && f < 0.1f) {
             NetworkEngine.reportDesync("updateAllGame3: deltaSpeed:" + f + " frame:" + this.currentTick);
@@ -1520,6 +1522,7 @@ public class GameLogic extends GameEngine {
                 GameObject gameObject2 = (GameObject) listOperationEntry.value;
                 if (!gameObject2.isDestroyed) {
                     gameObject2.update(f);
+                    evaluate.utils.EngineEvidence.observeObject(gameObject2);
                 }
             }
         }
@@ -1569,6 +1572,7 @@ public class GameLogic extends GameEngine {
             this.teamStats.update();
         }
         this.gameStatistics.b();
+        evaluate.utils.EngineEvidence.afterTick();
     }
 
     /* JADX INFO: renamed from: a */

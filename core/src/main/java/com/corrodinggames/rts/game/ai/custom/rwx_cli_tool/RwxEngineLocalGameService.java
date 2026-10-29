@@ -1078,6 +1078,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             GameEngine engine = GameEngine.getInstance();
             requireActiveGame(engine);
             PlayerTeam controlled = requireControlledTeam(engine);
+            evaluate.utils.EngineEvidence.intent(Collections.singletonList(unitId), null, "cancel", null, null);
             BaseUnit found = findLiveUnit(unitId);
             if (!(found instanceof OrderableUnit) || found.team != controlled
                     || !(found instanceof FactoryQueueInterface)) {
@@ -1124,6 +1125,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
                 command.addUnitToCommand(factory);
                 command.stopCurrentAction = true;
                 command.setActionId(matching.get(index).j);
+                evaluate.utils.EngineEvidence.tag(command, "MANUAL");
                 if (immediate) applyCommandNow(engine, command);
             }
             String message = "cancelled queue entries: " + String.join(", ", removed)
@@ -2173,9 +2175,14 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             return applyAttackMode(engine, controlled, order);
         }
 
+        List<Long> requestedUnitIds = resolveOrderUnitIds(order);
+        if (origin == OrderOrigin.MANUAL) {
+            evaluate.utils.EngineEvidence.intent(requestedUnitIds, order.targetUnitId,
+                    describeOrderType(order.type), order.x, order.y);
+        }
         List<Long> skippedUnitIds = new ArrayList<>();
         List<OrderableUnit> selected = requireControllableUnits(
-                resolveOrderUnitIds(order), controlled, skippedUnitIds);
+                requestedUnitIds, controlled, skippedUnitIds);
         String skippedNote = skippedUnitIds.isEmpty() ? ""
                 : " (skipped dead/missing units: " + RwxCliText.joinIds(skippedUnitIds) + ")";
         BaseUnit target = null;
@@ -2374,6 +2381,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
                     throw notImplemented("order-" + order.type.name().toLowerCase().replace('_', '-'));
             }
 
+            evaluate.utils.EngineEvidence.tag(command, origin.name());
             boolean localIdle = canApplyImmediately(engine);
             if (origin != OrderOrigin.KEEP) {
                 yieldAutomation(engine, selected, order.queued || !isWaypointOrder(order.type),
@@ -3005,6 +3013,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
             try {
                 for (OrderableUnit unit : selected) command.addUnitToCommand(unit);
                 command.setAttackMode(mode);
+                evaluate.utils.EngineEvidence.tag(command, "MANUAL");
                 yieldAutomation(engine, selected, true, canApplyImmediately(engine), command);
                 // 显式姿态也优先于尚未被采样器应用的新单位默认姿态。
                 stanceIssuedUnitIds.addAll(idsOf(selected));
@@ -4583,6 +4592,7 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
 
     /** Same hand-off with a caller-chosen deadline; the background sampler uses a short one. */
     private static <T> T onGameThread(Callable<T> work, long timeoutMillis) {
+        work = evaluate.utils.EngineEvidence.propagate(work);
         GameEngine engine = GameEngine.getInstance();
         if (isSimulationIdle(engine)) {
             synchronized (engine.gameStateLock) {

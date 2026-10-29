@@ -119,6 +119,7 @@ public final class RwxCliTool implements AutoCloseable {
         portFile.close();
         commandCapture.close();
         eventStream.close();
+        evaluate.utils.EngineEvidence.close("process_exit");
     }
 
     /** Walks up from the working directory to the checkout root (marker: settings.gradle.kts). */
@@ -271,7 +272,15 @@ public final class RwxCliTool implements AutoCloseable {
             if (registered == RwxCliCommands.Command.PING) return "pong";
             if (registered == RwxCliCommands.Command.HELP) return helpDocument(arguments);
 
-            String message = executor.execute(registered, arguments);
+            evaluate.utils.EngineEvidence.beginRequest(command, arguments);
+            String message;
+            try {
+                message = executor.execute(registered, arguments);
+            } catch (Exception error) {
+                evaluate.utils.EngineEvidence.endRequest("error: " + describe(error));
+                throw error;
+            }
+            evaluate.utils.EngineEvidence.endRequest(message);
             System.out.println(message);
             return message;
         } catch (Exception error) {

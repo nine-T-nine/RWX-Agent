@@ -2,6 +2,10 @@
 
 按日期追加，一条一句结论 + 简短理由。
 
+## 2026-10-29
+
+- Replay 相邻底层命令间隔使用完整 Replay 的当前 player/team 有效记录（排除 noop，包含自动微操/UI），每条记录算一命令，保留同 tick 的零间隔，横坐标取前条执行时间；不受高低层归属与去重口径影响，避免丢掉实际命令节奏。离群复用现有 IQR/MAD 与中位数+5s 的阈值，序列只新增一个 CSV，其余统计并入已有 TXT/JSON/HTML。
+
 ## 2026-10-28
 
 - 双源评测按 CLI/Command 原生语义映射全部 19 种 order：建造数量读单条 `buildQueueSize`，rally/stop/cancel/stance 与坐标动作保留独立字段；8 种 group/keep/pending/auto 管理命令记录为间接效果，不强造一对一映射。规则独立到 `evaluate/execution-mapping.js`，双文件入口不变。

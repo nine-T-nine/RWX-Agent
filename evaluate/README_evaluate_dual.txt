@@ -15,8 +15,11 @@ No fallback to faction or another team.
 It preserves all output from evaluate_1.js:
   report.txt, summary.json, classified_commands.csv, decision_cycles.csv,
   waiting_intervals.csv, command_intervals.csv, report.html (three charts).
-It appends an interactive execution-latency chart and detailed report.html
-sections, and adds:
+It extends report.txt and summary.json with adjacent native Replay command
+intervals, adds an interactive interval line chart, then appends the existing
+execution-latency chart and detailed report.html sections (five charts total).
+Additional output files:
+  native_command_intervals.csv,
   execution_report.txt, execution_summary.json, execution_matches.csv,
   execution_matches.jsonl, mapping_rules.json
 
@@ -31,6 +34,20 @@ cannot recover the original receipt milliseconds and are never rewritten.
 Latency = X - receipt game time. New logs have delayMin=delayMax=latency;
 for legacy logs latency is an upper bound, with delayMin=max(0,latency-1).
 Execution span = Y - X.  A/B cycle & wait analytics remain unchanged.
+
+Native command intervals use ALL valid rows of the controlled team in the
+entire Replay, independently of high-to-low matching. Automation and UI
+commands are included; other teams and noop rows are excluded. N rows yield
+N-1 intervals. Each Replay row is one command regardless of unit count;
+same-tick rows are retained as distinct commands, with a zero-second gap.
+The chart X value is the PREVIOUS command's execution time (the left endpoint),
+and Y is next.time_s - previous.time_s. Hover shows both commands/ticks/lines.
+native_command_intervals.csv stores the complete sequence and outlier flags;
+summary.json.nativeCommandIntervals stores raw/clean mean, median, P90/P95,
+maximum, threshold, outlier count and zero-gap count. report.txt lists outliers.
+Long-gap detection uses the existing max(IQR fence, scaled MAD fence,
+median + 5 seconds) rule; the JavaScript API's minOutlierSeconds option can
+change the 5-second floor. Fewer than four intervals are not marked outliers.
 
 All 19 order commands are mapped, including stop, rally, cancel and stance.
 Eight group/keep/pending/auto commands configure local or indirect behavior;

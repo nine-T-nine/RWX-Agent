@@ -17,7 +17,7 @@ Rusted Warfare（RW）的桌面/多平台移植与自动化改造版。在保留
 | `android/` | Android 壳 |
 | `web/` | RWX-Agent 静态项目网站、三场网页录像（含 Claude 利用暂停对战 Very Hard AI）、媒体生成与资源校验脚本；GitHub Pages 部署见 `web/README.md` |
 | `agent-operation/` | Agent 文档与工具：`START.md`、`help.md`、`tools/rwx-cli.py`、`server/`（systemd、host-service）、`VALIDATION.md` |
-| `evaluate/` | `evaluate.js` 复用 `evaluate_1.js` 做 A/B 统计，并用 `execution-mapping.js` 匹配 19 种直接 order、区分间接管理命令和归属歧义；`utils/replay.py <replay>` 输出底层记录；`CommandRecorder.java` 随 core 打包，收包时间保留 `[MM:SS:mmm]`，日志/统计在 `evaluate/output/` |
+| `evaluate/` | `evaluate.js` 复用 `evaluate_1.js` 做 A/B 统计，增加 Replay 我方相邻底层命令间隔（CSV、均值/离群报告、X=左端点折线图），并用 `execution-mapping.js` 匹配 19 种直接 order；`utils/replay.py <replay>` 输出底层记录；`CommandRecorder.java` 随 core 打包，收包时间 `[MM:SS:mmm]`，输出在 `evaluate/output/` |
 | `.agents/skills/rwx-cli-tools/` | 战术参考与 PowerShell 批处理辅助脚本 |
 
 ## 关键实现点
