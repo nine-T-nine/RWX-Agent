@@ -24,6 +24,11 @@ internal class SkiaPaintAdapter : AutoCloseable {
     private var strokeWidth: Float? = null
     private var mode: PaintMode? = null
     private var blendMode: BlendMode? = null
+    var version: Long = 0
+        private set
+
+    val canBatchImages: Boolean
+        get() = (blendMode ?: BlendMode.SRC_OVER).ordinal <= BlendMode.SCREEN.ordinal
 
     fun configure(
         source: Paint?,
@@ -54,7 +59,10 @@ internal class SkiaPaintAdapter : AutoCloseable {
         // drawImageRect ignores Paint RGB. Modulate the image explicitly, leaving alpha
         // to Paint so texture transparency and effect fading are not multiplied twice.
         val nextImageTint = if (image) nextColor or 0xff000000.toInt() else -1
+        // Source paints have public mutable fields, so keep comparing their values.
+        // The version describes the configured native paint, not the source object.
         if (filter !== lastFilter || nextImageTint != lastImageTint) {
+            version++
             paint.colorFilter = null
             nativeFilter?.close()
             nativeFilter = createColorFilter(filter, nextImageTint)
@@ -63,21 +71,27 @@ internal class SkiaPaintAdapter : AutoCloseable {
             paint.colorFilter = nativeFilter
         }
         if (color != nextColor) {
+            version++
             paint.color = nextColor; color = nextColor
         }
         if (antiAlias != nextAntiAlias) {
+            version++
             paint.isAntiAlias = nextAntiAlias; antiAlias = nextAntiAlias
         }
         if (dither != nextDither) {
+            version++
             paint.isDither = nextDither; dither = nextDither
         }
         if (strokeWidth != nextStrokeWidth) {
+            version++
             paint.strokeWidth = nextStrokeWidth; strokeWidth = nextStrokeWidth
         }
         if (mode != nextMode) {
+            version++
             paint.mode = nextMode; mode = nextMode
         }
         if (blendMode != nextBlendMode) {
+            version++
             paint.blendMode = nextBlendMode; blendMode = nextBlendMode
         }
         return paint

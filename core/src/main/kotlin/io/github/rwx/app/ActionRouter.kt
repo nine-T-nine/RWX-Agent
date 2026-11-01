@@ -20,6 +20,7 @@ internal class ActionRouter(
     private val settingsModel: SettingsModel,
     private val refreshScreen: () -> Unit,
     private val levelSelectSceneHost: LevelSelectSceneHost,
+    private val mapPathPickerController: MapPathPickerController,
     private val battleRoomController: BattleRoomController,
     private val multiplayerLobbyController: MultiplayerLobbyController,
     private val multiplayerConnectionController: MultiplayerConnectionController,
@@ -94,6 +95,24 @@ internal class ActionRouter(
             battleRoomController.selectedMode = action.mode
             levelSelectSceneHost.updateMaps(action.mode)
             return
+        }
+        if (mapPathPickerController.hasPending) {
+            when (action) {
+                is LevelSelectAction.SelectMap -> {
+                    mapPathPickerController.complete(action.map.mapAssetPath)
+                    return
+                }
+
+                LevelSelectAction.Back -> {
+                    mapPathPickerController.cancel()
+                    return
+                }
+
+                is LevelSelectAction.SelectMode -> {
+                    levelSelectSceneHost.updateMaps(action.mode)
+                    return
+                }
+            }
         }
         when (val outcome = LevelSelectNavigation.outcomeFor(action)) {
             is LevelSelectOutcome.Navigate -> {

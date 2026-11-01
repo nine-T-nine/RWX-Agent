@@ -54,18 +54,20 @@ public class FactoryQueueManager {
 
     public void a(GameInputStream gameInputStream) throws IOException {
         this.e = gameInputStream.readFloat();
-        int i = gameInputStream.readInt();
+        int i = gameInputStream.collectionSize(gameInputStream.readInt());
         this.c.clear();
         for (int i2 = 0; i2 < i; i2++) {
             Projectile projectile = new Projectile();
             projectile.readFromStream(gameInputStream);
             if (AbstractUnitAction.isActionIdSpecified(projectile.j)) {
                 if (this.a.validateActionId(projectile.j) == null) {
+                    if (gameInputStream.strictUnitTypes()) throw new IOException("Unsupported queued unit action");
                     GameEngine.log("Factory", this.a.r() + " no longer has the action:" + projectile.j);
                 } else {
                     this.c.add(projectile);
                 }
             } else {
+                if (gameInputStream.strictUnitTypes()) throw new IOException("Missing queued unit action");
                 GameEngine.log("Factory", "buildQueue has uIndex of -1, skipping");
             }
         }

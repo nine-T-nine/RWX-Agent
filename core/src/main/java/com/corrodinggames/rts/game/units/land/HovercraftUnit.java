@@ -125,7 +125,7 @@ public class HovercraftUnit extends HoverLandUnit implements TransportUnitInterf
         this.unloadTimer = gameInputStream.readFloat();
         this.isUnloading = gameInputStream.readBoolean();
         this.transportedUnits.clear();
-        int i2 = gameInputStream.readInt();
+        int i2 = gameInputStream.collectionSize(gameInputStream.readInt());
         for (int i3 = 0; i3 < i2; i3++) {
             BaseUnit baseUnit = gameInputStream.readBaseUnit();
             if (baseUnit != null) {

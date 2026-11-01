@@ -6,6 +6,23 @@ import com.corrodinggames.rts.game.PlayerTeam.resetTeamRegistry
 import com.corrodinggames.rts.gameFramework.GameEngine
 import com.corrodinggames.rts.gameFramework.network.NetworkEngine
 import com.corrodinggames.rts.gameFramework.network.TeamLayoutType
+import com.corrodinggames.rts.gameFramework.network.GameInputStream
+
+/** Restores the world and the detached room rules captured with it on either renderer. */
+fun GameEngine.restoreMapSnapshot(snapshot: MapSnapshot) {
+    check(!isNetworkGameActive()) { "Cannot restore a local map snapshot during multiplayer" }
+    check(gameSaver.readLocalMapSnapshot(GameInputStream(snapshot.saveBytes))) {
+        "Unable to restore in-memory save: ${snapshot.mapPath}"
+    }
+    networkEngine?.let { network ->
+        snapshot.battleRoomConfig?.let { config ->
+            network.roomSettings = config.room.options.clone()
+            network.isSandboxMode = config.sandbox
+        }
+        network.selectedMapPath = snapshot.mapPath
+    }
+    applyLoadedSinglePlayerFogRules()
+}
 
 
 /**
@@ -63,7 +80,7 @@ fun NetworkEngine.applyBattleRoomTeamLayout(layout: BattleRoomTeamLayout) {
 
 private fun NetworkEngine.applyCustomTeamMode(layout: BattleRoomTeamLayout) {
     if (!isServer) return
-    val teams = PlayerTeam.getTeams().filter { !it.isSpectatorTeamColor() }
+    val teams = PlayerTeam.getTeams().filter { !it.isSpectatorTeamColor }
     when (layout) {
         BattleRoomTeamLayout.AllVsAi ->
             teams.forEach { it.teamColorId = if (it.isTeamControlledByAI) 1 else 0 }
@@ -101,6 +118,12 @@ fun GameEngine.configureLocalBattleRoom(
     logLabel: String,
 ): NetworkEngine? {
     val networkEngine = networkEngine ?: return null
+    // Starting a local server resets its mutable settings. Snapshot the requested rules first,
+    // including when a caller captured them directly from this engine's current room.
+    val settings = config.room.options.clone()
+    if (networkEngine.roomSettings === config.room.options) {
+        networkEngine.roomSettings = networkEngine.roomSettings.clone()
+    }
     networkEngine.selectedMapPath = config.room.mapPath
     val playerName = networkEngine.playerName
         ?: settingsEngine?.lastNetworkPlayerName
@@ -128,19 +151,11 @@ fun GameEngine.configureLocalBattleRoom(
         "Unable to start $logLabel battle room: local player team was not registered"
     }
 
-    if (config.sandbox)
-        networkEngine.roomSettings.apply {
-            fogMode = 0
-            revealedMap = true
-        }
-
-    val settings = networkEngine.getEditableRoomSettings() ?: networkEngine.roomSettings
     if (!config.room.isSavedGame) {
-        config.room.options.apply {
-            gameModeType = getGameModeType()
-        }
+        settings.gameModeType = getGameModeType()
+        settings.mapPath = currentMapFilename
     }
-
+    networkEngine.roomSettings = settings
     networkEngine.a(settings)
 
     repeat(config.aiPlayerCount.coerceAtLeast(0)) {

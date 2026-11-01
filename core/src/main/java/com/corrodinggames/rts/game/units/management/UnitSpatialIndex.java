@@ -301,7 +301,7 @@ public final class UnitSpatialIndex {
             baseUnit.spatialIndexTileY = -1;
             return;
         }
-        if (baseUnit.isDead) {
+        if (baseUnit.isDead || baseUnit.isTransferUnavailable()) {
             if (baseUnit.spatialIndexTileX != -1 && baseUnit.spatialIndexTileY != -1) {
                 this.e[baseUnit.spatialIndexTileX][baseUnit.spatialIndexTileY].b(baseUnit);
                 baseUnit.spatialIndexTileX = -1;

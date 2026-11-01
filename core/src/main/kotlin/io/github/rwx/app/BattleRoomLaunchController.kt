@@ -4,11 +4,9 @@ import com.corrodinggames.rts.gameFramework.GameEngine
 import io.github.rwx.PlatformStorage
 import io.github.rwx.i18n.I18n
 import io.github.rwx.logger
-import io.github.rwx.map.LinkedMapAvailability
 import io.github.rwx.map.MapLinkResolver
 import io.github.rwx.p2p.FeatureIds
 import io.github.rwx.p2p.MapFeatureDetector
-import io.github.rwx.p2p.MultiMapCoordinator
 import io.github.rwx.p2p.P2PLobbyService
 import io.github.rwx.render.frame.GameViewport
 import io.github.rwx.session.BattleRoomLaunchConfig
@@ -87,6 +85,10 @@ internal class BattleRoomLaunchController(
     }
 
     fun handleBattleRoomGameStarted() {
+        if (P2PLobbyService.getInstance().isLinkedMapTransition()) {
+            BattleRoomUiBridge.startGamePending = false
+            return
+        }
         val networkGameStarted =
             GameEngine.getInstance()?.networkEngine?.hasActiveStartedGameConnection() == true
         when (battleRoomGameStartedAction(
@@ -144,9 +146,17 @@ internal class BattleRoomLaunchController(
         handleBattleRoomGameStarted()
     }
 
+    fun driveLinkedMapSession() {
+        val lobby = P2PLobbyService.getInstance()
+        lobby.driveLinkedMaps(gameSession, viewport())
+        lobby.consumeLinkedMapFailure()?.let(showUnavailableDialog)
+        if (lobby.consumeLinkedMapStarted()) enterStartedBattleRoomGame()
+    }
+
     private fun enterStartedBattleRoomGame() {
         val network = GameEngine.getInstance()?.networkEngine
-        val mapPath = gameSession.currentBattleRoom()?.room?.mapPath?.takeIf { it.isNotBlank() }
+        val mapPath = gameSession.linkedViewedMapPath
+            ?: gameSession.currentBattleRoom()?.room?.mapPath?.takeIf { it.isNotBlank() }
             // During GUI reconnect the renderer can still be preparing its menu surface,
             // so the published room snapshot is temporarily absent. The start packet has
             // already supplied the native map path; use it to replace that menu request.
@@ -163,7 +173,7 @@ internal class BattleRoomLaunchController(
             )
             return
         }
-        if (!gameSession.adoptStartedGameFromEngine(viewport())) {
+        if (gameSession.linkedViewedMapPath == null && !gameSession.adoptStartedGameFromEngine(viewport())) {
             logger.warn { "Game session rejected the started battle room game" }
             showUnavailableDialog(
                 I18n.battleroom.unableToStartGame("Renderer could not adopt the started game")
@@ -198,10 +208,9 @@ internal class BattleRoomLaunchController(
         }
         val mapPath = gameSession.currentBattleRoom()?.room?.mapPath?.takeIf { it.isNotBlank() }
             ?: return null
-        if (FeatureIds.MAP_LINKS in MapFeatureDetector.requiredFeaturesForMap(mapPath) &&
-            !LinkedMapAvailability.ENABLED
+        if (FeatureIds.MAP_LINKS in MapFeatureDetector.requiredFeaturesForMap(mapPath)
         ) {
-            return LinkedMapAvailability.UNAVAILABLE_MESSAGE
+            return "There is no linked map feature in this map"
         }
         val mapStorage = storage() ?: return null
         val missing = MapLinkResolver.missingLinkedMapIds(mapStorage, mapPath)
@@ -221,33 +230,11 @@ internal class BattleRoomLaunchController(
         if (FeatureIds.MAP_LINKS !in requiredFeatures) {
             return true
         }
-        if (!LinkedMapAvailability.ENABLED) {
-            showUnavailableDialog(LinkedMapAvailability.UNAVAILABLE_MESSAGE)
-            return false
+        val lobby = P2PLobbyService.getInstance()
+        if (!lobby.prepareLinkedMapSession(gameSession, snapshot)) {
+            lobby.consumeLinkedMapFailure()?.let(showUnavailableDialog)
         }
-        val mapStorage = storage()
-        if (mapStorage == null) {
-            showUnavailableDialog("RWX multi-map requires local map storage.")
-            return false
-        }
-        val plan = MultiMapCoordinator.createAssignmentPlan(mapStorage, mapPath, snapshot.players)
-        if (plan.missingTargetMapIds.isNotEmpty()) {
-            showUnavailableDialog(I18n.ingame.map.missing(plan.missingTargetMapIds.joinToString(", ")))
-            return false
-        }
-        if (!plan.hasEnoughPlayers) {
-            showUnavailableDialog(
-                "RWX multi-map requires at least one non-spectator human player per map instance. " +
-                        "Maps: ${plan.requiredPlayerCount}, players: ${plan.availablePlayerCount}."
-            )
-            return false
-        }
-        val assignments = plan.assignments
-        if (assignments == null) {
-            showUnavailableDialog("Unable to prepare RWX multi-map assignments.")
-            return false
-        }
-        P2PLobbyService.getInstance().broadcastMultiMapAssignments(assignments)
-        return true
+        // The session's all-peer/all-world barrier starts workers and opens the initial view.
+        return false
     }
 }

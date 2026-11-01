@@ -677,7 +677,9 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
     /* JADX INFO: renamed from: m */
     public boolean canVoteToSurrender() {
         GameEngine gameEngine = GameEngine.getInstance();
-        if (((this.isTeamDefeatedTech || this.isTeamWipedOut) && !gameEngine.networkEngine.roomSettings.sharedControl) || this.isTeamSpectator || isTeamDisconnected()) {
+        // A worker's viewer socket does not determine room membership or its surrender quorum.
+        boolean disconnectedFromRoom = gameEngine.networkEngine.mapWorkerAdmission == null && isTeamDisconnected();
+        if (((this.isTeamDefeatedTech || this.isTeamWipedOut) && !gameEngine.networkEngine.roomSettings.sharedControl) || this.isTeamSpectator || disconnectedFromRoom) {
             return false;
         }
         if (this.isTeamAutoStartQueued && !hasSurrenderVote()) {
@@ -938,7 +940,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
         int size = BaseUnit.bE.size();
         for (int i = 0; i < size; i++) {
             BaseUnit baseUnit = baseUnitArrA[i];
-            if (baseUnit.team == this) {
+            if (baseUnit.team == this && !baseUnit.isTransferUnavailable()) {
                 teamUnitStats.a(baseUnit);
                 if (z) {
                     baseUnit.isHidden = true;
@@ -1558,6 +1560,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
 
     public void e(float f) {
         GameEngine gameEngine = GameEngine.getInstance();
+        if (gameEngine.missionEngine != null && gameEngine.missionEngine.linkedWorldState != null) return;
         if (this.defeatCheckDelayTicks > 0) {
             this.defeatCheckDelayTicks--;
             return;
@@ -1634,6 +1637,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
     }
 
     public static void a(BaseUnit baseUnit) {
+        if (baseUnit.pendingPortalTransfer != null) return;
         if (baseUnit.team != null && baseUnit.isHidden && baseUnit.isHighlighted) {
             PlayerTeam playerTeam = baseUnit.team;
             baseUnit.isHidden = false;
@@ -1647,6 +1651,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
     }
 
     public static void c(BaseUnit baseUnit) {
+        if (baseUnit.isTransferUnavailable()) return;
         if (baseUnit.team != null && !baseUnit.isHidden && baseUnit.isHighlighted && !baseUnit.isDead) {
             baseUnit.isHidden = true;
             PlayerTeam playerTeam = baseUnit.team;
@@ -1705,7 +1710,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
                         pruneExpiredSurrenderVotes(playerTeam.teamColorId);
                     }
                 }
-                if (playerTeam.isTeamVictory) {
+                if (playerTeam.isTeamVictory && (gameEngine.missionEngine == null || gameEngine.missionEngine.linkedWorldState == null)) {
                     if (playerTeam.teamVictoryCleanupStartTimeMillis < 0) {
                         playerTeam.teamVictoryCleanupStartTimeMillis = gameEngine.gameTimeMillis;
                     }

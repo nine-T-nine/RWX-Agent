@@ -12,6 +12,7 @@ import com.corrodinggames.rts.gameFramework.file.FileHelper;
 import com.corrodinggames.rts.gameFramework.network.GameInputStream;
 import com.corrodinggames.rts.gameFramework.network.GameOutputStream;
 import io.github.rwx.geometry.RectF;
+import io.github.rwx.map.PortalUnitTypeIds;
 import io.github.rwx.render.canvas.Paint;
 import io.github.rwx.ui.CoreUiEventQueue;
 import org.w3c.dom.Document;
@@ -129,7 +130,7 @@ public class MapPortalMode {
 
     public float[] getPortalCenter(String portalId) {
         Portal portal = findPortalById(portalId);
-        if (portal == null && this.portals.length > 0) {
+        if (portal == null && (portalId == null || portalId.trim().isEmpty()) && this.portals.length > 0) {
             portal = this.portals[0];
         }
         if (portal == null) {
@@ -139,6 +140,17 @@ public class MapPortalMode {
                 (portal.object.tileRect.a + portal.object.tileRect.c) * 0.5f,
                 (portal.object.tileRect.b + portal.object.tileRect.d) * 0.5f
         };
+    }
+
+    public String resolveDestinationPortal(String portalId) {
+        if (portalId == null || portalId.trim().isEmpty()) return this.portals.length == 0 ? null : this.portals[0].id;
+        Portal portal = findPortalById(portalId);
+        return portal == null ? null : portal.id;
+    }
+
+    public boolean containsPortalPoint(String portalId, float x, float y) {
+        Portal portal = findPortalById(portalId);
+        return portal != null && portal.containsPoint(x, y);
     }
 
     public int addEditorPortal(MapObject object) throws MapLoadException {
@@ -156,6 +168,7 @@ public class MapPortalMode {
         if (index < 0) {
             return null;
         }
+        Portal removed = this.portals[index];
         Portal[] updated = new Portal[this.portals.length - 1];
         if (index > 0) {
             System.arraycopy(this.portals, 0, updated, 0, index);
@@ -163,9 +176,9 @@ public class MapPortalMode {
         if (index < this.portals.length - 1) {
             System.arraycopy(this.portals, index + 1, updated, index, this.portals.length - index - 1);
         }
-        MapObject object = this.portals[index].object;
         this.portals = updated;
-        return object;
+        removeUnusedLink(removed);
+        return removed.object;
     }
 
     public EditorPortalProperties getEditorPortalPropertiesAt(float x, float y) {
@@ -193,6 +206,27 @@ public class MapPortalMode {
     }
 
     public void update(float deltaFrames) {
+        GameEngine linkedEngine = GameEngine.getInstance();
+        if (linkedEngine != null && linkedEngine.missionEngine != null && linkedEngine.missionEngine.linkedWorldState != null) {
+            io.github.rwx.map.multiplayer.LinkedWorldState state = linkedEngine.missionEngine.linkedWorldState;
+            state.updateArrivals((id, x, y) -> containsPortalPoint(id, x, y));
+            io.github.rwx.map.multiplayer.PortalTransferWorker authority = state.getAuthority();
+            if (authority != null) {
+                for (Portal portal : this.portals) {
+                    ArrayList<Long> ids = new ArrayList<Long>();
+                    for (BaseUnit unit : BaseUnit.bE) {
+                        if (isTransferableUnit(unit) && !unit.isTransferUnavailable() && !state.isArrivalProtected(unit.objectId)
+                                && portal.containsPoint(unit.posX, unit.posY)) ids.add(unit.objectId);
+                    }
+                    if (!ids.isEmpty()) {
+                        authority.requestPortal(ids, portal.targetMapId, portal.targetPortalId,
+                                (portal.object.tileRect.a + portal.object.tileRect.c) * 0.5f,
+                                (portal.object.tileRect.b + portal.object.tileRect.d) * 0.5f);
+                    }
+                }
+            }
+            return;
+        }
         this.jumpCooldownFrames = Math.max(0.0f, this.jumpCooldownFrames - deltaFrames);
         if (this.jumpCooldownFrames > 0.0f || this.portals.length == 0) {
             return;
@@ -372,10 +406,64 @@ public class MapPortalMode {
         if (portal.targetMapId == null || portal.targetMapId.trim().length() == 0) {
             return;
         }
-        String linkId = portal.linkId != null && portal.linkId.trim().length() > 0 ? portal.linkId.trim() : portal.id;
-        if (!this.links.containsKey(linkId)) {
-            this.links.put(linkId, new Link(linkId, portal.targetMapId, "oneWay"));
+        String linkId = resolveLinkId(portal);
+        if (linkId.length() == 0) {
+            return;
         }
+        String key = findLinkKey(linkId);
+        if (key == null) {
+            key = linkId;
+        }
+        Link existing = this.links.get(key);
+        String direction = existing != null ? existing.direction : "oneWay";
+        this.links.put(key, new Link(key, portal.targetMapId.trim(), direction));
+    }
+
+    /**
+     * Drops the link owned by a portal once no remaining portal references it, so deleting or
+     * retargeting a portal does not leave a stale entry in the map link manifest.
+     */
+    private void removeUnusedLink(Portal portal) {
+        String linkId = resolveLinkId(portal);
+        if (linkId.length() == 0) {
+            return;
+        }
+        for (Portal candidate : this.portals) {
+            if (linkId.equalsIgnoreCase(resolveLinkId(candidate))) {
+                return;
+            }
+        }
+        String key = findLinkKey(linkId);
+        if (key == null) {
+            return;
+        }
+        Link link = this.links.get(key);
+        if (link != null && sameTarget(link.targetMapId, portal.targetMapId)) {
+            this.links.remove(key);
+        }
+    }
+
+    private static String resolveLinkId(Portal portal) {
+        String linkId = portal.linkId == null ? "" : portal.linkId.trim();
+        return linkId.length() > 0 ? linkId : (portal.id == null ? "" : portal.id.trim());
+    }
+
+    private String findLinkKey(String linkId) {
+        if (this.links.containsKey(linkId)) {
+            return linkId;
+        }
+        for (String key : this.links.keySet()) {
+            if (key != null && key.equalsIgnoreCase(linkId)) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    private static boolean sameTarget(String left, String right) {
+        String first = left == null ? "" : left.trim();
+        String second = right == null ? "" : right.trim();
+        return first.equalsIgnoreCase(second);
     }
 
     public String updateEditorPortalAt(float x, float y, EditorPortalProperties properties) throws MapLoadException {
@@ -387,7 +475,7 @@ public class MapPortalMode {
             throw new MapLoadException("Map portal properties are missing");
         }
         String id = required(properties.id, "portal id");
-        String targetMapId = required(properties.targetMapId, "target map id");
+        String targetMapId = required(properties.targetMapId, "target map path");
         float width = properties.width;
         float height = properties.height;
         if (properties.circle) {
@@ -400,6 +488,7 @@ public class MapPortalMode {
         }
 
         MapObject object = this.portals[index].object;
+        Portal previous = this.portals[index];
         object.name = id;
         object.normalizedName = id.trim().toLowerCase(java.util.Locale.ENGLISH);
         object.type = PORTAL_OBJECT_TYPE;
@@ -417,8 +506,10 @@ public class MapPortalMode {
             removeObjectProperty(object, "shape");
             removeObjectProperty(object, "circle");
         }
-        this.portals[index] = Portal.fromMapObject(object, index, this.links);
-        ensureLinkForPortal(this.portals[index]);
+        Portal updated = Portal.fromMapObject(object, index, this.links);
+        this.portals[index] = updated;
+        ensureLinkForPortal(updated);
+        removeUnusedLink(previous);
         return id;
     }
 
@@ -512,8 +603,9 @@ public class MapPortalMode {
 
     private boolean requestTransfer(GameEngine gameEngine, Portal portal, BaseUnit unit) {
         UnitType unitType = unit.r();
-        if (!(unitType instanceof UnitTypeEnum)) {
-            GameEngine.log("Map portal skipped custom unit transfer: " + unitType.getUnitTypeDescriptionShort());
+        String unitTypeId = PortalUnitTypeIds.encode(unitType);
+        if (unitTypeId == null) {
+            GameEngine.log("Map portal skipped unsupported unit type: " + unitType.getUnitTypeDescriptionShort());
             return false;
         }
         int teamId = unit.team != null ? unit.team.teamId : -1;
@@ -525,12 +617,12 @@ public class MapPortalMode {
                 gameEngine.currentMapPath,
                 portal.targetMapId,
                 portal.targetPortalId,
-                ((UnitTypeEnum) unitType).name(),
+                unitTypeId,
                 teamId,
                 healthFraction,
-                unit.direction
+                unit.rotationSpeed
         );
-        GameEngine.log("Map portal transfer requested: " + ((UnitTypeEnum) unitType).name());
+        GameEngine.log("Map portal transfer requested: " + unitTypeId);
         return true;
     }
 
@@ -796,7 +888,7 @@ public class MapPortalMode {
                 }
             }
             if (targetMapId == null || targetMapId.trim().length() == 0) {
-                throw new MapLoadException("Map portal '" + id + "' requires targetMapId or a valid linkId");
+                throw new MapLoadException("Map portal '" + id + "' requires a target map path or a valid linkId");
             }
             return new Portal(id.trim(), linkId, targetMapId.trim(), readProperty(object, "targetPortalId"), isCircle(object), object);
         }

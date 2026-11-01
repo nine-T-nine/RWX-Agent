@@ -12,6 +12,7 @@ internal class CoreEventDispatcher(
     private val resourceBrowserController: ResourceBrowserController,
     private val inGameDialogController: InGameDialogController,
     private val mapController: MapController,
+    private val mapPathPickerController: MapPathPickerController,
     private val openInGameSettings: () -> Unit,
     private val requestInGameSurrender: () -> Unit,
     private val exitRwGameToMainMenu: () -> Unit,
@@ -56,6 +57,7 @@ internal class CoreEventDispatcher(
                 is CoreUiEvent.MessageDialogRequested -> inGameDialogController.showLegacyMessageDialog(event)
                 is CoreUiEvent.PasswordDialogRequested -> inGameDialogController.showLegacyPasswordDialog(event)
                 is CoreUiEvent.FormDialogRequested -> inGameDialogController.showLegacyFormDialog(event)
+                is CoreUiEvent.MapPathSelectionRequested -> mapPathPickerController.request(event)
                 is CoreUiEvent.BattleRoomChatMessage ->
                     battleRoomController.appendChat(event.text, event.teamColorIndex)
 

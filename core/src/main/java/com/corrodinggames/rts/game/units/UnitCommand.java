@@ -90,7 +90,7 @@ public final class UnitCommand {
         gameOutputStream.writeFloat(this.targetX);
         gameOutputStream.writeFloat(this.targetY);
         if (this.targetUnitId != -1) {
-            gameOutputStream.writeLong(this.targetUnitId);
+            gameOutputStream.writeUnitId(this.targetUnitId);
         } else {
             gameOutputStream.writeUnitIdOrNullBaseUnit(this.targetUnit);
         }
@@ -147,6 +147,13 @@ public final class UnitCommand {
                 GameEngine.logColored("convertUnitIds: x:" + this.targetX + ", y:" + this.targetY);
             }
             this.targetUnitId = -1L;
+        }
+    }
+
+    public void resolveTargetUnitFromId(GameInputStream input) throws IOException {
+        if (this.targetUnitId != -1) {
+            this.targetUnit = (BaseUnit) input.resolveObjectId(this.targetUnitId, BaseUnit.class, true);
+            this.targetUnitId = -1;
         }
     }
 

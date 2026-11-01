@@ -58,6 +58,31 @@ public final class NetworkEngine {
     public boolean useMasterServer = true;
     /* JADX INFO: renamed from: s */
     public boolean allowJoinInProgress;
+    /**
+     * Present only in an isolated map worker, never in an ordinary room.
+     */
+    public volatile MapWorkerAdmission mapWorkerAdmission;
+    public io.github.rwx.map.multiplayer.PortalTransferWorker linkedTransferAuthority;
+    private String mapViewerIdentity;
+    private final ConcurrentLinkedQueue<PacketData> mapViewerPackets = new ConcurrentLinkedQueue<>();
+    private boolean applyingMapViewerPacket;
+    public boolean mapViewerSnapshotLoaded;
+    public boolean mapViewerSnapshotSynchronized;
+    public String mapViewerMapPath;
+
+    public boolean isMapViewer() {
+        return mapViewerIdentity != null;
+    }
+
+    private KeepAliveTimer mapWorkerMaintenance;
+
+    public interface MapWorkerAdmission {
+        GameTeam admitView(String token);
+
+        boolean isSimulationThread();
+
+        boolean enqueue(Runnable work);
+    }
     public String u;
 
     /* JADX INFO: renamed from: y */
@@ -947,6 +972,13 @@ public final class NetworkEngine {
 
     /* JADX INFO: renamed from: s */
     public void resetNetworkGameState() {
+        this.mapWorkerAdmission = null;
+        this.mapViewerIdentity = null;
+        this.mapViewerSnapshotLoaded = false;
+        this.mapViewerSnapshotSynchronized = false;
+        this.mapViewerMapPath = null;
+        this.mapViewerPackets.clear();
+        this.mapWorkerMaintenance = null;
         this.bH = false;
         this.bG = false;
         this.localPlayerTeam = null;
@@ -1117,6 +1149,14 @@ public final class NetworkEngine {
 
     public void w() {
         GameEngine gameEngine = GameEngine.getInstance();
+        // A viewer can already have later lockstep frames buffered when it reaches this
+        // system action. Reloading its local save must retain those commands and their
+        // received boundary; otherwise the authority moves while this viewer loses the order.
+        ArrayList<Command> viewerCommands = isMapViewer()
+                ? new ArrayList<>(gameEngine.commandController.pendingCommands) : null;
+        ArrayList<Command> viewerInput = isMapViewer()
+                ? new ArrayList<>(gameEngine.commandController.queuedCommands) : null;
+        int viewerBoundary = this.nextBlockingFrame;
         GameOutputStream gameOutputStream = new GameOutputStream();
         try {
             gameEngine.gameSaver.writeSaveToStream(gameOutputStream);
@@ -1144,9 +1184,19 @@ public final class NetworkEngine {
             gameEngine.gameSaver.readSaveFromStream(gameInputStream, true, true, true);
             gameEngine.currentTick = i;
             gameEngine.gameTimeMillis = i2;
-            this.nextBlockingFrame = gameEngine.currentTick + 1;
+            if (viewerCommands != null) {
+                gameEngine.commandController.pendingCommands.addAll(viewerCommands);
+                for (Command command : viewerInput) {
+                    command.prepareForNetworkTransfer();
+                    gameEngine.commandController.queuedCommands.add(command);
+                }
+                this.nextBlockingFrame = viewerBoundary;
+            } else {
+                this.nextBlockingFrame = gameEngine.currentTick + 1;
+            }
             this.ag = false;
-            this.lastSyncedTick = this.nextBlockingFrame + 1;
+            // Viewers retain a future command boundary; checksum epochs still belong to this shared frame.
+            this.lastSyncedTick = gameEngine.currentTick + 2;
             this.stateChecksum.totalChecksum = 0L;
             for (NetworkConnection networkConnection : this.sendQueue) {
                 networkConnection.isDirectServer = false;
@@ -1465,7 +1515,26 @@ public final class NetworkEngine {
         gameEngine.showMessageBox("Players", str);
     }
 
+    /**
+     * Called only by the engine owner; reader threads cannot mutate a newly adopted world.
+     */
+    private synchronized void drainMapViewerPackets() {
+        PacketData packet;
+        while ((packet = mapViewerPackets.poll()) != null) {
+            if (!isMapViewer() || !this.sendQueue.contains(packet.connection)) continue;
+            applyingMapViewerPacket = true;
+            try {
+                handlePreregisterInfo(packet);
+            } catch (IOException failure) {
+                packet.connection.sendPacket("Invalid map viewer packet");
+            } finally {
+                applyingMapViewerPacket = false;
+            }
+        }
+    }
+
     public void a(float f) {
+        drainMapViewerPackets();
         GameEngine gameEngine = GameEngine.getInstance();
         this.at += f;
         if (this.returnToBattleroomCountdownActive) {
@@ -1872,6 +1941,7 @@ public final class NetworkEngine {
 
     /* JADX INFO: renamed from: a */
     public void processGamePacket(PacketData packet) throws IOException {
+        if (isMapViewer() && packet.connection != null && !this.sendQueue.contains(packet.connection)) return;
         GameEngine gameEngine = GameEngine.getInstance();
         if (shouldFilterPacket(packet)) {
             d("filtered packet (type:" + packet.packetType + ")");
@@ -1914,6 +1984,10 @@ public final class NetworkEngine {
                             Command commandCreateCommand2 = gameEngine.commandController.createCommand();
                             commandCreateCommand2.deserializeCommand(gameInputStream2);
                             commandCreateCommand2.sourceTeam = gameTeam;
+                            if (commandCreateCommand2.linkedWorldOperation != null) {
+                                d("Rejected viewer-originated world operation");
+                                break;
+                            }
                             if (commandCreateCommand2.isSystemAction) {
                                 d("Got system action from client, ignoring (" + networkConnection.connectionId + ")");
                                 commandCreateCommand2.isSystemAction = false;
@@ -2080,6 +2154,7 @@ public final class NetworkEngine {
                         gameEngine.loadLevel("Resyncing game from server...", true);
                         gameEngine.gameSaver.readSaveFromStream(gameInputStream6, true, true, true);
                         gameEngine.clearCurrentLoadingStatus();
+                        if (isMapViewer()) this.mapViewerSnapshotSynchronized = gameEngine.hasLoadedLevel;
                         this.resyncSendOrReceiveCount++;
                         gameEngine.currentTick = i8;
                         gameEngine.gameTimeMillis = i9;
@@ -2315,7 +2390,8 @@ public final class NetworkEngine {
                     playerTeamK.setHostTeam(this.localPlayerTeam == playerTeamK);
                     if (!this.gameHasBeenStarted) {
                     }
-                    if (this.gameHasBeenStarted && !this.singleplayerServer && !playerTeamK.isTeamSpectator) {
+                    // The room owns player liveness; a worker sees only the currently selected map's viewers.
+                    if (this.gameHasBeenStarted && !this.singleplayerServer && this.mapWorkerAdmission == null && !playerTeamK.isTeamSpectator) {
                         boolean z = false;
                         if (playerTeamK.isTeamDisconnected()) {
                             z = true;
@@ -2501,6 +2577,27 @@ public final class NetworkEngine {
 
     /* JADX INFO: renamed from: c */
     public synchronized void handlePreregisterInfo(PacketData packet) throws IOException {
+        if (isMapViewer() && !applyingMapViewerPacket) {
+            if (!this.sendQueue.contains(packet.connection)) return;
+            if (mapViewerPackets.size() >= 256) throw new IOException("Map viewer packet queue is full");
+            mapViewerPackets.add(packet);
+            return;
+        }
+        MapWorkerAdmission admission = this.mapWorkerAdmission;
+        if (admission != null && !admission.isSimulationThread()) {
+            if (!admission.enqueue(() -> {
+                // A reset or a closed worker must not execute an old registration.
+                if (this.mapWorkerAdmission != admission) return;
+                try {
+                    handlePreregisterInfo(packet);
+                } catch (IOException failure) {
+                    packet.connection.sendPacket("Invalid map viewer packet");
+                }
+            })) {
+                throw new IOException("Map worker command queue is full");
+            }
+            return;
+        }
         int activeTeamCount;
         String nullableString;
         GameEngine gameEngine = GameEngine.getInstance();
@@ -2679,7 +2776,16 @@ public final class NetworkEngine {
                     return;
                 }
                 GameTeam existingGameTeam = null;
-                if (utf2 != null) {
+                if (admission != null) {
+                    existingGameTeam = admission.admitView(utf2);
+                    if (existingGameTeam == null) {
+                        a(networkConnection5, "Map viewer authorization is invalid or expired");
+                        networkConnection5.sendPacket("kicked");
+                        return;
+                    }
+                    // The room manifest owns names and team slots, not viewer input.
+                    strP = existingGameTeam.teamName;
+                } else if (utf2 != null) {
                     existingGameTeam = PlayerTeam.findGameTeamBySharedControlId(utf2);
                     if (existingGameTeam != null) {
                         d("Existing player: " + existingGameTeam.teamId + " - " + existingGameTeam.teamName);
@@ -2816,7 +2922,9 @@ public final class NetworkEngine {
                                 }
                             }
                             networkConnection5.player.teamName = strP;
-                            networkConnection5.player.teamSharedControlType = utf2;
+                            if (admission == null) {
+                                networkConnection5.player.teamSharedControlType = utf2;
+                            }
                             networkConnection5.player.teamAIHint = networkConnection5.remoteId;
                             networkConnection5.networkVersion = i3;
                             GameEngine.log("processSystemPacket", "New player: " + strP + ", networkVersion:" + networkConnection5.networkVersion + " existing:" + (existingGameTeam != null));
@@ -3017,6 +3125,7 @@ public final class NetworkEngine {
                 }
                 this.selectedMapPath = gameInputStream11.readUTF();
                 aB();
+                if (isMapViewer()) BattleRoomUiBridge.setupGame();
                 return;
             case 122:
                 if (this.isServer) {
@@ -3552,6 +3661,38 @@ public final class NetworkEngine {
     }
 
     public synchronized boolean a(Socket socket) throws IOException {
+        return connectGameSocket(socket, null);
+    }
+
+    public void acceptMapWorkerSocket(Socket socket) throws IOException {
+        MapWorkerAdmission admission = this.mapWorkerAdmission;
+        if (admission == null || !admission.isSimulationThread() || !socket.getInetAddress().isLoopbackAddress()) {
+            throw new IOException("Map worker accepts local streams on its simulation thread only");
+        }
+        NetworkConnection connection = new NetworkConnection(this, socket);
+        connection.inetAddress = socket.getInetAddress();
+        connection.startWorkers();
+        this.sendQueue.add(connection);
+    }
+
+    /**
+     * Reuse the normal heartbeat/roster schedule without a second engine-mutating timer thread.
+     */
+    public void updateMapWorkerMaintenance() {
+        MapWorkerAdmission admission = this.mapWorkerAdmission;
+        if (admission == null || !admission.isSimulationThread() || !this.isServer) {
+            throw new IllegalStateException("Map worker maintenance requires its simulation thread");
+        }
+        if (this.mapWorkerMaintenance == null) this.mapWorkerMaintenance = new KeepAliveTimer(this);
+        this.mapWorkerMaintenance.run();
+    }
+
+    public synchronized boolean connectMapViewer(Socket socket, String identity) throws IOException {
+        if (identity == null || identity.isEmpty()) throw new IllegalArgumentException("Missing map viewer identity");
+        return connectGameSocket(socket, identity);
+    }
+
+    private boolean connectGameSocket(Socket socket, String identity) throws IOException {
         if (this.networkGameActive) {
             disconnectNetworking("starting new");
         }
@@ -3559,6 +3700,7 @@ public final class NetworkEngine {
             throw new RuntimeException("connectedSocket==null");
         }
         q();
+        this.mapViewerIdentity = identity;
         GameEngine.getInstance();
         this.networkPort = socket.getPort();
         this.networkGameActive = true;
@@ -3815,7 +3957,7 @@ public final class NetworkEngine {
             }
             gameOutputStream.writeStringNullable(strTruncate);
             gameOutputStream.writeStringUTF(gameEngine.getPackageName());
-            gameOutputStream.writeStringUTF(getOwnClientIdHashed());
+            gameOutputStream.writeStringUTF(this.mapViewerIdentity != null ? this.mapViewerIdentity : getOwnClientIdHashed());
             gameOutputStream.writeInt(gameEngine.getAllUnitsChecksum());
             gameOutputStream.writeStringUTF(g(this.T));
             gameOutputStream.writeStringUTF(h(this.U));
@@ -4164,6 +4306,22 @@ public final class NetworkEngine {
         GameOutputStream gameOutputStream = new GameOutputStream();
         try {
             gameOutputStream.writeByte(0);
+            if (this.mapWorkerAdmission != null && this.gameHasBeenStarted && networkConnection != null) {
+                // A viewer starts from the current save. The normal forwarded-player quick
+                // resync then aligns the command boundary for every participant, including
+                // pending commands cleared by the save reload. Never restart the initial map.
+                GameOutputStream liveSave = new GameOutputStream();
+                gameEngine.gameSaver.writeSaveToStream(liveSave);
+                byte[] bytes = liveSave.toByteArray();
+                liveSave.close();
+                gameOutputStream.writeEnumOrdinal(GameModeType.savedGame);
+                gameOutputStream.writeInt(bytes.length);
+                gameOutputStream.writeBytesRaw(bytes);
+                gameOutputStream.writeStringUTF("SAVE:map-view");
+                gameOutputStream.writeBoolean(true);
+                a(networkConnection, gameOutputStream.buildPacketData(120));
+                return true;
+            }
             gameOutputStream.writeEnumOrdinal(this.roomSettings.gameModeType);
             if (this.roomSettings.gameModeType == GameModeType.savedGame) {
                 try {

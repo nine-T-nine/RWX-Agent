@@ -32,10 +32,12 @@ import com.corrodinggames.rts.gameFramework.ui.widgets.UIEvent;
 import com.corrodinggames.rts.gameFramework.ui.widgets.UIEventHandler;
 import com.corrodinggames.rts.gameFramework.utility.SlickToAndroidKeycodes;
 import io.github.rwx.geometry.PointF;
-import io.github.rwx.map.LinkedMapAvailability;
 import io.github.rwx.render.canvas.Paint;
 import io.github.rwx.ui.CoreUiEventQueue;
+import io.github.rwx.ui.FormDialogInfoRowPressHandler;
+import io.github.rwx.ui.FormDialogInfoRowRequest;
 import io.github.rwx.ui.FormDialogSubmitHandler;
+import io.github.rwx.ui.MapPathSelectedHandler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -2162,10 +2164,6 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
 
     public static void addAreaEditorBounds(AbstractUnitAction action, float startX, float startY, float endX, float endY, boolean circle) {
         if (isMapPortalEditorAddAction(action)) {
-            if (!LinkedMapAvailability.ENABLED) {
-                GameEngine.getInstance().showMessageBox("Linked Map", LinkedMapAvailability.UNAVAILABLE_MESSAGE);
-                return;
-            }
             requestAddMapPortalDialog(startX, startY, endX, endY, circle);
         } else {
             addAreaZoneBounds(startX, startY, endX, endY, circle);
@@ -2173,18 +2171,33 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
     }
 
     static void requestAddMapPortalDialog(final float startX, final float startY, final float endX, final float endY, final boolean circle) {
+        showAddMapPortalDialog(startX, startY, endX, endY, circle, "", "");
+    }
+
+    private static void showAddMapPortalDialog(final float startX, final float startY, final float endX, final float endY, final boolean circle, final String targetMapPath, final String targetPortalId) {
         final GameEngine gameEngine = GameEngine.getInstance();
         if (!isAreaEditorAvailable()) {
             gameEngine.gameUI.showMediumPriorityMessage("Area editor is only available while sandbox editor is active");
             return;
         }
-        CoreUiEventQueue.requestFormDialog("Add Map Portal", "Create a map portal. Target map id can be an existing map path, file name, base name, or display name.", new String[]{"targetMapId", "targetPortalId"}, new String[]{"Target map id", "Target portal id"}, new String[]{"", ""}, new String[]{"Lake (2p)", "optional"}, "Create", "Cancel", new FormDialogSubmitHandler() {
+        final String selectedTargetMapPath = targetMapPath == null ? "" : targetMapPath.trim();
+        FormDialogInfoRowRequest targetMapRow = new FormDialogInfoRowRequest(
+                "Target map",
+                selectedTargetMapPath.isEmpty() ? "Select a map" : selectedTargetMapPath,
+                () -> CoreUiEventQueue.requestMapPathSelection(selectedTargetMapPath,
+                        selected -> showAddMapPortalDialog(startX, startY, endX, endY, circle, selected, targetPortalId))
+        );
+        CoreUiEventQueue.requestFormDialogWithInfoRows("Add Map Portal", "Create a map portal. Select the target map path.", new FormDialogInfoRowRequest[]{targetMapRow}, new String[]{"targetPortalId"}, new String[]{"Target portal id"}, new String[]{targetPortalId == null ? "" : targetPortalId}, new String[]{"optional"}, "Create", "Cancel", new FormDialogSubmitHandler() {
             @Override
             public void submit(Map<String, String> values) {
+                String portalId = parseOptionalString(values, "targetPortalId");
+                if (selectedTargetMapPath.isEmpty()) {
+                    gameEngine.showMessageBox("Map portal editor", "Select a target map first.");
+                    showAddMapPortalDialog(startX, startY, endX, endY, circle, selectedTargetMapPath, portalId);
+                    return;
+                }
                 try {
-                    String targetMapId = parseRequiredString(values, "targetMapId", "Target map id");
-                    String targetPortalId = parseOptionalString(values, "targetPortalId");
-                    int count = gameEngine.missionEngine.addMapPortalEditorPortalBounds(startX, startY, endX, endY, circle, targetMapId, targetPortalId);
+                    int count = gameEngine.missionEngine.addMapPortalEditorPortalBounds(startX, startY, endX, endY, circle, selectedTargetMapPath, portalId);
                     gameEngine.gameUI.showMediumPriorityMessage("Added " + (circle ? "circle" : "rect") + " map portal #" + count);
                 } catch (IllegalArgumentException e) {
                     gameEngine.showMessageBox("Map portal editor", e.getMessage());
@@ -2290,6 +2303,10 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
     }
 
     static void requestEditMapPortalDialog(final float x, final float y) {
+        showEditMapPortalDialog(x, y, null);
+    }
+
+    private static void showEditMapPortalDialog(final float x, final float y, final String targetMapPath) {
         final GameEngine gameEngine = GameEngine.getInstance();
         if (!isAreaEditorAvailable()) {
             gameEngine.gameUI.showMediumPriorityMessage("Area editor is only available while sandbox editor is active");
@@ -2307,8 +2324,17 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
             gameEngine.gameUI.showMediumPriorityMessage("No map portal at selected point");
             return;
         }
-        String[] ids = new String[]{"id", "shape", "x", "y", "width", "height", "targetMapId", "targetPortalId"};
-        String[] labels = new String[]{"Name", "Shape", "X", "Y", "Width", "Height", "Target map id", "Target portal id"};
+        final String selectedTargetMapPath = targetMapPath == null
+                ? (properties.targetMapId == null ? "" : properties.targetMapId.trim())
+                : targetMapPath.trim();
+        FormDialogInfoRowRequest targetMapRow = new FormDialogInfoRowRequest(
+                "Target map",
+                selectedTargetMapPath.isEmpty() ? "Select a map" : selectedTargetMapPath,
+                () -> CoreUiEventQueue.requestMapPathSelection(selectedTargetMapPath,
+                        selected -> showEditMapPortalDialog(x, y, selected))
+        );
+        String[] ids = new String[]{"id", "shape", "x", "y", "width", "height", "targetPortalId"};
+        String[] labels = new String[]{"Name", "Shape", "X", "Y", "Width", "Height", "Target portal id"};
         String[] initial = new String[]{
                 properties.id,
                 properties.circle ? "circle" : "rect",
@@ -2316,13 +2342,16 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
                 trimFloat(properties.y),
                 trimFloat(properties.width),
                 trimFloat(properties.height),
-                properties.targetMapId,
                 properties.targetPortalId == null ? "" : properties.targetPortalId
         };
-        String[] hints = new String[]{"portal1", "rect/circle", "0", "0", "360", "220", "Lake (2p)", "optional"};
-        CoreUiEventQueue.requestFormDialog("Edit Map Portal", "Edit map portal properties.", ids, labels, initial, hints, "Save", "Cancel", new FormDialogSubmitHandler() {
+        String[] hints = new String[]{"portal1", "rect/circle", "0", "0", "360", "220", "optional"};
+        CoreUiEventQueue.requestFormDialogWithInfoRows("Edit Map Portal", "Edit map portal properties. Select the target map path.", new FormDialogInfoRowRequest[]{targetMapRow}, ids, labels, initial, hints, "Save", "Cancel", new FormDialogSubmitHandler() {
             @Override
             public void submit(Map<String, String> values) {
+                if (selectedTargetMapPath.isEmpty()) {
+                    gameEngine.showMessageBox("Map portal editor", "Select a target map first.");
+                    return;
+                }
                 try {
                     properties.id = parseRequiredString(values, "id", "Name");
                     properties.circle = parseShape(values, "shape", properties.circle);
@@ -2330,7 +2359,7 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
                     properties.y = parseFloat(values, "y", properties.y, "Y");
                     properties.width = parsePositiveFloat(values, "width", properties.width, "Width");
                     properties.height = parsePositiveFloat(values, "height", properties.height, "Height");
-                    properties.targetMapId = parseRequiredString(values, "targetMapId", "Target map id");
+                    properties.targetMapId = selectedTargetMapPath;
                     properties.targetPortalId = parseOptionalString(values, "targetPortalId");
                     String id = gameEngine.missionEngine.updateMapPortalEditorPortal(x, y, properties);
                     if (id == null) {
@@ -2695,11 +2724,6 @@ public class EditorOrBuilder extends LandUnit implements UnitPathPoints {
         abstractUnitAction = unwrapAreaEditorAction(abstractUnitAction);
         if (isAreaEditorAction(abstractUnitAction) && !isAreaEditorAvailable()) {
             gameEngine.gameUI.showMediumPriorityMessage("Area editor is only available while sandbox editor is active");
-            return;
-        }
-        if (isMapPortalEditorAction(abstractUnitAction) && !LinkedMapAvailability.ENABLED) {
-            gameEngine.gameUI.clearCurrentAction();
-            gameEngine.showMessageBox("Linked Map", LinkedMapAvailability.UNAVAILABLE_MESSAGE);
             return;
         }
         if (abstractUnitAction == addCircleZoneAction || abstractUnitAction == addRectangleZoneAction) {

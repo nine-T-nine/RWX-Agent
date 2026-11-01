@@ -11,7 +11,9 @@ import kotlin.test.*
 
 class MicroCaseTest {
     @Test fun `case forms preserve the old flag and require complete case inputs`() {
-        assertNull(AppOptions.parseArgs(arrayOf("--evaluate", "--headless")).evaluateCase)
+        // --headless only exists on the desktop build (it selects the headless render backend),
+        // so the parse below has to say so; a bare --evaluate must still not name a case.
+        assertNull(AppOptions.parseArgs(arrayOf("--evaluate", "--headless"), isDesktop = true).evaluateCase)
         for (prefix in listOf(arrayOf("--evaluate", "CASE1-duel"), arrayOf("--evaluate=CASE1-duel"))) {
             val options=AppOptions.parseArgs(prefix+arrayOf("--case-args", "task=1_2_2,seed=1,track=pause"))
             assertEquals("CASE1-duel",options.evaluateCase)

@@ -34,7 +34,7 @@ private class EngineUnitCommandBackend(
         command.unitIds.distinct().forEach { instanceId ->
             val unit = findUnit(instanceId) as? OrderableUnit
                 ?: return command.rejected("Orderable unit not found: ${instanceId.value}")
-            if (unit.isDestroyed) return command.rejected("Unit is destroyed: ${instanceId.value}")
+            if (unit.isTransferUnavailable) return command.rejected("Unit is unavailable: ${instanceId.value}")
             if (unit.team?.teamId != command.teamId) {
                 return command.rejected("Unit ${instanceId.value} is not on team ${command.teamId}")
             }
@@ -74,6 +74,7 @@ private class EngineUnitCommandBackend(
         }
 
         CommandQueue.enqueue(owner) {
+            if (units.any { it.isTransferUnavailable } || targetUnit?.isTransferUnavailable == true) return@enqueue
             val native = GameEngine.getInstance().commandController.createCommandForTeam(team)
             native.isQueued = command.queued
             native.isHighPriority = command.highPriority

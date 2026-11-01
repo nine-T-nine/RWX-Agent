@@ -71,6 +71,8 @@ public class Command {
     /* JADX INFO: renamed from: u */
     public int systemActionType;
 
+    public io.github.rwx.map.multiplayer.LinkedWorldOperation linkedWorldOperation;
+
     /* JADX INFO: renamed from: y */
     final /* synthetic */ CommandController commandController;
 
@@ -121,6 +123,8 @@ public class Command {
 
     /* JADX INFO: renamed from: b */
     public void precomputeCommandTargets() {
+        resolvePendingUnitIds();
+        if (hasUnavailableTarget()) return;
         GameEngine gameEngine = GameEngine.getInstance();
         this.hasProcessedTargets = true;
         FormationGroup formationGroupC = gameEngine.formationEngine.c();
@@ -245,10 +249,12 @@ public class Command {
         gameOutputStream.writeShort(this.allowedTeamMask);
         gameOutputStream.writeBoolean(this.isSystemAction);
         if (this.isSystemAction) {
-            gameOutputStream.writeByte(0);
+            gameOutputStream.writeByte(this.linkedWorldOperation == null ? 0 : 1);
             gameOutputStream.writeFloat(this.gameSpeedChange);
             gameOutputStream.writeFloat(this.systemFloat);
             gameOutputStream.writeInt(this.systemActionType);
+            if (this.linkedWorldOperation != null)
+                gameOutputStream.writeBytesWithLength(this.linkedWorldOperation.encode());
         }
         gameOutputStream.writeInt(this.commandTargets.size());
         for (int i = 0; i < this.commandTargets.size(); i++) {
@@ -309,10 +315,18 @@ public class Command {
         if (gameInputStream.getProtocolVersion() >= 53) {
             this.isSystemAction = gameInputStream.readBoolean();
             if (this.isSystemAction) {
-                gameInputStream.readByte();
+                int systemVersion = gameInputStream.readByte();
+                if (systemVersion < 0 || systemVersion > 1) throw new IOException("Unsupported system command version");
                 this.gameSpeedChange = gameInputStream.readFloat();
                 this.systemFloat = gameInputStream.readFloat();
                 this.systemActionType = gameInputStream.readInt();
+                if (systemVersion == 1) {
+                    int length = gameInputStream.readInt();
+                    if (length < 1 || length > 1024 * 1024) throw new IOException("Invalid linked command size");
+                    byte[] payload = new byte[length];
+                    new java.io.DataInputStream(gameInputStream.getActiveInputStream()).readFully(payload);
+                    this.linkedWorldOperation = io.github.rwx.map.multiplayer.LinkedWorldOperation.decode(payload);
+                }
             }
             int i3 = gameInputStream.readInt();
             this.commandTargets.clear();
@@ -470,7 +484,8 @@ public class Command {
         this.pendingUnitIds.clear();
         Iterator it2 = this.selectedUnits.iterator();
         while (it2.hasNext()) {
-            if (((OrderableUnit) it2.next()).isDead) {
+            OrderableUnit unit = (OrderableUnit) it2.next();
+            if (unit.isDead || unit.isTransferUnavailable()) {
                 it2.remove();
             }
         }
@@ -478,12 +493,25 @@ public class Command {
 
     /* JADX INFO: renamed from: j */
     public void applyCommandToUnits() {
+        // Micro cases authorize every native command; anything else must not reach the engine.
         if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(this)) return;
+        resolvePendingUnitIds();
+        if (hasUnavailableTarget()) return;
         if (AbstractUnitAction.isActionIdSpecified(this.actionId)) {
             for (OrderableUnit orderableUnit : this.selectedUnits) {
                 orderableUnit.stopMoving(orderableUnit.validateActionId(this.actionId), this.stopCurrentAction);
             }
         }
+    }
+
+    private boolean hasUnavailableTarget() {
+        if (this.targetUnit != null && this.targetUnit.isTransferUnavailable()) return true;
+        if (this.unitCommand != null) {
+            this.unitCommand.resolveTargetUnitFromId();
+            BaseUnit target = this.unitCommand.getTargetUnit();
+            return target != null && target.isTransferUnavailable();
+        }
+        return false;
     }
 
     /* JADX INFO: renamed from: k */
@@ -520,8 +548,23 @@ public class Command {
         if (gameEngine.replayEngine.j() && !this.isReplayCommand) {
             return;
         }
+        if (gameEngine.missionEngine != null && gameEngine.missionEngine.linkedWorldState != null
+                && this.linkedWorldOperation == null) {
+            if (gameEngine.missionEngine.linkedWorldState.isOutcomeFenced()) {
+                gameEngine.missionEngine.linkedWorldState.deferCommand(this);
+                return;
+            }
+            if (this.team != null && gameEngine.missionEngine.linkedWorldState.getSurrendered().contains(this.team.teamId))
+                return;
+        }
         resolvePendingUnitIds();
         if (this.isSystemAction) {
+            if (this.linkedWorldOperation != null) {
+                if (gameEngine.missionEngine == null || gameEngine.missionEngine.linkedWorldState == null)
+                    throw new IllegalStateException("Linked command has no world state");
+                gameEngine.missionEngine.linkedWorldState.apply(this.linkedWorldOperation);
+                return;
+            }
             if (this.gameSpeedChange != 0.0f) {
                 GameEngine.log("issueCommand: changeStepRate:" + this.gameSpeedChange);
                 gameEngine.networkEngine.applyChangedSetup(this.gameSpeedChange, "command");
@@ -549,6 +592,10 @@ public class Command {
                     }
                     if (gameEngine.networkEngine.isServer) {
                         gameEngine.networkEngine.j("'" + this.team.teamName + "' has surrendered");
+                    }
+                    if (gameEngine.missionEngine != null && gameEngine.missionEngine.linkedWorldState != null) {
+                        gameEngine.missionEngine.linkedWorldState.surrender(this.team.teamId);
+                        return;
                     }
                     this.team.isTeamVictory = true;
                     for (Object o : BaseUnit.bE) {
@@ -623,6 +670,7 @@ public class Command {
             GameEngine.log("issueCommand: Null System action");
             return;
         }
+        if (hasUnavailableTarget()) return;
         if (this.sourceTeam != null) {
             this.sourceTeam.teamLastConnectionTime = System.currentTimeMillis();
             this.sourceTeam.teamPingCount = gameEngine.gameTimeMillis;

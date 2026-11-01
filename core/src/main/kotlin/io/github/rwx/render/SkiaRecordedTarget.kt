@@ -9,6 +9,7 @@ import org.jetbrains.skia.Paint
 import org.jetbrains.skia.Picture
 import org.jetbrains.skia.PictureRecorder
 import org.jetbrains.skia.Rect
+import org.jetbrains.skia.Shader
 
 /** An immutable snapshot between batches; Skia materializes its shader on the drawing backend. */
 internal class SkiaRecordedTarget(
@@ -21,6 +22,8 @@ internal class SkiaRecordedTarget(
         if (seed != null) drawImage(seed, 0f, 0f)
     }
     private var picture: Picture? = null
+    private var nearestShader: Shader? = null
+    private var linearShader: Shader? = null
     private var atlas: SkiaAtlasBatch? = null
     var generations = 0
         private set
@@ -32,11 +35,11 @@ internal class SkiaRecordedTarget(
     }
 
     fun addImage(
-        image: Image, paint: Paint, sl: Float, st: Float, sr: Float, sb: Float,
+        image: Image, paint: Paint, version: Long, sl: Float, st: Float, sr: Float, sb: Float,
         dl: Float, dt: Float, dr: Float, db: Float,
     ) {
         val batch = atlas ?: sharedAtlas.value.also { atlas = it }
-        batch.add(recordingCanvas(), image, paint, sl, st, sr, sb, dl, dt, dr, db)
+        batch.add(recordingCanvas(), image, paint, version, sl, st, sr, sb, dl, dt, dr, db)
     }
 
     private fun recordingCanvas(): Canvas {
@@ -54,6 +57,7 @@ internal class SkiaRecordedTarget(
             }
         }
         previous.close()
+        closeShaders()
         picture = null
         generations++
         canvas = next
@@ -68,8 +72,28 @@ internal class SkiaRecordedTarget(
         canvas = null
     }
 
+    /** Borrowed until the next write; native draws retain their own references. */
+    fun shader(linear: Boolean): Shader {
+        val current = snapshot()
+        return if (linear) {
+            linearShader ?: current.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, FilterMode.LINEAR)
+                .also { linearShader = it }
+        } else {
+            nearestShader ?: current.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, FilterMode.NEAREST)
+                .also { nearestShader = it }
+        }
+    }
+
+    private fun closeShaders() {
+        nearestShader?.close()
+        nearestShader = null
+        linearShader?.close()
+        linearShader = null
+    }
+
     override fun close() {
         atlas?.close()
+        closeShaders()
         picture?.close()
         picture = null
         canvas = null

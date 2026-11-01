@@ -8,6 +8,7 @@ import io.github.rwx.render.frame.GameViewport
 import io.github.rwx.session.GameSession
 import io.github.rwx.ui.AppScreen
 import io.github.rwx.ui.CoreUiEvent
+import io.github.rwx.ui.component.Icon
 import io.github.rwx.ui.host.DialogSceneHost
 import io.github.rwx.ui.host.LoadingDialogSceneHost
 import io.github.rwx.ui.model.*
@@ -135,6 +136,14 @@ internal class InGameDialogController(
             Dialog(
                 title = event.title,
                 message = event.message,
+                infoRows = event.infoRows.map { row ->
+                    DialogInfoRow(
+                        icon = Icon.Map,
+                        label = row.label,
+                        value = row.value,
+                        onPress = row.onPress?.let { press -> { press.onPress() } },
+                    )
+                },
                 form = DialogForm(
                     event.fields.map { field ->
                         DialogFormField.Text(

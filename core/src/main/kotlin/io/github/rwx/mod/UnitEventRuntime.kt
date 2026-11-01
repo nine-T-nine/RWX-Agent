@@ -181,6 +181,9 @@ object UnitEventRuntime {
                 return
             }
             val event = queue.removeFirst()
+            if (event.self.pendingPortalTransfer != null || event.source?.pendingPortalTransfer != null ||
+                event.target?.pendingPortalTransfer != null
+            ) continue
             val registration = event.registration
             val selfState = NativeUnitState(event.self)
             val sourceState = event.source?.let(::NativeUnitState)
@@ -243,6 +246,10 @@ object UnitEventRuntime {
         target: BaseUnit?,
         payload: UnitEventPayload,
     ) {
+        // Ordinary destruction still emits events; transfer disposal has an explicit pending marker.
+        if (self.pendingPortalTransfer != null || source?.pendingPortalTransfer != null ||
+            target?.pendingPortalTransfer != null
+        ) return
         val tick = GameEngine.getInstance().currentTick.toLong()
         unitBirthTicks.putIfAbsent(self.objectId, tick)
         queue.addLast(

@@ -83,7 +83,7 @@ class SkiaGameSession(
     }
 
     fun renderInto(canvas: Canvas, width: Int, height: Int, deltaSeconds: Float) {
-        if (closed.get() || isEngineBusyForUiReads()) return
+        if (closed.get() || isEngineBusyForUiReads() || linkedInputBlocked) return
         val probeOn = frameProbe.isEnabled
         val startNanos = if (probeOn) System.nanoTime() else 0L
         synchronized(gameLock) {
@@ -161,7 +161,7 @@ class SkiaGameSession(
             if (!engine.hasLoadedLevel || engine.networkEngine?.hasActiveStartedGameConnection() != true) {
                 return@synchronized false
             }
-            val activeMapPath = startedSkiaMapPath(engine) ?: return@synchronized false
+            val activeMapPath = linkedViewedMapPath ?: startedSkiaMapPath(engine) ?: return@synchronized false
 
             updateLoadState {
                 it.copy(
@@ -299,19 +299,28 @@ class SkiaGameSession(
     }
 
     override fun submitPointer(screenX: Float, screenY: Float, isDown: Boolean, pointerId: Int) {
-        input.submit(SkiaGameInputQueue.Event.Pointer(screenX, screenY, isDown, pointerId), isEngineBusyForUiReads())
+        input.submit(
+            SkiaGameInputQueue.Event.Pointer(screenX, screenY, isDown, pointerId),
+            isEngineBusyForUiReads() || linkedInputBlocked
+        )
     }
 
     override fun movePointer(screenX: Float, screenY: Float) {
-        input.submit(SkiaGameInputQueue.Event.Move(screenX, screenY), isEngineBusyForUiReads())
+        input.submit(SkiaGameInputQueue.Event.Move(screenX, screenY), isEngineBusyForUiReads() || linkedInputBlocked)
     }
 
     override fun submitKey(androidKeyCode: Int, isDown: Boolean) {
-        input.submit(SkiaGameInputQueue.Event.Key(androidKeyCode, isDown), isEngineBusyForUiReads())
+        input.submit(
+            SkiaGameInputQueue.Event.Key(androidKeyCode, isDown),
+            isEngineBusyForUiReads() || linkedInputBlocked
+        )
     }
 
     override fun submitMouseWheel(amount: Int) {
-        if (amount != 0) input.submit(SkiaGameInputQueue.Event.Wheel(amount), isEngineBusyForUiReads())
+        if (amount != 0) input.submit(
+            SkiaGameInputQueue.Event.Wheel(amount),
+            isEngineBusyForUiReads() || linkedInputBlocked
+        )
     }
 
     override fun clearInputState() {

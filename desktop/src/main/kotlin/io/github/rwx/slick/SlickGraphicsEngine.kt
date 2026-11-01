@@ -58,6 +58,7 @@ class SlickGraphicsEngine private constructor(
     private val paintColorScratch = Color(1f, 1f, 1f, 1f)
     private val imageColorScratch = Color(1f, 1f, 1f, 1f)
     private val clearColorScratch = Color(1f, 1f, 1f, 1f)
+    private val windowViewport = BufferUtils.createIntBuffer(4)
     private val awtFontCache = mutableMapOf<SlickFontKey, AwtFont>()
     private val fontCache = mutableMapOf<SlickFontKey, UnicodeFont>()
     private val recentUnicodeTexts = mutableMapOf<SlickFontKey, ArrayDeque<String>>()
@@ -70,6 +71,11 @@ class SlickGraphicsEngine private constructor(
         this.graphics = graphics
         this.width = width.coerceAtLeast(1)
         this.height = height.coerceAtLeast(1)
+        if (targetTexture == null) {
+            // The container has set this frame's physical window viewport.
+            windowViewport.clear()
+            GL11.glGetIntegerv(GL11.GL_VIEWPORT, windowViewport)
+        }
         applyClip(graphics)
     }
 
@@ -1083,12 +1089,27 @@ class SlickGraphicsEngine private constructor(
         if (clip == null || clip.a()) {
             active.clearClip()
         } else {
-            active.setClip(
-                clip.a.toInt(),
-                clip.b.toInt(),
-                max(1, clip.width().toInt()),
-                max(1, clip.height().toInt()),
-            )
+            val x = clip.a.toInt()
+            val y = clip.b.toInt()
+            val clipWidth = max(1, clip.width().toInt())
+            val clipHeight = max(1, clip.height().toInt())
+            active.setClip(x, y, clipWidth, clipHeight)
+            if (targetTexture == null) {
+                // Keep Slick's logical clip state and adapt only the window scissor.
+                // Offscreen targets already clip in their texture's own pixels.
+                val scaleX = windowViewport.get(2) / width.toDouble()
+                val scaleY = windowViewport.get(3) / height.toDouble()
+                val left = (x * scaleX).roundToInt()
+                val right = ((x.toDouble() + clipWidth) * scaleX).roundToInt()
+                val top = (y * scaleY).roundToInt()
+                val bottom = ((y.toDouble() + clipHeight) * scaleY).roundToInt()
+                Renderer.get().glScissor(
+                    windowViewport.get(0) + left,
+                    windowViewport.get(1) + windowViewport.get(3) - bottom,
+                    right - left,
+                    bottom - top,
+                )
+            }
         }
     }
 

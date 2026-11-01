@@ -93,6 +93,7 @@ class WebRtcSignalExchange(val roomId: String, val localClientId: String) {
     private var active = true
     private val endpoints = mutableMapOf<String, EndpointState>()
     private val receivedMessages = LinkedHashMap<String, Long>()
+    private val dispatchLock = Any()
 
     @Synchronized
     fun isActive(): Boolean = active
@@ -118,28 +119,39 @@ class WebRtcSignalExchange(val roomId: String, val localClientId: String) {
         return endpoint.cursor
     }
 
-    @Synchronized
     fun receive(
         serviceUrl: String,
         envelopes: List<SignalEnvelope>,
         nowMs: Long,
         handle: (SignalEnvelope) -> Unit,
         onError: (Exception) -> Unit,
-    ) {
-        if (!active) return
-        val endpoint = endpoints.getOrPut(serviceUrl) { EndpointState() }
-        endpoint.lastPollMs = nowMs
-        endpoint.failures = 0
-        receivedMessages.entries.removeIf { nowMs - it.value >= 300_000L }
-        for (envelope in envelopes.sortedBy { it.seq }) {
+    ) = synchronized(dispatchLock) {
+        synchronized(this) {
             if (!active) return
-            if (envelope.roomId != roomId || envelope.toClientId != localClientId || envelope.seq <= endpoint.cursor) continue
-            endpoint.cursor = envelope.seq
-            if (envelope.fromClientId == localClientId || !envelope.isValid()) continue
-            val messageId = envelope.messageId!!
-            if (receivedMessages.putIfAbsent(messageId, nowMs) != null) continue
-            while (receivedMessages.size > 10_000) receivedMessages.remove(receivedMessages.keys.first())
+            val endpoint = endpoints.getOrPut(serviceUrl) { EndpointState() }
+            endpoint.lastPollMs = nowMs
+            endpoint.failures = 0
+            receivedMessages.entries.removeIf { nowMs - it.value >= 300_000L }
+        }
+        for (envelope in envelopes.sortedBy { it.seq }) {
+            val accepted = synchronized(this) {
+                if (!active) return
+                val endpoint = endpoints.getValue(serviceUrl)
+                if (envelope.roomId != roomId || envelope.toClientId != localClientId || envelope.seq <= endpoint.cursor) false
+                else {
+                    endpoint.cursor = envelope.seq
+                    if (envelope.fromClientId == localClientId || !envelope.isValid()) false
+                    else {
+                        val fresh = receivedMessages.putIfAbsent(envelope.messageId!!, nowMs) == null
+                        while (receivedMessages.size > 10_000) receivedMessages.remove(receivedMessages.keys.first())
+                        fresh
+                    }
+                }
+            }
+            if (!accepted || !isActive()) continue
             try {
+                // JNI can wait for a signaling callback which needs isActive/prepareOutgoing.
+                // Serialize delivery separately, never holding the exchange state monitor.
                 handle(envelope)
             } catch (error: Exception) {
                 onError(error)

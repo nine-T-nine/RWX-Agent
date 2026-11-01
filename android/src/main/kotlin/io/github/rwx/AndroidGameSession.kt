@@ -214,10 +214,12 @@ internal class AndroidGameSession(
     }
 
     override fun submitPointer(screenX: Float, screenY: Float, isDown: Boolean, pointerId: Int) {
+        if (linkedInputBlocked) return
         view.submitPointer(screenX, screenY, isDown, pointerId)
     }
 
     override fun movePointer(screenX: Float, screenY: Float) {
+        if (linkedInputBlocked) return
         view.movePointer(screenX, screenY)
     }
 
@@ -369,7 +371,7 @@ internal class AndroidGameSession(
             // InGameActivity. Android has no renderer callback equivalent to SlickGame's, so
             // complete that load here before exposing the GameView.
             BattleRoomUiBridge.setupGame()
-            val activeMapPath = activeRunningMapPath(engine) ?: return@synchronized false
+            val activeMapPath = linkedViewedMapPath ?: activeRunningMapPath(engine) ?: return@synchronized false
 
             updateLoadState {
                 it.copy(

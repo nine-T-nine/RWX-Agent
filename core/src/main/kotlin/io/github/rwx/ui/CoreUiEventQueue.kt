@@ -11,11 +11,25 @@ fun interface FormDialogSubmitHandler {
     fun submit(values: Map<String, String>)
 }
 
+fun interface FormDialogInfoRowPressHandler {
+    fun onPress()
+}
+
+fun interface MapPathSelectedHandler {
+    fun onSelected(mapPath: String)
+}
+
 data class FormDialogTextFieldRequest(
     val id: String,
     val label: String,
     val initialText: String = "",
     val hint: String = "",
+)
+
+data class FormDialogInfoRowRequest(
+    val label: String,
+    val value: String,
+    val onPress: FormDialogInfoRowPressHandler? = null,
 )
 
 sealed interface CoreUiEvent {
@@ -79,6 +93,12 @@ sealed interface CoreUiEvent {
         val fields: List<FormDialogTextFieldRequest>,
         val confirmButtonLabel: String,
         val cancelButtonLabel: String,
+        val infoRows: List<FormDialogInfoRowRequest> = emptyList(),
+    ) : CoreUiEvent
+
+    data class MapPathSelectionRequested(
+        val handler: MapPathSelectedHandler,
+        val currentMapPath: String,
     ) : CoreUiEvent
 }
 
@@ -340,6 +360,69 @@ object CoreUiEventQueue {
         cancelButtonLabel: String?,
         handler: FormDialogSubmitHandler,
     ) {
+        enqueueFormDialog(
+            title = title,
+            message = message,
+            infoRows = emptyList(),
+            fieldIds = fieldIds,
+            labels = labels,
+            initialTexts = initialTexts,
+            hints = hints,
+            confirmButtonLabel = confirmButtonLabel,
+            cancelButtonLabel = cancelButtonLabel,
+            handler = handler,
+        )
+    }
+
+    @JvmStatic
+    fun requestFormDialogWithInfoRows(
+        title: String?,
+        message: String?,
+        infoRows: Array<FormDialogInfoRowRequest>,
+        fieldIds: Array<String>,
+        labels: Array<String>,
+        initialTexts: Array<String>,
+        hints: Array<String>,
+        confirmButtonLabel: String?,
+        cancelButtonLabel: String?,
+        handler: FormDialogSubmitHandler,
+    ) {
+        enqueueFormDialog(
+            title = title,
+            message = message,
+            infoRows = infoRows.toList(),
+            fieldIds = fieldIds,
+            labels = labels,
+            initialTexts = initialTexts,
+            hints = hints,
+            confirmButtonLabel = confirmButtonLabel,
+            cancelButtonLabel = cancelButtonLabel,
+            handler = handler,
+        )
+    }
+
+    @JvmStatic
+    fun requestMapPathSelection(currentMapPath: String?, handler: MapPathSelectedHandler) {
+        enqueue(
+            CoreUiEvent.MapPathSelectionRequested(
+                handler = handler,
+                currentMapPath = currentMapPath?.trim().orEmpty(),
+            )
+        )
+    }
+
+    private fun enqueueFormDialog(
+        title: String?,
+        message: String?,
+        infoRows: List<FormDialogInfoRowRequest>,
+        fieldIds: Array<String>,
+        labels: Array<String>,
+        initialTexts: Array<String>,
+        hints: Array<String>,
+        confirmButtonLabel: String?,
+        cancelButtonLabel: String?,
+        handler: FormDialogSubmitHandler,
+    ) {
         val count = minOf(fieldIds.size, labels.size)
         val fields = (0 until count).map { index ->
             FormDialogTextFieldRequest(
@@ -357,6 +440,7 @@ object CoreUiEventQueue {
                 fields = fields,
                 confirmButtonLabel = confirmButtonLabel?.takeIf { it.isNotBlank() } ?: "OK",
                 cancelButtonLabel = cancelButtonLabel?.takeIf { it.isNotBlank() } ?: "Cancel",
+                infoRows = infoRows,
             )
         )
     }

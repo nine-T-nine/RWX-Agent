@@ -10,6 +10,7 @@ import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxCliTool
 import io.github.rwx.di.coreModule
 import io.github.rwx.di.desktopModule
 import io.github.rwx.i18n.LocaleSettings
+import io.github.rwx.headless.HeadlessDesktopRunner
 import io.github.rwx.render.canvas.GameFontMetrics
 import io.github.rwx.settings.GameSettingsRepository
 import io.github.rwx.skia.SkiaGameSession
@@ -35,6 +36,22 @@ object DesktopMain : KoinComponent {
         startup.dataDir?.let { System.setProperty("launch.dir", java.io.File(it).absolutePath) }
         startup.cliPortFile?.let { System.setProperty("rwx.cli.portFile", java.io.File(it).absolutePath) }
         if (startup.headless) {
+            // --headless covers two different jobs. The batch runner loads exactly one map,
+            // replay or server, steps a fixed number of frames and exits; it needs no app layer.
+            // Everything else (CLI, alert delivery, evaluation, micro cases) needs the full app
+            // loop, so it goes through HeadlessMain. --map/--ticks are the only batch-only flags,
+            // which makes them the unambiguous signal for the first job.
+            if (startup.headlessMapPath != null || startup.headlessTickLimit != null) {
+                configureDesktopLogging()
+                val exitCode = try {
+                    io.github.rwx.headless.HeadlessDesktopRunner.run(startup)
+                    0
+                } catch (error: Throwable) {
+                    error.printStackTrace()
+                    1
+                }
+                kotlin.system.exitProcess(exitCode)
+            }
             io.github.rwx.headless.HeadlessMain.run(startup)
             return
         }
@@ -95,6 +112,7 @@ object DesktopMain : KoinComponent {
                 DesktopRenderBackend.Slick -> SwingAppHost.create(
                     fullscreen = SettingsEngine.getInstance().slick2dFullScreen
                 )
+                DesktopRenderBackend.Headless -> error("Headless mode does not create a desktop host")
             }
             bridge.filePickerHost = host
             host.closeCompletion.whenComplete { _, error ->
@@ -117,6 +135,7 @@ object DesktopMain : KoinComponent {
                 val presenter: GameFramePresenter = when (renderBackend) {
                     DesktopRenderBackend.Skia -> GameFramePresenter { }
                     DesktopRenderBackend.Slick -> SlickFramePresenter { host.presentSnapshot(get<SlickGameSession>().currentSnapshot()) }
+                    DesktopRenderBackend.Headless -> error("Headless mode does not create a frame presenter")
                 }
                 val session = installApp(
                     viewportProvider = { host.viewport },

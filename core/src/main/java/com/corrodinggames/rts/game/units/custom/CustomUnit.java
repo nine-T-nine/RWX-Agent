@@ -250,7 +250,8 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
                 CustomUnitEventData customUnitEventData = (CustomUnitEventData) objArrA[i4];
                 CustomEventBinding customEventBinding = customUnitEventData.eventInfo;
                 CustomUnit customUnit = customUnitEventData.customUnit;
-                if (customEventBinding.c == customUnit.unitConfig) {
+                if (customEventBinding.c == customUnit.unitConfig && customUnit.pendingPortalTransfer == null
+                        && (customUnitEventData.unit == null || customUnitEventData.unit.pendingPortalTransfer == null)) {
                     ec.x = customUnit.posX;
                     ec.y = customUnit.posY;
                     PointF pointF = ec;
@@ -404,6 +405,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     /* JADX INFO: renamed from: L */
     public void startUnloading() {
+        if (this.pendingPortalTransfer != null) return;
         if (this.unitConfig.maxTransportingUnits == 0) {
             return;
         }
@@ -413,6 +415,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     /* JADX INFO: renamed from: M */
     public void finishUnloading() {
+        if (this.pendingPortalTransfer != null) return;
         if (this.unitConfig.maxTransportingUnits == 0) {
             return;
         }
@@ -446,7 +449,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
             this.transportUnloadTimer = gameInputStream.readFloat();
             this.isUnloading = gameInputStream.readBoolean();
             this.transportedUnits.clear();
-            int i2 = gameInputStream.readInt();
+            int i2 = gameInputStream.collectionSize(gameInputStream.readInt());
             for (int i3 = 0; i3 < i2; i3++) {
                 BaseUnit baseUnit = gameInputStream.readBaseUnit();
                 if (baseUnit != null) {
@@ -551,6 +554,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     }
 
     public void h(boolean z) {
+        if (this.pendingPortalTransfer != null) return;
         for (BaseUnit baseUnit : this.transportedUnits) {
             baseUnit.transportContainer = null;
             baseUnit.posX = this.posX + (Utility.fastCos(this.rotationSpeed) * (-9.0f));
@@ -564,6 +568,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.OrderableUnit, com.corrodinggames.rts.game.units.BaseUnit
     public void bu() {
+        if (this.pendingPortalTransfer != null) return;
         if (!this.isDead) {
             a(UnitEventType.destroyed);
         }
@@ -578,6 +583,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     // com.corrodinggames.rts.game.units.OrderableUnit, com.corrodinggames.rts.game.units.BaseUnit, com.corrodinggames.rts.gameFramework.SizedObject, com.corrodinggames.rts.gameFramework.GameObject
     /* JADX INFO: renamed from: a */
     public void remove() {
+        if (this.pendingPortalTransfer != null) return;
         ds();
         Object[] objArrA = this.unitConfig.onCreateListeners.a();
         for (int i = this.unitConfig.onCreateListeners.size - 1; i >= 0; i--) {
@@ -1196,6 +1202,23 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
         a(customUnitConfig, true, false);
     }
 
+    @Override
+    public void rebaseTransferState(float dx, float dy, int timeDelta) {
+        super.rebaseTransferState(dx, dy, timeDelta);
+        this.dP += dx;
+        this.dQ += dy;
+        if (this.factoryQueueManager.b != null) {
+            this.factoryQueueManager.b.x += dx;
+            this.factoryQueueManager.b.y += dy;
+        }
+        for (com.corrodinggames.rts.game.units.buildings.Projectile item : this.factoryQueueManager.c) {
+            if (item.targetPoint != null) {
+                item.targetPoint.x += dx;
+                item.targetPoint.y += dy;
+            }
+        }
+    }
+
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void f_() {
         if (!this.unitConfig.isBuildingUnit && !this.isDead) {
@@ -1264,6 +1287,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     }
 
     public final boolean a(TurretConfig turretConfig, int i, BaseUnit baseUnit, boolean z, boolean z2) {
+        if (isTransferUnavailable() || (baseUnit != null && baseUnit.isTransferUnavailable())) return false;
         float f;
         if (!z && (turretConfig.hasRangeRestrictions || z2)) {
             float fDistanceSq = Utility.distanceSq(this.posX, this.posY, baseUnit.posX, baseUnit.posY);
@@ -1649,6 +1673,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     // com.corrodinggames.rts.game.units.OrderableUnit, com.corrodinggames.rts.game.units.BaseUnit, com.corrodinggames.rts.gameFramework.GameObject
     /* JADX INFO: renamed from: a */
     public void update(float f) {
+        if (this.pendingPortalTransfer != null) return;
         float fAbs;
         Effect effectCreateSmallExplosion;
         float fA;
@@ -2954,6 +2979,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void a(AbstractUnitAction abstractUnitAction, boolean z, PointF pointF, BaseUnit baseUnit) {
+        if (this.pendingPortalTransfer != null || (baseUnit != null && baseUnit.pendingPortalTransfer != null)) return;
         if (abstractUnitAction == HovercraftUnit.i) {
             if (!z) {
                 startUnloading();
@@ -3068,6 +3094,8 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     }
 
     public boolean a(AbstractUnitAction abstractUnitAction, PointF pointF, BaseUnit baseUnit, int i, int i2) {
+        if (this.pendingPortalTransfer != null || (baseUnit != null && baseUnit.pendingPortalTransfer != null))
+            return false;
         PointF pointF2 = null;
         BaseUnit baseUnit2 = null;
         int i3 = 0;
@@ -3125,6 +3153,8 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     }
 
     public boolean a(AbstractUnitAction abstractUnitAction, PointF pointF, BaseUnit baseUnit, int i) {
+        if (this.pendingPortalTransfer != null || (baseUnit != null && baseUnit.pendingPortalTransfer != null))
+            return false;
         BaseUnit unit;
         GameEngine gameEngine = GameEngine.getInstance();
         if (i > 10) {
@@ -3896,6 +3926,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void f(float f, float f2) {
+        if (this.pendingPortalTransfer != null) return;
         super.f(f, f2);
         a(UnitEventType.teleported);
         float f3 = this.rotationSpeed;
@@ -4175,6 +4206,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     /* JADX INFO: renamed from: a */
     public float applyDamage(BaseUnit baseUnit, float f, Projectile projectile) {
+        if (isTransferUnavailable()) return f;
         AttachmentSlotDefinition attachmentSlotDefinitionDn = dn();
         if (attachmentSlotDefinitionDn != null && this.parentEntity != null && attachmentSlotDefinitionDn.j) {
             int i = 0;
@@ -4248,6 +4280,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     }
 
     public void b(UnitEventType unitEventType) {
+        if (this.pendingPortalTransfer != null) return;
         UnitEventRuntime.enqueue(this, unitEventType, null, null);
         CustomUnitConfig customUnitConfig = this.unitConfig;
         if (customUnitConfig.eventBindings.size == 0) {
@@ -4266,6 +4299,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void a(UnitEventType unitEventType, BaseUnit baseUnit, AnimationSet animationSet, VariableScope variableScope) {
+        if (this.pendingPortalTransfer != null || (baseUnit != null && baseUnit.pendingPortalTransfer != null)) return;
         CustomUnitEventData customUnitEventData;
         UnitEventRuntime.enqueue(this, unitEventType, baseUnit, animationSet);
         CustomUnitConfig customUnitConfig = this.unitConfig;
@@ -4684,6 +4718,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.OrderableUnit
     public boolean a(OrderableUnit orderableUnit, AttachmentSlotDefinition attachmentSlotDefinition) {
+        if (isTransferUnavailable() || orderableUnit.isTransferUnavailable()) return false;
         if (orderableUnit == this) {
             return false;
         }
@@ -4707,6 +4742,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
 
     @Override // com.corrodinggames.rts.game.units.OrderableUnit
     public boolean b(OrderableUnit orderableUnit) {
+        if (isTransferUnavailable() || orderableUnit.isTransferUnavailable()) return false;
         if (orderableUnit.parentEntity != this) {
             GameEngine.logColored("deattachRequest: unit is not attached");
             return false;
@@ -4850,6 +4886,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     /* JADX INFO: renamed from: e */
     public void changeTeam(PlayerTeam playerTeam) {
+        if (this.pendingPortalTransfer != null) return;
         AttachmentSlotDefinition attachmentSlotDefinitionDn;
         if (this.team == playerTeam) {
             return;

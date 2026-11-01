@@ -1,9 +1,9 @@
 package io.github.rwx.app
 
 import com.corrodinggames.rts.gameFramework.GameEngine
+import com.corrodinggames.rts.gameFramework.network.GameModeType
 import io.github.rwx.PlatformStorage
 import io.github.rwx.i18n.I18n
-import io.github.rwx.map.LinkedMapAvailability
 import io.github.rwx.map.MapLinkResolver
 import io.github.rwx.map.MapMetadata
 import io.github.rwx.map.PortalTransferMessage
@@ -34,20 +34,38 @@ internal class MapController(
     private val state: MapRuntimeState = MapRuntimeState(),
 ) {
     fun jumpToLinkedMap(event: CoreUiEvent.InGameMapJumpRequested) {
-        if (!LinkedMapAvailability.ENABLED) {
-            showUnavailableDialog(LinkedMapAvailability.UNAVAILABLE_MESSAGE)
-            return
-        }
-        showUnavailableDialog("RWX multi-map switching is not wired to the HUD yet: ${event.targetMapId}")
+        val session = P2PLobbyService.getInstance().currentLinkedMapSession() ?: return
+        val targetName = event.targetMapId.replace('\\', '/').substringAfterLast('/').removeSuffix(".tmx")
+        val worldId = session.paths.entries.firstOrNull { (_, path) ->
+            path.replace('\\', '/').substringAfterLast('/').removeSuffix(".tmx")
+                .equals(targetName, ignoreCase = true)
+        }?.key ?: session.spec?.worlds?.firstOrNull { world ->
+            world.mapId.equals(event.targetMapId, ignoreCase = true) ||
+                    world.mapId.equals(targetName, ignoreCase = true)
+        }?.mapId ?: return
+        session.requestView(worldId)
     }
 
     fun canShowMapList(): Boolean =
+        P2PLobbyService.getInstance().currentLinkedMapSession()?.spec?.worlds?.isNotEmpty() == true ||
         state.hasKnownLinkedMaps() ||
                 ((P2PLobbyService.getInstance().currentMultiMapAssignments()?.instances?.size ?: 0) > 1)
 
     fun showMapSwitchDialog() {
-        if (!LinkedMapAvailability.ENABLED) {
-            showUnavailableDialog(LinkedMapAvailability.UNAVAILABLE_MESSAGE)
+        P2PLobbyService.getInstance().currentLinkedMapSession()?.let { session ->
+            showDialogOverGame(
+                Dialog(
+                    title = I18n.ingame.map.title(), message = I18n.ingame.map.message(),
+                    infoRows = session.spec!!.worlds.map { world ->
+                        DialogInfoRow(
+                            icon = Icon.Map, label = world.mapId,
+                            value = if (gameSession.linkedViewedMapPath == session.paths[world.mapId]) I18n.ingame.map.current() else "",
+                            onPress = { hideDialog(); session.requestView(world.mapId) },
+                        )
+                    },
+                    buttons = listOf(DialogButton(I18n.common.cancel())), scrollableMessage = true,
+                )
+            )
             return
         }
         val mapStorage = storage()
@@ -69,24 +87,36 @@ internal class MapController(
                         state.samePath(it.mapPath, currentMapPath)
                     }
         } ?: currentMapPath
-        val graph = MapLinkResolver.resolveLinkedMapGraph(mapStorage, rootPath)
+        val liveRootTargets = if (state.samePath(rootPath, currentMapPath)) {
+            GameEngine.getInstance()?.missionEngine?.linkedPortalMode?.targetMapIds?.toList()
+        } else {
+            null
+        }
+        val graph = MapLinkResolver.resolveLinkedMapGraph(mapStorage, rootPath, liveRootTargets)
         val mapRows = linkedMapOf<String, String>()
         graph.maps.forEach { node ->
             mapRows[node.mapPath] = node.fileName
+        }
+        val runtimeMissingTargets = mutableListOf<String>()
+        GameEngine.getInstance()?.missionEngine?.mapPortalTargetMapIds?.forEach { targetPathValue ->
+            val targetPath = MapLinkResolver.findMapPath(mapStorage, targetPathValue)
+            if (targetPath == null) {
+                runtimeMissingTargets += targetPathValue
+            } else {
+                mapRows.putIfAbsent(targetPath, MapMetadata.getMapName(targetPath))
+            }
+        }
+        // The current map's editor state is authoritative: drop remembered maps that its live
+        // portals no longer reach, so a deleted portal stops resurfacing in this list.
+        if (state.samePath(rootPath, currentMapPath)) {
+            state.runtimeLinkedMapNames.keys.removeAll { cached ->
+                mapRows.keys.none { state.samePath(it, cached) }
+            }
         }
         state.runtimeLinkedMapNames.forEach { (path, name) ->
             mapRows.putIfAbsent(path, name)
         }
         mapRows.putIfAbsent(currentMapPath, MapMetadata.getMapName(currentMapPath))
-        val runtimeMissingTargets = mutableListOf<String>()
-        GameEngine.getInstance()?.missionEngine?.mapPortalTargetMapIds?.forEach { targetId ->
-            val targetPath = MapLinkResolver.findMapPathById(mapStorage, targetId)
-            if (targetPath == null) {
-                runtimeMissingTargets += targetId
-            } else {
-                mapRows.putIfAbsent(targetPath, MapMetadata.getMapName(targetPath))
-            }
-        }
         state.runtimeLinkedMapNames.clear()
         state.runtimeLinkedMapNames.putAll(mapRows)
         if (mapRows.size <= 1) {
@@ -132,11 +162,8 @@ internal class MapController(
     }
 
     fun handlePortalTransfer(transfer: PortalTransferMessage) {
-        if (!LinkedMapAvailability.ENABLED) {
-            showUnavailableDialog(LinkedMapAvailability.UNAVAILABLE_MESSAGE)
-            return
-        }
-        val targetMapPath = storage()?.let { MapLinkResolver.findMapPathById(it, transfer.targetMapId) }
+        if (gameSession.hasLinkedRoom) return
+        val targetMapPath = storage()?.let { MapLinkResolver.findMapPath(it, transfer.targetMapId) }
         if (targetMapPath == null) {
             showUnavailableDialog(I18n.ingame.map.notFound(transfer.targetMapId))
             return
@@ -153,13 +180,12 @@ internal class MapController(
     }
 
     fun drainP2PPortalTransfers() {
-        if (!LinkedMapAvailability.ENABLED) {
-            P2PLobbyService.getInstance().drainPortalTransfers()
-            return
+        if (gameSession.hasLinkedRoom) {
+            P2PLobbyService.getInstance().drainPortalTransfers(); return
         }
         P2PLobbyService.getInstance().drainPortalTransfers().forEach { transfer ->
             val targetMapPath = storage()?.let {
-                MapLinkResolver.findMapPathById(it, transfer.targetMapId)
+                MapLinkResolver.findMapPath(it, transfer.targetMapId)
             } ?: return@forEach
             if (!shouldSimulateMapLocally(targetMapPath)) {
                 return@forEach
@@ -169,7 +195,7 @@ internal class MapController(
     }
 
     fun applyPendingPortalTransfers() {
-        if (!LinkedMapAvailability.ENABLED) return
+        if (gameSession.hasLinkedRoom) return
         val currentMapPath = gameSession.runningMapPath() ?: return
         if (!gameSession.isMapLoaded(currentMapPath)) {
             return
@@ -182,7 +208,7 @@ internal class MapController(
     }
 
     fun ensureP2PAssignedMapLoaded() {
-        if (!LinkedMapAvailability.ENABLED) return
+        if (gameSession.hasLinkedRoom) return
         val engine = GameEngine.getInstance() ?: return
         val networkEngine = engine.networkEngine ?: return
         if (!engine.isNetworkGameActive() || !networkEngine.p2pSession) {
@@ -208,6 +234,15 @@ internal class MapController(
 
     private fun switchMap(targetMapPath: String) {
         hideDialog()
+        P2PLobbyService.getInstance().currentLinkedMapSession()?.let { session ->
+            session.paths.entries.firstOrNull {
+                state.samePath(
+                    it.value,
+                    targetMapPath
+                )
+            }?.key?.let(session::requestView)
+            return
+        }
         val currentMapPath = gameSession.runningMapPath()
         if (state.samePath(currentMapPath, targetMapPath)) {
             return
@@ -241,11 +276,28 @@ internal class MapController(
     }
 
     private fun queueMapLoad(targetMapPath: String, snapshot: MapSnapshot? = null) {
-        val currentBattleRoomConfig = gameSession.activeRendererBattleRoomConfig()
+        // These load APIs create/restore a local world. A multiplayer world needs a coordinated
+        // map transition; calling them here would disconnect the room and reset its players.
+        if (gameSession.isNetworkMultiplayerActive()) {
+            showUnavailableDialog("network multiplayer is not active")
+            return
+        }
         val battleRoomConfig = if (snapshot == null) {
-            currentBattleRoomConfig.copy().apply {
-                //TODO 之后调整
-                // mapPath=targetMapPath
+            gameSession.captureCurrentBattleRoomConfig()?.let { current ->
+                current.copy(
+                    room = current.room.copy(
+                        mapPath = targetMapPath,
+                        options = current.room.options.clone().apply {
+                            // The source can be a saved game; the destination here is a TMX map.
+                            gameModeType = if (MapMetadata.isFromSdCard(targetMapPath)) {
+                                GameModeType.customMap
+                            } else {
+                                GameModeType.skirmishMap
+                            }
+                            mapPath = targetMapPath.replace('\\', '/').substringAfterLast('/')
+                        },
+                    ),
+                )
             }
         } else {
             null

@@ -307,6 +307,8 @@ public class Projectile extends PositionedObject {
     }
 
     public static void a(BaseUnit baseUnit, BaseUnit baseUnit2, float f2, Projectile projectile, boolean z) {
+        if ((baseUnit2 != null && baseUnit2.isTransferUnavailable()) ||
+                (baseUnit != null && baseUnit.pendingPortalTransfer != null)) return;
         GameEngine gameEngine = GameEngine.getInstance();
         if (baseUnit2 != null && !baseUnit2.isDead) {
             f2 = DamageRegistry.applyHitRate(baseUnit2, f2, projectile, z);
@@ -751,6 +753,12 @@ public class Projectile extends PositionedObject {
     @Override // com.corrodinggames.rts.gameFramework.GameObject
     /* JADX INFO: renamed from: a */
     public void update(float f2) {
+        if ((this.sourceUnit != null && this.sourceUnit.pendingPortalTransfer != null) ||
+                (this.targetUnit != null && this.targetUnit.pendingPortalTransfer != null)) {
+            if ((this.sourceUnit != null && this.sourceUnit.isDestroyed) ||
+                    (this.targetUnit != null && this.targetUnit.isDestroyed)) remove();
+            return;
+        }
         float angleBetweenPoints;
         float fDistanceSq;
         float f3;

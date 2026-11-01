@@ -706,13 +706,13 @@ public abstract class OrderableUnit extends UnitBase {
         this.blockedRecoveryTime = gameInputStream.readFloat();
         this.moveThrottle = gameInputStream.readFloat();
         this.movementLevels[0].rotation = gameInputStream.readFloat();
-        this.waypointCount = gameInputStream.readInt();
+        this.waypointCount = gameInputStream.collectionSize(gameInputStream.readInt());
         if (this.waypointCount > 0) {
             ensureWaypointCapacityForIndex(Utility.min(this.waypointCount - 1, 29));
         }
         int i = 30;
         if (gameInputStream.getProtocolVersion() >= 42) {
-            i = gameInputStream.readInt();
+            i = gameInputStream.collectionSize(gameInputStream.readInt());
         }
         for (int i2 = 0; i2 < i; i2++) {
             int length = i2;
@@ -755,7 +755,7 @@ public abstract class OrderableUnit extends UnitBase {
             this.waypointSyncGroupId = gameInputStream.readInt();
         }
         if (gameInputStream.getProtocolVersion() >= 21) {
-            int i3 = gameInputStream.readInt();
+            int i3 = gameInputStream.collectionSize(gameInputStream.readInt());
             for (int i4 = 0; i4 < i3; i4++) {
                 ensurePathPositionCapacityForIndex(i4);
                 if (this.pathPositions[i4] == null) {
@@ -819,12 +819,12 @@ public abstract class OrderableUnit extends UnitBase {
         }
         super.a(gameInputStream);
         if (!this.isDead) {
-            this.attackTarget = GameObject.a(attackTargetUnitId, false);
+            this.attackTarget = (BaseUnit) gameInputStream.resolveObjectId(attackTargetUnitId, BaseUnit.class, false);
             for (int i6 = 0; i6 < this.waypointCount; i6++) {
                 if (this.waypoints[i6] == null) {
                     GameEngine.log("readIn: convertUnitIds is null: " + i6 + " waypointsCount:" + this.waypointCount);
                 } else {
-                    this.waypoints[i6].resolveTargetUnitFromId();
+                    this.waypoints[i6].resolveTargetUnitFromId(gameInputStream);
                 }
             }
         }
@@ -847,6 +847,7 @@ public abstract class OrderableUnit extends UnitBase {
     @Override // com.corrodinggames.rts.game.units.BaseUnit, com.corrodinggames.rts.gameFramework.GameObject
     /* JADX INFO: renamed from: a */
     public void update(float f) {
+        if (this.pendingPortalTransfer != null) return;
         float fD;
         float fFastCos;
         float fFastSin;
@@ -1069,6 +1070,7 @@ public abstract class OrderableUnit extends UnitBase {
     /* JADX INFO: Access modifiers changed from: private */
     /* JADX INFO: renamed from: a */
     public final void resolveSoftCollisionWithUnit(BaseUnit baseUnit, float f, boolean z) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return;
         int i;
         UnitCommand currentWaypoint;
         UnitCommand currentWaypoint2;
@@ -2505,6 +2507,10 @@ public abstract class OrderableUnit extends UnitBase {
             this.moveThrottle = Utility.moveTowardsZero(this.moveThrottle, f);
         }
         UnitCommand currentWaypoint = getCurrentWaypoint();
+        // Retain the order, but do not interact with its target while that group is pending.
+        if (currentWaypoint != null && currentWaypoint.targetUnit != null && currentWaypoint.targetUnit.isTransferUnavailable()) {
+            currentWaypoint = null;
+        }
         this.canAttack = false;
         boolean z = this.isPathingActive;
         this.isPathingActive = false;
@@ -3266,6 +3272,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     /* JADX INFO: renamed from: a */
     public boolean advanceMovementLevelTowardTarget(float f, BaseUnit baseUnit, int i) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return false;
         UnitMovementData unitMovementData = this.movementLevels[i];
         int linkedTurretIndex = getLinkedTurretIndex(i);
         if (linkedTurretIndex != -1) {
@@ -3346,6 +3353,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     /* JADX INFO: renamed from: i */
     public boolean canEngageTargetNow(BaseUnit baseUnit) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return false;
         int linkedTurretIndex;
         int techLevel = getTechLevel();
         for (int i = 0; i < techLevel; i++) {
@@ -3358,6 +3366,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     /* JADX INFO: renamed from: j */
     public boolean canEngageTargetWithMovement(BaseUnit baseUnit) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return false;
         int linkedTurretIndex;
         int techLevel = getTechLevel();
         for (int i = 0; i < techLevel; i++) {
@@ -3369,6 +3378,7 @@ public abstract class OrderableUnit extends UnitBase {
     }
 
     public boolean a(int i, BaseUnit baseUnit, boolean z, boolean z2) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return false;
         if (!z && z2 && !isWithinEngagementRange(baseUnit)) {
             return false;
         }
@@ -3470,6 +3480,7 @@ public abstract class OrderableUnit extends UnitBase {
     }
 
     public final boolean a(BaseUnit baseUnit, boolean z) {
+        if (isTransferUnavailable() || baseUnit.isTransferUnavailable()) return false;
         if (this.team == baseUnit.team || baseUnit.isDead || !this.team.c(baseUnit.team) || this.attackMode == AttackMode.holdFire || this.attackMode == AttackMode.returnFire || baseUnit.transportContainer != null || !canAttackUnitType(baseUnit) || !baseUnit.d((BaseUnit) this)) {
             return false;
         }
@@ -4002,6 +4013,34 @@ public abstract class OrderableUnit extends UnitBase {
         this.pathRetryTimer = 0.0f;
         this.previousPathRetryTimer = 0.0f;
         this.pathRetryCount = (byte) 0;
+    }
+
+    @Override
+    public void rebaseTransferState(float dx, float dy, int timeDelta) {
+        super.rebaseTransferState(dx, dy, timeDelta);
+        for (int i = 0; i < this.waypointCount; i++) {
+            this.waypoints[i].targetX += dx;
+            this.waypoints[i].targetY += dy;
+        }
+        this.pathTargetX += dx;
+        this.pathTargetY += dy;
+        this.lastPathTargetX += dx;
+        this.lastPathTargetY += dy;
+        clearPathingState();
+        this.pathPositionProvider = null;
+        this.lastDamagedBy = null;
+        this.nextCollisionQueryTick = 0;
+    }
+
+    @Override
+    public void rebaseTransferClock(int timeDelta) {
+        super.rebaseTransferClock(timeDelta);
+        this.lastTransportPathUpdateTick = rebaseTransferStamp(this.lastTransportPathUpdateTick, timeDelta);
+        if (this.activeStatusEffects != null) {
+            for (Object effect : this.activeStatusEffects) {
+                ((com.corrodinggames.rts.game.units.g.AirUnitEffect) effect).rebaseTransferClock(timeDelta);
+            }
+        }
     }
 
     /* JADX INFO: renamed from: aI */
@@ -5116,6 +5155,7 @@ public abstract class OrderableUnit extends UnitBase {
     // com.corrodinggames.rts.game.units.BaseUnit, com.corrodinggames.rts.gameFramework.SizedObject, com.corrodinggames.rts.gameFramework.GameObject
     /* JADX INFO: renamed from: a */
     public void remove() {
+        if (this.pendingPortalTransfer != null) return;
         if (this.parentEntity != null) {
             bx();
         }
@@ -5126,6 +5166,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void bt() {
+        if (this.pendingPortalTransfer != null) return;
         setTransportParent((OrderableUnit) null);
         this.attackTarget = null;
         clearAllWaypoints();
@@ -5134,6 +5175,7 @@ public abstract class OrderableUnit extends UnitBase {
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit
     public void bu() {
+        if (this.pendingPortalTransfer != null) return;
         if (this.parentEntity != null) {
             bx();
         }

@@ -62,6 +62,11 @@ class LevelSelectSceneHost(
         }
     }
 
+    /** Restores the full mode list after a restricted picker visit. */
+    fun resetAvailableModes() {
+        if (!closed) availableModes = LevelSelectMode.entries
+    }
+
     fun snapshot(): LevelSelectUiState = LevelSelectUiState(
         revision = mapLoadRevision,
         currentMode = currentMode,

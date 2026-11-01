@@ -120,7 +120,7 @@ public class Dropship extends AirUnit implements TransportUnitInterface {
         this.f = gameInputStream.readFloat();
         this.g = gameInputStream.readBoolean();
         this.transportedUnits.clear();
-        int i = gameInputStream.readInt();
+        int i = gameInputStream.collectionSize(gameInputStream.readInt());
         for (int i2 = 0; i2 < i; i2++) {
             BaseUnit baseUnit = gameInputStream.readBaseUnit();
             if (baseUnit != null) {

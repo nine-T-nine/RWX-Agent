@@ -336,6 +336,21 @@ public class GameSaver {
 
     /* JADX INFO: renamed from: a */
     public synchronized boolean readSaveFromStream(GameInputStream gameInputStream, boolean z, boolean z2, boolean z3) {
+        return readSaveFromStream(gameInputStream, z, z2, z3, false);
+    }
+
+    /**
+     * Local map switching restores editor state; ordinary, network and replay loads do not opt in.
+     */
+    public synchronized boolean readLocalMapSnapshot(GameInputStream gameInputStream) {
+        GameEngine engine = GameEngine.getInstance();
+        if (engine.isNetworkGameActive() || engine.replayEngine.j()) {
+            return false;
+        }
+        return readSaveFromStream(gameInputStream, false, false, false, true);
+    }
+
+    private boolean readSaveFromStream(GameInputStream gameInputStream, boolean z, boolean z2, boolean z3, boolean restoreLocalSandbox) {
         GameObject effectEmitter;
         PlayerTeam playerTeamK;
         GameEngine gameEngine = GameEngine.getInstance();
@@ -443,6 +458,12 @@ public class GameSaver {
                         gameEngine.currentMapPath = VariableScope.nullOrMissingString;
                         gameEngine.remoteMapStream = gameEngine.networkEngine.receivedCustomMapStream;
                     }
+                    // A worker's private filesystem path has no meaning in a different process/device.
+                    // The session has already verified this local map against the manifest digest.
+                    if (gameEngine.networkEngine.isMapViewer() && gameEngine.networkEngine.mapViewerMapPath != null) {
+                        gameEngine.currentMapPath = gameEngine.networkEngine.mapViewerMapPath;
+                        gameEngine.remoteMapStream = null;
+                    }
                     performanceProfiler.a(ProfilerSection.load_map);
                     if (z3) {
                         gameEngine.loadLevel(true, true, GameMode.normalSave);
@@ -482,6 +503,11 @@ public class GameSaver {
                         gameEngine.tileMap.readCursorSelectionBlockFromStream(gameInputStream);
                         if (i >= 86) {
                             boolean z8 = gameInputStream.readBoolean();
+                            if (restoreLocalSandbox) {
+                                // Restore before editor objects are created or discarded below.
+                                gameEngine.isGameStarted = z8;
+                                gameEngine.networkEngine.isSandboxMode = z8;
+                            }
                             boolean z9 = gameInputStream.readBoolean();
                             boolean z10 = gameInputStream.readBoolean();
                             boolean z11 = gameInputStream.readBoolean();
@@ -610,7 +636,7 @@ public class GameSaver {
                             }
                         }
                         for (GameObject o : GameObject.dK()) {
-                            o.remove();
+                            o.removeForWorldReset();
                         }
                         if (gameEngine.isMissionActive()) {
                             for (GameObject gameObject : GameObject.dK()) {
@@ -747,6 +773,11 @@ public class GameSaver {
                                 gameInputStream.a("post unit: " + gameObject2.getClass().toString() + " with id:" + gameObject2.objectId);
                             }
                         }
+                        if (gameEngine.missionEngine != null && gameEngine.missionEngine.linkedWorldState != null)
+                            gameEngine.missionEngine.linkedWorldState.reconcileUnits();
+                        if (gameEngine.networkEngine.linkedTransferAuthority != null && gameEngine.missionEngine != null
+                                && gameEngine.missionEngine.linkedWorldState != null)
+                            gameEngine.networkEngine.linkedTransferAuthority.rebind(gameEngine.missionEngine.linkedWorldState);
                         GameEngine.log("gameSaver", "Loading unit data done.");
                         performanceProfiler.b(ProfilerSection.load_units);
                         if (z14) {
@@ -877,7 +908,7 @@ public class GameSaver {
                 if (gameObject7.objectId == 0) {
                     gameObject7.objectId = gameEngine.networkEngine.y();
                 }
-                gameObject7.remove();
+                gameObject7.removeForWorldReset();
             }
             throw new RuntimeException(e4);
         }

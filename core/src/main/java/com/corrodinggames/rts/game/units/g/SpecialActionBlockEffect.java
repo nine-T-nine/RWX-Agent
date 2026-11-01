@@ -40,6 +40,12 @@ public class SpecialActionBlockEffect extends AirUnitEffect {
         return this.blockedAction == ActionId.NONE || this.blockedAction == actionId;
     }
 
+    @Override
+    public void rebaseTransferClock(int timeDelta) {
+        super.rebaseTransferClock(timeDelta);
+        this.startTime = Math.addExact(this.startTime, timeDelta);
+    }
+
     public float c() {
         int i = this.effectId - this.startTime;
         if (i <= 0) {

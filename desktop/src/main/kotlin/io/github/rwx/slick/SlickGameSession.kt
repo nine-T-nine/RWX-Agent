@@ -519,15 +519,21 @@ class SlickGameSession(
         isDown: Boolean,
         pointerId: Int,
     ) {
+        if (linkedInputBlocked) return
         activeGame()?.submitOverlayPointer(screenX, screenY, isDown, pointerId)
     }
 
     override fun movePointer(screenX: Float, screenY: Float) {
+        if (linkedInputBlocked) return
         activeGame()?.moveOverlayPointer(screenX, screenY)
     }
 
     override fun submitMouseWheel(amount: Int) {
-        if (amount != 0) activeGame()?.submitOverlayMouseWheel(amount)
+        if (!linkedInputBlocked && amount != 0) activeGame()?.submitOverlayMouseWheel(amount)
+    }
+
+    override fun clearInputState() {
+        activeGame()?.clearPendingViewInput()
     }
 
     override fun adoptStartedGameFromEngine(viewport: GameViewport): Boolean {
@@ -535,7 +541,7 @@ class SlickGameSession(
             val engine = activeEngineLocked() ?: return@synchronized null
             val networkEngine = engine.networkEngine ?: return@synchronized null
             if (!networkEngine.hasActiveStartedGameConnection()) return@synchronized null
-            networkEngine.selectedMapPath?.takeIf { it.isNotBlank() }
+            linkedViewedMapPath ?: networkEngine.selectedMapPath?.takeIf { it.isNotBlank() }
                 ?: engine.currentMapPath?.takeIf { it.isNotBlank() }
         } ?: return false
         val normalizedViewport = normalizedViewport(viewport)

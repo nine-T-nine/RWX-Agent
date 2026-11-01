@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Set;
 
 /* JADX INFO: loaded from: game-lib.jar:com/corrodinggames/rts/game/units/custom/logicBooleans/VariableScope.class */
 public class VariableScope {
@@ -780,7 +781,7 @@ public class VariableScope {
         if (b == -2 || b == -1) {
             return null;
         }
-        short shortValue = gameInputStream.readShortValue();
+        int shortValue = gameInputStream.collectionSize(gameInputStream.readShortValue());
         VariableScope variableScope = new VariableScope();
         for (int i = 0; i < shortValue; i++) {
             VariableName variableName = VariableName.get(gameInputStream.readUTF());
@@ -789,6 +790,29 @@ public class VariableScope {
             }
         }
         return variableScope;
+    }
+
+    /**
+     * Only typed position placeholders carry coordinates; ordinary unit refs and numbers are unchanged.
+     */
+    public static void rebaseTransferPlaceholder(BaseUnit value, float dx, float dy, Set<BaseUnit> translated) {
+        if (value instanceof DummyNonUnitWithTeam && translated.add(value)) {
+            value.posX += dx;
+            value.posY += dy;
+        }
+    }
+
+    public void rebaseTransferPositions(float dx, float dy, Set<BaseUnit> translated) {
+        for (VariableData value : this.variableData) {
+            if (value instanceof VariableDataUnit) {
+                rebaseTransferPlaceholder(((VariableDataUnit) value).unit, dx, dy, translated);
+            } else if (value instanceof VariableDataUnitArray) {
+                VariableDataUnitArray array = (VariableDataUnitArray) value;
+                for (int i = 0; i < array.size; i++) {
+                    rebaseTransferPlaceholder(array.dataArray[i], dx, dy, translated);
+                }
+            }
+        }
     }
 
     public static void writeOutUnitOrPlaceholder(GameOutputStream gameOutputStream, BaseUnit baseUnit) throws IOException {
@@ -898,7 +922,7 @@ public class VariableScope {
             return new VariableDataNumber(gameInputStream.readDouble());
         }
         if (returnType == LogicBoolean.ReturnType.boolArray || returnType == LogicBoolean.ReturnType.numberArray || returnType == LogicBoolean.ReturnType.unitArray) {
-            int i = gameInputStream.readInt();
+            int i = gameInputStream.collectionSize(gameInputStream.readInt());
             if (returnType == LogicBoolean.ReturnType.boolArray) {
                 VariableDataBoolArray variableDataBoolArray = new VariableDataBoolArray();
                 for (int i2 = 0; i2 < i; i2++) {

@@ -5,6 +5,8 @@ import com.corrodinggames.rts.gameFramework.GameEngine
 import com.corrodinggames.rts.gameFramework.network.NetworkEngine
 import io.github.rwx.p2p.FeatureIds
 import io.github.rwx.p2p.FeatureMessage
+import io.github.rwx.p2p.FeatureMessageFramer
+import io.github.rwx.p2p.FeatureSendBudget
 import io.github.rwx.p2p.P2PJson
 import io.github.rwx.p2p.WebRtcTunnelProxy
 import io.github.rwx.p2p.WebRtcTransferConnection
@@ -32,7 +34,7 @@ class AndroidWebRtcTunnelProxy(
         val openFuture: CompletableFuture<Unit> = CompletableFuture(),
         val pendingCandidates: MutableList<IceCandidate> = CopyOnWriteArrayList(),
         val closed: AtomicBoolean = AtomicBoolean(false),
-        val featureReceiveBuffer: StringBuilder = StringBuilder(),
+        val featureReceiveBuffer: FeatureMessageFramer = FeatureMessageFramer(),
     )
 
     private val appContext = context.applicationContext
@@ -51,6 +53,9 @@ class AndroidWebRtcTunnelProxy(
     private var currentRequiredFeatures: List<String> = emptyList()
     private val peerFeatures = ConcurrentHashMap<String, Set<String>>()
     private var featureReceiver: ((FeatureMessage) -> Unit)? = null
+
+    @Volatile
+    private var retainControl = false
     private val modTransfers = AndroidTransferTransport({ ensureFactory(); factory!! }, ::createRtcConfig,
         { work -> executor.execute { work() } })
 
@@ -111,6 +116,7 @@ class AndroidWebRtcTunnelProxy(
     override fun stopTransfers() = modTransfers.stop()
 
     override fun stop() {
+        retainControl = false
         stopTransfers()
         clientRunning.set(false)
         runCatching { clientServerSocket?.close() }
@@ -139,6 +145,42 @@ class AndroidWebRtcTunnelProxy(
     }
 
     override fun setFeatureReceiver(receiver: (FeatureMessage) -> Unit) { featureReceiver = receiver }
+
+    override fun retainControlConnection() {
+        retainControl = true
+    }
+
+    override fun detachGameTransport() {
+        retainControlConnection()
+        clientRunning.set(false)
+        runCatching { clientServerSocket?.close() }
+        clientServerSocket = null
+        sessions.values.forEach(::closeGameTransport)
+    }
+
+    override fun gamePeerBindings(): Map<Int, String> = sessions.values.mapNotNull { session ->
+        if (session.localPeerId != hostPeerId) null
+        else session.socket?.localPort?.takeIf { it > 0 }?.let { it to session.remotePeerId }
+    }.toMap()
+
+    override fun trySendFeatureMessage(message: FeatureMessage): Boolean {
+        val peer = message.toPeerId ?: return false
+        val session = sessions.values.firstOrNull { it.remotePeerId == peer && !it.closed.get() } ?: return false
+        val channel = session.featureDataChannel ?: return false
+        return runCatching {
+            synchronized(channel) {
+                if (channel.state() != DataChannel.State.OPEN) return false
+                val bytes = (P2PJson.encodeToString(
+                    message.copy(
+                        roomId = session.roomId,
+                        fromPeerId = session.localPeerId, toPeerId = peer
+                    )
+                ) + "\n").toByteArray(Charsets.UTF_8)
+                if (!FeatureSendBudget.accepts(message, channel.bufferedAmount(), bytes.size)) return false
+                channel.send(DataChannel.Buffer(ByteBuffer.wrap(bytes), true))
+            }
+        }.getOrDefault(false)
+    }
 
     override fun broadcastFeatureMessage(message: FeatureMessage, excludeClientId: String?) {
         sessions.values.forEach { session ->
@@ -432,7 +474,7 @@ class AndroidWebRtcTunnelProxy(
                         executor.execute { relaySocketToDataChannel(session) }
                     }
                 } else if (state == DataChannel.State.CLOSED) {
-                    closeSession(session)
+                    onGameTransportClosed(session)
                 }
             }
 
@@ -445,7 +487,7 @@ class AndroidWebRtcTunnelProxy(
                     socket.outputStream.write(data)
                     socket.outputStream.flush()
                 } catch (_: Exception) {
-                    closeSession(session)
+                    onGameTransportClosed(session)
                 }
             }
         })
@@ -466,25 +508,15 @@ class AndroidWebRtcTunnelProxy(
 
             override fun onMessage(buffer: DataChannel.Buffer?) {
                 val messageBuffer = buffer ?: return
-                val data = ByteArray(messageBuffer.data.remaining())
-                messageBuffer.data.get(data)
-                session.featureReceiveBuffer.append(data.toString(Charsets.UTF_8))
-                while (true) {
-                    val endIndex = session.featureReceiveBuffer.indexOf("\n")
-                    if (endIndex == -1) {
-                        return
-                    }
-                    val line = session.featureReceiveBuffer.substring(0, endIndex).trim()
-                    session.featureReceiveBuffer.delete(0, endIndex + 1)
-                    if (line.isEmpty()) {
-                        continue
-                    }
+                if (session.closed.get()) return
+                val accepted = session.featureReceiveBuffer.accept(messageBuffer.data) { line ->
                     runCatching {
                         handleFeatureMessage(session, P2PJson.decodeFromString<FeatureMessage>(line))
                     }.onFailure { error ->
                         logger.warn(error) { "Android WebRTC RWX feature message decode failed: ${error.message}" }
                     }
                 }
+                if (!accepted) closeSession(session)
             }
         })
     }
@@ -605,8 +637,23 @@ class AndroidWebRtcTunnelProxy(
             }
         } catch (_: Exception) {
         } finally {
-            closeSession(session)
+            onGameTransportClosed(session)
         }
+    }
+
+    private fun onGameTransportClosed(session: ClientSession) {
+        if (retainControl && !session.closed.get()) closeGameTransport(session) else closeSession(session)
+    }
+
+    private fun closeGameTransport(session: ClientSession) {
+        val old = synchronized(session) {
+            val old = session.socket to session.dataChannel
+            session.socket = null
+            session.dataChannel = null
+            old
+        }
+        runCatching { old.first?.close() }
+        runCatching { old.second?.close() }
     }
 
     private fun sendSessionDescription(session: ClientSession, type: String, description: SessionDescription) {

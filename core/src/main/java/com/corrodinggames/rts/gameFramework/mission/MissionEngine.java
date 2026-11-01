@@ -95,7 +95,9 @@ public class MissionEngine extends Serializable {
     ArrayList T = new ArrayList();
     AreaControlMode areaControlMode;
     MapPortalMode mapPortalMode;
+    public io.github.rwx.map.multiplayer.LinkedWorldState linkedWorldState;
     boolean areaControlEditorModified;
+    boolean mapPortalEditorModified;
 
     public void a(String str) {
         GameEngine.log("MissionEngine", "Map warning: " + str);
@@ -116,7 +118,7 @@ public class MissionEngine extends Serializable {
         gameOutputStream.writeBoolean(this.isDefeatWave);
         boolean hasAreaControlMode = this.areaControlMode != null && this.areaControlMode.getZoneCount() > 0;
         boolean hasMapPortalMode = this.mapPortalMode != null && this.mapPortalMode.getPortalCount() > 0;
-        int missionStateVersion = (hasAreaControlMode || hasMapPortalMode) ? 8 : 6;
+        int missionStateVersion = this.linkedWorldState != null ? 9 : (hasAreaControlMode || hasMapPortalMode) ? 8 : 6;
         gameOutputStream.writeInt(missionStateVersion);
         gameOutputStream.writeInt(this.J.size());
         for (MapTrigger mapTrigger : this.J) {
@@ -145,6 +147,7 @@ public class MissionEngine extends Serializable {
                 this.mapPortalMode.writeSnapshot(gameOutputStream);
             }
         }
+        if (missionStateVersion >= 9) gameOutputStream.writeBytesWithLength(this.linkedWorldState.snapshot());
     }
 
     public void a(GameInputStream gameInputStream) throws IOException {
@@ -217,6 +220,14 @@ public class MissionEngine extends Serializable {
             } else {
                 this.mapPortalMode = null;
             }
+        }
+        this.linkedWorldState = null;
+        if (i >= 9) {
+            int length = gameInputStream.readInt();
+            if (length < 1 || length > 8 * 1024 * 1024) throw new IOException("Invalid linked world metadata");
+            byte[] bytes = new byte[length];
+            new java.io.DataInputStream(gameInputStream.getActiveInputStream()).readFully(bytes);
+            this.linkedWorldState = io.github.rwx.map.multiplayer.LinkedWorldState.restore(bytes);
         }
     }
 
@@ -325,6 +336,17 @@ public class MissionEngine extends Serializable {
         return this.mapPortalMode == null ? null : this.mapPortalMode.getPortalCenter(portalId);
     }
 
+    public void validateLinkedEliminationMode() {
+        if (!this.isSkirmish || this.isSurvival || this.areaControlMode != null
+                || this.waveSpawnMode != WaveSpawnMode.noConstructionOrTech) {
+            throw new IllegalStateException("Linked multiplayer supports ordinary skirmish elimination; explicit map objectives are unsupported");
+        }
+    }
+
+    public MapPortalMode getLinkedPortalMode() {
+        return this.mapPortalMode;
+    }
+
     public String[] getMapPortalTargetMapIds() {
         return this.mapPortalMode == null ? new String[0] : this.mapPortalMode.getTargetMapIds();
     }
@@ -338,6 +360,7 @@ public class MissionEngine extends Serializable {
         this.areaControlMode = null;
         this.mapPortalMode = null;
         this.areaControlEditorModified = false;
+        this.mapPortalEditorModified = false;
         this.hasCameraStartMarker = false;
         this.lastSaveTime = instance.gameTimeMillis - 1000;
         this.lastAutosaveTime = instance.gameTimeMillis - 1000;
@@ -803,6 +826,7 @@ public class MissionEngine extends Serializable {
         if (removed == null) {
             return null;
         }
+        this.mapPortalEditorModified = true;
         if (gameEngine.tileMap.objectsLayer != null && gameEngine.tileMap.objectsLayer.mapObjects != null) {
             gameEngine.tileMap.objectsLayer.mapObjects.remove(removed);
         }
@@ -829,7 +853,11 @@ public class MissionEngine extends Serializable {
         if (this.mapPortalMode == null || this.mapPortalMode.getPortalCount() == 0) {
             return null;
         }
-        return this.mapPortalMode.updateEditorPortalAt(x, y, properties);
+        String id = this.mapPortalMode.updateEditorPortalAt(x, y, properties);
+        if (id != null) {
+            this.mapPortalEditorModified = true;
+        }
+        return id;
     }
 
     public int addMapPortalEditorPortal(float x, float y, boolean circle, float width, float height, String targetMapId, String targetPortalId) throws MapLoadException {
@@ -850,7 +878,9 @@ public class MissionEngine extends Serializable {
         int portalIndex = mode.getPortalCount();
         MapObject object = createMapPortalEditorObject(gameEngine, layer, portalIndex, x, y, circle, width, height, targetMapId, targetPortalId);
         layer.mapObjects.add(object);
-        return mode.addEditorPortal(object);
+        int count = mode.addEditorPortal(object);
+        this.mapPortalEditorModified = true;
+        return count;
     }
 
     public void exportEditorMap(String targetPath) throws MapLoadException, IOException {
@@ -862,7 +892,8 @@ public class MissionEngine extends Serializable {
         MapPortalMode portalMode = this.mapPortalMode;
         boolean hasAreaZones = areaMode != null && areaMode.getZoneCount() > 0;
         boolean hasMapPortals = portalMode != null && portalMode.getPortalCount() > 0;
-        if (!hasAreaZones && !hasMapPortals && !this.areaControlEditorModified) {
+        boolean mapPortalsChanged = this.mapPortalEditorModified;
+        if (!hasAreaZones && !hasMapPortals && !this.areaControlEditorModified && !mapPortalsChanged) {
             throw new MapLoadException("Add at least one area zone or map portal before saving");
         }
         gameEngine.tileMap.exportMapToPath(gameEngine.currentMapPath, targetPath);
@@ -871,7 +902,7 @@ public class MissionEngine extends Serializable {
         } else if (this.areaControlEditorModified) {
             AreaControlMode.clearEditorZonesFromPath(targetPath);
         }
-        if (hasMapPortals) {
+        if (hasMapPortals || mapPortalsChanged) {
             portalMode.writeEditorPortalsToPath(targetPath);
         }
     }
@@ -1328,7 +1359,7 @@ public class MissionEngine extends Serializable {
                     z = true;
                 }
             }
-            if (!gameEngine.hasWonGame && !gameEngine.hasLostGame && !gameEngine.replayEngine.j() && !z && this.areaControlMode == null) {
+            if (this.linkedWorldState == null && !gameEngine.hasWonGame && !gameEngine.hasLostGame && !gameEngine.replayEngine.j() && !z && this.areaControlMode == null) {
                 boolean z2 = true;
                 boolean z3 = true;
                 if (this.waveSpawnMode == WaveSpawnMode.none) {
@@ -1379,7 +1410,7 @@ public class MissionEngine extends Serializable {
                     }
                 }
             }
-            if (this.areaControlMode == null && this.isSurvival && !this.isDefeatWave) {
+            if (this.linkedWorldState == null && this.areaControlMode == null && this.isSurvival && !this.isDefeatWave) {
                 boolean z4 = true;
                 for (BaseUnit baseUnit3 : BaseUnit.bE) {
                     if ((baseUnit3 instanceof CommandCenter) || baseUnit3.isTargetable) {

@@ -27,6 +27,13 @@ public abstract class AirUnitEffect {
         return this.effectId;
     }
 
+    /**
+     * Absolute status-effect times use the simulation millisecond clock.
+     */
+    public void rebaseTransferClock(int timeDelta) {
+        this.effectId = Math.addExact(this.effectId, timeDelta);
+    }
+
     public void a(OrderableUnit orderableUnit, float f) {
     }
 

@@ -15,9 +15,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 object MapLinkResolver {
     private const val MAP_ID_PROPERTY = "rwxMapId"
-    private const val MAP_ID_PROPERTY_ALIAS = "rwx_map_id"
     private const val LINKS_PROPERTY = "rwxMapLinks"
-    private const val LINKS_PROPERTY_ALIAS = "rwx_map_links"
     private const val PORTAL_OBJECT_TYPE = "rwx_map_portal"
 
     private val assetPrefixes = listOf(
@@ -27,20 +25,29 @@ object MapLinkResolver {
         "maps/survival",
         "maps/testing",
     )
+    fun findMapPath(storage: PlatformStorage, targetMapPath: String?): String? {
+        val path = targetMapPath?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        return if (mapPathExists(storage, path)) path else null
+    }
 
-    fun findMapPathById(storage: PlatformStorage, targetMapId: String?): String? {
-        val id = targetMapId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-        return buildMapIndex(storage).byId[normalizeId(id)]?.mapPath
+    /** Resolve a manifest in one index pass; each machine keeps its own filesystem paths. */
+    fun findMapPathsById(storage: PlatformStorage, targetMapIds: Collection<String>): Map<String, String> {
+        val index = buildMapIndex(storage)
+        return targetMapIds.mapNotNull { id -> index.byId[normalizeId(id)]?.mapPath?.let { id to it } }.toMap()
     }
 
     fun missingLinkedMapIds(storage: PlatformStorage, sourceMapPath: String?): List<String> {
         return resolveLinkedMapGraph(storage, sourceMapPath).missingTargetMapIds
     }
 
-    fun resolveLinkedMapGraph(storage: PlatformStorage, sourceMapPath: String?): LinkedMapGraph {
+    fun resolveLinkedMapGraph(
+        storage: PlatformStorage,
+        sourceMapPath: String?,
+        rootTargetMapIds: Collection<String>? = null,
+    ): LinkedMapGraph {
         val rootPath = sourceMapPath?.trim()?.takeIf { it.isNotEmpty() }
             ?: return LinkedMapGraph(rootMapPath = null)
-        val index = buildMapIndex(storage)
+        val rootKey = normalizeMapPath(rootPath)
         val maps = mutableListOf<LinkedMapNode>()
         val missing = linkedSetOf<String>()
         val visited = linkedSetOf<String>()
@@ -53,20 +60,22 @@ object MapLinkResolver {
             if (!visited.add(normalizedPath)) {
                 continue
             }
-            val indexedEntry = index.byPath[normalizedPath]
-            val info = indexedEntry?.info ?: readInfo(mapPath)
-            val targetMapIds = info?.targetMapIds.orEmpty().distinct()
+            val info = readInfo(storage, mapPath)
+            val targetMapIds = if (rootTargetMapIds != null && normalizedPath == rootKey) {
+                rootTargetMapIds.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+            } else {
+                info?.targetMapIds.orEmpty().distinct()
+            }
             maps += LinkedMapNode(
                 mapId = info?.explicitMapId ?: existingMapIds(mapPath).firstOrNull().orEmpty(),
                 mapPath = mapPath,
                 targetMapIds = targetMapIds,
             )
-            targetMapIds.forEach { targetId ->
-                val target = index.byId[normalizeId(targetId)]
-                if (target == null) {
-                    missing += targetId
-                } else if (normalizeMapPath(target.mapPath) !in visited) {
-                    queue.add(target.mapPath)
+            targetMapIds.forEach { targetPath ->
+                if (!mapPathExists(storage, targetPath)) {
+                    missing += targetPath
+                } else if (normalizeMapPath(targetPath) !in visited) {
+                    queue.add(targetPath)
                 }
             }
         }
@@ -77,10 +86,12 @@ object MapLinkResolver {
         )
     }
 
-    fun readInfo(mapPath: String?): MapLinkInfo? {
+    private fun readInfo(storage: PlatformStorage, mapPath: String?): MapLinkInfo? {
         val path = mapPath?.takeIf { it.isNotBlank() } ?: return null
         return runCatching {
-            TileMap.openMapInputStreamWithMovedFallback(path)?.use { parseInfo(it) }
+            val stream = storage.resolveVirtualPath(path)?.takeIf { it.isFile }?.inputStream()
+                ?: TileMap.openMapInputStreamWithMovedFallback(path)
+            stream?.use { parseInfo(it) }
         }.getOrElse { error ->
             logger.warn(error) { "RWX map link read failed for $path: ${error.message}" }
             null
@@ -109,7 +120,7 @@ object MapLinkResolver {
                 .map { it.replace('\\', '/').trim('/') }
                 .filter { it.endsWith(".tmx", ignoreCase = true) }
                 .forEach { path ->
-                    addMap(path, readInfo(path))
+                    addMap(path, readInfo(storage, path))
                 }
         }
         storage.mapsDir.file
@@ -148,9 +159,7 @@ object MapLinkResolver {
             val root = document.documentElement
             val mapInfo = findMapInfo(root)
             val explicitMapId = readProperty(mapInfo, MAP_ID_PROPERTY)
-                ?: readProperty(mapInfo, MAP_ID_PROPERTY_ALIAS)
             val linkText = readProperty(mapInfo, LINKS_PROPERTY)
-                ?: readProperty(mapInfo, LINKS_PROPERTY_ALIAS)
             val targetIds = linkedSetOf<String>()
             parseLinkedTargetIds(linkText).forEach(targetIds::add)
             val objects = root.getElementsByTagName("object")
@@ -163,6 +172,16 @@ object MapLinkResolver {
             }
             return MapLinkInfo(explicitMapId = explicitMapId, targetMapIds = targetIds.toList())
         }
+    }
+
+    private fun mapPathExists(storage: PlatformStorage, path: String): Boolean {
+        if (!path.endsWith(".tmx", ignoreCase = true)) {
+            return false
+        }
+        if (storage.assetFileExists(path)) {
+            return true
+        }
+        return storage.resolveVirtualPath(path)?.isFile == true || File(path).isFile
     }
 
     private fun existingMapIds(mapPath: String): List<String> {

@@ -159,12 +159,24 @@ public class GameInputStream {
 
     /* JADX INFO: renamed from: a */
     public GameObject readGameObject(Class clazz) throws IOException {
-        return GameObject.a(this.currentDataInput.readLong(), clazz, false);
+        return resolveObjectId(readUnitId(), clazz, false);
+    }
+
+    public GameObject resolveObjectId(long id, Class clazz, boolean expected) throws IOException {
+        return GameObject.a(id, clazz, expected);
+    }
+
+    public boolean strictUnitTypes() {
+        return false;
+    }
+
+    public int collectionSize(int size) throws IOException {
+        return size;
     }
 
     /* JADX INFO: renamed from: a */
     public void readGameObjectList(FastArrayList fastArrayList, Class cls) throws IOException {
-        int i = readInt();
+        int i = collectionSize(readInt());
         for (int i2 = 0; i2 < i; i2++) {
             GameObject gameObject = readGameObject(cls);
             if (gameObject != null) {
@@ -180,12 +192,12 @@ public class GameInputStream {
 
     /* JADX INFO: renamed from: a */
     public BaseUnit readBaseUnit(ConnectionStatus connectionStatus) throws IOException {
-        return GameObject.a(this.currentDataInput.readLong(), connectionStatus == ConnectionStatus.EXPECTED);
+        return (BaseUnit) resolveObjectId(readUnitId(), BaseUnit.class, connectionStatus == ConnectionStatus.EXPECTED);
     }
 
     /* JADX INFO: renamed from: p */
     public OrderableUnit readOrderableUnit() throws IOException {
-        return GameObject.b(this.currentDataInput.readLong(), false);
+        return (OrderableUnit) resolveObjectId(readUnitId(), OrderableUnit.class, false);
     }
 
     /* JADX INFO: renamed from: b */
@@ -211,10 +223,13 @@ public class GameInputStream {
             String utf = readUTF();
             CustomUnitConfig customUnitConfigFindConfigByName = CustomUnitConfig.findConfigByName(utf);
             if (customUnitConfigFindConfigByName == null) {
+                if (strictUnitTypes()) throw new IOException("Unknown custom unit type: " + utf);
                 NetworkEngine.reportDesync("readUnitType: Could not find customUnitMetadata:" + utf);
             }
             UnitType unitTypeC = CustomUnitConfig.c(customUnitConfigFindConfigByName);
             if (unitTypeC != null) {
+                if (strictUnitTypes() && unitTypeC != customUnitConfigFindConfigByName)
+                    throw new IOException("Custom unit replacement is incompatible with transfer");
                 if (unitTypeC instanceof CustomUnitConfig) {
                     customUnitConfigFindConfigByName = (CustomUnitConfig) unitTypeC;
                 } else {
@@ -225,6 +240,7 @@ public class GameInputStream {
         }
         Object[] enumConstants = UnitTypeEnum.class.getEnumConstants();
         if (i < 0 || i >= enumConstants.length) {
+            if (strictUnitTypes()) throw new IOException("Unknown unit type");
             NetworkEngine.reportDesync("readUnitType:" + i + " is out of range for UnitType");
             return null;
         }
@@ -250,7 +266,7 @@ public class GameInputStream {
     public byte[] readBytesWithLength() throws IOException {
         int i;
         int i2 = 0;
-        int i3 = readInt();
+        int i3 = collectionSize(readInt());
         byte[] bArr = new byte[i3];
         while (i2 < i3 && (i = this.currentDataInput.read(bArr, i2, i3 - i2)) != -1) {
             i2 += i;

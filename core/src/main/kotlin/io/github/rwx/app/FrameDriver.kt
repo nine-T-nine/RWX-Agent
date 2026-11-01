@@ -29,6 +29,7 @@ internal class FrameDriver(
         if (modsController.driveReload()) {
             return
         }
+        battleRoomLaunchController.driveLinkedMapSession()
         coreEventDispatcher.drain(isRenderLoopFrame)
         battleRoomLaunchController.driveDeferredNetworkGameStart()
         updateController.maybeRequestAutomatic(currentScreen() == AppScreen.MainMenu)

@@ -145,6 +145,13 @@ public class GameOutputStream {
         this.currentDataOutput.writeLong(j);
     }
 
+    /**
+     * A deferred unit reference, distinct from scalar longs such as creation time.
+     */
+    public void writeUnitId(long id) throws IOException {
+        writeLong(id);
+    }
+
     /* JADX INFO: renamed from: b */
     public void writeStringNullable(String str) throws IOException {
         writeBoolean(str != null);

@@ -106,6 +106,13 @@ public class BattleRoomUiBridge {
 
     public static void setupGame() {
         GameEngine gameEngine = GameEngine.getInstance();
+        if (gameEngine.networkEngine.isMapViewer()) {
+            if (gameEngine.networkEngine.mapViewerSnapshotLoaded) return;
+            if (gameEngine.networkEngine.receivedSaveGameStream == null) return;
+            gameEngine.gameSaver.readSaveFromStream(gameEngine.networkEngine.receivedSaveGameStream, true, false, false);
+            gameEngine.networkEngine.mapViewerSnapshotLoaded = gameEngine.hasLoadedLevel;
+            return;
+        }
         gameEngine.remoteMapStream = null;
         if (gameEngine.networkEngine.roomSettings.gameModeType == GameModeType.savedGame) {
             if (!gameEngine.networkEngine.isServer) {

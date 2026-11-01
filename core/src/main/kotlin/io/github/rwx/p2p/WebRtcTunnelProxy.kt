@@ -80,6 +80,14 @@ interface WebRtcTunnelProxy {
     fun broadcastFeatureMessage(message: FeatureMessage, excludeClientId: String? = null)
     fun setFeatureReceiver(receiver: (FeatureMessage) -> Unit)
 
+    /** Ordered direct control send; false means the message was not accepted by the channel. */
+    fun trySendFeatureMessage(message: FeatureMessage): Boolean = false
+    fun retainControlConnection() = Unit
+    fun detachGameTransport() = Unit
+
+    /** Host-side loopback source port to authenticated peer, captured before lobby detachment. */
+    fun gamePeerBindings(): Map<Int, String> = emptyMap()
+
     fun getConnectedPeerIds(): Set<String>
 
     fun peerFeatureSnapshot(): Map<String, Set<String>>

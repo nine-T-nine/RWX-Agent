@@ -24,6 +24,11 @@
             android:theme="@android:style/Theme.Material.NoActionBar"
             android:usesCleartextTraffic="true">
         <uses-library android:name="org.apache.http.legacy" android:required="false"/>
+        <service
+                android:name="io.github.rwx.MapSimulationService"
+                android:exported="false"
+                android:process=":map_simulation"
+                android:stopWithTask="true"/>
         <activity
                 android:name="io.github.rwx.MainActivity"
                 android:configChanges="colorMode|density|fontScale|keyboard|keyboardHidden|layoutDirection|locale|navigation|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"

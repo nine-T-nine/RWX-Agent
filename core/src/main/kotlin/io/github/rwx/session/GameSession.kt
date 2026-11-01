@@ -15,6 +15,12 @@ import io.github.rwx.geometry.Point
 import io.github.rwx.logger
 import io.github.rwx.map.MapMetadata
 import io.github.rwx.map.TransferredUnit
+import io.github.rwx.map.PortalUnitTypeIds
+import io.github.rwx.map.multiplayer.*
+import com.corrodinggames.rts.game.units.BaseUnit
+import java.net.Socket
+import java.net.InetSocketAddress
+import java.util.concurrent.CompletableFuture
 import io.github.rwx.net.CoreUiNetworkCallbacks
 import io.github.rwx.platform.CoreGameView
 import io.github.rwx.render.RenderBackend
@@ -41,6 +47,305 @@ fun NetworkEngine.hasActiveStartedGameConnection(): Boolean =
 internal fun battleRoomPlayerTeams(): List<PlayerTeam> = PlayerTeam.getSortedTeams(true)
 
 abstract class GameSession {
+    private data class MapViewCompletion(
+        val future: CompletableFuture<Socket>,
+        val socket: Socket?,
+        val failure: Throwable?,
+        val token: String
+    )
+
+    private data class MapViewBookmark(
+        val x: Float,
+        val y: Float,
+        val zoom: Float,
+        val targetZoom: Float,
+        val selected: Set<Long>
+    )
+
+    @Volatile
+    private var linkedRoom: BattleRoomSnapshot? = null
+
+    @Volatile
+    var linkedViewedMapPath: String? = null
+        private set
+
+    @Volatile
+    protected var linkedInputBlocked = false
+    val isMapViewInputBlocked: Boolean get() = linkedInputBlocked
+    private var stopLinkedRoom: (() -> Unit)? = null
+    private var returnLinkedRoom: (() -> Boolean)? = null
+    private var linkedClientIdentities: Map<Int, String?> = emptyMap()
+    private var linkedServerIdentity: String? = null
+    private var linkedPassword: String? = null
+    val hasLinkedRoom: Boolean get() = linkedRoom != null
+
+    fun retainLinkedRoom(snapshot: BattleRoomSnapshot, stop: () -> Unit, returnToRoom: () -> Boolean) {
+        linkedRoom = snapshot.copy(
+            room = snapshot.room.copy(options = snapshot.room.options.clone()),
+            players = snapshot.players.toList()
+        )
+        stopLinkedRoom = stop
+        returnLinkedRoom = returnToRoom
+        if (snapshot.isHost) runEngineCommand("retain room reconnect identities") { engine ->
+            linkedClientIdentities = battleRoomPlayerTeams().associate { it.teamId to it.teamSharedControlType }
+            linkedServerIdentity = engine.settingsEngine.networkServerId
+            linkedPassword = engine.networkEngine.roomPassword
+        }
+    }
+
+    fun restoreLinkedHostRoom(spec: MapSessionSpec): Boolean {
+        val snapshot = linkedRoom?.takeIf { it.isHost } ?: return false
+        return runEngineCommand("restore multiplayer battle room") { engine ->
+            val network = engine.networkEngine
+            network.disconnectNetworking("Returning to battle room")
+            network.playerName = spec.players.first { it.peerId == spec.hostPeerId }.name
+            network.roomPassword = linkedPassword
+            network.selectedMapPath = snapshot.room.mapPath
+            network.roomSettings = snapshot.room.options.clone()
+            check(network.startServerHosting(false)) { "Cannot restore multiplayer server" }
+            engine.settingsEngine.networkServerId = linkedServerIdentity
+            PlayerTeam.resetTeamRegistry()
+            spec.players.forEach { player ->
+                val team = if (player.ai) com.corrodinggames.rts.game.ai.AIController(player.teamId)
+                else com.corrodinggames.rts.game.GameTeam(player.teamId)
+                team.teamName = player.name
+                team.teamColorId = if (player.spectator) -3 else player.allyId
+                team.teamSharedControlType = linkedClientIdentities[player.teamId]
+                team.startingUnitsOverride = player.startingUnits
+                team.teamAIDifficultyOverride = player.aiDifficulty
+                if (player.peerId == spec.hostPeerId) {
+                    network.localPlayerTeam = team as com.corrodinggames.rts.game.GameTeam; engine.playerTeam = team
+                }
+            }
+            network.roomSettings = snapshot.room.options.clone()
+            network.selectedMapPath = snapshot.room.mapPath
+            network.p2pSession = true
+            engine.hasLoadedLevel = false
+            engine.currentMapPath = snapshot.room.mapPath
+            updateLoadState { SessionLoadState(mapLoadGeneration = it.mapLoadGeneration + 1) }
+            true
+        } == true
+    }
+
+    fun releaseLinkedRoom() {
+        linkedRoom = null
+        linkedViewedMapPath = null
+        linkedInputBlocked = false
+        stopLinkedRoom = null
+        returnLinkedRoom = null
+        linkedClientIdentities = emptyMap()
+        linkedServerIdentity = null
+        linkedPassword = null
+    }
+
+    fun restoreLinkedClientRoom(): Boolean {
+        val snapshot = linkedRoom?.takeUnless { it.isHost } ?: return false
+        return runEngineCommand("restore client battle room") { engine ->
+            val network = engine.networkEngine
+            network.selectedMapPath = snapshot.room.mapPath
+            network.roomSettings = snapshot.room.options.clone()
+            snapshot.players.firstOrNull { it.isLocal }?.let { network.playerName = it.name }
+            engine.currentMapPath = snapshot.room.mapPath
+            engine.hasLoadedLevel = false
+            updateLoadState { SessionLoadState(mapLoadGeneration = it.mapLoadGeneration + 1) }
+            true
+        } == true
+    }
+
+    fun captureLinkedPlayers(localPeer: String, bindings: Map<Int, String>): List<MapSessionPlayer>? =
+        runEngineCommand("capture linked room players") { engine ->
+            battleRoomPlayerTeams().map { team ->
+                // The other legacy flag records advanced-unit history, also for humans.
+                val ai = team.isTeamSpectator
+                val peer = if (ai) null else if (team === engine.networkEngine.localPlayerTeam) localPeer
+                else engine.networkEngine.sendQueue.filterIsInstance<NetworkConnection>()
+                    .firstOrNull { it.player === team }?.socket?.port?.let(bindings::get)
+                    ?: error("A player has no authenticated room connection")
+                MapSessionPlayer(
+                    team.teamId.toString(),
+                    peer,
+                    team.teamId,
+                    team.teamColorId,
+                    team.teamName ?: "Player",
+                    ai,
+                    team.isSpectatorTeamColor,
+                    team.startingUnitsOverride,
+                    team.teamAIDifficultyOverride
+                )
+            }
+        }
+
+    protected open fun connectMapViewSocket(address: String): CompletableFuture<Socket> =
+        CompletableFuture.supplyAsync {
+            Socket().apply {
+                connect(
+                    InetSocketAddress("127.0.0.1", address.substringAfterLast(':').toInt()),
+                    5000
+                ); tcpNoDelay = true
+            }
+        }
+
+    /** The renderer keeps one world. The source worker remains alive while its view is detached. */
+    fun linkedMapView(
+        viewport: () -> GameViewport, pathFor: (MapWorldId) -> String,
+        detachRoomGame: () -> Unit
+    ): MapSessionView = object : MapSessionView {
+        val bookmarks = mutableMapOf<MapWorldId, MapViewBookmark>()
+        var world: MapWorldId? = null
+        var pending: MapWorldId? = null
+
+        @Volatile
+        var connection: CompletableFuture<Socket>? = null
+        val completions = java.util.concurrent.ConcurrentLinkedQueue<MapViewCompletion>()
+        var error: Throwable? = null
+        var detached = false
+        var adopting = false
+
+        @Volatile
+        var attached = false
+
+        override fun connect(world: MapWorldId, address: String, token: String) {
+            error = null
+            attached = false
+            linkedInputBlocked = true
+            clearPendingInput()
+            val socketFuture = connectMapViewSocket(address)
+            connection = socketFuture
+            pending = world
+            adopting = false
+            socketFuture.whenComplete { socket, failure ->
+                synchronized(completions) {
+                    if (connection !== socketFuture) socket?.close()
+                    else completions.add(MapViewCompletion(socketFuture, socket, failure, token))
+                }
+            }
+        }
+
+        override fun drive() {
+            while (true) {
+                val result = completions.poll() ?: break
+                if (connection !== result.future) {
+                    result.socket?.close(); continue
+                }
+                if (result.failure != null) {
+                    error = result.failure; continue
+                }
+                val socket = requireNotNull(result.socket)
+                val targetWorld = pending
+                if (targetWorld == null) {
+                    socket.close(); continue
+                }
+                val connected = runEngineCommand("connect map view") { engine ->
+                    if (connection !== result.future) {
+                        socket.close(); return@runEngineCommand false
+                    }
+                    if (!detached) {
+                        detachRoomGame(); detached = true
+                    }
+                    this.world?.let { previous ->
+                        bookmarks[previous] =
+                            MapViewBookmark(
+                                engine.viewpointX, engine.viewpointY, engine.zoom, engine.targetZoom,
+                                BaseUnit.bE.filterIsInstance<BaseUnit>().filter { it.isSelected }.map { it.objectId }
+                                    .toSet()
+                            )
+                    }
+                    this.world = null
+                    engine.clearInputState()
+                    engine.commandController.clearAllCommands()
+                    engine.gameUI?.clearSelection()
+                    engine.networkEngine.connectMapViewer(socket, result.token)
+                    engine.networkEngine.mapViewerMapPath = pathFor(targetWorld)
+                    engine.networkEngine.p2pSession = true
+                    engine.isStopped = false
+                    engine.isPaused = false
+                    attached = true
+                    true
+                }
+                if (connected != true) {
+                    socket.close()
+                    if (connection === result.future) error = java.io.IOException("Could not connect map view")
+                }
+            }
+            val target = pending ?: run {
+                if (world != null) runEngineCommand("check map view connection") { engine ->
+                    engine.networkEngine.a(0f)
+                    engine.networkEngine.b(0f)
+                    if (!engine.networkEngine.networkGameActive || engine.networkEngine.getActiveServerConnection()?.isConnected != true)
+                        error = java.io.IOException("Map view disconnected")
+                }
+                return
+            }
+            if (error != null || !attached) return
+            val loaded = runEngineCommand("advance map view admission") { engine ->
+                if (connection == null) return@runEngineCommand false
+                engine.networkEngine.a(0f)
+                engine.networkEngine.b(0f)
+                if (!engine.networkEngine.networkGameActive) {
+                    error = java.io.IOException("Map viewer disconnected"); return@runEngineCommand false
+                }
+                if (!engine.networkEngine.mapViewerSnapshotLoaded || !engine.networkEngine.mapViewerSnapshotSynchronized || !engine.hasLoadedLevel) return@runEngineCommand false
+                linkedViewedMapPath = pathFor(target)
+                engine.currentMapPath = linkedViewedMapPath
+                true
+            } == true
+            if (!loaded) return
+            if (!adopting) {
+                if (!adoptStartedGameFromEngine(viewport())) {
+                    error = java.io.IOException("Renderer rejected map snapshot"); return
+                }
+                adopting = true
+            }
+            if (!isMapLoaded(linkedViewedMapPath)) return
+            runEngineCommand("restore map view camera") { engine ->
+                bookmarks[target]?.let { saved ->
+                    engine.zoom = saved.zoom
+                    engine.targetZoom = saved.targetZoom
+                    (engine as com.corrodinggames.rts.game.GameLogic).updateCameraSystem()
+                    engine.setViewpoint(saved.x, saved.y)
+                    engine.gameUI?.clearSelection()
+                    BaseUnit.bE.filterIsInstance<BaseUnit>()
+                        .filter { !it.isDead && !it.isDestroyed && it.objectId in saved.selected }
+                        .forEach { engine.gameUI?.selectUnit(it) }
+                }
+                engine.clearInputState()
+            }
+            clearInputState()
+            world = target
+            pending = null
+            linkedInputBlocked = false
+        }
+
+        override fun currentWorld() = world
+        override fun failure(): Throwable? = error.also { error = null }
+        override fun clearPendingInput() {
+            clearInputState()
+        }
+
+        override fun cancelPendingConnection() {
+            synchronized(completions) {
+                connection = null
+                while (true) {
+                    (completions.poll() ?: break).socket?.close()
+                }
+            }
+            pending = null
+            attached = false
+            error = null
+            linkedInputBlocked = world == null
+        }
+
+        override fun close() {
+            cancelPendingConnection()
+            world = null
+            bookmarks.clear()
+            linkedInputBlocked = false
+            postEngineCommand("close map view") { engine ->
+                if (engine.networkEngine.isMapViewer) engine.networkEngine.disconnectNetworking("Map view closed")
+                engine.clearInputState()
+            }
+        }
+    }
     protected val gameLock = Any()
     private val engineStartLock = Any()
     val inGameMenuController = InGameMenuController()
@@ -210,7 +515,7 @@ abstract class GameSession {
     open fun submitKey(androidKeyCode: Int, isDown: Boolean) {
         // Input during a long engine hold is meaningless (nothing interactive is running) and must
         // not park the UI thread on gameLock — drop it.
-        if (isEngineBusyForUiReads()) return
+        if (isEngineBusyForUiReads() || linkedInputBlocked) return
         postEngineCommand("key state") { engine ->
             engine.setKeyState(androidKeyCode, isDown)
         }
@@ -218,7 +523,7 @@ abstract class GameSession {
 
     open fun submitMouseWheel(amount: Int) {
         if (amount == 0) return
-        if (isEngineBusyForUiReads()) return
+        if (isEngineBusyForUiReads() || linkedInputBlocked) return
         postEngineCommand("mouse wheel") { engine ->
             engine.queueMouseWheelDelta(amount)
         }
@@ -572,8 +877,12 @@ abstract class GameSession {
         get() = activeBattleRoomJoinConnector != null
 
     open fun cancelBattleRoomJoin() {
-        activeBattleRoomJoinConnector?.a()
+        val connector = activeBattleRoomJoinConnector
         activeBattleRoomJoinConnector = null
+        connector?.a()
+        // A completed connect may still be waiting to hand its socket to the engine owner.
+        runCatching { connector?.connectedSocket?.close() }
+            .onFailure { error -> logger.warn(error) { "Failed to close a pending battle room connection" } }
     }
 
     open fun leaveBattleRoom() {
@@ -597,6 +906,7 @@ abstract class GameSession {
     }
 
     open fun currentBattleRoom(refreshNetworkStatus: Boolean = true): BattleRoomSnapshot? {
+        linkedRoom?.let { return it.copy(room = it.room.copy(options = it.room.options.clone())) }
         if (isEngineBusyForUiReads()) {
             return publishedBattleRoom.get()
         }
@@ -903,6 +1213,23 @@ abstract class GameSession {
         ?: throw IllegalStateException("Unable to load renderer battle room config")
     }
 
+    /** Detached live rules for changing maps; the renderer's original load request stays stable. */
+    open fun captureCurrentBattleRoomConfig(): BattleRoomLaunchConfig? {
+        val state = loadState
+        val draft = state.activeRendererBattleRoomConfig ?: state.pendingRendererBattleRoomConfig
+        return runEngineCommand("capture current room rules") { engine ->
+            val network = engine.networkEngine ?: return@runEngineCommand null
+            if (!network.singleplayerServer && !network.networkGameActive) return@runEngineCommand null
+            val path = activeRunningMapPath(engine) ?: draft?.room?.mapPath ?: return@runEngineCommand null
+            (draft ?: BattleRoomLaunchConfig(room = BattleRoomCoreConfig(path, network.roomSettings))).copy(
+                // The in-game editor toggle can be active without a sandbox room flag.
+                sandbox = network.isSandboxMode || (engine.hasLoadedLevel && !engine.isNetworkGameActive() && engine.isGameStarted),
+                aiPlayerCount = battleRoomPlayerTeams().count { it.isTeamControlledByAI },
+                room = BattleRoomCoreConfig(path, network.roomSettings.clone()),
+            )
+        } ?: draft?.copy(room = draft.room.copy(options = draft.room.options.clone()))
+    }
+
     protected data class RendererPreparationSnapshot(
         val mapPath: String?,
         val mapSnapshot: MapSnapshot?,
@@ -1046,6 +1373,8 @@ abstract class GameSession {
     }
 
     open fun discardRunningGame() {
+        stopLinkedRoom?.invoke()
+        releaseLinkedRoom()
         publishedBattleRoom.set(null)
         publishedPlayerList.set(emptyList())
         publishedChatHistory.set(emptyList())
@@ -1120,9 +1449,7 @@ abstract class GameSession {
             }
             val mapPath = activeRunningMapPath(engine)?.takeIf { it.isNotBlank() }
                 ?: return@runEngineCommand null
-            val state = loadState
-            val battleRoomConfig = state.activeRendererBattleRoomConfig
-                ?: state.pendingRendererBattleRoomConfig
+            val battleRoomConfig = captureCurrentBattleRoomConfig()
             runCatching {
                 val output = GameOutputStream()
                 engine.gameSaver.writeSaveToStream(output)
@@ -1215,6 +1542,7 @@ abstract class GameSession {
     }
 
     open fun isNetworkMultiplayerActive(): Boolean {
+        if (hasLinkedRoom) return true
         if (gameEngine == null || isEngineBusyForUiReads()) return false
         return synchronized(gameLock) {
             activeEngineLocked()?.isNetworkGameActive() == true
@@ -1222,6 +1550,7 @@ abstract class GameSession {
     }
 
     open fun multiplayerPlayerList(): List<BattleRoomPlayer> {
+        linkedRoom?.let { return it.players }
         if (isEngineBusyForUiReads()) return publishedPlayerList.get()
         return synchronized(gameLock) {
             val engine = activeEngineLocked() ?: return@synchronized emptyList()
@@ -1257,6 +1586,7 @@ abstract class GameSession {
     }
 
     open fun runningMultiplayerExitInfo(): RunningMultiplayerExitInfo? {
+        linkedRoom?.let { return RunningMultiplayerExitInfo(it.isHost) }
         if (gameEngine == null || isEngineBusyForUiReads()) return null
         return synchronized(gameLock) {
             val engine = activeEngineLocked() ?: return@synchronized null
@@ -1267,12 +1597,14 @@ abstract class GameSession {
     }
 
     open fun disconnectRunningMultiplayer() {
+        stopLinkedRoom?.invoke()
+        releaseLinkedRoom()
         postEngineCommand("disconnect multiplayer") { engine ->
             engine.networkEngine?.disconnectNetworking("exited")
         }
     }
 
-    open fun scheduleReturnToBattleRoom(): Boolean =
+    open fun scheduleReturnToBattleRoom(): Boolean = returnLinkedRoom?.invoke() ?:
         runEngineCommand("schedule return to battle room") { engine ->
             val networkEngine = engine.networkEngine ?: return@runEngineCommand false
             if (!networkEngine.networkGameActive || !networkEngine.gameHasBeenStarted || !networkEngine.isServer) {
@@ -1316,13 +1648,13 @@ abstract class GameSession {
     open fun injectTransferredUnits(units: List<TransferredUnit>, targetPortalId: String?): Int {
         if (units.isEmpty()) return 0
         return runEngineCommand("inject transferred units") { engine ->
-            if (!engine.hasLoadedLevel) return@runEngineCommand 0
+            if (!engine.hasLoadedLevel || engine.missionEngine?.linkedWorldState != null) return@runEngineCommand 0
             val center = engine.missionEngine?.getMapPortalCenter(targetPortalId)
             val spawnX = center?.getOrNull(0) ?: (engine.viewpointX + engine.halfVisibleWorldWidth)
             val spawnY = center?.getOrNull(1) ?: (engine.viewpointY + engine.halfVisibleWorldHeight)
             var createdCount = 0
             units.forEachIndexed { index, transfer ->
-                val unitType = runCatching { UnitTypeEnum.valueOf(transfer.unitTypeId) }.getOrNull()
+                val unitType = PortalUnitTypeIds.resolve(transfer.unitTypeId)
                     ?: return@forEachIndexed
                 val team = PlayerTeam.k(transfer.teamId) ?: return@forEachIndexed
                 val unit = unitType.a()
@@ -1390,7 +1722,7 @@ abstract class GameSession {
             ?: engine.networkEngine?.selectedMapPath?.takeIf { it.isNotBlank() }
             ?: engine.currentMapPath?.takeIf { it.isNotBlank() }
 
-    protected fun activeEngineLocked(): GameEngine? {
+    protected open fun activeEngineLocked(): GameEngine? {
         val sessionEngine = gameEngine
         val singletonEngine = GameEngine.getInstance()
         return when {
@@ -1802,9 +2134,7 @@ abstract class GameSession {
         }
         engine.isStopped = false
         engine.isPaused = false
-        check(engine.gameSaver.readSaveFromStream(GameInputStream(snapshot.saveBytes), false, false, false)) {
-            "Unable to restore in-memory save: ${snapshot.mapPath}"
-        }
+        engine.restoreMapSnapshot(snapshot)
         val resolvedMapPath = activeRunningMapPath(engine) ?: snapshot.mapPath
         updateLoadState {
             it.copy(

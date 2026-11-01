@@ -5,6 +5,8 @@ import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxCliCommands
 import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxDelivery
 import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameCommands
 import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxUnitQueryCommands
+import io.github.rwx.p2p.P2PLobbyService
+
 import io.github.rwx.ui.model.ModsAction
 import io.github.rwx.ui.model.ResourceBrowserAction
 import io.github.rwx.ui.model.ReplaySelectAction
@@ -458,6 +460,11 @@ fun installApp(
         initialScreen = AppScreen.Loading,
         onScreenChanged = screenLifecycleController::onScreenChanged,
     )
+    val mapPathPickerController = MapPathPickerController(
+        levelSelectSceneHost = levelSelectSceneHost,
+        navigateTo = { screen -> navigator.navigateTo(screen) },
+        hideDialog = dialogSceneHost::hide,
+    )
     val onBack: () -> Unit = {
         when (backActionForScreen(navigator.current, gameSession.usesFrameCommandRendering)) {
             BackNavigationAction.Pause -> {
@@ -528,6 +535,7 @@ fun installApp(
         settingsModel = settingsModel,
         refreshScreen = { screenPresenter.apply(navigator.current, lastExternalGameFrame) },
         levelSelectSceneHost = levelSelectSceneHost,
+        mapPathPickerController = mapPathPickerController,
         battleRoomController = battleRoomController,
         multiplayerLobbyController = multiplayerLobbyController,
         multiplayerConnectionController = multiplayerConnectionController,
@@ -573,6 +581,7 @@ fun installApp(
         resourceBrowserController = resourceBrowserController,
         inGameDialogController = inGameDialogController,
         mapController = mapController,
+        mapPathPickerController = mapPathPickerController,
         sessionActions = sessionActions,
         updateController = updateController,
         battleRoomJoinController = battleRoomJoinController,
@@ -581,7 +590,8 @@ fun installApp(
         externalGameController = externalGameController,
         modsController = modsController,
         gameReadyController = gameReadyController,
-        onBattleRoomClosed = { reason, message ->
+        onBattleRoomClosed = closed@{ reason, message ->
+            if (P2PLobbyService.getInstance().isLinkedMapTransition()) return@closed
             battleRoomJoinController.handleBattleRoomClosed()
             BattleRoomUiBridge.startGamePending = false
             val showingRoom = isBattleRoomOwnedScreen(navigator.current, battleRoomController.isSelectingMapForBattleRoom)

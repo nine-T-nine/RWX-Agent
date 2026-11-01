@@ -32,7 +32,7 @@ object HeadlessMain {
         val koin = GlobalContext.get()
         koin.get<PlatformStorage>().createDirectories()
         LocaleSettings.initialize()
-        val game = koin.get<HeadlessGameSession>()
+        val game = koin.get<HeadlessAppSession>()
         val viewport = GameViewport(1280, 720)
         val done = CountDownLatch(1)
         var cli: RwxCliTool? = null

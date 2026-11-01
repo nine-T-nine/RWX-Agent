@@ -5,7 +5,8 @@ import java.util.Locale
 
 internal enum class DesktopRenderBackend : RenderBackend {
     Slick,
-    Skia;
+    Skia,
+    Headless;
 
     override val id: String = name.lowercase(Locale.ROOT)
 
@@ -15,6 +16,7 @@ internal enum class DesktopRenderBackend : RenderBackend {
             return when (normalized) {
                 "", Slick.name.lowercase() -> Slick
                 Skia.name.lowercase() -> Skia
+                Headless.name.lowercase() -> Headless
                 else -> throw IllegalArgumentException("Unsupported desktop renderer: $rendererId")
             }
         }

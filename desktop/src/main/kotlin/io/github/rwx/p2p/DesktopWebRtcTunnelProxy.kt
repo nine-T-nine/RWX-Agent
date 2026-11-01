@@ -29,7 +29,7 @@ class DesktopWebRtcTunnelProxy(
         val openFuture: CompletableFuture<Unit> = CompletableFuture(),
         val pendingCandidates: MutableList<RTCIceCandidate> = CopyOnWriteArrayList(),
         val closed: AtomicBoolean = AtomicBoolean(false),
-        val featureReceiveBuffer: StringBuilder = StringBuilder()
+        val featureReceiveBuffer: FeatureMessageFramer = FeatureMessageFramer()
     )
 
     private var factory: PeerConnectionFactory? = null
@@ -47,6 +47,9 @@ class DesktopWebRtcTunnelProxy(
     private var currentRequiredFeatures: List<String> = emptyList()
     private val peerFeatures = ConcurrentHashMap<String, Set<String>>()
     private var featureReceiver: ((FeatureMessage) -> Unit)? = null
+
+    @Volatile
+    private var retainControl = false
     private val modTransfers = DesktopTransferTransport({ ensureFactory(); factory!! }, ::createRtcConfig,
         { work -> executor.execute { work() } })
 
@@ -108,6 +111,7 @@ class DesktopWebRtcTunnelProxy(
     override fun stopTransfers() = modTransfers.stop()
 
     override fun stop() {
+        retainControl = false
         stopTransfers()
         clientRunning.set(false)
         runCatching { clientServerSocket?.close() }
@@ -136,6 +140,46 @@ class DesktopWebRtcTunnelProxy(
     }
 
     override fun setFeatureReceiver(receiver: (FeatureMessage) -> Unit) { featureReceiver = receiver }
+
+    override fun retainControlConnection() {
+        retainControl = true
+    }
+
+    override fun detachGameTransport() {
+        retainControlConnection()
+        clientRunning.set(false)
+        runCatching { clientServerSocket?.close() }
+        clientServerSocket = null
+        sessions.values.forEach(::closeGameTransport)
+    }
+
+    override fun gamePeerBindings(): Map<Int, String> = sessions.values.mapNotNull { session ->
+        if (session.localPeerId != hostPeerId) null
+        else session.socket?.localPort?.takeIf { it > 0 }?.let { it to session.remotePeerId }
+    }.toMap()
+
+    override fun trySendFeatureMessage(message: FeatureMessage): Boolean {
+        val peer = message.toPeerId ?: return false
+        val session = sessions.values.firstOrNull {
+            it.remotePeerId == peer && !it.closed.get() &&
+                    runCatching { it.featureDataChannel?.state == RTCDataChannelState.OPEN }.getOrDefault(false)
+        } ?: return false
+        val channel = session.featureDataChannel ?: return false
+        return runCatching {
+            synchronized(channel) {
+                if (channel.state != RTCDataChannelState.OPEN) return false
+                val bytes = (P2PJson.encodeToString(
+                    message.copy(
+                        roomId = session.roomId,
+                        fromPeerId = session.localPeerId, toPeerId = peer
+                    )
+                ) + "\n").toByteArray(Charsets.UTF_8)
+                if (!FeatureSendBudget.accepts(message, channel.bufferedAmount, bytes.size)) return false
+                channel.send(RTCDataChannelBuffer(ByteBuffer.wrap(bytes), true))
+                true
+            }
+        }.getOrDefault(false)
+    }
 
     override fun broadcastFeatureMessage(message: FeatureMessage, excludeClientId: String?) {
         sessions.values.forEach { session ->
@@ -395,7 +439,7 @@ class DesktopWebRtcTunnelProxy(
                         executor.execute { relaySocketToDataChannel(session) }
                     }
                 } else if (state == RTCDataChannelState.CLOSED) {
-                    closeSession(session)
+                    onGameTransportClosed(session)
                 }
             }
 
@@ -407,7 +451,7 @@ class DesktopWebRtcTunnelProxy(
                     socket.outputStream.write(data)
                     socket.outputStream.flush()
                 } catch (_: Exception) {
-                    closeSession(session)
+                    onGameTransportClosed(session)
                 }
             }
         })
@@ -427,25 +471,15 @@ class DesktopWebRtcTunnelProxy(
             }
 
             override fun onMessage(buffer: RTCDataChannelBuffer) {
-                val data = ByteArray(buffer.data.remaining())
-                buffer.data.get(data)
-                session.featureReceiveBuffer.append(data.toString(Charsets.UTF_8))
-                while (true) {
-                    val endIndex = session.featureReceiveBuffer.indexOf("\n")
-                    if (endIndex == -1) {
-                        return
-                    }
-                    val line = session.featureReceiveBuffer.substring(0, endIndex).trim()
-                    session.featureReceiveBuffer.delete(0, endIndex + 1)
-                    if (line.isEmpty()) {
-                        continue
-                    }
+                if (session.closed.get()) return
+                val accepted = session.featureReceiveBuffer.accept(buffer.data) { line ->
                     runCatching {
                         handleFeatureMessage(session, P2PJson.decodeFromString<FeatureMessage>(line))
                     }.onFailure { error ->
                         logger.info { "WebRTC RWX feature message decode failed: ${error.message}" }
                     }
                 }
+                if (!accepted) closeSession(session)
             }
         })
     }
@@ -566,8 +600,23 @@ class DesktopWebRtcTunnelProxy(
             }
         } catch (_: Exception) {
         } finally {
-            closeSession(session)
+            onGameTransportClosed(session)
         }
+    }
+
+    private fun onGameTransportClosed(session: ClientSession) {
+        if (retainControl && !session.closed.get()) closeGameTransport(session) else closeSession(session)
+    }
+
+    private fun closeGameTransport(session: ClientSession) {
+        val old = synchronized(session) {
+            val old = session.socket to session.dataChannel
+            session.socket = null
+            session.dataChannel = null
+            old
+        }
+        runCatching { old.first?.close() }
+        runCatching { old.second?.close() }
     }
 
     private fun sendSessionDescription(session: ClientSession, type: String, description: RTCSessionDescription) {

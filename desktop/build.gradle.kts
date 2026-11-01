@@ -192,7 +192,7 @@ compose {
                     "jdk.zipfs",
                 )
                 if (isHostWindows) {
-                    targetFormats(TargetFormat.AppImage, TargetFormat.Exe, TargetFormat.Msi)
+                    targetFormats(TargetFormat.AppImage, TargetFormat.Exe)
                 } else if (isHostMac) {
                     targetFormats(TargetFormat.AppImage, TargetFormat.Dmg)
                 } else {
@@ -203,7 +203,6 @@ compose {
                     console = false
                     shortcut = true
                     menu = true
-                    upgradeUuid = "7f3a2b1c-4d5e-4f60-8a9b-0c1d2e3f4a5b"
                 }
                 linux {
                     iconFile.set(layout.projectDirectory.file("src/main/resources/icons/logo.png"))
@@ -219,7 +218,7 @@ compose {
 
 afterEvaluate {
     tasks.matching {
-        it.name in listOf("packageDmg", "packageDeb", "packageExe", "packageMsi")
+        it.name in listOf("packageDmg", "packageDeb", "packageExe")
     }.configureEach {
         dependsOn("packageAppImage")
     }

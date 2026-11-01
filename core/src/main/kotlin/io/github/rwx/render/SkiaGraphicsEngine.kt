@@ -427,8 +427,8 @@ class SkiaGraphicsEngine private constructor(
                 right - (srcRight - clippedRight) * scaleX, bottom - (srcBottom - clippedBottom) * scaleY,
             )
             resources.pictureSampler.makeShader(
-                recorded, SkiaRect(clippedLeft, clippedTop, clippedRight, clippedBottom), destination,
-                paint?.isFilterBitmap() == true || texture.o,
+                checkNotNull(resolved.recordedShader(paint?.isFilterBitmap() == true || texture.o)),
+                SkiaRect(clippedLeft, clippedTop, clippedRight, clippedBottom), destination,
             ).use { shader ->
                 withCanvas { canvas ->
                     val nativePaint = paints.configure(paint, image = true)
@@ -451,7 +451,8 @@ class SkiaGraphicsEngine private constructor(
             unambiguousSampling(left, right, srcRight - srcLeft) &&
             unambiguousSampling(top, bottom, srcBottom - srcTop) &&
             target?.recordImage(
-                image, paints.configure(paint, image = true), srcLeft, srcTop, srcRight, srcBottom,
+                image, paints.configure(paint, image = true), paints.version, paints.canBatchImages,
+                srcLeft, srcTop, srcRight, srcBottom,
                 left, top, right, bottom,
             ) == true
         ) return

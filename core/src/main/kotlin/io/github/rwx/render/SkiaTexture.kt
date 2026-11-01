@@ -8,6 +8,7 @@ import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.Picture
+import org.jetbrains.skia.Shader
 import org.jetbrains.skia.Surface
 
 /** A raster render target with lazy, unpremultiplied ARGB readback. Use on the render thread. */
@@ -90,19 +91,24 @@ class SkiaTexture internal constructor(
         return recorded?.snapshot()
     }
 
+    internal fun recordedShader(linear: Boolean): Shader? {
+        synchronizePixels()
+        return recorded?.shader(linear)
+    }
+
     internal fun canvasForDrawing(sourceImage: Image? = null, replaceContents: Boolean = false): Canvas {
         if (!recordingEnabled) return surfaceForDrawing(sourceImage).canvas
         return recordingForDrawing(sourceImage, replaceContents).canvas()
     }
 
     internal fun recordImage(
-        image: Image, paint: org.jetbrains.skia.Paint,
+        image: Image, paint: org.jetbrains.skia.Paint, paintVersion: Long, canBatch: Boolean,
         sl: Float, st: Float, sr: Float, sb: Float, dl: Float, dt: Float, dr: Float, db: Float,
     ): Boolean {
         // Advanced blend modes can need a destination read between overlapping
         // quads; preserve separate draws instead of merging them into one mesh.
-        if (!recordingEnabled || paint.blendMode.ordinal > org.jetbrains.skia.BlendMode.SCREEN.ordinal) return false
-        recordingForDrawing(image, false).addImage(image, paint, sl, st, sr, sb, dl, dt, dr, db)
+        if (!recordingEnabled || !canBatch) return false
+        recordingForDrawing(image, false).addImage(image, paint, paintVersion, sl, st, sr, sb, dl, dt, dr, db)
         rendered()
         return true
     }

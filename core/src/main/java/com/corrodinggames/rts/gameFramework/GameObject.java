@@ -106,6 +106,33 @@ public abstract class GameObject extends Serializable {
     public void p(float f) {
     }
 
+    protected final void registerTransferObject() {
+        if (this.objectId != 0 || this.isDestroyed)
+            throw new IllegalStateException("Transfer shell is already registered");
+        this.objectId = GameEngine.getInstance().networkEngine.y();
+        a.a(this);
+        fastGameObjectList.add(this);
+    }
+
+    protected final void unregisterTransferObject() {
+        if (this.objectId != 0) {
+            a.b(this);
+            fastGameObjectList.remove(this);
+        }
+        this.isDestroyed = true;
+    }
+
+    /**
+     * World replacement discards frozen actors without invoking gameplay removal hooks.
+     */
+    public final void removeForWorldReset() {
+        if (this instanceof BaseUnit && ((BaseUnit) this).pendingPortalTransfer != null) {
+            ((BaseUnit) this).discardForTransfer();
+        } else {
+            remove();
+        }
+    }
+
     public boolean a(GameEngine gameEngine) {
         return true;
     }

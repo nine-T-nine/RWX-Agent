@@ -3,18 +3,20 @@ package io.github.rwx.di
 import android.content.Context
 import io.github.rwx.*
 import io.github.rwx.p2p.WebRtcTunnelProxy
+import io.github.rwx.map.multiplayer.MapWorkerLauncher
 import io.github.rwx.session.GameSession
 import io.github.rwx.settings.KEY_ANDROID_OPENGL_RENDERER
 import org.koin.dsl.module
 
-fun androidModule(context: Context) = module {
-    WebRtcTunnelProxy.registerFactory { config -> AndroidWebRtcTunnelProxy(context, config) }
-    single<PlatformBridge> { AndroidPlatformBridge(context) }
+fun androidModule(context: Context, mapWorker: Boolean = false) = module {
+    if (!mapWorker) WebRtcTunnelProxy.registerFactory { config -> AndroidWebRtcTunnelProxy(context, config) }
+    single<PlatformBridge> { if (mapWorker) AndroidMapWorkerBridge(context) else AndroidPlatformBridge(context) }
     single<PlatformStorage> { get<PlatformBridge>().storage }
     single<PreferenceStorage> { get<PlatformBridge>().preferenceStorage }
     single<AppMetadata> { get<PlatformBridge>().appMetadata }
     single<AppLogger> { get<PlatformBridge>().logger }
     single<CrashReporter> { get<PlatformBridge>().crashReporter }
+    single<MapWorkerLauncher> { AndroidMapWorkerLauncher(context) }
     single {
         AndroidGameSession(
             renderBackend = selectedAndroidRenderBackend(),

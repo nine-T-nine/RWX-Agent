@@ -72,11 +72,6 @@ jobs:
           fi
           echo "RWX_VERSION=$version" >> "$GITHUB_ENV"
 
-      - name: Install WiX Toolset (Windows installers)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: choco install wixtoolset -y --no-progress
-
       - name: Build Compose desktop distribution
         shell: bash
         run: |
@@ -93,7 +88,7 @@ jobs:
           OUT="$GITHUB_WORKSPACE/desktop-artifacts"
           PLAT="${{ matrix.platform_id }}"
           VER="$RWX_VERSION"
-          find "$BIN" -type f \( -iname '*.deb' -o -iname '*.rpm' -o -iname '*.dmg' -o -iname '*.msi' -o -iname '*.exe' -o -iname '*.AppImage' \) -not -path "$BIN/main/app/*" -print0 | while IFS= read -r -d '' f; do
+          find "$BIN" -type f \( -iname '*.deb' -o -iname '*.rpm' -o -iname '*.dmg' -o -iname '*.exe' -o -iname '*.AppImage' \) -not -path "$BIN/main/app/*" -print0 | while IFS= read -r -d '' f; do
             base="$(basename "$f")"
             raw_ext="${base##*.}"
             low_ext="$(printf '%s' "$raw_ext" | tr '[:upper:]' '[:lower:]')"
