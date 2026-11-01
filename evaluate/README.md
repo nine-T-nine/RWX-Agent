@@ -271,6 +271,8 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 口径：加法模型，每个扣分点都能追溯到一条事件，每类有上限，避免单一失败模式主导总分；`EXPLAINED`/`UNCERTAIN` 和 `scoreable:false` 的事件不扣分；资金空余只出材料、不计分。权重与上限的默认值见 `events/score.js`，这是初版，不替代人工复核。
 
+`score.txt` 另有一块**未计分时长**：证据没覆盖到（`UNCERTAIN`、`not_scoreable`）的空闲段不扣分，但按类汇总条数和秒数报出来。看总分前先看这一块——一局被中途掐断时，末段最长的空闲往往全落在未计分里。
+
 注意 `economy.log` 里的收入字段单位是"每 `resourceIncomeRatePeriod`（40 tick）"，不是每秒；换算与实测差异见 `economy_seconds.csv` 的 `fundsDelta` 列。
 
 ## 清理测试产物

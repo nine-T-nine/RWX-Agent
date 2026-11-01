@@ -130,11 +130,22 @@ function scoreEvents(events, {weights, caps, baseline, freeIdleMs, maxIdleMsPerE
     const family = FAMILY[event.type];
     if (!family) { excluded[event.type] = (excluded[event.type] || 0) + 1; continue; }
     const row = families[family] ||= {raw: 0, capped: 0, cap: config.caps[family] ?? Infinity,
-      items: [], counts: {}};
+      items: [], counts: {}, unscored: null};
     const result = deduction(event, config);
     if (!result) continue;
     row.counts[result.reason] = (row.counts[result.reason] || 0) + 1;
-    if (!result.points) continue;
+    if (!result.points) {
+      // Unscored time has to stay visible: an idle episode that the evidence could not close
+      // (EVIDENCE_END) costs nothing, and reporting only the total would read as if those minutes
+      // never happened. `durationMs` is the detector's own length, not a re-derivation.
+      if (result.reason === 'not_scoreable') {
+        row.unscored ||= {count: 0, durationMs: 0};
+        row.unscored.count += 1;
+        row.unscored.durationMs += ms(event.durationMs ?? event.gapMs
+          ?? (event.t_end - event.t_start));
+      }
+      continue;
+    }
     row.raw += result.points;
     row.items.push({id: event.id, type: event.type, t_start: event.t_start, t_end: event.t_end,
       points: Number(result.points.toFixed(3)), reason: result.reason});

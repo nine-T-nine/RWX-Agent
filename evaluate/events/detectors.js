@@ -447,12 +447,20 @@ class IdleAssetDetector extends Detector {
     const type=factory?'FACTORY_IDLE':'BUILDER_IDLE';
     const ref=pickReference(row.actions,factory?'produce':'build',row.lastProduct);
     const durationMs=Number(row.durationMs??(Number(row.toMs)-Number(row.fromMs)));
-    const coverage=this.s.covers(row.fromMs,row.toMs);
+    // The command log can end before the telemetry does (the Agent process exited, quota ran out).
+    // Discarding the whole interval as UNCERTAIN throws away exactly the failure this family exists
+    // to catch: builders and factories abandoned in the last minutes. Judge the covered prefix and
+    // say so with `durationIsLowerBound`; a log that ends before the idle even starts stays UNCERTAIN.
+    const coverageEnd=this.s.commandCoverage?.end??-Infinity;
+    const coveredTo=Math.min(Number(row.toMs),coverageEnd);
+    const coverage=coveredTo>=Number(row.fromMs)&&this.s.covers(row.fromMs,coveredTo);
+    const judgedEnd=coverage?coveredTo:Number(row.toMs);
+    const judgedMs=coverage?coveredTo-Number(row.fromMs):durationMs;
     const keepActive=this.keep.has(Number(row.unitId));
-    const agent=agentState(this.s.commands,row.fromMs,row.toMs);
+    const agent=agentState(this.s.commands,row.fromMs,judgedEnd);
     const affordableStart=ref?Number(row.startFunds)>=ref.cost&&Number(row.startCap)>=1:null;
     const affordableEnd=ref?Number(row.endFunds)>=ref.cost&&Number(row.startCap)>=1:null;
-    const tier=durationMs>=this.c.T_IDLE_LONG?'STALL':durationMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
+    const tier=judgedMs>=this.c.T_IDLE_LONG?'STALL':judgedMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
     let status,reason;
     if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
     else if(!ref){status='UNCERTAIN';reason='no_reference_action';}
@@ -460,17 +468,18 @@ class IdleAssetDetector extends Detector {
     else if(!affordableStart&&!affordableEnd){status='EXPLAINED';reason='not_affordable_during_idle';}
     else {status='DETECTED';reason=agent.state==='SILENT'?'agent_silent':'agent_busy_elsewhere';}
     const scoreable=status==='DETECTED'&&tier!=='SHORT'&&(factory||this.c.idleScoreBuilders);
-    const event=this.event(type,row.fromMs,{t_confirm:row.toMs,
+    const event=this.event(type,row.fromMs,{t_confirm:judgedEnd,
       unitId:Number(row.unitId),life:Number(row.life??0),unit:{id:Number(row.unitId),type:row.type},
-      roles,durationMs,closeReason:row.closeReason??null,closeAction:row.closeAction??null,tier,
+      roles,durationMs:judgedMs,observedDurationMs:durationMs,closeReason:row.closeReason??null,
+      closeAction:row.closeAction??null,tier,
       startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
       referenceAction:ref,affordableStart,affordableEnd,
       agentState:agent.state,agentStateEvidence:agent.evidence,
       keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
       status,reason,strict:false,scoreable,visibility:'HIGH',
-      durationIsLowerBound:row.closeReason==='EVIDENCE_END'});
+      durationIsLowerBound:row.closeReason==='EVIDENCE_END'||judgedMs<durationMs});
     this.diagnose(reason);
-    this.emit(event,row.toMs);
+    this.emit(event,judgedEnd);
   }
   finish(){ }
 }

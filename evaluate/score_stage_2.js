@@ -100,6 +100,16 @@ function reportText(score, summary) {
     out.push('');
     out.push('未计分事件: ' + Object.entries(score.excluded).map(([k, v]) => `${k}=${v}`).join(' '));
   }
+  const unscored = score.breakdown.filter(family => family.unscored);
+  if (unscored.length) {
+    // 证据没覆盖到的区间不扣分，但必须报出来：否则“总分 83”会被读成“那些时间没发生”。
+    out.push('');
+    out.push('未计分时长（证据未覆盖，不扣分）');
+    for (const family of unscored) {
+      out.push(`  ${family.family.padEnd(14)} ${String(family.unscored.count).padStart(3)} 条  `
+        + `${(family.unscored.durationMs / 1000).toFixed(1)}s`);
+    }
+  }
   const items = score.breakdown.flatMap(f => f.items).sort((a, b) => b.points - a.points).slice(0, 20);
   if (items.length) {
     out.push('');

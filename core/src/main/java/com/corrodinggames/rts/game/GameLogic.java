@@ -590,6 +590,7 @@ public class GameLogic extends GameEngine {
     /* JADX INFO: renamed from: f */
     public void resetFlags() {
         resetGame(false);
+        evaluate.utils.EngineEvidence.gameLeft();
         this.hasLoadedLevel = false;
         this.isMenuBackgroundMap = false;
         this.exitGameThread = false;

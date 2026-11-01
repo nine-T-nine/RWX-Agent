@@ -86,6 +86,7 @@ public final class RwxCliCommands {
         STEP("rwx-game-step", Domain.LOCAL_GAME),
         RESTART("rwx-game-restart", Domain.LOCAL_GAME),
         SURRENDER("rwx-game-surrender", Domain.LOCAL_GAME),
+        ABORT("rwx-game-abort", Domain.LOCAL_GAME),
         SNAPSHOT("rwx-game-camera", Domain.LOCAL_GAME),
         NUKE_REPORT("rwx-game-nuke-status", Domain.LOCAL_GAME),
         GROUP_SAVE("rwx-game-group-save", Domain.LOCAL_GAME),

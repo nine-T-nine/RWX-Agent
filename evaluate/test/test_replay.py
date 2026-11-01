@@ -561,6 +561,17 @@ class ToleranceTest(unittest.TestCase):
         with self.assertRaises(rp.ReplayError):
             rp.Replay.load(path, strict=True)
 
+    def test_truncated_replay_keeps_tick_clock(self):
+        """未完成录制（无 end/meta、全程无 resync）时 tick→时间必须按标称速率外推。
+
+        回归：`anchors` 永远至少有 `(0, 0)` 一个起点，旧实现把“只有一个锚点”当成
+        “超出最后一个锚点”，用零跨度算出 0，整局时间全为 0，端口命令一条都对不上。
+        """
+        replay = rp.Replay("synthetic")
+        self.assertEqual(replay.anchors, [(0, 0)])
+        self.assertEqual(replay.tick_to_ms(52), 832)
+        self.assertEqual(replay.tick_to_ms(36132), 578112)
+
     def test_strict_mode_raises_on_truncation(self):
         with self.assertRaises(rp.ReplayError):
             rp.Replay.load(self._write_cut(len(self.data) - 40), strict=True)

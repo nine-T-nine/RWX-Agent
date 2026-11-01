@@ -158,6 +158,32 @@ public final class EngineEvidence extends UnitEventListener {
         finally{s.closed=true;GameStatistics.f.removeObserver(s);current=null;ORIGINS.clear();REPLAY_ORDINALS.clear();}
     }
     /**
+     * Ends the current match cleanly while the process keeps running.
+     *
+     * <p>{@link #close} alone would let the next tick reopen a fresh session on the same map, so the
+     * match is pinned to this game time first; the pin is released only when the clock goes
+     * backwards, which is what a restart does. Used by the host abort path.</p>
+     */
+    public static synchronized void finish(String reason){
+        EngineEvidence s=current;
+        if(s!=null){endedMap=s.map;endedTime=s.engine.gameTimeMillis;}
+        close(reason);
+    }
+    /**
+     * The player left the match without ending it: menu exit, disconnect, mod reload.
+     *
+     * <p>Nothing else closes the evidence on that path — the session stays open until the process
+     * exits, so a later hard kill would drop the {@code end} row and the last buffered second. The
+     * replay is already finalized by {@code GameLogic.resetGame}; this makes the evidence just as
+     * safe, which is what "exit game" needs to be.</p>
+     */
+    public static synchronized void gameLeft(){
+        EngineEvidence s=current;
+        if(s==null)return;
+        endedMap=s.map;endedTime=s.engine.gameTimeMillis;
+        close("match_left");
+    }
+    /**
      * Collapses runs of consecutive per-tick frame rows into one {@code "kind":"frames"} row.
      *
      * <p>The game clock is an int advanced by {@code (int)(prev + f*16.666666f)} where

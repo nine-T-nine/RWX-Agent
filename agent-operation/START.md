@@ -187,6 +187,8 @@ rwx-game-state --summary
 
 `rwx-disconnect` 断开多人连接；`rwx-connect --reconnect true` 使用同一进程和身份重连；`rwx-exit` 退出 RWX。关闭 CLI 客户端不会断开游戏连接。
 
+**对局中途必须结束时**（Agent 额度用尽、链路断了、不能再操作）：用 `rwx-game-abort --reason agent_gone`，不要直接杀进程、也不要从菜单退出。它会冻结模拟、把回放收尾（写完 `end`/`endReplayMetaData`，之后还能在游戏里回放）、关闭评测材料并写 `end.reason=agent_gone`，但不记录胜负——所以既不算投降，也不丢材料。进程继续活着，可以照常读证据、把回放拷走。硬杀进程虽然现在也有兜底钩子收尾回放，但最后几秒的缓冲仍可能丢。
+
 ### 4.3 多人模式限制
 
 普通玩家只能读取其可见信息、控制己方单位。房间设置修改及开始游戏由房主负责。

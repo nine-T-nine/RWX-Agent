@@ -44,6 +44,7 @@ Room setting options:
 ### 1.2 Ending a match
 
 - `rwx-game-surrender`: surrender a local match on the next simulation tick; networked matches still use the original surrender vote. Surrender also turns micro-management off and clears keep rules and pending orders.
+- `rwx-game-abort [--reason LABEL]`: stop the match **without** surrendering. The simulation is frozen, the replay is finalized (so it stays playable), and the evaluation evidence is closed with `end.reason=LABEL` (default `host_abort`); no winner or loser is recorded. The process keeps running, so the evidence can still be read afterwards. Use this instead of killing the process or leaving the match through the menu when the Agent can no longer act: a hard kill leaves the replay without its `end` blocks, and such a file cannot be replayed in the game.
 
 ### 1.3 Multiplayer connection, hosting and process exit
 

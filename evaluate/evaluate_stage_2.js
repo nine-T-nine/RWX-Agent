@@ -124,6 +124,10 @@ class Session {
     if(event.strict)this.strict[event.type]=(this.strict[event.type]||0)+1;
     if(event.reactionMs!=null)(this.latencies[event.type]??=[]).push(event.reactionMs);
     if(event.type==='BUILDER_GAP'&&event.strict)this.builderIntervals.push({start:event.t_start,end:event.t_end,unitId:event.unit.id});
+    // 建造者闲置（D）也计入并发统计：两个以上建造者同时闲着是系统性停摆，不是单点失误。
+    // 只取 DETECTED，UNCERTAIN 的区间长度不可信，会把并发时长算高。
+    if(event.type==='BUILDER_IDLE'&&event.status==='DETECTED'&&event.unitId!=null)
+      this.builderIntervals.push({start:event.t_start,end:event.t_end,unitId:event.unitId});
     this.output(event);
   }
   consume(row,command=null) {
@@ -184,7 +188,7 @@ class Session {
     const sweep=this.builderIntervals.flatMap(i=>[{time:i.start,delta:1},{time:i.end,delta:-1}]).sort((a,b)=>a.time-b.time||a.delta-b.delta);
     let active=0,last=0,overlap=0,max=0;
     for(const point of sweep){if(active>=2)overlap+=point.time-last;active+=point.delta;max=Math.max(max,active);last=point.time;}
-    return {schema:1,team:this.meta.team,config:this.config,source:this.meta.source??'engine',complete,
+    return {schema:1,team:this.meta.team,config:this.config,source:this.meta.source??'engine',complete,endReason,
       counts:this.counts,statuses:this.statuses,strict:this.strict,economySamples:this.economy.entries.length,
       economyComplete:this.economy.complete&&this.meta.timeMs===0,diagnostics:this.diagnostics,
       commandFailures:this.commandFailures??null,
@@ -197,7 +201,11 @@ class Session {
         'COMMAND_FAILURE counts rejected requests; it is not a score and does not repeat STALE_COMMAND.',
         ...(this.meta.source==='replay'?['Replay does not contain CLI origin or rejected requests; supply original command evidence for attribution.']:[]),
         ...(!complete?['Evidence has no clean end marker; active events are truncated.']:[]),
-        ...(endReason==='truncated_after_interference'?['Evidence stops at the recorded interference boundary; later game time has no evidence.']:[])]};
+        ...(endReason==='truncated_after_interference'?['Evidence stops at the recorded interference boundary; later game time has no evidence.']:[]),
+        // A host abort (`rwx-game-abort`) stops the match without a result: the evidence is complete
+        // up to that instant, but nothing after it exists, so late-game behaviour is not observable.
+        ...(typeof endReason==='string'&&endReason.startsWith('host_abort')
+          ?['The host aborted the match without a result; game time after the abort has no evidence.']:[])]};
   }
 }
 function eventText(e) {

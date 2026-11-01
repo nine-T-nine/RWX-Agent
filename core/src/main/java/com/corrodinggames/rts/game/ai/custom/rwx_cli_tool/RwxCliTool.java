@@ -139,6 +139,9 @@ public final class RwxCliTool implements AutoCloseable {
 
     @Override
     public void close() {
+        // The replay has to be finalized before anything else: a truncated recording cannot be
+        // opened again, and the evidence is worth little if the match cannot be watched back.
+        RwxReplayShutdown.finalizeQuietly();
         clients.shutdownNow();
         try {
             listener.close();

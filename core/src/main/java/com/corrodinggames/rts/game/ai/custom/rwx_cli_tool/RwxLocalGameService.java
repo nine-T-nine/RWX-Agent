@@ -110,6 +110,16 @@ public interface RwxLocalGameService {
         throw new UnsupportedOperationException("surrender is not supported by this service");
     }
 
+    /**
+     * Ends the match without surrendering: the simulation stops, the replay is finalized and the
+     * evaluation evidence is closed, but no winner or loser is recorded.
+     *
+     * @param reason short label written into the evidence {@code end} row, e.g. {@code agent_gone}
+     */
+    default String abort(String reason) {
+        throw new UnsupportedOperationException("abort is not supported by this service");
+    }
+
     /** Saved unit groups, oldest name first. */
     List<RwxLocalGameTypes.GroupSnapshot> groups();
 

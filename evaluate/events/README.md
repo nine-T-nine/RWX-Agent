@@ -158,7 +158,9 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 | 字段 | 含义 |
 |---|---|
 | `tier` | `SHORT`（<10s）/ `LONG`（10–60s）/ `STALL`（≥60s） |
-| `durationMs`、`closeReason`、`closeAction` | 段长与结束原因 |
+| `durationMs` | 判定用的段长；命令日志先结束时会被截到日志末端（见下） |
+| `observedDurationMs` | 采集端实际观测到的完整段长，永远 ≥ `durationMs` |
+| `closeReason`、`closeAction` | 段长与结束原因 |
 | `referenceAction` | 参照动作：该资产上次实际产出的型号（采集端 `lastProduct`），没有则最便宜的可用项 |
 | `affordableStart`/`affordableEnd` | 段首/段尾是否买得起参照动作 |
 | `agentState` | 窗口内 Agent 在做什么 |
@@ -168,15 +170,16 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 
 | 序 | 条件 | 结果 |
 |---|---|---|
-| 1 | 命令覆盖不全 | `UNCERTAIN` |
+| 1 | 命令日志的末端早于区间开头 | `UNCERTAIN` |
 | 2 | 没有可用参照动作 | `UNCERTAIN` |
 | 3 | 有生效的 `keep-set` 规则 | `EXPLAINED`（引擎自动补产，空闲只能是买不起或动作不可用） |
 | 4 | 段首和段尾都买不起 | `EXPLAINED` |
 | 5 | 其余 | `DETECTED`；`reason` 区分 `agent_silent` / `agent_busy_elsewhere` |
 
+- **命令日志可能比遥测先结束**（Agent 进程退出、额度耗尽）。这时不整条作废，而是把区间截到日志末端 `commandCoverage.end`，按**已覆盖的前缀**判定：`durationMs = commandCoverage.end − fromMs`，`observedDurationMs` 保留真实段长，`durationIsLowerBound = true`。否则"末段被放弃的建造者/工厂"会全部变成 `UNCERTAIN`，正好漏掉这一类要抓的"发呆"。日志末端早于段首才判 `UNCERTAIN`。
 - **`agentState`**：`SILENT` = 窗口内没有任何 Agent 命令（模型或链路停摆）；`OBSERVING` = 只有查询；`BUSY_ELSEWHERE` = 在给别的东西下令。它不改变判定，只解释判定。
 - `scoreable`：`DETECTED` 且 `tier != SHORT` 且是工厂。**建造者默认不可扣分**，因为"能不能放下"无法从证据证明；把 `idleScoreBuilders` 设为 true 才纳入。
-- `durationIsLowerBound`：段在证据结束处截断时为 true。
+- `durationIsLowerBound`：段在证据结束处截断、或被命令日志截断时为 true。
 
 ### F 资金空余（只出材料，不出事件）
 

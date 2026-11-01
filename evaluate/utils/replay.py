@@ -941,8 +941,12 @@ class Replay:
     def tick_to_ms(self, tick: int) -> int:
         """tick → 游戏时间（毫秒）。有锚点时线性插值，否则按标称值。"""
         anchors = self.anchors
-        if not anchors:
-            return int(round(tick * NOMINAL_MS_PER_TICK))
+        if len(anchors) < 2:
+            # 只有一个起点锚点（未完成录制且全程没有 resync）：没有可用的段速率可插值，
+            # 只能按标称 16 ms/tick 外推；早先这里会走“超出最后锚点”分支并用零跨度算出 0，
+            # 导致整局时间全为 0、与端口命令无法对齐。
+            base = anchors[0][1] if anchors else 0
+            return int(round(base + tick * NOMINAL_MS_PER_TICK))
         if tick <= anchors[0][0]:
             return anchors[0][1]
         if tick >= anchors[-1][0]:

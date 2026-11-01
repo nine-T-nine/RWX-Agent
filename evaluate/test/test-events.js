@@ -540,3 +540,25 @@ test('an unobserved march falls back to the hard cap from the order',()=>{
   assert.equal(late.consequence.arrivalObserved,false);
   assert.equal(arrivalCase({arriveAt:null,hitAt:200_000}),undefined);
 });
+function idleCase(coverageEnd,fromMs=5000,toMs=60000) {
+  const events=[],session=new Session({schema:1,team:0,timeMs:0,X:160,
+    commandCoverage:{start:0,end:coverageEnd}},[],
+  {legacyDetectors:false},e=>events.push(e));
+  session.consume({kind:'idle',timeMs:toMs,tick:toMs,seq:1,unitId:7,type:'landFactory',
+    roles:['factory'],fromMs,toMs,durationMs:toMs-fromMs,closeReason:'EVIDENCE_END',
+    startFunds:3000,endFunds:3000,startCap:999,lastProduct:null,
+    actions:{b_c_tank:{kind:'produce',type:'c_tank',cost:350,available:true,affordable:true}}});
+  session.now=toMs;session.finish();
+  return events.find(e=>e.type==='FACTORY_IDLE');
+}
+test('an idle interval that outlives the command log is judged on its covered prefix',()=>{
+  // The Agent process exits before the engine does, so the command log stops at 20 s while the
+  // factory stays idle to 60 s. Discarding the whole episode would hide exactly the failure this
+  // family exists to catch, so the event is truncated to the covered part and flagged.
+  const e=idleCase(20_000);
+  assert.ok(e);assert.equal(e.status,'DETECTED');assert.equal(e.t_end,20_000);
+  assert.equal(e.durationMs,15_000);assert.equal(e.observedDurationMs,55_000);
+  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,true);
+  // A log that ends before the idle even starts proves nothing.
+  assert.equal(idleCase(1_000).status,'UNCERTAIN');
+});

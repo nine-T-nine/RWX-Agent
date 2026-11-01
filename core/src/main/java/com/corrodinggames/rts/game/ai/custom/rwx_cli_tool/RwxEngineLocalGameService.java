@@ -361,6 +361,44 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
     }
 
     /**
+     * 中止本局：不投降、不判胜负，但把回放和遥测都按正常结束收尾。
+     *
+     * <p>投降会把这一局按失败记进结果；而直接杀进程会让回放缺 {@code end}/{@code endReplayMetaData}
+     * 块——游戏里点开就报错、根本放不了（见 2026-11-01 的三个旧回放）。所以“Agent 已经不能操作了”
+     * 应该走这里：冻结模拟、收尾回放、关闭评测材料，进程还可以继续活着供人查看。</p>
+     */
+    @Override
+    public String abort(String reason) {
+        return onGameThread(() -> {
+            GameEngine engine = GameEngine.getInstance();
+            requireActiveGame(engine);
+            String detail = reason == null || reason.trim().isEmpty() ? "host_abort" : reason.trim();
+            // 先释放微操控制，免得残留订单在冻结前又落一次。
+            PlayerTeam controlled = engine.playerTeam;
+            if (controlled != null && !controlled.isTeamSpectator) automate.reset(engine, controlled);
+            pendingActions.clear();
+            keepRules.clear();
+            int tick = engine.currentTick;
+            long gameMillis = engine.gameTimeMillis;
+            ReplayEngine replay = engine.replayEngine;
+            String replayPath = null;
+            boolean wasRecording = replay != null && replay.isRecording();
+            if (wasRecording) {
+                replayPath = replay.getReplayFilePath();
+                replay.e();
+            }
+            forcePause();
+            evaluate.utils.EngineEvidence.finish(detail);
+            StringBuilder message = new StringBuilder("已中止本局（未投降，胜负未记录）：tick ")
+                    .append(tick).append("，游戏时间 ").append(gameMillis).append(" ms");
+            if (wasRecording) message.append("\n回放已收尾: ").append(replayPath);
+            else message.append("\n回放: 本局没有在录制");
+            message.append("\n评测材料已收尾（end.reason=").append(detail).append("）");
+            return message.toString();
+        });
+    }
+
+    /**
      * 让“屏幕上看到的那块世界”落在[0,world]内：比引擎自己的钳制更严格一点——引擎按去掉侧栏的
      * viewpoint 宽度算，画面右下角会露出地图外的一截；这里按实际可见宽度算，地图比画面窄时居中。
      */

@@ -332,6 +332,10 @@ public final class RwxLocalGameCommands implements RwxCliCommandExecutor {
             requireNoArguments(arguments);
             return service.surrender();
         }
+        if (command == RwxCliCommands.Command.ABORT) {
+            validateOptions(arguments, new String[] {"--reason"});
+            return service.abort(optionalValue(arguments, "--reason"));
+        }
         if (command == RwxCliCommands.Command.STEP) {
             validateOptions(arguments, new String[] {"--seconds", "--timeout-ms"});
             String rawSeconds = optionalValue(arguments, "--seconds");

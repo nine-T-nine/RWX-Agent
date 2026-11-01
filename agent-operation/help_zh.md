@@ -30,6 +30,7 @@
 - `--revealedMap` / `--noNukes` / `--sharedControl` / `--allowSpectators` / `--teamLock` / `--roomLock` / `--fixedAllyTeams <true|false>`：布尔开关。
 ### 1.2 对局结束
 - `rwx-game-surrender`：本地对局在下一模拟 tick 投降；联机对局仍走原版投降投票。投降同时关闭微操、清空自动补产和待发指令。
+- `rwx-game-abort [--reason 标签]`：**不投降**地中止本局。模拟冻结，回放收尾（写完 `end`/`endReplayMetaData`，之后还能在游戏里放），评测材料关闭并写 `end.reason=标签`（默认 `host_abort`），不记录胜负。进程继续活着，材料随时可读。Agent 已经不能操作时用这条，不要直接杀进程或从菜单退出：硬杀会让回放缺 `end` 块，那种文件游戏里放不了。
 ### 1.3 多人连接、托管与进程退出
 ```text
 rwx-connect <host[:port]|RELAY-CN|connect-descriptor> [--name NAME] [--password VALUE|--password-env ENV_NAME] [--room CODE] [--timeout-ms 20000]

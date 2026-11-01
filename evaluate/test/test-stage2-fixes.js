@@ -214,6 +214,12 @@ test('clean, truncated and missing end markers keep their own completeness state
     const broken=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'broken')});
     assert.equal(broken.summary.complete,false);
     assert.ok(broken.summary.limitations.some(l=>l.includes('no clean end marker')));
+    // A host abort is complete evidence that stops early: it must be reported, not hidden.
+    fs.writeFileSync(file,[...base,{kind:'end',timeMs:0,seq:3,reason:'host_abort:agent_gone'}].map(r=>JSON.stringify(r)).join('\n'));
+    const aborted=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'aborted')});
+    assert.equal(aborted.summary.complete,true);
+    assert.equal(aborted.summary.endReason,'host_abort:agent_gone');
+    assert.ok(aborted.summary.limitations.some(l=>l.includes('aborted the match without a result')));
     fs.writeFileSync(file,base.map(r=>JSON.stringify(r)).join('\n'));
     const missing=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'missing')});
     assert.equal(missing.summary.complete,false);
