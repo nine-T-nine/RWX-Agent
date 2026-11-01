@@ -1,6 +1,7 @@
 'use strict';
-const {identity,contains,intersects,location,composition,directB,operation,staleRefState,commandTargets}=require('./model');
+const {identity,distance,contains,intersects,location,composition,directB,operation,argsObject,staleRefState,staleCommandRefs,commandTargets}=require('./model');
 const {collectFailures}=require('./failures');
+const {agentState,positionalQuery}=require('./commands');
 
 /**
  * Diagnostic split of the global B set for one object. The verdict still uses B_count (any active
@@ -33,7 +34,7 @@ class AmbushDetector extends Detector {
     if(!v)return;
     this.lastDamage.set(identity(v),row.timeMs);
     for(const r of this.regions)for(const [key,p]of r.pairs)if(identity(p.attacker)===identity(v))r.pairs.delete(key);
-    const rejection=!a||a.side!=='enemy'||v.side!=='self'?'not_enemy_to_self':!v.idle?'victim_not_idle':v.building&&!v.canAttack?'unarmed_building'
+    const rejection=!a||a.side!=='enemy'||v.side!=='self'?'not_enemy_to_self':!v.idle?'victim_not_idle'
       :a.excluded||v.excluded?'excluded_unit':row.timeMs-(this.lastDamage.get(identity(a))??-Infinity)<this.c.T_INACTIVE?'counterfire':null;
     if(rejection){this.diagnose(rejection);return;}
     const key=identity(a)+'>'+identity(v);
@@ -87,7 +88,12 @@ class AmbushDetector extends Detector {
     // `losses` is the union of both sides; the two extra fields keep kills and own losses apart
     // without changing the shape existing readers use.
     const lost=[...r.losses.values()];
-    Object.assign(r.event,{location:location(this.circles(r).length?this.circles(r):[...r.history.values()]),
+    // A sustained attack on unarmed structures is a home attack, not an ambush of a unit: it is
+    // reported with the same evidence but a distinct kind so it can be weighted separately.
+    const kind=us.length&&us.every(u=>u.building&&!u.canAttack)?'BASE':'UNITS';
+    const agent=agentState(this.s.commands,r.event.t_start,now);
+    Object.assign(r.event,{kind,agentState:agent.state,agentStateEvidence:agent.evidence,
+      location:location(this.circles(r).length?this.circles(r):[...r.history.values()]),
       self:composition(us),enemy:composition(enemies),units:[...r.history.keys()],losses:composition(lost),
       lossesSelf:composition(lost.filter(u=>u.side==='self')),lossesEnemy:composition(lost.filter(u=>u.side==='enemy')),
       status:r.event.t_first_B==null?(this.s.covers(r.event.t_start,now)?'UNANSWERED':'UNCERTAIN'):'DETECTED',truncated,
@@ -387,4 +393,308 @@ class CommandFailureDetector extends Detector {
     }
   }
 }
-module.exports={AmbushDetector,BuilderGapDetector,FeedDetector,StaleCommandDetector,ProductionGapDetector,CommandFailureDetector};
+/** Codes that mean the Agent's picture of the world was wrong, not that it typed something wrong. */
+const STALE_INFO=new Set(['STALE_OBJECT','NOT_CONTROLLABLE','PLACEMENT_BLOCKED','UNAVAILABLE_ACTION']);
+
+/**
+ * Reference action for an idle asset: the type it last produced/built when the collector recorded
+ * one, otherwise the cheapest available action. "Cheapest available" is the conservative choice —
+ * if even that is unaffordable, the idle is explained without any placement argument.
+ */
+function pickReference(actions,kind,lastProduct){
+  const rows=Object.entries(actions||{}).filter(([,row])=>row&&row.kind===kind&&Number.isFinite(row.cost));
+  if(!rows.length)return null;
+  if(lastProduct){
+    const match=rows.find(([,row])=>row.type===lastProduct);
+    if(match)return {action:match[0],type:match[1].type,cost:match[1].cost,
+      available:match[1].available!==false,source:'last_product'};
+  }
+  const available=rows.filter(([,row])=>row.available!==false).sort((a,b)=>a[1].cost-b[1].cost);
+  const pick=available[0]||rows.sort((a,b)=>a[1].cost-b[1].cost)[0];
+  return {action:pick[0],type:pick[1].type,cost:pick[1].cost,available:pick[1].available!==false,
+    source:available.length?'cheapest_available':'cheapest_known'};
+}
+
+/**
+ * D 空闲建造者 / E 空闲工厂.
+ *
+ * <p>One idle pair from the collector becomes one event. The collector already dropped periods
+ * shorter than its floor and named the reason the idle ended, so this detector only judges
+ * attribution: was there anything the asset could have done, was an automation rule responsible,
+ * and was the Agent stalled or busy elsewhere?</p>
+ *
+ * <p>An automation rule (keep-set) is a full explanation: the engine refills the queue itself when
+ * the action is available and affordable, so an idle factory with an active rule can only be
+ * blocked by money or by the rule having been paused.</p>
+ */
+class IdleAssetDetector extends Detector {
+  constructor(s){super(s);this.keep=new Map();}
+  command(command){
+    const name=String(command.name||'');
+    if(name==='rwx-game-keep-set'){
+      const unit=Number(argsObject(command).unit);
+      if(Number.isInteger(unit))this.keep.set(unit,{timeMs:command.timeMs,action:argsObject(command).action??null});
+    }else if(name==='rwx-game-keep-clear'&&argsObject(command).id==null){
+      // Clearing every rule releases every factory. A single-rule clear cannot be mapped back to a
+      // unit without the keep-list reply, so that unit keeps its flag: over-explaining is safe.
+      this.keep.clear();
+    }
+  }
+  idle(row){
+    const roles=Array.isArray(row.roles)?row.roles:[];
+    const factory=roles.includes('factory'),builder=roles.includes('builder');
+    if(!factory&&!builder){this.diagnose('no_role');return;}
+    const type=factory?'FACTORY_IDLE':'BUILDER_IDLE';
+    const ref=pickReference(row.actions,factory?'produce':'build',row.lastProduct);
+    const durationMs=Number(row.durationMs??(Number(row.toMs)-Number(row.fromMs)));
+    const coverage=this.s.covers(row.fromMs,row.toMs);
+    const keepActive=this.keep.has(Number(row.unitId));
+    const agent=agentState(this.s.commands,row.fromMs,row.toMs);
+    const affordableStart=ref?Number(row.startFunds)>=ref.cost&&Number(row.startCap)>=1:null;
+    const affordableEnd=ref?Number(row.endFunds)>=ref.cost&&Number(row.startCap)>=1:null;
+    const tier=durationMs>=this.c.T_IDLE_LONG?'STALL':durationMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
+    let status,reason;
+    if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
+    else if(!ref){status='UNCERTAIN';reason='no_reference_action';}
+    else if(keepActive){status='EXPLAINED';reason='automation_configured';}
+    else if(!affordableStart&&!affordableEnd){status='EXPLAINED';reason='not_affordable_during_idle';}
+    else {status='DETECTED';reason=agent.state==='SILENT'?'agent_silent':'agent_busy_elsewhere';}
+    const scoreable=status==='DETECTED'&&tier!=='SHORT'&&(factory||this.c.idleScoreBuilders);
+    const event=this.event(type,row.fromMs,{t_confirm:row.toMs,
+      unitId:Number(row.unitId),life:Number(row.life??0),unit:{id:Number(row.unitId),type:row.type},
+      roles,durationMs,closeReason:row.closeReason??null,closeAction:row.closeAction??null,tier,
+      startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
+      referenceAction:ref,affordableStart,affordableEnd,
+      agentState:agent.state,agentStateEvidence:agent.evidence,
+      keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
+      status,reason,strict:false,scoreable,visibility:'HIGH',
+      durationIsLowerBound:row.closeReason==='EVIDENCE_END'});
+    this.diagnose(reason);
+    this.emit(event,row.toMs);
+  }
+  finish(){ }
+}
+
+/**
+ * C 抖动过期指令.
+ *
+ * <p>A single rejected request is noise: the Agent may be probing, or a parallel batch may reject
+ * itself. A *burst* is the signal — several attempts inside one window, where an attempt is a batch
+ * of receipts within {@code T_STALE_BATCH} milliseconds, because commands sent together can
+ * invalidate each other and should not each count.</p>
+ *
+ * <p>Two sources feed the same burst: the engine's explicit rejection ({@code accepted=false}) and
+ * a receipt-time stale reference, which can be skipped without an error reply. Only bursts that
+ * contain at least one "the world was not what I thought" code are scoreable; pure argument typos
+ * stay as review evidence.</p>
+ */
+class StaleBurstDetector extends Detector {
+  constructor(s){super(s);this.rows=[];}
+  command(command){
+    if(!directB(command))return;
+    for(const ref of staleCommandRefs(command))
+      this.rows.push({timeMs:command.timeMs,commandId:command.id,name:command.name,
+        code:'STALE_OBJECT',source:'receipt_ref',objectId:ref.id});
+  }
+  finish(now){
+    for(const row of collectFailures(this.s.commands,{retryWindowMs:this.c.T_RETRY_WINDOW}))
+      this.rows.push({timeMs:row.timeMs,commandId:row.commandId,name:row.name,
+        code:row.code||row.category,source:'rejected',category:row.category,kind:row.kind});
+    const unique=[...new Map(this.rows.map(row=>[row.commandId,row])).values()]
+      .sort((a,b)=>a.timeMs-b.timeMs||String(a.commandId).localeCompare(String(b.commandId)));
+    const bursts=[];let current=null;
+    for(const row of unique){
+      if(current&&row.timeMs-current.end<=this.c.T_STALE_BURST_WINDOW){
+        current.rows.push(row);current.end=row.timeMs;
+      }else{current={rows:[row],start:row.timeMs,end:row.timeMs};bursts.push(current);}
+    }
+    for(const burst of bursts){
+      const batches=[];
+      for(const row of burst.rows){
+        const last=batches.at(-1);
+        if(!last||row.timeMs-last.at(-1).timeMs>this.c.T_STALE_BATCH)batches.push([row]);
+        else last.push(row);
+      }
+      if(batches.length<this.c.T_STALE_BURST_MIN){this.diagnose('below_burst_threshold');continue;}
+      const codes={};for(const row of burst.rows)codes[row.code]=(codes[row.code]||0)+1;
+      const staleInfo=Object.keys(codes).some(code=>STALE_INFO.has(code));
+      const coverage=this.s.covers(burst.start,burst.end);
+      const event=this.event('STALE_BURST',burst.start,{t_confirm:burst.end,
+        count:burst.rows.length,attempts:batches.length,windowMs:burst.end-burst.start,codes,
+        commands:burst.rows.map(row=>({commandId:row.commandId,timeMs:row.timeMs,name:row.name,
+          code:row.code,source:row.source})),
+        status:!coverage?'UNCERTAIN':'DETECTED',
+        reason:!coverage?'CLI_command_coverage_unavailable'
+          :staleInfo?'stale_or_conflicting_commands':'invalid_commands_only',
+        strict:false,scoreable:coverage&&staleInfo,visibility:'MEDIUM'});
+      this.diagnose(event.reason);
+      this.emit(event,burst.end);
+    }
+  }
+}
+
+/** Task kinds that mean the unit was fighting, not "parked somewhere it believed safe". */
+const FIGHTING=new Set(['attackMove','guard','guardAt','patrol','attack']);
+/** Orders that move people or builders to a place; an assault is deliberately not one of them. */
+const SEND_ORDERS=Object.freeze({'rwx-game-order-move':'move','rwx-game-order-build':'build',
+  'rwx-game-order-repair':'repair','rwx-game-order-rally':'rally'});
+
+/**
+ * B 绞肉机 / 危险区误判.
+ *
+ * <p>The event is an information failure, not a tactical one: our units died at P, the Agent never
+ * obtained a report that covered that loss, and it then sent units or a builder to P and they were
+ * hit. A human sees exactly this in a replay — "it just died there, why is it walking back in".</p>
+ *
+ * <p>Three facts must all hold: a danger point from our own losses ({@code T_GRINDER_RECENT}), a
+ * send order after that loss, and a consequence — one of the sent units damaged or killed at P
+ * inside {@code T_GRINDER_AFTER}. The awareness test only reads the Agent's own receipts: an
+ * {@code rwx-game-events}/{@code state} query whose window covers the loss, a positional query over
+ * P, or a live event socket. An assault or a guard is excluded, because those are deliberate.</p>
+ */
+class GrinderDetector extends Detector {
+  constructor(s){super(s);this.deaths=[];this.pending=[];this.stream=[];this.positions=new Map();}
+  eventstream(row){
+    const last=this.stream.at(-1);
+    if(row.connected){if(!last||last.to!=null)this.stream.push({from:row.timeMs,to:null});}
+    else if(last&&last.to==null)last.to=row.timeMs;
+  }
+  /** Last observed position of our own units, used to tell "already there" from "still marching". */
+  unit(row){
+    const unit=row.unit;
+    if(!unit||unit.side!=='self')return;
+    this.positions.set(Number(unit.id),{x:unit.x,y:unit.y,timeMs:row.timeMs});
+    for(const candidate of this.pending){
+      if(candidate.consequence||candidate.arrivals.has(Number(unit.id)))continue;
+      if(candidate.operation!=='rally'&&!candidate.units.has(Number(unit.id)))continue;
+      if(distance(unit,candidate.point)<=this.c.X)
+        candidate.arrivals.set(Number(unit.id),row.timeMs);
+    }
+  }
+  /** Latest own loss within the radius and the recency window, or null. */
+  dangerAt(x,y,now){
+    let best=null;
+    for(const death of this.deaths){
+      if(now-death.timeMs>this.c.T_GRINDER_RECENT)continue;
+      if(distance(death,{x,y})>this.c.X)continue;
+      if(!best||death.timeMs>best.timeMs)best=death;
+    }
+    return best;
+  }
+  /** Did the Agent obtain anything that covered the loss, between the loss and the order? */
+  awareness(tLoss,tOrder,point){
+    for(const command of this.s.commands){
+      if(command.timeMs<=tLoss||command.timeMs>tOrder)continue;
+      const name=String(command.name||''),args=argsObject(command);
+      if(name==='rwx-game-events'){
+        if(args.since!=null)return {aware:true,by:'events_since',commandId:command.id};
+        const seconds=Number(args.seconds??15);
+        if(command.timeMs-seconds*1000<=tLoss)return {aware:true,by:'events_window',commandId:command.id};
+      }else if(name==='rwx-game-state'&&args['no-events']!==true){
+        const seconds=Number(args['event-seconds']??10);
+        if(command.timeMs-seconds*1000<=tLoss)return {aware:true,by:'state_events',commandId:command.id};
+      }else if(positionalQuery(command)){
+        if(name==='rwx-game-threat-list'){
+          const radius=Number(args.radius??0);
+          if(Number.isFinite(radius)&&radius>0
+              &&distance({x:Number(args.x),y:Number(args.y)},point)<=radius)
+            return {aware:true,by:'threat_list',commandId:command.id};
+        }else if(name==='rwx-game-unit-list'&&/enemy|all/i.test(String(args.owner||''))){
+          return {aware:true,by:'enemy_list',commandId:command.id};
+        }
+      }
+    }
+    for(const interval of this.stream)
+      if(interval.from<tOrder&&(interval.to==null||interval.to>tLoss))
+        return {aware:true,by:'event_stream'};
+    return {aware:false,by:null};
+  }
+  command(command){
+    if(command.source!=='agent')return;
+    const operation=SEND_ORDERS[String(command.name||'')];
+    if(!operation)return;
+    const x=Number(command.x),y=Number(command.y);
+    if(!Number.isFinite(x)||!Number.isFinite(y))return;
+    const point=this.dangerAt(x,y,command.timeMs);
+    if(!point){this.diagnose('no_recent_loss_at_target');return;}
+    const units=[...(command.units||[]),...(command.builders||[])].map(Number).filter(Number.isFinite);
+    // A unit already standing at the place has "arrived" at the order instant; anything else must
+    // be seen marching in before the after-arrival window can start.
+    const arrivals=new Map();
+    for(const id of units){
+      const position=this.positions.get(id);
+      if(position&&command.timeMs-position.timeMs<=5000&&distance(position,point)<=this.c.X)
+        arrivals.set(id,command.timeMs);
+    }
+    this.pending.push({tLoss:point.timeMs,point,orderMs:command.timeMs,commandId:command.id,operation,
+      units:new Set(units),unitsResolved:units.length>0,arrivals,
+      awareness:this.awareness(point.timeMs,command.timeMs,point),
+      deadline:command.timeMs+this.c.T_GRINDER_HARD_CAP,consequence:null});
+    this.diagnose('candidate_send_into_danger');
+  }
+  /** A sent unit took damage or died at the danger point inside the follow-up window. */
+  consequence(now,unit,x,y){
+    if(unit?.side!=='self')return;
+    const task=unit.taskType??unit.task?.type??null;
+    for(const candidate of this.pending){
+      if(candidate.consequence||now<candidate.orderMs||now>candidate.deadline)continue;
+      if(distance({x,y},candidate.point)>this.c.X)continue;
+      if(candidate.operation!=='rally'){
+        if(!candidate.unitsResolved)continue;
+        if(!candidate.units.has(Number(unit.id)))continue;
+      }
+      // An assault or a deliberate guard is not "it thought this was safe".
+      if(unit.canAttack&&FIGHTING.has(task))continue;
+      // The window starts when the ordered unit first reached the place: a long march must not eat
+      // it, and a unit that parked there and was hit much later must not extend it. Units we never
+      // saw marching fall back to the hard cap from the order.
+      const arrival=candidate.arrivals.get(Number(unit.id));
+      if(arrival!=null&&now-arrival>this.c.T_GRINDER_AFTER)continue;
+      if(arrival==null&&now-candidate.orderMs>this.c.T_GRINDER_HARD_CAP)continue;
+      candidate.consequence={timeMs:now,unitId:unit.id,type:unit.type,alive:unit.alive!==false,
+        taskType:task,arrivalMs:arrival??null,arrivalObserved:arrival!=null};
+    }
+  }
+  damage(row){this.consequence(row.timeMs,row.victim,row.victim?.x,row.victim?.y);}
+  death(row){
+    if(row.unit?.side!=='self')return;
+    this.deaths.push({timeMs:row.timeMs,x:row.unit.x,y:row.unit.y,unitId:row.unit.id,type:row.unit.type});
+    if(this.deaths.length>1024)this.deaths.shift();
+    this.consequence(row.timeMs,row.unit,row.unit.x,row.unit.y);
+  }
+  advance(now){this.close(now);}
+  finish(now){this.close(now,true);for(const interval of this.stream)if(interval.to==null)interval.to=now;}
+  close(now,force=false){
+    for(const candidate of [...this.pending]){
+      if(!force&&now<candidate.deadline)continue;
+      this.pending.splice(this.pending.indexOf(candidate),1);
+      if(!candidate.consequence){this.diagnose('no_consequence');continue;}
+      const coverage=this.s.covers(candidate.tLoss,candidate.consequence.timeMs);
+      const agent=agentState(this.s.commands,candidate.tLoss,candidate.consequence.timeMs);
+      const event=this.event('GRINDER',candidate.tLoss,{t_confirm:candidate.consequence.timeMs,
+        location:{x:candidate.point.x,y:candidate.point.y,r:this.c.X},
+        commandId:candidate.commandId,operation:candidate.operation,
+        delayMs:candidate.orderMs-candidate.tLoss,reactionMs:candidate.orderMs-candidate.tLoss,
+        consequence:candidate.consequence,awareness:candidate.awareness,
+        unitsResolved:candidate.unitsResolved,
+        agentState:agent.state,agentStateEvidence:agent.evidence,
+        status:!coverage?'UNCERTAIN':candidate.awareness.aware?'EXPLAINED':'DETECTED',
+        reason:!coverage?'CLI_command_coverage_unavailable'
+          :candidate.awareness.aware?'agent_was_informed':'danger_not_observed',
+        strict:false,scoreable:coverage&&!candidate.awareness.aware,visibility:'HIGH'});
+      this.diagnose(event.reason);
+      this.emit(event,candidate.consequence.timeMs);
+    }
+  }
+}
+
+/** Which detectors a session runs. The 3-10s gap family is superseded by D/E. */
+const LEGACY=[BuilderGapDetector,FeedDetector,StaleCommandDetector,ProductionGapDetector,CommandFailureDetector];
+function createDetectors(session){
+  const types=[AmbushDetector,GrinderDetector,IdleAssetDetector,StaleBurstDetector];
+  if(session.config.legacyDetectors)types.push(...LEGACY);
+  return types.map(Type=>new Type(session));
+}
+module.exports={AmbushDetector,GrinderDetector,BuilderGapDetector,FeedDetector,StaleCommandDetector,
+  ProductionGapDetector,CommandFailureDetector,IdleAssetDetector,StaleBurstDetector,LEGACY,STALE_INFO,
+  FIGHTING,SEND_ORDERS,createDetectors};

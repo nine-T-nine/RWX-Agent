@@ -17,6 +17,8 @@ import static com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameTyp
 
 /** Freezes facts and visibility on the simulation thread, before the involved objects disappear. */
 final class RwxEventCollector extends UnitEventListener {
+    /** A contact must stay observable this long before it is announced, so fog flicker is not a discovery. */
+    private static final int DISCOVERY_CONFIRM_MILLIS = 1000;
     final RwxEventStore store = new RwxEventStore();
     private GameEngine world;
     private Object map;
@@ -24,7 +26,10 @@ final class RwxEventCollector extends UnitEventListener {
     private int lastTime = -1;
     private int lastTick = -1;
     private boolean initialized;
-    private Set<Long> visibleEnemies = new HashSet<>();
+    /** Game time each enemy first became continuously observable in the current streak. */
+    private final Map<Long, Integer> visibleSince = new HashMap<>();
+    /** Ids already reported once; a unit that leaves and re-enters the fog is never re-announced. */
+    private final Set<Long> reportedEnemies = new HashSet<>();
     private Set<Long> ownUnits = new HashSet<>();
     private final Map<UnitType, String> names = new HashMap<>();
 
@@ -45,7 +50,7 @@ final class RwxEventCollector extends UnitEventListener {
     }
 
     void clear() {
-        store.clear(); names.clear(); visibleEnemies.clear(); ownUnits.clear(); initialized = false;
+        store.clear(); names.clear(); visibleSince.clear(); reportedEnemies.clear(); ownUnits.clear(); initialized = false;
         lastTime = -1; lastTick = -1;
     }
 
@@ -105,7 +110,9 @@ final class RwxEventCollector extends UnitEventListener {
         if (detail == null) return;
         ownUnits.add(unit.objectId);
         if (other != null && "produced".equals(phase)) ownUnits.add(other.id);
-        store.append(event(EventType.INFO, self, null, detail));
+        // The produced unit travels in `attacker` so the renderer can aggregate a batch of production
+        // notices without parsing prose: subject is always the producer.
+        store.append(event(EventType.INFO, self, "produced".equals(phase) ? other : null, detail));
     }
 
     void observe(List<BaseUnit> friends, List<BaseUnit> enemies) {
@@ -114,10 +121,16 @@ final class RwxEventCollector extends UnitEventListener {
         for (BaseUnit enemy : enemies) {
             if (!enemy.d(owner)) continue;
             current.add(enemy.objectId);
-            if (!visibleEnemies.contains(enemy.objectId)) {
+            Integer since = visibleSince.get(enemy.objectId);
+            if (since == null) { visibleSince.put(enemy.objectId, world.gameTimeMillis); continue; }
+            // A unit that flickers at the edge of the fog is not a discovery: it must stay observable
+            // for a full confirmation window, and each id is reported at most once per match.
+            if (world.gameTimeMillis - since >= DISCOVERY_CONFIRM_MILLIS
+                    && reportedEnemies.add(enemy.objectId)) {
                 store.append(event(EventType.NEW, snapshot(enemy), null, null));
             }
         }
+        visibleSince.keySet().retainAll(current);
         Set<Long> currentOwn = new HashSet<>();
         for (BaseUnit unit : friends) {
             if (unit.team != owner) continue;
@@ -126,7 +139,6 @@ final class RwxEventCollector extends UnitEventListener {
                 info(unit, null, unit.buildProgress < 1 ? "construction-started" : "created");
             }
         }
-        visibleEnemies = current;
         ownUnits = currentOwn;
         initialized = true;
         store.maintain(world.gameTimeMillis);

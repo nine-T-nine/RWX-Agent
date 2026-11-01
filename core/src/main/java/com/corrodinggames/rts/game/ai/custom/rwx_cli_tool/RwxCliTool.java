@@ -421,7 +421,7 @@ public final class RwxCliTool implements AutoCloseable {
             try {
                 message = executor.execute(registered, arguments);
             } catch (Exception error) {
-                evaluate.utils.EngineEvidence.endRequest("error: " + describe(error));
+                evaluate.utils.EngineEvidence.endRequest("error: " + describe(error), error);
                 throw error;
             }
             evaluate.utils.EngineEvidence.endRequest(message);

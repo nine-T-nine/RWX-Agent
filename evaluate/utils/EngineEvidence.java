@@ -43,6 +43,8 @@ public final class EngineEvidence extends UnitEventListener {
     private final Map<Long, String> signatures = new HashMap<>();
     private final Map<Long, Anchor> anchors = new LinkedHashMap<>();
     private final Map<Long, Long> deathTimes = new HashMap<>();
+    /** Last unit type each factory produced, so an idle pair can name the action it last used. */
+    private final Map<Long, String> lastProduct = new HashMap<>();
     private final Map<Long, Long> deathSequences = new HashMap<>();
     private final Set<Long> removed = new HashSet<>();
     private long sequence, lastTime, nextSample;
@@ -50,7 +52,8 @@ public final class EngineEvidence extends UnitEventListener {
     private boolean closed;
 
     private record Origin(Request request, String source) { }
-    public record Request(String id, long timeMs, long tick, String name, List<String> args) { }
+    public record Request(String id, long timeMs, long tick, String name, List<String> args,
+                          double creditsBefore) { }
     public record Application(String id, Origin origin, List<Long> units,
                               Map<Long, Map<String,Object>> before) { }
     private static final class Anchor {
@@ -82,7 +85,8 @@ public final class EngineEvidence extends UnitEventListener {
         lastTime=engine.gameTimeMillis;nextSample=(lastTime+999)/1000*1000;
         write("meta",data("schema",1,"team",team.teamId,"X",radius,"source",engine.replayEngine.j()?"replay":"live",
                 "map",engine.getCurrentMapName(),"incomeField","PlayerTeam.getScaledIncomeRate",
-                "incomeUnit","credits per engine resourceIncomeRatePeriod (40 simulation units), scaled as HUD",
+                "incomeUnit","credits per resourceIncomeRatePeriod (40 ticks); economy rows also carry "
+                        + "incomePerSecond, the same rate converted with the observed clock step",
                 "startComplete",lastTime==0,"regionHoldMs",regionHold,
                 // The directory name is only as good as the clock it was stamped with, so keep the exact
                 // start instant and the requested label in the row: a directory can then be matched to it
@@ -147,7 +151,7 @@ public final class EngineEvidence extends UnitEventListener {
     }
     public static synchronized void close(String reason){
         EngineEvidence s=current;if(s==null)return;
-        try{s.write("end",data("reason",reason));s.output.flush();
+        try{s.flushIdles("EVIDENCE_END");s.write("end",data("reason",reason));s.output.flush();
             if(s.economyColumn>0)s.economy.newLine();s.economy.close();s.output.close();
             trimTelemetry(s.telemetryPath);}
         catch(IOException error){System.err.println("Evaluation close failed: "+error);}
@@ -276,6 +280,12 @@ public final class EngineEvidence extends UnitEventListener {
         boolean idle=w==null&&queue.isEmpty()&&(u==null||u.attackTarget==null)
                 &&unit.attackTargetUnit==null&&unit.buildProgress>=1&&unit.transportContainer==null;
         if(u!=null&&engine.gameTimeMillis-u.lastWeaponFireMillis<=1000&&u.lastWeaponFireMillis>=0)idle=false;
+        // A command centre keeps producing while it defends itself, so its combat state must not hide
+        // an idle production line. Every other asset keeps the existing `idle` definition; `workIdle`
+        // is the field the idle-pair evidence uses, so ambush still reads `idle`.
+        boolean workIdle=idle;
+        if(!workIdle&&"commandCenter".equals(type(unit))
+                &&w==null&&queue.isEmpty()&&unit.buildProgress>=1&&unit.transportContainer==null)workIdle=true;
         Map<String,Object> actions=new LinkedHashMap<>();boolean factory=false;
         if(u!=null)for(Object raw:u.getAvailableActions()){
             AbstractUnitAction action=(AbstractUnitAction)raw;
@@ -291,7 +301,7 @@ public final class EngineEvidence extends UnitEventListener {
                 "x",w.getTargetX(),"y",w.getTargetY(),"buildType",w.getBuildUnitType()==null?null:w.getBuildUnitType().v(),"count",w.getBuildQueueSize());
         Map<String,Object> result=data("id",unit.objectId,"life",0,"type",type(unit),"side",side(unit),
                 "x",unit.posX,"y",unit.posY,"alive",!unit.isDead&&!unit.isDestroyed,"complete",unit.buildProgress>=1,
-                "visible",unit.d(team),"canAttack",weapon,"idle",idle,"building",unit.bI(),
+                "visible",unit.d(team),"canAttack",weapon,"idle",idle,"workIdle",workIdle,"building",unit.bI(),
                 "mobile",!unit.bI(),"builder",builder(unit),"factory",factory,"task",task,"queue",queue,
                 "capRemaining",Math.max(0,team.getUnitCap()-team.getNonBuildingUnitCountIncludingQueued()));
         result.put("waypointCount",u==null?0:u.getWaypointCount());
@@ -323,8 +333,87 @@ public final class EngineEvidence extends UnitEventListener {
         signatures.put(unit.objectId,signature);
         positionSamples.put(unit.objectId,now);
         positions.put(unit.objectId,new double[]{px,py});
-        if(Boolean.TRUE.equals(state.get("idle"))&&(builder(unit)||Boolean.TRUE.equals(state.get("factory"))))state=snapshot(unit,true);
+        if(Boolean.TRUE.equals(state.get("workIdle"))&&(builder(unit)||Boolean.TRUE.equals(state.get("factory"))
+                ||"commandCenter".equals(type(unit))))state=snapshot(unit,true);
         write("unit",data("unit",state,"funds",team.credits));
+        trackIdle(unit,state);
+    }
+    /**
+     * One open idle pair per asset. The collector owns the pair because only it can name the reason
+     * the idle ended: a task type, a queued production item, an automatic engagement (no task and no
+     * queue but not idle), death, or the end of the evidence. Rebuilding that from the change-only
+     * unit stream is possible but ambiguous exactly where it matters.
+     */
+    private static final class Idle {
+        final long unitId,startMs; final double funds,startX,startY; final int cap;
+        final String type; final Object actions; final List<String> roles;
+        Idle(long unitId,long startMs,double funds,int cap,Object actions,double x,double y,
+             String type,List<String> roles){
+            this.unitId=unitId;this.startMs=startMs;this.funds=funds;this.cap=cap;this.actions=actions;
+            this.startX=x;this.startY=y;this.type=type;this.roles=roles;
+        }
+    }
+    private final Map<Long,Idle> idles=new HashMap<>();
+    /** Idle periods shorter than this are dropped at the source; the offline layer may want a floor too. */
+    private static final long IDLE_MIN_MS=Long.getLong("rwx.evaluate.idleMinMs",3000L);
+    private void trackIdle(BaseUnit unit,Map<String,Object> state) throws IOException{
+        long id=unit.objectId;
+        boolean alive=!unit.isDead&&!unit.isDestroyed;
+        boolean now=alive&&Boolean.TRUE.equals(state.get("workIdle"));
+        Idle open=idles.get(id);
+        if(now){
+            if(open==null){
+                Object actions=state.get("actions");
+                idles.put(id,new Idle(id,engine.gameTimeMillis,team.credits,
+                        ((Number)state.getOrDefault("capRemaining",0)).intValue(),actions,
+                        unit.posX,unit.posY,type(unit),rolesOf(actions)));
+            }
+            return;
+        }
+        if(open==null)return;
+        idles.remove(id);
+        writeIdle(open,alive?closeReason(state):"DEATH",state);
+    }
+    /** Roles are read from the action menu, not from a name list, so hybrids (carrier, nautilus) are exact. */
+    private static List<String> rolesOf(Object actions){
+        List<String> roles=new ArrayList<>();
+        if(actions instanceof Map<?,?> map)for(Object value:map.values()){
+            if(!(value instanceof Map<?,?> row))continue;
+            if("produce".equals(row.get("kind"))&&!roles.contains("factory"))roles.add("factory");
+            if("build".equals(row.get("kind"))&&!roles.contains("builder"))roles.add("builder");
+        }
+        return roles;
+    }
+    private static String closeReason(Map<String,Object> state){
+        if(state.get("task") instanceof Map<?,?> task&&task.get("type")!=null){
+            return switch(String.valueOf(task.get("type"))){
+                case "build"->"BUILD"; case "repair"->"REPAIR"; case "move"->"MOVE";
+                case "attackMove"->"ATTACK_MOVE"; case "guardAt"->"GUARD_AT";
+                case "patrol"->"PATROL"; case "attack"->"ATTACK";
+                default->"TASK_"+String.valueOf(task.get("type")).toUpperCase(Locale.ROOT);
+            };
+        }
+        if(state.get("queue") instanceof List<?> queue&&!queue.isEmpty())return "PRODUCE";
+        return "AUTO_ENGAGE";
+    }
+    private void writeIdle(Idle open,String reason,Map<String,Object> state) throws IOException{
+        long end=engine.gameTimeMillis,duration=end-open.startMs;
+        if(duration<IDLE_MIN_MS)return;
+        Object first=state.get("queue") instanceof List<?> queue&&!queue.isEmpty()?queue.get(0):null;
+        write("idle",data("unitId",open.unitId,"life",0,"type",open.type,"roles",open.roles,
+                "fromMs",open.startMs,"toMs",end,"durationMs",duration,"closeReason",reason,
+                "closeAction",first instanceof Map<?,?> row?row.get("action"):null,
+                "startFunds",open.funds,"endFunds",team.credits,"startCap",open.cap,
+                "startX",open.startX,"startY",open.startY,"actions",open.actions,
+                "lastProduct",lastProduct.get(open.unitId)));
+    }
+    /** Flushes every still-open pair when the evidence ends; the end time is then a lower bound. */
+    private void flushIdles(String reason) throws IOException{
+        for(Iterator<Map.Entry<Long,Idle>> it=idles.entrySet().iterator();it.hasNext();){
+            Map.Entry<Long,Idle> entry=it.next();it.remove();
+            BaseUnit unit=monitored.get(entry.getKey());
+            writeIdle(entry.getValue(),reason,unit==null?Map.of():snapshot(unit,false));
+        }
     }
     private void frame() throws IOException {
         lastTime=engine.gameTimeMillis;
@@ -373,7 +462,11 @@ public final class EngineEvidence extends UnitEventListener {
         }
         while(nextSample<=engine.gameTimeMillis){
             double funds=team.credits;int income=team.getScaledIncomeRate();
-            write("economy",data("sampleMs",nextSample,"funds",funds,"income",income));
+            // `income` is per resourceIncomeRatePeriod ticks, not per second; the converted value is
+            // written next to it so an offline income table never has to re-derive the conversion.
+            write("economy",data("sampleMs",nextSample,"funds",funds,"income",income,
+                    "incomePerSecond",com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxIncomeRate
+                            .perSecond(income,engine)));
             if(economyColumn>0)economy.write(',');
             economy.write(number(funds)+"("+(income>=0?"+":"")+income+")");
             if(++economyColumn==60){economy.newLine();economyColumn=0;}
@@ -381,6 +474,23 @@ public final class EngineEvidence extends UnitEventListener {
         }
     }
     @Override public void a(BaseUnit attacker,BaseUnit victim,Object unused) { }
+    /**
+     * The subset of a unit snapshot an ambush judgement needs: identity, side, position, whether it
+     * was idle (so it could not have been fighting back), whether it can shoot, and whether our team
+     * could see it. Damage rows are the largest part of a busy telemetry file and the full snapshot
+     * carried task, queue, action menu and capacity fields no damage rule reads.
+     */
+    private Map<String,Object> combatSnapshot(BaseUnit unit){
+        Map<String,Object> full=snapshot(unit,false);
+        Object task=full.get("task");
+        return data("id",full.get("id"),"life",full.get("life"),"type",full.get("type"),
+                "side",full.get("side"),"x",full.get("x"),"y",full.get("y"),"alive",full.get("alive"),
+                "idle",full.get("idle"),"building",full.get("building"),
+                "canAttack",full.get("canAttack"),"visible",full.get("visible"),
+                // Only the task kind: the danger-zone judgement must know whether a unit was
+                // assaulting or guarding when it was hit, not what its full waypoint was.
+                "taskType",task instanceof Map<?,?> map?map.get("type"):null);
+    }
     @Override public void damaged(BaseUnit victim,BaseUnit attacker){
         if(closed||!eligible(victim)||!eligible(attacker))return;
         try{
@@ -388,8 +498,8 @@ public final class EngineEvidence extends UnitEventListener {
             // every unit that ever fought write a snapshot on every tick for the rest of the match.
             long until=engine.gameTimeMillis+POSITION_SAMPLE_MS;
             watched.put(victim.objectId,until);watched.put(attacker.objectId,until);
-            // The damage row already embeds both full snapshots, so no extra unit rows are forced here.
-            write("damage",data("victim",snapshot(victim,false),"attacker",snapshot(attacker,false)));
+            // The damage row already embeds both snapshots, so no extra unit rows are forced here.
+            write("damage",data("victim",combatSnapshot(victim),"attacker",combatSnapshot(attacker)));
         }catch(IOException|RuntimeException e){fail(e);}
     }
     @Override public void removed(BaseUnit unit,BaseUnit killer){
@@ -404,6 +514,7 @@ public final class EngineEvidence extends UnitEventListener {
     }
     @Override public void info(BaseUnit unit,BaseUnit related,String phase){
         if(closed)return;register(unit);if(related!=null)register(related);
+        if("produced".equals(phase)&&related!=null&&eligible(related))lastProduct.put(unit.objectId,type(related));
         if(eligible(unit))try{write("lifecycle",data("phase",phase,"unitId",unit.objectId,"relatedId",related==null?null:related.objectId));}
         catch(IOException e){fail(e);}
     }
@@ -412,7 +523,7 @@ public final class EngineEvidence extends UnitEventListener {
         GameEngine e=GameEngine.getInstance();if(e==null)return null;
         synchronized(e.gameStateLock){
             EngineEvidence s=session();if(s==null)return null;
-            Request request=new Request("B-"+(++requestNumber),e.gameTimeMillis,e.currentTick,name,List.copyOf(arguments));
+            Request request=new Request("B-"+(++requestNumber),e.gameTimeMillis,e.currentTick,name,List.copyOf(arguments),s.team.credits);
             REQUEST.set(request);
             try{
                 Map<String,String> opts=options(arguments);
@@ -430,11 +541,54 @@ public final class EngineEvidence extends UnitEventListener {
             return request;
         }
     }
-    public static void endRequest(String reply){
+    public static void endRequest(String reply){ endRequest(reply,null); }
+    /**
+     * Records the reply plus the two facts an offline judge needs: a stable rejection {@code code}
+     * (so a verdict never depends on the engine's prose) and the credit balance around the call (so
+     * a per-second income table can separate income from spending).
+     *
+     * <p>The code is assigned here, at the transport boundary, because that is the only place that
+     * still sees the exception type — {@link RwxLocalGameTypes.CreditShortageException} is a real
+     * type, everything else is text. The raw {@code reply} is kept unchanged and stays authoritative.</p>
+     */
+    public static void endRequest(String reply,Throwable error){
         Request request=REQUEST.get();REQUEST.remove();if(request==null||current==null)return;
-        synchronized(current){try{current.write("result",data("commandId",request.id,"accepted",!reply.startsWith("error:"),"reply",reply));}
+        String code=error==null?"ACCEPTED":failureCode(error);
+        synchronized(current){try{
+            current.write("result",data("commandId",request.id,"accepted",!reply.startsWith("error:"),
+                    "code",code,"creditsBefore",request.creditsBefore,"creditsAfter",current.team.credits,
+                    "reply",reply));}
         catch(IOException e){fail(e);}}
     }
+    /** Ordered, case-insensitive classification of one rejection. First match wins. */
+    static String failureCode(Throwable error){
+        if(error==null)return "ACCEPTED";
+        Throwable cause=error;
+        for(int depth=0;cause!=null&&depth<4;depth++,cause=cause.getCause()){
+            if(com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameTypes.isCreditShortage(cause))
+                return "INSUFFICIENT_CREDITS";
+            String text=cause.getMessage()==null?"":cause.getMessage().toLowerCase(Locale.ROOT);
+            for(String[] rule:FAILURE_RULES)if(text.contains(rule[1]))return rule[0];
+        }
+        return "INTERNAL";
+    }
+    /** Most specific first: a dead object must not be reported as a bad argument. */
+    private static final String[][] FAILURE_RULES={
+            {"STALE_OBJECT","skipped dead/missing"},{"STALE_OBJECT","no controllable unit remains"},
+            {"STALE_OBJECT","not currently observable"},{"STALE_OBJECT","dead or hidden"},
+            {"NOT_CONTROLLABLE","is not controllable"},{"NOT_CONTROLLABLE","not a controllable"},
+            {"NOT_CONTROLLABLE","is not an owned"},{"NOT_CONTROLLABLE","has no nuclear launch action"},
+            {"PLACEMENT_BLOCKED","cannot place"},{"PLACEMENT_BLOCKED","placement blocked"},
+            {"PLACEMENT_BLOCKED","blockedby:"},{"PLACEMENT_BLOCKED","位置被阻挡"},
+            // "has no action 'x' right now" is a timing problem; a bare "has no action" is a typo.
+            {"UNAVAILABLE_ACTION","right now"},{"UNAVAILABLE_ACTION","正在升级"},
+            {"INVALID_ACTION","has no action"},{"INVALID_ACTION","no such action"},
+            {"INVALID_ACTION","unknown action"},{"INVALID_ACTION","未找到动作"},
+            {"INVALID_ARGUMENT","unknown option"},{"INVALID_ARGUMENT","unrecognized option"},
+            {"INVALID_ARGUMENT","missing required"},{"INVALID_ARGUMENT","invalid argument"},
+            {"INVALID_ARGUMENT","invalid value"},{"INVALID_ARGUMENT","must be"},
+            {"INVALID_ARGUMENT","is required"},
+    };
     public static <T> Callable<T> propagate(Callable<T> work){
         Request request=REQUEST.get();if(request==null)return work;
         return ()->{Request previous=REQUEST.get();REQUEST.set(request);try{return work.call();}finally{if(previous==null)REQUEST.remove();else REQUEST.set(previous);}};
@@ -508,6 +662,18 @@ public final class EngineEvidence extends UnitEventListener {
                 "commandId",a.origin==null||a.origin.request==null?null:a.origin.request.id,"units",a.units,
                 "operation",w==null?command.clearExistingOrders?"stop":"action":w.getCommandType().name(),
                 "action",command.actionId==null?null:command.actionId.getId(),"queued",command.isQueued,"results",results));
+    }
+    /**
+     * Records that an Agent opened or closed the realtime event socket.
+     *
+     * <p>Without this the offline judge cannot tell a polling Agent from a subscribed one, and would
+     * read "it never queried after the loss" as "it was never told" even though the loss was pushed
+     * to it. The row carries the live client count so a reconnect storm is visible too.</p>
+     */
+    public static void streamClient(boolean connected,int clients){
+        EngineEvidence s=current;if(s==null)return;
+        try{s.write("eventstream",data("connected",connected,"clients",clients));}
+        catch(IOException|RuntimeException error){fail(error);}
     }
     /** `-Drwx.evaluate.label` reduced to a path-safe token, or null when unset or blank after cleaning. */
     private static String label(){

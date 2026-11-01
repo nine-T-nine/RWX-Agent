@@ -9,7 +9,7 @@ const unit=(id,extra={})=>({id,life:0,type:'tank',side:'self',x:0,y:0,alive:true
 const b=(id,timeMs,extra={})=>({id,timeMs,seq:id,source:'agent',name:'rwx-game-order-move',operation:'move',
   units:[1],x:1000,y:1000,controlled:[unit(1)],refs:[],...extra});
 function harness(commands=[],config={}) {
-  const events=[],session=new Session({schema:1,team:0,timeMs:0,X:160},commands,config,e=>events.push(e));let seq=0;
+  const events=[],session=new Session({schema:1,team:0,timeMs:0,X:160},commands,{legacyDetectors:true,...config},e=>events.push(e));let seq=0;
   return {session,events,row:(kind,timeMs,fields={})=>session.consume({kind,timeMs,tick:timeMs,seq:++seq,...fields},kind==='command'?fields.command:null),
     end:time=>{session.now=time;session.finish();return events;}};
 }
@@ -264,7 +264,7 @@ test('stale command dedups objects per command, aggregates repeats, and separate
   const ref={id:7,life:0,role:'controlled',status:'dead',checkedMs:1000};
   const commands=[b(1,1000,{refs:[ref,{...ref,role:'target'}]}),b(2,2000,{refs:[ref]}),b(3,3000,{refs:[{...ref,life:1}]})];
   const h=harness(commands);for(const command of commands)h.row('command',command.timeMs,{command});
-  const events=h.end(4000);assert.equal(events.length,2);assert.equal(events[0].count,2);assert.equal(events[1].count,1);
+  const events=h.end(4000).filter(e=>e.type==='STALE_COMMAND');assert.equal(events.length,2);assert.equal(events[0].count,2);assert.equal(events[1].count,1);
 });
 test('targets dying after receipt stay uncertain and ordinary failures are not stale',()=>{
   const commands=[b(1,1000,{refs:[{id:7,role:'target',status:'dead',checkedMs:2000,deathTimeMs:1500}]}),
@@ -313,7 +313,7 @@ test('temporary departure from idle resets continuous attack confirmation',()=>{
   h.row('unit',3500,{unit:unit(1)});attacks(h,4000,7000);assert.equal(h.end(7000).filter(e=>e.type==='AMBUSH').length,0);
 });
 test('Replay without CLI coverage cannot assert global no-B or unanswered events',()=>{
-  const events=[],session=new Session({schema:1,team:0,timeMs:0,source:'replay'},[],{},e=>events.push(e));
+  const events=[],session=new Session({schema:1,team:0,timeMs:0,source:'replay'},[],{legacyDetectors:true},e=>events.push(e));
   const factory=unit(7,{factory:true,mobile:false});
   session.consume({kind:'unit',timeMs:0,unit:{...factory,idle:false,queue:[{kind:'produce'}]}});
   session.consume({kind:'unit',timeMs:1000,funds:1000,unit:{...factory,actions:{tank:{kind:'produce',cost:100,available:true,affordable:true}}}});
@@ -439,4 +439,104 @@ test('frames rows expand lazily so the rest of the file is not parsed up front',
     },/telemetry\.jsonl:\d+/);
     assert.equal(count,1000);assert.equal(last.tick,1000);assert.equal(last.timeMs,16000);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+// --- B 绞肉机：把刚死过人的地方当安全区 -------------------------------------
+function grinderCase({order={},query=[],consequence={},stream=[]}={}) {
+  const move=b(1,12_000,{name:'rwx-game-order-move',operation:'move',units:[5],x:1000,y:1000,
+    controlled:[unit(5)],...order});
+  const commands=[...query,move];
+  const h=harness(commands);
+  h.row('death',10_000,{unit:unit(1,{x:1000,y:1000}),killer:unit(2,{side:'enemy'}),nearby:[]});
+  for(const row of stream)h.row('eventstream',row.timeMs,row);
+  for(const command of commands)h.row('command',command.timeMs,{command});
+  if(consequence!==false)
+    h.row('damage',14_000,{attacker:unit(2,{side:'enemy'}),
+      victim:unit(5,{x:1010,y:1000,taskType:'move',...consequence})});
+  h.row('frame',14_000);
+  return h.end(40_000);
+}
+test('a send into a place we just lost units is a danger-zone event',()=>{
+  const events=grinderCase(),e=events.find(x=>x.type==='GRINDER');
+  assert.ok(e,'expected a GRINDER event');
+  assert.equal(e.status,'DETECTED');assert.equal(e.scoreable,true);
+  assert.equal(e.t_start,10_000);assert.equal(e.delayMs,2_000);
+  assert.equal(e.awareness.aware,false);assert.equal(e.operation,'move');
+  assert.equal(e.consequence.unitId,5);assert.equal(e.agentState,'BUSY_ELSEWHERE');
+});
+test('a report that covers the loss turns the danger-zone event into EXPLAINED',()=>{
+  const query=[{id:9,timeMs:11_000,seq:9,source:'agent',name:'rwx-game-events',
+    args:['--seconds','60'],refs:[],units:[]}];
+  const e=grinderCase({query}).find(x=>x.type==='GRINDER');
+  assert.equal(e.status,'EXPLAINED');assert.equal(e.scoreable,false);
+  assert.equal(e.awareness.by,'events_window');
+});
+test('a query window that does not reach back to the loss does not count as informed',()=>{
+  const query={id:9,timeMs:30_000,seq:9,source:'agent',name:'rwx-game-events',
+    args:['--seconds','5'],refs:[],units:[]};
+  const move=b(1,31_000,{name:'rwx-game-order-move',operation:'move',units:[5],x:1000,y:1000,
+    controlled:[unit(5)]});
+  const h=harness([query,move]);
+  h.row('death',10_000,{unit:unit(1,{x:1000,y:1000}),killer:unit(2,{side:'enemy'}),nearby:[]});
+  h.row('command',30_000,{command:query});
+  h.row('command',31_000,{command:move});
+  h.row('damage',32_000,{attacker:unit(2,{side:'enemy'}),
+    victim:unit(5,{x:1010,y:1000,taskType:'move'})});
+  h.row('frame',32_000);
+  const e=h.end(60_000).find(x=>x.type==='GRINDER');
+  assert.ok(e,'expected a GRINDER event');
+  assert.equal(e.awareness.aware,false);assert.equal(e.scoreable,true);
+});
+test('a live event socket counts as informed',()=>{
+  const stream=[{timeMs:10_500,connected:true,clients:1},{timeMs:13_000,connected:false,clients:0}];
+  const e=grinderCase({stream}).find(x=>x.type==='GRINDER');
+  assert.equal(e.status,'EXPLAINED');assert.equal(e.awareness.by,'event_stream');
+});
+test('without a consequence there is no danger-zone event',()=>{
+  assert.equal(grinderCase({consequence:false}).filter(x=>x.type==='GRINDER').length,0);
+});
+test('an assault or a guard is not a send into believed-safe ground',()=>{
+  assert.equal(grinderCase({order:{name:'rwx-game-order-attack-move',operation:'attackMove'}})
+    .filter(x=>x.type==='GRINDER').length,0);
+  assert.equal(grinderCase({consequence:{taskType:'attackMove'}})
+    .filter(x=>x.type==='GRINDER').length,0);
+  assert.equal(grinderCase({consequence:{taskType:'guardAt'}})
+    .filter(x=>x.type==='GRINDER').length,0);
+});
+test('a builder sent to build where we just lost units is judged the same way',()=>{
+  const build=b(1,12_000,{name:'rwx-game-order-build',operation:'build',units:[],builders:[5],
+    x:1000,y:1000,controlled:[unit(5,{type:'builder',builder:true,canAttack:false})]});
+  const h=harness([build]);
+  h.row('death',10_000,{unit:unit(1,{x:1000,y:1000}),killer:unit(2,{side:'enemy'}),nearby:[]});
+  h.row('command',12_000,{command:build});
+  h.row('damage',15_000,{attacker:unit(2,{side:'enemy'}),
+    victim:unit(5,{type:'builder',builder:true,canAttack:false,x:1000,y:1000,taskType:'build'})});
+  h.row('frame',15_000);
+  const e=h.end(40_000).find(x=>x.type==='GRINDER');
+  assert.ok(e);assert.equal(e.operation,'build');assert.equal(e.consequence.unitId,5);
+});
+function arrivalCase({arriveAt,hitAt}) {
+  const move=b(1,12_000,{name:'rwx-game-order-move',operation:'move',units:[5],x:1000,y:1000,
+    controlled:[unit(5)]});
+  const h=harness([move]);
+  h.row('death',10_000,{unit:unit(1,{x:1000,y:1000}),killer:unit(2,{side:'enemy'}),nearby:[]});
+  h.row('command',12_000,{command:move});
+  if(arriveAt!=null)h.row('unit',arriveAt,{unit:unit(5,{x:1000,y:1000,taskType:'move'})});
+  h.row('damage',hitAt,{attacker:unit(2,{side:'enemy'}),
+    victim:unit(5,{x:1010,y:1000,taskType:'move'})});
+  h.row('frame',hitAt);
+  return h.end(200_000).find(x=>x.type==='GRINDER');
+}
+test('the consequence window starts when the unit reaches the place',()=>{
+  const near=arrivalCase({arriveAt:20_000,hitAt:28_000});
+  assert.ok(near);assert.equal(near.consequence.arrivalObserved,true);
+  assert.equal(near.consequence.arrivalMs,20_000);
+  // Twelve seconds after arrival is outside the ten second window.
+  assert.equal(arrivalCase({arriveAt:20_000,hitAt:32_000}),undefined);
+});
+test('an unobserved march falls back to the hard cap from the order',()=>{
+  const late=arrivalCase({arriveAt:null,hitAt:100_000});
+  assert.ok(late,'a long march must still count inside the hard cap');
+  assert.equal(late.consequence.arrivalObserved,false);
+  assert.equal(arrivalCase({arriveAt:null,hitAt:200_000}),undefined);
 });

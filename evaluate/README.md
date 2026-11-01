@@ -134,23 +134,26 @@ rwx-game-replay-status
 | 评估 | 测量内容 | 主要报告 |
 |---|---|---|
 | 第一轮：整体命令节奏 | 观察到操作的决策周期、操作后再次观察的等待、相邻高层/底层命令间隔、高层请求对应的底层执行及延迟 | `report.html`、`execution_report.txt` |
-| 第二轮：局部事件响应 | 持续偷袭、建造者空窗、重复损失、过期命令、生产空窗，以及相关主动命令和经济背景 | `events.txt`、`events.jsonl`、`summary.json` |
+| 第二轮：局部事件响应 | 偷袭（含偷家）、绞肉机、抖动过期指令、空闲建造者、空闲工厂、资金空余，以及相关主动命令和经济背景 | `events.txt`、`events.jsonl`、`summary.json` |
 
 第一轮中，A 为查询、B 为操作或配置、C 为其他命令。统计 A→B 决策周期、B→A 等待及 A-A/A-B/B-A/B-B 间隔；设置类命令不计入直接执行延迟。底层间隔图的横坐标是前一条命令的执行时间。
 
-第二轮检查以下情况：
+第二轮检查以下情况（精确规则见[事件规则](events/README.md)）：
 
 | 类型 | 关注的问题 |
 |---|---|
-| `AMBUSH` | 持续受到偷袭后，是否下达防守、撤离或反击命令 |
-| `BUILDER_GAP` | 建造者完成任务后，本可继续工作却出现空窗 |
-| `FEED` | 同一区域反复出现孤立损失时，是否调整部署 |
-| `STALE_COMMAND` | 是否向已死亡、删除或失去控制的对象下令 |
-| `PRODUCTION_GAP` | 工厂本可继续生产却空闲等待 |
-| `COMMAND_FAILURE` | 被引擎明确拒绝的请求：分类统计，不评分，也不与 `STALE_COMMAND` 重复计数；另给出去掉重复/已恢复后的上界，以及只保留“写错且没纠正”的可扣分视图 |
-| `economy.log` | 资金与收入变化，为空窗和决策提供背景 |
+| `AMBUSH`（A） | 持续受到偷袭后，是否下达防守、撤离或反击命令；`kind=BASE` 是偷家 |
+| `GRINDER`（B） | 我方刚在某个位置死过人，Agent 没重新获取战报就把部队派去集合或把建造者派去施工，结果在那里挨打 |
+| `STALE_BURST`（C） | 短时间内连续被拒/失效的命令突发；单条不扣分，同一批发的命令有宽限 |
+| `BUILDER_IDLE`（D） | 建造者完全空闲的时段、结束原因与当时能否建造 |
+| `FACTORY_IDLE`（E） | 工厂完全空闲的时段；有 `keep-set` 补产规则的工厂不判为疏忽 |
+| `economy.log` / `economy_seconds.csv`（F） | 每秒资金与收入，为空窗和决策提供背景；只出材料，不评分 |
 
 所有时间均为游戏时间。底层命令执行不等于生产或移动完成；自动反击和自动化后续行为不算 Agent 新的主动响应，战损也不直接说明反应迟钝。
+
+事件里带 `agentState`（`SILENT`/`OBSERVING`/`BUSY_ELSEWHERE`），用来区分"模型或链路停摆"和"在忙别的、漏了这个资产"；它只解释判定，不改变判定。
+
+旧的 3–10 秒空窗判定（`BUILDER_GAP`/`PRODUCTION_GAP`）、`FEED`、`STALE_COMMAND`、`COMMAND_FAILURE` 已被上述六类取代，默认不运行；复现旧报告时用 `--config '{"legacyDetectors":true}'`。
 
 ## 保存评估输入
 
@@ -255,6 +258,20 @@ python evaluate/utils/evaluate_replay.py "<回放文件.replay路径>" --team "<
 第二轮中，`EXPLAINED` 表示候选有解释，`UNCERTAIN` 表示证据不足，`UNANSWERED` 表示未找到相关主动响应。结合 `strict` 和 `reason` 阅读，不把所有候选当作失误。
 
 核对报告的 `complete/economyComplete`；重放补采还应检查 `playback.json` 中 `unchanged=true`、`checksumWarnings=0`。原始Replay、commands和有效telemetry应与报告一并保留。
+
+### 初步评分与后处理（可选）
+
+事件报告本身不含总分。需要一份可追溯的初评时，对 `stage_2/` 再跑一次后处理：
+
+```sh
+node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
+```
+
+它在同一目录写出 `score.json`（逐条扣分依据）、`score.txt`（人类可读表格）、`timeline.csv`（按开始时间排序的全部事件）和 `economy_seconds.csv`（F 材料：每游戏秒的资金、HUD 收入字段与实测变化）。`--weights <json>` 覆盖默认权重，`--out <目录>` 换输出目录。
+
+口径：加法模型，每个扣分点都能追溯到一条事件，每类有上限，避免单一失败模式主导总分；`EXPLAINED`/`UNCERTAIN` 和 `scoreable:false` 的事件不扣分；资金空余只出材料、不计分。权重与上限的默认值见 `events/score.js`，这是初版，不替代人工复核。
+
+注意 `economy.log` 里的收入字段单位是"每 `resourceIncomeRatePeriod`（40 tick）"，不是每秒；换算与实测差异见 `economy_seconds.csv` 的 `fundsDelta` 列。
 
 ## 清理测试产物
 

@@ -11,7 +11,7 @@
 1. **证据优先。** 只有证据能严格证明时才确认事件；证明不了就输出 `UNCERTAIN` 或不输出，不按推测补全。不为了提高检测率扩大时间窗、空间半径或放宽排除条件。
 2. **不做意图推断。** 不引入 Agent 意图、战略规划、战术质量评分；战损本身不直接等于战术错误。
 3. **复用现有证据。** 只用 telemetry / commands / economy / Replay；不新增每 tick 全量快照，不显著增加日志体积。
-4. **结构兼容。** 保持五类检测器的基本结构与输出字段；新增内容只做统计，不改既有字段含义。
+4. **结构兼容。** 第二轮的事件集合由“五类检测器”改为 A–F 六类（见 [事件规则](events/README.md)）；原有字段只增不改，旧的 `BUILDER_GAP`/`PRODUCTION_GAP`/`FEED`/`STALE_COMMAND`/`COMMAND_FAILURE` 保留代码，默认不运行（`legacyDetectors=false`）。
 
 具体规则：
 
@@ -20,7 +20,8 @@
 - **PRODUCTION_GAP**：严格 `3s < gap < 10s`；必须有实际生产完成、队列彻底清空、下一次成功新增生产队列；升级不是生产端点；检查开区间 `(t_idle,t_order)` 的全局 B 与工厂状态；用 t0 的动作可用性、资金、单位上限和完整下单批次；自动化/提前安排的下单不算主动迟到响应；t0 连一个单位都下不了单时直接 `EXPLAINED`；多工厂共享预算无法重建时 `UNCERTAIN`。
 - **FEED**：保留实际敌方伤害来源、附近敌人、无其他友军等条件；全部损失按时间排序，相邻间隔 ≤5s 才属于同一损失段，每段独立判断第三次损失；圆集合传递合并；战损不直接代表战术错误。
 - **STALE_COMMAND**：仅主动直接 B；必须证明收包时对象已死亡、删除或失去控制权；按对象生命周期去重，同一命令同一对象最多一次；资金、队列、路径、射程不算过期；错误文本不作为状态依据。
-- **暂不增加**：`ASSAULT_ATTRITION` 等进攻编队战损评价、`OBSERVED_NO_RESPONSE`、`LONG_IDLE`、高级战术意图匹配、按损失比例直接扣分、复杂动态威胁半径。本轮唯一新增类别是 `COMMAND_FAILURE` 统计。
+- **暂不增加**：`ASSAULT_ATTRITION` 等进攻编队战损评价、`OBSERVED_NO_RESPONSE`、高级战术意图匹配、按损失比例直接扣分、复杂动态威胁半径。
+- **2026-11-01 修订**：原“不新增超过 10 秒的 `LONG_IDLE`”一条作废。D/E 不再按 3–10 秒窗口判定“延迟”，而是由采集端记录每个资产的完整空闲段（`idle` 记录），离线按时长分 `SHORT`/`LONG`/`STALL` 并单独判定归因。理由：实测一局 887 秒里有 12 个生产空窗候选被 10 秒上界丢弃，最明显的一类“发呆”完全不可见。`strict` 语义未变；新档位永远 `strict:false`，只带 `scoreable`。
 - **全局 B 口径**：空窗检查使用 `directB`（`source==='agent'` 且不是间接配置的 `rwx-game-order-*`/`push`/`cancel`），统计范围是全局直接主动 B，不按目标相关性筛选；`keep-set`、`auto-set`、`group-*` 等间接配置不属于该集合。不要把它改成相关性匹配。
 
 ## B. 必须修复清单
@@ -116,6 +117,18 @@
 - **执行的测试**：
   - `node --test evaluate/test/test-evaluate.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js` → 119 通过、0 失败（新增 `actionable` 用例）。
   - Ice Island 真实样本：`filtered.count=4`（上界），`actionable.count=0`，`excluded={staleCommand:3,timing:2,objectContinued:1,unprovenAvoidability:1}`；`counts` 仍为 AMBUSH 4 / STALE_COMMAND 5 / COMMAND_FAILURE 7。
+
+### 2026-11-01（第二轮改版：A–F 六类）
+
+- **Git**：HEAD `7155acf` + 本轮改动。
+- **决策**：① 第二轮改为 A 偷袭（含偷家）/ B 绞肉机 / C 抖动过期 / D 空闲建造者 / E 空闲工厂 / F 资金空余；开局延迟移交第一轮。② D/E 的材料由采集端维护“每资产一个空闲 pair”，不再由检测器猜。③ `damage` 行只写战斗快照（行数不变）。④ C 的原因码由引擎在异常还有类型时赋值。⑤ `new`/`info` 在渲染层聚合，采集层只加“连续可见 1 秒才确认、同一 ID 只报一次”。
+- **新发现**：`economy.log` 的 `income` 是“每 40 tick”而非每秒（实测约 ×1.5625），而 CLI 一直把它渲染成 `(+N/s)`，少报约 56%——已修（`RwxIncomeRate`）。`FEED` 的“附近无友军”与绞肉机语义相反，实测 101 次己方损失输出 0 条；`FEED` 还排除 `attackMove`（占 46%）。`AMBUSH` 原先把无武器建筑整条丢弃（一局 171 次）。
+- **已关闭**：无（本轮是新增与改版，不是修 bug 清单项）。
+- **B 已实现**：危险点（我方死亡）+ 投入（move/build/repair/rally，排除 attack-move/guard）+ 后果（必要条件，挨打时不能是 attackMove/guard/patrol/attack）+ 知情（events/state 窗口、threat-list、enemy list、事件 Socket）。真实样本 8 个候选：7 个无后果、1 个 `informed_by=threat_list` 判 EXPLAINED。
+- **执行的测试**：
+  - `node --test evaluate/test/{test-evaluate,test-events,test-stage2-fixes,test-score}.js` → 130 通过、0 失败（旧检测器测试通过 `legacyDetectors:true` 保留）。
+  - `:core:test` 全量通过（含更新后的 `RwxEventsTest`：发现确认 1 秒、同一 ID 只报一次、生产聚合）。
+  - 真实样本：Ice Island 887 秒 DeepSeek 局，新判定输出 5 条 AMBUSH（3 条 `BASE` 偷家），旧判定 1 条；`agentState` 已填充；`STALE_BURST` 因两次失效间隔 10 秒内只有 2 批、低于阈值 3 而正确不报；`GRINDER` 8 个候选里 1 条出事件（EXPLAINED，`informed_by=threat_list`），7 条无后果。
 
 ## F. 更新机制
 

@@ -15,6 +15,11 @@ import static com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameTyp
 final class RwxEventProcessor {
     /** Adjacent discoveries chain into one run; the stream shares this window for revisions. */
     static final int DISCOVERY_WINDOW_MILLIS = 5000;
+    /**
+     * Discoveries further apart than this are different places, so one run never averages a contact
+     * on one flank with a contact on the other. Matches the evaluator's spatial radius.
+     */
+    static final double DISCOVERY_RADIUS = 160.0;
     /** Adjacent losses chain per victim type; untouched by the discovery window. */
     static final int LOSS_WINDOW_MILLIS = 3000;
 
@@ -71,7 +76,8 @@ final class RwxEventProcessor {
                 .thenComparingInt(Indexed::order));
         List<Line> lines = new ArrayList<>();
         Map<String, Group> losses = new LinkedHashMap<>();
-        Group found = null;
+        List<Group> founds = new ArrayList<>();
+        Group produced = null;
         for (Indexed row : unique) {
             GameEvent event = row.event;
             if (event.type == EventType.LOSSES) {
@@ -83,10 +89,20 @@ final class RwxEventProcessor {
                     losses.put(key, group);
                 } else group.add(row);
             } else if (event.type == EventType.NEW) {
-                if (found == null || (long) event.gameTimeMillis - found.lastTime > DISCOVERY_WINDOW_MILLIS) {
-                    if (found != null) lines.add(newLine(found));
-                    found = new Group(row);
-                } else found.add(row);
+                // Cluster by place inside the time window: one line per area, never one line per unit.
+                Group target = null;
+                for (Group group : founds) {
+                    if ((long) event.gameTimeMillis - group.lastTime <= DISCOVERY_WINDOW_MILLIS
+                            && group.near(event.subject, DISCOVERY_RADIUS)) { target = group; break; }
+                }
+                if (target == null) founds.add(new Group(row)); else target.add(row);
+            } else if (event.type == EventType.INFO && event.attacker != null) {
+                // Production notices carry the produced unit in `attacker`; aggregate them by source.
+                if (produced == null
+                        || (long) event.gameTimeMillis - produced.lastTime > DISCOVERY_WINDOW_MILLIS) {
+                    if (produced != null) lines.add(producedLine(produced));
+                    produced = new Group(row);
+                } else produced.add(row);
             } else {
                 String description;
                 if (event.type == EventType.DAMAGED) {
@@ -101,7 +117,8 @@ final class RwxEventProcessor {
             }
         }
         for (Group group : losses.values()) lines.add(lossLine(group));
-        if (found != null) lines.add(newLine(found));
+        for (Group group : founds) lines.add(newLine(group));
+        if (produced != null) lines.add(producedLine(produced));
         lines.sort(Comparator.comparingInt(Line::time).thenComparingInt(Line::order));
         int start = Math.max(0, lines.size() - limit);
         List<String> output = new ArrayList<>();
@@ -132,6 +149,13 @@ final class RwxEventProcessor {
         int lastTime;
         Group(Indexed row) { first = row; add(row); }
         void add(Indexed row) { events.add(row.event); lastTime = row.event.gameTimeMillis; }
+        /** True when a contact is within {@code radius} of this group's mean position. */
+        boolean near(EventEntity unit, double radius) {
+            if (unit.x == null || unit.y == null || events.isEmpty()) return false;
+            double x = 0, y = 0;
+            for (GameEvent event : events) { x += event.subject.x; y += event.subject.y; }
+            return Math.hypot(unit.x - x / events.size(), unit.y - y / events.size()) <= radius;
+        }
     }
 
     private static final class Killer {
@@ -188,6 +212,32 @@ final class RwxEventProcessor {
                     + coordinates(x / group.events.size(), y / group.events.size());
         }
         return new Line(group.first.event.gameTimeMillis, group.first.order, EventType.NEW, description, group.events);
+    }
+
+    /**
+     * One production notice for the whole window: what was produced, and which assets produced it.
+     * A factory that queued five units used to produce five lines; the ids are what the Agent acts on.
+     */
+    private static Line producedLine(Group group) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        Map<String, String> names = new LinkedHashMap<>();
+        Set<Long> sources = new java.util.LinkedHashSet<>();
+        List<Long> products = new ArrayList<>();
+        for (GameEvent event : group.events) {
+            counts.merge(event.attacker.typeId, 1, Integer::sum);
+            names.putIfAbsent(event.attacker.typeId, event.attacker.name);
+            sources.add(event.subject.id);
+            products.add(event.attacker.id);
+        }
+        List<String> labels = new ArrayList<>();
+        counts.forEach((type, count) -> labels.add(names.get(type) + " x" + count));
+        StringBuilder ids = new StringBuilder();
+        for (Long id : products) ids.append(ids.length() == 0 ? "" : " ").append("#").append(id);
+        StringBuilder by = new StringBuilder();
+        for (Long id : sources) by.append(" #").append(id);
+        String description = "produced " + String.join(", ", labels) + " (" + ids + ") by" + by;
+        return new Line(group.first.event.gameTimeMillis, group.first.order, EventType.INFO, description,
+                group.events);
     }
 
     static String coordinates(double x, double y) {

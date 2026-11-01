@@ -6,7 +6,7 @@ const {EconomyTimeline}=require('../events/economy');
 const unit=(id,extra={})=>({id,life:0,type:'tank',side:'self',alive:true,complete:true,idle:true,
   x:0,y:0,canAttack:true,building:false,mobile:true,task:null,queue:[],...extra});
 function run(commands=[]){
-  const events=[],s=new Session({schema:1,team:0,timeMs:0},commands,{},e=>events.push(e));let seq=0;
+  const events=[],s=new Session({schema:1,team:0,timeMs:0},commands,{legacyDetectors:true},e=>events.push(e));let seq=0;
   return {s,events,row:(kind,timeMs,fields={})=>s.consume({kind,timeMs,seq:++seq,...fields},fields.command),
     finish:t=>{s.now=t;s.finish();return events;}};
 }
@@ -84,10 +84,10 @@ test('offline evaluation requires both external logs and compares income around 
       {kind:'economy',timeMs:1000,seq:3,sampleMs:1000,funds:1100,income:30},{kind:'end',timeMs:1500,seq:4}];
     fs.writeFileSync(file,rows.map(r=>JSON.stringify(r)).join('\n'));
     await assert.rejects(()=>evaluateEvents(file,{commands}),/--economy/);
-    const result=await evaluateEvents(file,{commands,economy,out:path.join(dir,'result')});
+    const result=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'result')});
     assert.equal(result.summary.economySamples,2);assert.equal(result.summary.diagnostics.inputKinds.economy,2);
     fs.writeFileSync(economy,'1000(+20),1100(+31)\n');
-    await assert.rejects(()=>evaluateEvents(file,{commands,economy,out:path.join(dir,'bad')}),/does not match/);
+    await assert.rejects(()=>evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'bad')}),/does not match/);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 // B-81: builder #218 died at 443.904s and the Agent ordered it to build at 450.144s. The request was
@@ -150,7 +150,7 @@ test('B-81 dead builder is captured through --builder and counted once with STAL
   const dir=fs.mkdtempSync(path.join(root,'stage2-b81-'));
   try{
     const {file,commands,economy}=rejectionMatch(dir);
-    const result=await evaluateEvents(file,{commands,economy,out:path.join(dir,'out')});
+    const result=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'out')});
     const events=fs.readFileSync(path.join(result.out,'events.jsonl'),'utf8').trim().split('\n').map(JSON.parse);
     const stale=events.find(e=>e.type==='STALE_COMMAND'&&e.unitId===218);
     assert.ok(stale,'B-81 must produce a STALE_COMMAND for #218');
@@ -171,7 +171,7 @@ test('rejected requests are classified, split by kind, and never double counted'
   const dir=fs.mkdtempSync(path.join(root,'stage2-failures-'));
   try{
     const {file,commands,economy}=rejectionMatch(dir);
-    const result=await evaluateEvents(file,{commands,economy,out:path.join(dir,'out')});
+    const result=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'out')});
     const summary=result.summary,stats=summary.commandFailures;
     assert.equal(stats.total,9);assert.equal(stats.operation,5);assert.equal(stats.configuration,2);assert.equal(stats.query,2);
     assert.deepEqual(stats.byCategory,{INVALID_ACTION:1,STALE_OBJECT:3,UNAVAILABLE_ACTION:2,PLACEMENT_BLOCKED:1});
@@ -203,19 +203,19 @@ test('clean, truncated and missing end markers keep their own completeness state
     fs.writeFileSync(economy,'1000(+20)\n');
     const base=[{kind:'meta',schema:1,team:0,timeMs:0,seq:1},{kind:'economy',timeMs:0,seq:2,sampleMs:0,funds:1000,income:20}];
     fs.writeFileSync(file,[...base,{kind:'end',timeMs:0,seq:3,reason:'match_result'}].map(r=>JSON.stringify(r)).join('\n'));
-    const clean=await evaluateEvents(file,{commands,economy,out:path.join(dir,'clean')});
+    const clean=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'clean')});
     assert.equal(clean.summary.complete,true);
     assert.ok(!clean.summary.limitations.some(l=>l.includes('clean end marker')));
     fs.writeFileSync(file,[...base,{kind:'end',timeMs:0,seq:3,reason:'truncated_after_interference'}].map(r=>JSON.stringify(r)).join('\n'));
-    const truncated=await evaluateEvents(file,{commands,economy,out:path.join(dir,'truncated')});
+    const truncated=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'truncated')});
     assert.equal(truncated.summary.complete,true);
     assert.ok(truncated.summary.limitations.some(l=>l.includes('interference boundary')));
     fs.writeFileSync(file,[...base,{kind:'end',timeMs:0,seq:3,reason:'observation_error'}].map(r=>JSON.stringify(r)).join('\n'));
-    const broken=await evaluateEvents(file,{commands,economy,out:path.join(dir,'broken')});
+    const broken=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'broken')});
     assert.equal(broken.summary.complete,false);
     assert.ok(broken.summary.limitations.some(l=>l.includes('no clean end marker')));
     fs.writeFileSync(file,base.map(r=>JSON.stringify(r)).join('\n'));
-    const missing=await evaluateEvents(file,{commands,economy,out:path.join(dir,'missing')});
+    const missing=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'missing')});
     assert.equal(missing.summary.complete,false);
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
@@ -234,7 +234,7 @@ test('repeats and transient retries are filtered out of the statistic only',asyn
       rejection('B-204',220000,'rwx-game-order-action',actionArgs,{units:[18],reply:'error: queue full'}),
       accepted('B-205',240000,'rwx-game-order-action',actionArgs,{units:[18]}),
     ]);
-    const result=await evaluateEvents(file,{commands,economy,out:path.join(dir,'out')});
+    const result=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'out')});
     const stats=result.summary.commandFailures;
     assert.equal(stats.total,13);assert.equal(stats.operation,7);assert.equal(stats.configuration,4);assert.equal(stats.query,2);
     assert.deepEqual(stats.filtered.excluded,{staleCommand:3,duplicateSignature:1,recoveredRetry:1});
@@ -261,7 +261,7 @@ test('a corrected follow-up retires the tool error and leaves no actionable reje
     const {file,commands,economy}=rejectionMatch(dir,[
       accepted('B-19',109376,'rwx-game-order-action',['--units','18','--action','u_builder','--count','1'],{units:[18]}),
     ]);
-    const result=await evaluateEvents(file,{commands,economy,out:path.join(dir,'out')});
+    const result=await evaluateEvents(file,{commands,economy,config:{legacyDetectors:true},out:path.join(dir,'out')});
     const stats=result.summary.commandFailures;
     assert.equal(stats.total,9);
     assert.equal(stats.actionable.count,0);

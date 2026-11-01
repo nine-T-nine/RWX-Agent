@@ -4,13 +4,17 @@
 // and classified, never scored: a rejection can be the correct outcome of a probe or a retry.
 const {directB,argsObject,staleCommandRefs,operation}=require('./model');
 const {isIndirect,signature}=require('../execution-mapping');
+const {QUERY}=require('./commands');
 
-// Read-only requests. Their failure is a diagnostic about the tool surface, not an operation failure.
-const QUERY=new Set(['rwx-game-state','rwx-game-team-list','rwx-game-unit-list','rwx-game-unit-show',
-  'rwx-game-unit-actions','rwx-game-map-show','rwx-game-map-path','rwx-game-map-place','rwx-game-events',
-  'rwx-game-threat-list','rwx-game-replay-status','rwx-game-group-list','rwx-game-group-show',
-  'rwx-game-pending-list','rwx-game-keep-list','rwx-game-auto-list','rwx-game-auto-show',
-  'rwx-game-nuke-status','rwx-game-camera','rwx-game-connection-status']);
+/**
+ * The engine now records a stable `code` on every `result` row (assigned where the exception is
+ * still typed). Prefer it; the prose patterns below are only the fallback for older telemetry and
+ * must never be the reason a verdict changes when a code is present.
+ */
+const CODE_CATEGORY=Object.freeze({STALE_OBJECT:'STALE_OBJECT',NOT_CONTROLLABLE:'STALE_OBJECT',
+  PLACEMENT_BLOCKED:'PLACEMENT_BLOCKED',UNAVAILABLE_ACTION:'UNAVAILABLE_ACTION',
+  INVALID_ACTION:'INVALID_ACTION',INVALID_ARGUMENT:'INVALID_ARGUMENT',
+  INSUFFICIENT_CREDITS:'INSUFFICIENT_CREDITS',INTERNAL:'OTHER'});
 
 /**
  * Ordered reply patterns. The engine answers with prose, so the category is only as precise as the
@@ -30,6 +34,12 @@ function classify(reply) {
   const text=typeof reply==='string'?reply:'';
   for(const [category,pattern] of RULES)if(pattern.test(text))return category;
   return 'OTHER';
+}
+/** The engine's code wins; the prose classifier is the fallback for telemetry that predates it. */
+function classifyCommand(command) {
+  const code=command?.code;
+  if(typeof code==='string'&&code&&code!=='ACCEPTED')return CODE_CATEGORY[code]||'OTHER';
+  return classify(command?.reply);
 }
 /** operation = active direct B, configuration = indirect setup, query = read-only, other = not scored. */
 function requestKind(command) {
@@ -53,7 +63,8 @@ function collectFailures(commands,{retryWindowMs=10000}={}) {
     if(command.accepted!==false)continue;
     const reply=typeof command.reply==='string'?command.reply:'';
     rows.push({command,commandId:command.id,timeMs:command.timeMs,name:command.name,args:command.args,raw:command.raw,reply,
-      category:classify(reply),kind:requestKind(command),staleObjects:staleCommandRefs(command).map(ref=>ref.id),
+      code:typeof command.code==='string'?command.code:null,
+      category:classifyCommand(command),kind:requestKind(command),staleObjects:staleCommandRefs(command).map(ref=>ref.id),
       objects:commandObjects(command),signature:signature({name:command.name,args:argsObject(command)})});
   }
   rows.sort((a,b)=>a.timeMs-b.timeMs||String(a.commandId).localeCompare(String(b.commandId)));
@@ -76,4 +87,4 @@ function collectFailures(commands,{retryWindowMs=10000}={}) {
   }
   return rows;
 }
-module.exports={QUERY,RULES,CATEGORIES,classify,requestKind,collectFailures};
+module.exports={QUERY,RULES,CATEGORIES,CODE_CATEGORY,classify,classifyCommand,requestKind,collectFailures};

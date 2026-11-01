@@ -1969,8 +1969,19 @@ public final class RwxEngineLocalGameService implements RwxLocalGameService {
         }
     }
 
+    /**
+     * Credits per <em>game second</em>.
+     *
+     * <p>{@code PlayerTeam.b(Resource.D)} is the sum of {@code getCreditIncomeRate()}, which the
+     * engine pays out once per {@link PlayerTeam#resourceIncomeUpdateInterval} ticks and expresses
+     * per {@link PlayerTeam#resourceIncomeRatePeriod} ticks — not per second. The clock advances
+     * {@code lastDelta * 16.666666} ms per tick, so a game second holds {@code 1000/step} ticks and
+     * the conversion is {@code rate * (1000/step) / resourceIncomeRatePeriod}. On a 1x run the step
+     * is 16 ms and this multiplies by 1.5625; reporting the raw field as "/s" understated income by
+     * that factor and made every credits-per-second estimate in the agent's prompt wrong.</p>
+     */
     private static double netIncomeRate(PlayerTeam team) {
-        return team.b(Resource.D) - team.getResourceDrainRate(Resource.D);
+        return RwxIncomeRate.perSecond(team, GameEngine.getInstance());
     }
 
     private static String relation(PlayerTeam controlled, PlayerTeam candidate) {

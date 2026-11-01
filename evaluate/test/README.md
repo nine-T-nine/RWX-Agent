@@ -7,7 +7,7 @@
 从仓库根目录执行，无需启动游戏，无需npm/pip依赖：
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js
+node --test evaluate/test/test-evaluate.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -17,6 +17,7 @@ python -W error::ResourceWarning evaluate/test/test_replay.py
 node --test evaluate/test/test-evaluate.js
 node --test evaluate/test/test-events.js
 node --test evaluate/test/test-stage2-fixes.js
+node --test evaluate/test/test-score.js
 python -m unittest discover -s evaluate/test -p 'test_*.py'
 ```
 
@@ -27,9 +28,10 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 | `test-evaluate.js` | 19种直接命令与8种间接配置、批量/队列/建筑位置、目标与取消、重复待发歧义、毫秒与旧整秒时间、A/B周期、未知端口请求不中断，以及真实GPT样本的映射分布 | 大部分使用合成命令；可选读取 `evaluate/output/` 中GPT原始commands与已解析JSONL，只读真实输入；报告写到临时目录 |
 | `test-events.js` | 五类检测器的确认/失活、3/10秒开界、区域合并、自动与主动来源、任务/队列/费用/单位上限、过期对象生命周期与去重、AMBUSH 战损/击杀拆分、空窗的 B 相关性计数、FEED 按全部损失分段（100/108/112 秒、两个独立段各自确认）、PRODUCTION_GAP 的三值判定（共享预算/历史动作/完成证明）、经济采样、旧日志关联、frames 行的等价展开与异常拒绝、同一证据重复分析一致 | 构造内存事件/小型JSONL；临时写事件报告，不启动引擎 |
 | `test-stage2-fixes.js` | 第二轮回归：偷袭响应按空间关系而非 `kind` 判定、未来/同 tick 应用结果不提前计入、端口日志命令先于同刻记录注入、FEED 合并重算状态、工厂 task 与真实产出证明、严格10秒上界、`--commands`/`--economy` 必需性及经济序列核对、B-81 已死亡 builder 经 `--builder` 进入 STALE_COMMAND、拒绝请求分类/查询分离/与 STALE_COMMAND 去重、重复与已恢复重试的过滤、`actionable` 可扣分视图（timing/未证明/对象续用）、完整/截断/缺失结束标记 | 构造内存遥测；小报告写 `agent-tmp/` 临时目录并清理 |
+| `test-score.js` | 初步评分：新旧事件名到 A–E 五族的映射、偷袭只扣未响应且偷家加权、绞肉机只扣净损失超出部分、过期抖动突发的前 N 次宽限、空闲时长扣除免罚窗口与单段上限、分类封顶与加法可加性、未知事件进 `excluded` 而不是静默丢弃、权重/上限覆盖不改默认值、经济秒表重建、时间线排序与扣分回填、文本报告内容 | 纯内存事件对象与临时 `economy.log`；不启动引擎 |
 | `test_replay.py` | 按引擎写侧布局合成二进制，覆盖UTF/gzip、命令各字段、JSONL导出、文本过滤、截断/损坏容错、strict模式；对仓库录像检查布局无漂移、元数据与时间一致 | 合成Replay和输出放临时目录；只读仓库 `replays/*.replay`，真实样本较多时用时更长 |
 
-Node最近验证为119项，Python为27项；新增或删除用例后以实际输出为准。样本要求：
+Node最近验证为130项，Python为27项；新增或删除用例后以实际输出为准。样本要求：
 
 - GPT映射回归依赖 `evaluate/output/` 中的对应原始commands与解析JSONL；目录不存在时skip，具体样本缺失时用例提前返回，因此不能仅凭总通过数认定真实GPT样本已验证。合成用例独立运行。
 - Python真实Replay回归在 `replays/` 不存在时skip；目录存在时要求至少一份样本，并对当前完整样本集设置命令总量和元数据断言。精简样本集可能不满足这些断言。

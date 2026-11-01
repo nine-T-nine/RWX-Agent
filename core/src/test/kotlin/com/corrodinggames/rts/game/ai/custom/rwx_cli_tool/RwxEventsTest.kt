@@ -21,7 +21,7 @@ class RwxEventsTest {
         EventEntity(id, type, name, team, side, x, y)
 
     private fun event(time: Int, type: EventType = EventType.LOSSES, id: Long = 1,
-                      killer: EventEntity? = entity(90, "Heavy Tank", 1, "enemy", 120f, 210f),
+                      killer: EventEntity? = if (type == EventType.INFO) null else entity(90, "Heavy Tank", 1, "enemy", 120f, 210f),
                       subject: EventEntity = entity(id), detail: String? = null) =
         GameEvent(time, type, subject, killer, detail)
 
@@ -461,22 +461,24 @@ class RwxEventCollectorTest {
         assertEquals(999f, second.attacker.x)
     }
 
-    @Test fun `reentering sight adds a fresh snapshot and sustained visibility does not refresh it`() {
+    @Test fun `discovery needs one second of continuous sight and is announced at most once`() {
         val target = spawn(2, true).apply { visible = false }
         collector.observe(emptyList(), listOf(target))
         assertEquals(0, collector.store.size())
         target.visible = true
         collector.observe(emptyList(), listOf(target))
+        engine.gameTimeMillis = 10_999; collector.observe(emptyList(), listOf(target))
+        assertEquals(0, collector.store.size())
+        engine.gameTimeMillis = 11_000; collector.observe(emptyList(), listOf(target))
+        assertEquals(1, collector.store.size())
         engine.gameTimeMillis = 12_000; collector.observe(emptyList(), listOf(target))
         assertEquals(1, collector.store.size())
         target.visible = false; collector.observe(emptyList(), listOf(target))
         engine.gameTimeMillis = 14_000; target.visible = true; target.posX = 500f
         collector.observe(emptyList(), listOf(target))
-        assertEquals(2, collector.store.size())
-        val lines = RwxEventProcessor.query(collector.store.snapshot(), 14_000, EventQuery(null, 30.0, false)).lines
-        assertEquals(1, lines.size)
-        assertTrue(lines.single().startsWith("[00:14][new]"))
-        assertTrue(lines.single().endsWith("(500,200)"))
+        engine.gameTimeMillis = 15_000; collector.observe(emptyList(), listOf(target))
+        // A unit that leaves and re-enters the fog is the same contact, not a second discovery.
+        assertEquals(1, collector.store.size())
         assertEquals(100f, collector.store.snapshot().first().subject.x)
     }
 
@@ -511,8 +513,9 @@ class RwxEventCollectorTest {
         factory.isDead = true; product.isDead = true
         val lines = RwxEventProcessor.query(collector.store.snapshot(), 10_000, EventQuery(listOf(EventType.INFO), 30.0, false)).lines
         assertEquals(5, lines.size)
-        assertTrue(lines[0].contains(",1 produced "))
-        assertTrue(lines[0].endsWith(",2"))
+        assertTrue(lines[0].contains("produced "))
+        assertTrue(lines[0].contains("#2"))
+        assertTrue(lines[0].contains("by #1"))
         assertTrue(lines[1].contains("started constructing"))
         assertTrue(lines[2].contains("completed"))
         assertTrue(lines[3].contains("started upgrading"))

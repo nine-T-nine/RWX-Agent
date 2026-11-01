@@ -5,8 +5,7 @@ const path=require('node:path');
 const readline=require('node:readline');
 const {configure}=require('./events/config');
 const {identity,stamp,directB,argsObject,CommandMatcher,EconomyRecorder}=require('./events/model');
-const detectors=require('./events/detectors');
-const {stageDirectory}=require('./utils/paths');
+const detectors=require('./events/detectors');const {stageDirectory}=require('./utils/paths');
 const {EconomyTimeline}=require('./events/economy');
 
 async function *records(file) {
@@ -105,13 +104,13 @@ function legacyCommands(index,commandsFile,replayFile) {
 }
 class Session {
   constructor(meta,commands,overrides={},emit=()=>{}) {
-    this.config=configure({X:meta.X??160,...overrides});this.meta=meta;this.commands=commands;
+    this.config=configure({X:meta.X??160,...overrides,legacyDetectors:overrides.legacyDetectors??false});this.meta=meta;this.commands=commands;
     this.units=new Map();this.deaths=new Map();this.regionNeighbors=new Map();this.matcher=new CommandMatcher(commands,this.config);
     this.commandCoverage=meta.commandCoverage??(meta.source==='replay'?null:{start:meta.timeMs??0,end:Infinity});
     this.output=emit;this.counter=0;this.now=meta.timeMs??0;this.counts={};this.statuses={};this.strict={};
     this.builderIntervals=[];this.latencies={};
     this.diagnostics={inputKinds:{},detectors:{},commands:{total:commands.length,direct:this.matcher.commands.length}};
-    this.detectors=Object.values(detectors).map(Type=>new Type(this));this.economy=new EconomyRecorder(this.config.T_ECONOMY_SAMPLE);
+    this.detectors=detectors.createDetectors(this);this.economy=new EconomyRecorder(this.config.T_ECONOMY_SAMPLE);
   }
   nextId(type){return `${type}-${String(++this.counter).padStart(6,'0')}`;}
   diagnose(type,reason){const counts=this.diagnostics.detectors[type]??={};counts[reason]=(counts[reason]||0)+1;}
@@ -154,6 +153,8 @@ class Session {
       if(row.kind==='death')detector.death?.(row);
       if(row.kind==='native')detector.native?.(row);
       if(row.kind==='lifecycle')detector.lifecycle?.(row);
+      if(row.kind==='idle')detector.idle?.(row);
+      if(row.kind==='eventstream')detector.eventstream?.(row);
       if(row.kind==='command'&&command)detector.command?.(command);
     }
     if(row.kind==='frame')for(const detector of this.detectors)detector.advance?.(row.timeMs);
@@ -203,11 +204,28 @@ function eventText(e) {
   // The reply itself stays in events.jsonl; the timeline only needs identity and classification.
   if(e.type==='COMMAND_FAILURE')return `[${stamp(e.t_start)}] COMMAND_FAILURE | ${e.kind}/${e.category} | ${e.commandId} ${e.name}`
     +(e.staleObjects?.length?` | #${e.staleObjects.join(',#')}`:'')+(e.coveredByStaleCommand?' | covered_by_stale_command':'');
+  if(e.type==='BUILDER_IDLE'||e.type==='FACTORY_IDLE')
+    return `[${stamp(e.t_start)}-${stamp(e.t_end)}] ${e.type} | ${e.status} | ${e.tier}`
+      +(e.unit?.type?` | ${e.unit.type}#${e.unitId}`:'')+` | idle=${(e.durationMs/1000).toFixed(3)}s`
+      +` close=${e.closeReason}`+(e.referenceAction?` ref=${e.referenceAction.type}:${e.referenceAction.cost}`:'')
+      +(e.agentState?` agent=${e.agentState}`:'')+(e.reason?` | ${e.reason}`:'');
+  if(e.type==='GRINDER')
+    return `[${stamp(e.t_start)}-${stamp(e.t_end)}] GRINDER | ${e.status} | ${e.operation}`
+      +` | @(${e.location.x.toFixed(0)},${e.location.y.toFixed(0)}) delay=${(e.delayMs/1000).toFixed(1)}s`
+      +` | lost ${e.consequence.type}#${e.consequence.unitId}`
+      +(e.awareness?.aware?` | informed_by=${e.awareness.by}`:' | not_observed')
+      +(e.agentState?` | agent=${e.agentState}`:'')+(e.reason?` | ${e.reason}`:'');
+  if(e.type==='STALE_BURST')
+    return `[${stamp(e.t_start)}-${stamp(e.t_end)}] STALE_BURST | ${e.status} | attempts=${e.attempts}`
+      +` rejected=${e.count} | ${Object.entries(e.codes||{}).map(([code,n])=>code+'x'+n).join(',')}`
+      +(e.reason?` | ${e.reason}`:'');
   const at=e.location?` | @(${e.location.x.toFixed(0)},${e.location.y.toFixed(0)};r=${e.location.r.toFixed(0)})`:'';
   return `[${stamp(e.t_start)}-${stamp(e.t_end)}] ${e.type}${at} | ${e.status}`
+    +(e.kind?` | ${e.kind}`:'')
     +(e.unit?` | ${e.unit.type}#${e.unit.id}`:'')+(e.unitId!=null?` | #${e.unitId} count=${e.count??0}`:'')
     +(e.gapMs!=null?` | idle=${(e.gapMs/1000).toFixed(3)}s B=${e.B_count}`:'')
     +(e.reactionMs!=null?` | first=${(e.reactionMs/1000).toFixed(3)}s`:'')
+    +(e.agentState?` | agent=${e.agentState}`:'')
     +(e.flags?.length?` | ${e.flags.join(',')}`:'')+(e.reason?` | ${e.reason}`:'');
 }
 async function evaluateEvents(file,{out,config={},commands:commandsFile,economy:economyFile,replay:replayFile}={}) {

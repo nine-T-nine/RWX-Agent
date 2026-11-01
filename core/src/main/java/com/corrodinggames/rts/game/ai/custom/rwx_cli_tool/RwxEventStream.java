@@ -209,6 +209,7 @@ final class RwxEventStream implements AutoCloseable {
         while (!closed) {
             try {
                 Socket socket = server.accept(); sockets.add(socket);
+                evaluate.utils.EngineEvidence.streamClient(true, sockets.size());
                 try { clients.execute(() -> serve(socket)); }
                 catch (RejectedExecutionException error) { sockets.remove(socket); socket.close(); }
             } catch (IOException error) {
@@ -267,7 +268,7 @@ final class RwxEventStream implements AutoCloseable {
             }
         } catch (IOException | InterruptedException | RuntimeException ignored) {
             if (ignored instanceof InterruptedException) Thread.currentThread().interrupt();
-        } finally { sockets.remove(socket); }
+        } finally { sockets.remove(socket); evaluate.utils.EngineEvidence.streamClient(false, sockets.size()); }
     }
 
     /**
