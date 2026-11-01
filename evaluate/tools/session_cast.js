@@ -94,18 +94,24 @@ function analyse(session) {
     outputChars += text.length;
     if (WSL_NOISE.test(text)) wslNoisy++;
     const names = cliNames(raw);
-    const rejected = /"error"\s*:\s*true/.test(text);
+    // `--json` 模式回 `{"error":true,...}`；纯文本模式回一行 `error: ...`。两种都要算被拒，
+    // 否则不用 --json 的模型会被统计成“零拒绝”，那是统计口径的错，不是它没犯错。
+    const replies = [];
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim();
+      if (/^error:/.test(trimmed)) replies.push(trimmed);
+    }
+    for (const m of text.matchAll(/"error"\s*:\s*true[^}]*"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+      replies.push(m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim());
+    }
+    const rejected = replies.length > 0;
     for (const name of (names.length ? names : [call.name])) {
       const row = perCommand.get(name) || {count: 0, rejected: 0};
       row.count++;
       if (rejected) row.rejected++;
       perCommand.set(name, row);
     }
-    if (rejected) {
-      const replies = [...text.matchAll(/"error"\s*:\s*true[^}]*"reply"\s*:\s*"((?:[^"\\]|\\.)*)"/g)]
-        .map(m => m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim());
-      rejections.push({command: raw.replace(/\s+/g, ' ').trim(), replies});
-    }
+    if (rejected) rejections.push({command: raw.replace(/\s+/g, ' ').trim(), replies});
   }
   return {perCommand, rejections, wslNoisy, outputChars};
 }

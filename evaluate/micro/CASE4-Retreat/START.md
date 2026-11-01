@@ -44,7 +44,7 @@ python agent-operation/tools/rwx-cli.py --port-file agent-operation/tmp/retreat-
 
 ## 4. 地图与维修
 
-- 地图大小 180×180 格；敌方炮塔位于左上角区域，我方维修湾和初始坦克位于右下角。
+- 地图大小 `a×b` 格（`a`、`b` ∈ `[75,80)`，由 seed 决定）；敌方炮塔位于地图左上的一片不规则扩散区域，我方维修湾和初始坦克位于右下角。
 - 维修湾呈折角布局，坦克出生在维修湾附近。实际几何布局和坐标以地图/单位观察为准。
 - type 1 无迷雾；type 2/3 使用普通持续迷雾。
 - `rwx-game-map-show` 可按坐标查看地形窗口；`rwx-game-unit-list --owner self --full --json` 可查看己方单位/建筑；`--owner enemy` 只返回当前可见敌方。

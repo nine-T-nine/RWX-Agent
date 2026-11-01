@@ -61,13 +61,14 @@ class TransportCaseTest {
         assertEquals(1800.0, MicroConfig.parse("CASE3-Transport", "task=3_4_1,seed=1,track=realtime", null).gameLimitSeconds)
         assertEquals(1920.0, MicroConfig.parse("CASE3-Transport", "task=3_4_1,seed=1,track=realtime", null).wallLimitSeconds)
     }
-    @Test fun `islands keep their exact area and stay separated`() {
+    @Test fun `islands keep their area budget and stay separated`() {
         withMap { _, tiles ->
             val grass = tiles.withIndex().filter { it.value == 20 }.map { it.index }.toSet()
-            assertEquals(400 + 625, grass.size)
             val target = grass.filter { it % Case3MapSize.SIZE < 40 && it / Case3MapSize.SIZE < 40 }.toSet()
             val base = grass - target
-            assertEquals(400, target.size); assertEquals(625, base.size)
+            assertEquals(grass.size, target.size + base.size)
+            assertTrue(target.size in 550..675, "target island area ${target.size}")
+            assertTrue(base.size in 700..800, "base island area ${base.size}")
             assertTrue(connected(target, Case3MapSize.SIZE)); assertTrue(connected(base, Case3MapSize.SIZE))
             // No grass tile of one island may touch the other island.
             assertTrue(target.none { key -> listOf(key - 1, key + 1, key - Case3MapSize.SIZE, key + Case3MapSize.SIZE).any { it in base } })
@@ -83,10 +84,11 @@ class TransportCaseTest {
             val meta = case.layout(config, null)
             val base = (meta["baseIslandTiles"] as List<*>).map { (it as Number).toInt() }.toSet()
             val target = (meta["targetIslandTiles"] as List<*>).map { (it as Number).toInt() }.toSet()
-            assertEquals(400, target.size); assertEquals(625, base.size)
             val units = meta["units"] as List<*>
             @Suppress("UNCHECKED_CAST") val specs = units.map { it as Map<String, Any?> }
             assertEquals(4 + 5 + 3 + 4, specs.size)
+            assertTrue(target.size in 550..675, "target island area ${target.size}")
+            assertTrue(base.size in 700..800, "base island area ${base.size}")
             for (spec in specs) {
                 val key = (spec["tileY"] as Int) * Case3MapSize.SIZE + (spec["tileX"] as Int)
                 if (spec["team"] == 1) assertTrue(key in target, "turret on target island")
@@ -94,9 +96,13 @@ class TransportCaseTest {
             }
             val turrets = specs.filter { it["team"] == 1 }
             assertEquals(4, turrets.size)
+            for (turret in turrets) {
+                // The ring sits a few tiles inland, never on the coastline itself.
+                assertTrue((turret["coastDepth"] as Int) in 3..6, "turret depth ${turret["coastDepth"]}")
+            }
             for (a in turrets) for (b in turrets) if (a !== b) {
                 val dx = Math.abs((a["tileX"] as Int) - (b["tileX"] as Int)); val dy = Math.abs((a["tileY"] as Int) - (b["tileY"] as Int))
-                assertTrue(dx + dy >= 10, "anti-air spacing")
+                assertTrue(Math.hypot(dx.toDouble(), dy.toDouble()) >= 8.0, "anti-air spacing")
             }
         } finally {
             java.nio.file.Files.list(dir).use { files -> files.forEach { java.nio.file.Files.deleteIfExists(it) } }

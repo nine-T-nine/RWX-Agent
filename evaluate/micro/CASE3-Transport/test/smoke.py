@@ -138,7 +138,8 @@ def main():
     for key in ("targetIslandTiles", "baseIslandTiles", "targetIslandArea", "baseIslandArea", "units"):
         assert repro_a[key] == repro_b[key], f"layout mismatch: {key}"
     assert repro_a["map"]["sha256"] == repro_b["map"]["sha256"], "map hash mismatch"
-    assert repro_a["targetIslandArea"] == 400 and repro_a["baseIslandArea"] == 625, repro_a["targetIslandArea"]
+    assert 550 <= repro_a["targetIslandArea"] <= 675, repro_a["targetIslandArea"]
+    assert 700 <= repro_a["baseIslandArea"] <= 800, repro_a["baseIslandArea"]
     print("TRANSPORT_SMOKE_OK baselineWin=true timeoutError=true authorityRejected=true reproducibleLayout=true")
 
 

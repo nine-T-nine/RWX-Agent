@@ -151,24 +151,26 @@ public final class Case3Transport implements MicroCase {
             transports.add(unit);units.add(unit);id++;
         }
         if(transports.size()<spec.transports())throw new IllegalStateException("base island has no free edge tiles for transports");
-        // Target island: four T1 anti-air turrets on the coast, at least 10 tiles apart (type 4 has none).
+        // Target island: four T1 anti-air turrets on a ring offset inwards from the coastline.
         List<Map<String,Object>> turrets=new ArrayList<>();
         if(t.type()<=3){
-            List<Integer> coast=new ArrayList<>();
-            for(int key:targetIsland)if(Case3Map.neighbours(targetIsland,key)<4)coast.add(key);
-            coast.sort(Comparator.comparingInt((Integer k)->Case3Map.y(k)).thenComparingInt(Case3Map::x));
-            List<Integer> picked=new ArrayList<>();
-            for(int key:coast){
-                if(picked.size()>=4)break;
-                int tx=Case3Map.x(key),ty=Case3Map.y(key);
-                boolean far=picked.stream().allMatch(other->Math.abs(Case3Map.x(other)-tx)+Math.abs(Case3Map.y(other)-ty)>=10);
-                if(!far)continue;
-                picked.add(key);
-                Map<String,Object> unit=map("id",id,"alias","A"+(picked.size()),"team",ENEMY_TEAM,"type","c_antiAirTurret",
-                        "x",Case3Map.worldX(tx),"y",Case3Map.worldY(ty),"tileX",tx,"tileY",ty);
+            double centreX=0,centreY=0;
+            for(int key:targetIsland){centreX+=Case3Map.x(key);centreY+=Case3Map.y(key);}
+            centreX/=targetIsland.size();centreY/=targetIsland.size();
+            Random random=new Random(c.seed^0xBB67AE8584CAA73BL);
+            List<int[]> ring=coastRing(targetIsland,4,random);
+            for(int i=0;i<ring.size();i++){
+                int[] spot=ring.get(i);
+                // Sub-tile jitter breaks the regular grid without leaving the tile, so the turret
+                // still stands on land and the spacing check keeps holding.
+                double jitterX=(random.nextDouble()-0.5)*0.8,jitterY=(random.nextDouble()-0.5)*0.8;
+                float facing=(float)Math.toDegrees(Math.atan2(spot[1]-centreY,spot[0]-centreX));
+                Map<String,Object> unit=map("id",id,"alias","A"+(i+1),"team",ENEMY_TEAM,"type","c_antiAirTurret",
+                        "x",Case3Map.worldX(spot[0])+(float)jitterX*Case3Map.TILE,
+                        "y",Case3Map.worldY(spot[1])+(float)jitterY*Case3Map.TILE,
+                        "tileX",spot[0],"tileY",spot[1],"coastDepth",spot[2],"facing",facing);
                 turrets.add(unit);units.add(unit);id++;
             }
-            if(picked.size()<4)throw new IllegalStateException("target island coast cannot hold four spaced anti-air turrets");
         }
         return map("task",c.task,"type",t.type(),"level",t.level(),"mapSize",Case3Map.SIZE,"tileSize",Case3Map.TILE,
                 "targetIslandTiles",new ArrayList<>(targetIsland),"baseIslandTiles",new ArrayList<>(baseIsland),
@@ -177,6 +179,54 @@ public final class Case3Transport implements MicroCase {
                 "requirements",requirements(t),"initialCredits",spec.credits(),"transportType",spec.transportType(),
                 "transportCapacity",spec.transportCapacity(),"factories",factories,"extractors",extractors,
                 "transports",transports,"antiAirTurrets",turrets,"units",units);
+    }
+
+    /**
+     * Turret slots on a ring offset inwards from the coastline: the band holds every island tile
+     * whose BFS distance to the coast is 3..6 tiles, each angular sector gets exactly one slot drawn
+     * at random inside it, and a slot must keep the minimum centre spacing from the ones already
+     * taken. The ring therefore follows the noise-perturbed coast instead of the old bounding box.
+     */
+    static List<int[]> coastRing(Set<Integer> island,int count,Random random){
+        Map<Integer,Integer> depth=Case3Map.coastDepth(island);
+        double centreX=0,centreY=0;
+        for(int key:island){centreX+=Case3Map.x(key);centreY+=Case3Map.y(key);}
+        centreX/=island.size();centreY/=island.size();
+        List<int[]> band=new ArrayList<>();
+        for(int key:island){
+            int d=depth.getOrDefault(key,0);
+            if(d>=3&&d<=6)band.add(new int[]{Case3Map.x(key),Case3Map.y(key),d});
+        }
+        if(band.isEmpty())throw new IllegalStateException("target island has no coastal band");
+        double sector=360.0/count;
+        List<int[]> picked=new ArrayList<>();
+        for(int slot=0;slot<count;slot++){
+            double from=slot*sector,to=from+sector;
+            List<int[]> candidates=new ArrayList<>();
+            for(int[] tile:band){
+                double angle=Math.toDegrees(Math.atan2(tile[1]-centreY,tile[0]-centreX));
+                if(angle<0)angle+=360;
+                if(angle>=from&&angle<to)candidates.add(tile);
+            }
+            Collections.shuffle(candidates,random);
+            int[] chosen=null;
+            for(double need=8;need>=3&&chosen==null;need-=1){
+                for(int[] tile:candidates){
+                    boolean free=true;
+                    for(int[] other:picked)if(Math.hypot(other[0]-tile[0],other[1]-tile[1])<need){free=false;break;}
+                    if(free){chosen=tile;break;}
+                }
+            }
+            if(chosen==null)throw new IllegalStateException("no room for a turret in sector "+slot);
+            picked.add(chosen);
+        }
+        return picked;
+    }
+
+    /** A building body is drawn upright only at rotationSpeed -90; mobile units face +x at 0. */
+    static boolean isBuilding(BaseUnit unit){
+        if(unit instanceof com.corrodinggames.rts.game.units.buildings.BaseBuilding)return true;
+        return unit instanceof CustomUnit custom&&custom.unitConfig.isBuildingUnit();
     }
 
     public static int capacity(String transportType){
@@ -217,8 +267,16 @@ public final class Case3Transport implements MicroCase {
             if(unit.objectId!=id)throw new IllegalStateException("Unstable initial unit id");
             unit.setUnitTeam(((Number)spec.get("team")).intValue()==SELF_TEAM?self:enemy);
             unit.posX=((Number)spec.get("x")).floatValue();unit.posY=((Number)spec.get("y")).floatValue();
-            unit.rotationSpeed=unit.team==self?0:180;unit.buildProgress=1;unit.currentHealth=unit.maxHealth;
+            // Building bodies are drawn at rotationSpeed + 90, so the engine's -90 is what stands a
+            // base texture upright; a mobile unit faces +x at 0.
+            unit.rotationSpeed=isBuilding(unit)?-90f:0f;
+            unit.buildProgress=1;unit.currentHealth=unit.maxHealth;
             unit.shield=unit.unitEnergyMax;unit.isActive=false;unit.n();PlayerTeam.c(unit);
+            // The barrel follows movementLevels[0].targetX (0 = east by default): point it outward.
+            if(unit.team==enemy&&spec.containsKey("facing")){
+                float facing=((Number)spec.get("facing")).floatValue();
+                unit.movementLevels[0].a(facing);
+            }
             // The draft asks for T2 land factories; the upgrade level is the same flag the upgrade action sets.
             if("landFactory".equals(spec.get("type"))){unit.a(2);spec.put("upgradeLevel",2);}
         }

@@ -136,7 +136,8 @@ public final class Case4Session extends AbstractCaseSession {
             return "ok: submitted requestId="+i.request;
         }
         if(x==null||y==null)throw new IllegalArgumentException("invalid_request: invalid_coordinate");
-        if(x<0||y<0||x>Case4Map.SIZE*Case4Map.TILE||y>Case4Map.SIZE*Case4Map.TILE)
+        int width=((Number)meta.get("mapWidth")).intValue(),height=((Number)meta.get("mapHeight")).intValue();
+        if(x<0||y<0||x>width*Case4Map.TILE||y>height*Case4Map.TILE)
             throw new IllegalArgumentException("invalid_request: invalid_coordinate");
         var nativeCommand=engine.commandController.newCommandForTeam(actors.get(0).team);
         for(OrderableUnit unit:actors)nativeCommand.addUnitToCommand(unit);

@@ -5,7 +5,7 @@
 整局能持续使用同一终端时，优先使用现有 Python `--stdio` 交互模式；不便保持交互进程时使用单次客户端，预定的连续命令可用批量模式。无需自行开发通信工具。
 
 - [战术指南](../.agents/skills/rwx-cli-tools/strategy.md)
-- [人类战术指南](../.agents/skills/rwx-cli-tools/strategy_human.md)
+- [战术指南B版本](../.agents/skills/rwx-cli-tools/strategy_human.md)
 - [中文命令手册](help_zh.md) · [英文命令手册 / rwx-help](help.md)
 - [工具说明](tools/README.md)
 - [服务器部署](SERVER.md)

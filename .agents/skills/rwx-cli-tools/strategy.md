@@ -1,72 +1,72 @@
-# RWX Agent 策略总则
+# RWX Agent Strategy Guide
 
-> 用途：对局中的**默认入口**。先按本文件判断并行动；只有遇到对应问题时，才查阅 `strategy_detail/` 下的专题。
+> **Default entry point for live matches.** Read this file first, then consult a topic under `strategy_detail/` only when needed.
 >
-> 这些是经验规则，不是必胜脚本。当前游戏状态、敌情和可执行动作始终优先于文档。这里不规定 CLI、Socket、事件订阅或查询频率；通信方式以 `help.md` / 启动文档为准。
+> These are practical guidelines, not a guaranteed winning script. The current game state, enemy behavior, and available actions always take precedence over this document. CLI usage, sockets, event subscriptions, and polling intervals are out of scope; follow `help.md` and the startup documentation for communication details.
 
-## 1. 决策优先级
+## 1. Decision Priorities
 
-| 级别 | 触发条件 | 第一反应 |
+| Priority | Trigger | Immediate response |
 |---|---|---|
-| P0 生存 | 指挥中心濒危、主力即将被歼灭 | 立刻救援、撤退或消除主要威胁；不等待完善情报 |
-| P1 战局突变 | 火炮/空军集群出现，矿区遭袭，关键防线崩溃 | 判断威胁与克制关系，调整现有部队、生产或防守 |
-| P2 战术窗口 | 敌主力暴露、薄弱据点可夺取、可赢得关键交换 | 在可接受风险下立即利用机会 |
-| P3 扩张发展 | 安全矿脉可占、长期收入不足 | 占矿、升级经济、补充必要防御 |
-| P4 日常优化 | 无紧迫威胁 | 完善编队、生产、科技与侦查 |
+| P0 — Survival | Command Center in imminent danger; main army about to be destroyed | Reinforce, retreat, or eliminate the main threat immediately. Do not wait for perfect intelligence. |
+| P1 — Major threat | Enemy artillery or air swarm appears; a mining area is attacked; a critical defense fails | Identify the threat and its counters. Reposition existing units or adjust production and defenses. |
+| P2 — Tactical opportunity | Enemy main force is exposed; a weak outpost can be taken; a favorable trade is available | Exploit the opportunity while keeping losses acceptable. |
+| P3 — Expansion | A safe resource deposit is available; long-term income is inadequate | Secure deposits, upgrade the economy, and add essential defenses. |
+| P4 — Routine optimization | No urgent threats | Improve army composition, production, tech, and scouting. |
 
-按**实际损失或收益**而非标签机械排序：小规模骚扰未必值得取消一次决定胜负的进攻。
+Prioritize by **actual expected loss or benefit**, not labels alone. A minor raid may not justify abandoning an attack that could decide the match.
 
-## 2. 最小决策过程
+## 2. Minimal Decision Loop
 
-1. **识别变化**：当前谁在受伤/损失？敌人在哪里？哪些信息已经过时？
-2. **挑一个主要目标**：保住关键资产、反制最大威胁、抓进攻机会，或扩大经济。
-3. **选最低成本的有效行动**：优先调动现成兵力；不足时再建造、升级、补产。
-4. **检查显著风险**：射程克制、空地相性、路径可达、速度脱节、资金及生产时间。
-5. **执行并验证结果**：下达命令不等于完成任务；出现异常时及时改计划，不要机械重复。
+1. **Identify changes:** Which units or assets are taking damage or being lost? Where is the enemy? Which observations are stale?
+2. **Pick one primary objective:** Protect a key asset, counter the biggest threat, exploit an attack window, or grow the economy.
+3. **Choose the cheapest effective response:** Reposition available forces first; build, upgrade, or queue more units when existing forces are insufficient.
+4. **Check major risks:** Weapon ranges, ground/air targeting, route accessibility, movement-speed mismatch, available funds, and production time.
+5. **Act and verify:** Issuing an order does not mean the objective is complete. Reassess when results differ from expectations; do not repeat a failed plan mechanically.
 
-无需为普通行动凑齐全部信息；**紧急事件先处理**。迷雾中的敌军不能视为已消失。
+Routine actions do not require complete information. **Handle emergencies immediately.** An enemy hidden by fog of war must not be treated as gone.
 
-## 3. 快速反制索引
+## 3. Quick Counter Reference
 
-| 发现的主要敌情 | 优先考虑 | 避免 |
+| Main enemy threat | Consider first | Avoid |
 |---|---|---|
-| 大量低血量地面单位（Tank、普通机甲、悬浮坦克） | 喷火器、火炮、范围火力 | 低级单位无掩护地硬拼 |
-| 中高级机甲、护盾单位 | 电击塔/T2 电击塔、火炮 | 只靠普通机枪防线 |
-| 敌方火炮阵地 | 激光防御塔、己方火炮、绕侧或撤离其射程 | 重复将密集坦克送入炮火 |
-| 武装直升机等低血量空军群 | T2 防空炮塔、防空机甲、拦截机、高射炮 | 仅凭 T1 防空守住基地 |
-| 高级重型空军 | T3 防空、AA 战机、重型拦截机等集中防空 | 分散且不足的防空火力 |
-| 机枪机甲 | 电击塔、火炮、猛犸坦克 | 用低级陆军逐次冲锋 |
-| 岸边战列舰 | 可对海远程火力、空军或反舰力量 | 让不对海的单位空耗 |
-| 防守薄弱的孤立据点 | 速攻、绕后、远程压制或建造者推进 | 不必要地与敌主力正面交战 |
+| Swarms of fragile ground units (Tanks, basic Mechs, Hover Tanks) | Flamethrower turrets, artillery, area damage | Unsupported low-tier units fighting head-on |
+| Mid/high-tier Mechs or shielded units | Tesla Towers / T2 Tesla Towers, artillery | Relying only on standard machine-gun defenses |
+| Enemy artillery position | Laser Defense Turrets, friendly artillery, flanking, or withdrawal from its range | Repeatedly sending dense Tank groups into artillery fire |
+| Swarms of fragile aircraft such as Gunships | T2 Anti-Air Turrets, Anti-Air Mechs, Interceptors, Flak Guns | Expecting T1 anti-air alone to protect the base |
+| Advanced heavy aircraft | Concentrated T3 anti-air, AA Fighters, Heavy Interceptors, etc. | Scattered, inadequate anti-air firepower |
+| Minigun Mechs | Tesla Towers, artillery, Mammoth Tanks | Sending low-tier ground units in successive waves |
+| Battleships near the coast | Long-range anti-ship weapons, aircraft, or other naval counters | Wasting units that cannot attack naval targets |
+| Isolated, lightly defended outpost | Rush, flank, long-range pressure, or Builder-assisted push | Unnecessary direct engagement with the enemy main force |
 
-这张表只提供方向；**数量、射程、地形、可达性和交战时间**决定方案是否真正可行。
+These are counter *options*, not guaranteed outcomes. **Numbers, range, terrain, access, and engagement time** determine whether a response will work.
 
-## 4. 经济速判
+## 4. Economy at a Glance
 
-- **≤50/s**：资源紧张，优先便宜且能发挥作用的单位、矿脉与必要防御。
-- **50–100/s**：一般开局经济，可考虑单价约 2000 内的部队。
-- **100–200/s**：可组织较强进攻，适当加入中高级单位。
-- **≥200/s**：可持续混编和扩张，长期局可考虑实验单位、核武等高成本手段。
-- **经济倍率 x1 / x1.5 / x2+**：分别大致对应紧缺、偏紧、发展较流畅。以上档位是经验，不是硬阈值。
-- 工厂**下单立即扣钱**。除为升级、昂贵单位或应急保留资金外，不宜长期闲置大量余额。
+- **≤50 income/s:** Limited economy. Prefer inexpensive effective units, resource deposits, and essential defenses.
+- **50–100 income/s:** Typical early-game income. Units costing roughly 2,000 or less are reasonable options.
+- **100–200 income/s:** Can support stronger attacks and some mid/high-tier units.
+- **≥200 income/s:** Can sustain mixed forces and expansion; expensive experimental units or nuclear weapons may become viable in long games.
+- **Income multiplier x1 / x1.5 / x2+:** Roughly means very tight / somewhat tight / more comfortable. These are guidelines, not hard thresholds.
+- **Factory orders deduct credits immediately.** Do not leave large sums unused without a clear reason such as saving for an upgrade, expensive unit, or emergency response.
 
-## 5. 三条强制纠错规则
+## 5. Three Mandatory Corrections
 
-- **损失突增**：立刻判断是否遭到火炮、范围伤害或兵种克制；不能不经改变就再派同类部队进攻。
-- **重要据点遇袭**：不能因为主力正在执行旧计划而忽视矿区、工厂或指挥中心的危险。
-- **视野消失**：敌军最后已知位置是未确认情报，不是“敌人已撤退/被消灭”的证据。
+- **Sudden heavy losses:** Immediately check for artillery, area damage, or a strong unit counter. Do not resend the same type of army without changing the conditions.
+- **Important base under attack:** Do not ignore threats to mining areas, factories, or the Command Center just because the main force is executing an older plan.
+- **Vision lost:** Last-known enemy positions are unconfirmed intelligence, not evidence that the enemy retreated or was destroyed.
 
-RWX 是高速 RTS；短时间无响应也可能导致局势逆转。减少无效等待，但不要因追求频繁操作而反复发送无意义命令。
+RWX is a fast RTS. Even a short period without a response can change the outcome. Avoid unnecessary waiting, but do not spam pointless commands merely to act frequently.
 
-## 6. 何时查阅详情
+## 6. When to Read the Details
 
-| 当前问题 | 只读取对应文件 |
+| Current question | Read only this file |
 |---|---|
-| 怎么守家、反制空袭/火炮、选炮塔和维修 | [defense.md](strategy_detail/defense.md) |
-| 怎么组成进攻编队、突破阵地、空降或速攻 | [offense.md](strategy_detail/offense.md) |
-| 钱怎么花、矿怎么抢、什么时候扩张/升级 | [economy.md](strategy_detail/economy.md) |
-| 战争迷雾、情报不确定、用什么侦查 | [scouting.md](strategy_detail/scouting.md) |
-| 山地、海岛、跨海矿脉与行军路线 | [terrain.md](strategy_detail/terrain.md) |
-| 固有机制、低优先级单位与通用限制 | [mechanics.md](strategy_detail/mechanics.md) |
+| How to defend the base, counter air/artillery, choose turrets, or repair units | [defense.md](strategy_detail/defense.md) |
+| How to compose an attack force, break defenses, airdrop, or rush | [offense.md](strategy_detail/offense.md) |
+| How to spend credits, secure deposits, expand, or upgrade | [economy.md](strategy_detail/economy.md) |
+| How to handle fog of war, uncertain intelligence, or reconnaissance | [scouting.md](strategy_detail/scouting.md) |
+| How to handle mountains, islands, sea crossings, and routes | [terrain.md](strategy_detail/terrain.md) |
+| How game mechanics work and when to use niche units | [mechanics.md](strategy_detail/mechanics.md) |
 
-**无需一次读完所有详情。** 没有专题需要时，只使用本文件即可决策。
+**Do not read all detail files by default.** If no special issue arises, this file is sufficient for decision-making.

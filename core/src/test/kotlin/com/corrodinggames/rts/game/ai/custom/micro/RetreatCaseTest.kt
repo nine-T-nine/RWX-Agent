@@ -38,7 +38,7 @@ class RetreatCaseTest {
         assertEquals(3, t.type()); assertEquals(2, t.level())
         val spec = Case4Retreat.spec(t)
         assertEquals(3, spec.tanks()); assertEquals(4, spec.bays()); assertEquals(1500, spec.gameLimitSeconds())
-        assertEquals(mapOf("c_turret_t3_gun" to 2, "c_turret_t2_artillery" to 2, "c_turret_t2_gun" to 10),
+        assertEquals(mapOf("c_turret_t3_gun" to 2, "c_turret_t2_artillery" to 2, "c_turret_t2_gun" to 8),
             Case4Retreat.turretCounts(t))
         val one = Case4Retreat.spec(Case4Retreat.task("4_1_1"))
         assertEquals(0, one.fogMode()); assertEquals(2, one.tanks()); assertEquals(2, one.bays())
@@ -60,37 +60,90 @@ class RetreatCaseTest {
         try {
             val path = Case4Retreat().prepareMap(config, dir)
             val tiles = ground(path)
-            assertEquals(180 * 180, tiles.size)
+            // seed 3 -> width 75+3, height 75+0; both sides stay inside [75,80).
+            assertEquals(78 * 75, tiles.size)
             assertTrue(tiles.all { it == 20 }, "every tile is plain grass")
         } finally {
             java.nio.file.Files.list(dir).use { files -> files.forEach { java.nio.file.Files.deleteIfExists(it) } }
             java.nio.file.Files.deleteIfExists(dir)
         }
     }
-    @Test fun `turrets stay inside their rings and keep their spacing`() {
+    @Test fun `map sides stay inside the requested range`() {
+        for (seed in 0L..24L) {
+            val config = MicroConfig.parse("CASE4-Retreat", "task=4_1_1,seed=$seed,track=realtime", null)
+            val dir = java.nio.file.Files.createTempDirectory("case4-size-")
+            try {
+                val path = Case4Retreat().prepareMap(config, dir)
+                val xml = java.nio.file.Files.readString(path)
+                val width = Regex("width=\"(\\d+)\"").find(xml)!!.groupValues[1].toInt()
+                val height = Regex("height=\"(\\d+)\"").find(xml)!!.groupValues[1].toInt()
+                assertTrue(width in 75..79, "seed $seed width $width")
+                assertTrue(height in 75..79, "seed $seed height $height")
+                assertEquals(width * height, ground(path).size)
+            } finally {
+                java.nio.file.Files.list(dir).use { files -> files.forEach { java.nio.file.Files.deleteIfExists(it) } }
+                java.nio.file.Files.deleteIfExists(dir)
+            }
+        }
+    }
+    @Test fun `turrets stay inside the field and keep their spacing`() {
         for (task in listOf("4_1_1", "4_2_1", "4_3_1", "4_3_3")) {
             val meta = layout(task)
             val turrets = rows(meta, "turrets")
+            val region = meta["region"] as Map<*, *>
+            val centreX = (region["centreTileX"] as Number).toDouble()
+            val centreY = (region["centreTileY"] as Number).toDouble()
+            val radius = (region["radiusTiles"] as Number).toDouble()
+            val width = (meta["mapWidth"] as Number).toInt()
+            val height = (meta["mapHeight"] as Number).toInt()
             assertEquals(Case4Retreat.turretCounts(Case4Retreat.task(task)).values.sum(), turrets.size, task)
             for (turret in turrets) {
-                val radius = (turret["radiusTiles"] as Int).toDouble()
-                val ring = turret["ring"] as String
-                if (ring == "A") assertTrue(radius in 20.0..30.0, "$task ring A radius $radius")
-                else assertTrue(radius in 30.0..50.0, "$task ring B radius $radius")
                 val tileX = turret["tileX"] as Int; val tileY = turret["tileY"] as Int
-                assertTrue(tileX > 0 && tileY > 0 && tileX < 180 && tileY < 180, "inside the map")
-                assertTrue(Math.hypot(tileX.toDouble(), tileY.toDouble()) in radius - 1.5..radius + 1.5, "radius matches its tiles")
+                assertTrue(tileX > 0 && tileY > 0 && tileX < width && tileY < height, "$task inside the map")
+                // The blob is the base radius plus at most 35% of coastline noise.
+                val distance = Math.hypot(tileX - centreX, tileY - centreY)
+                assertTrue(distance <= radius * 1.4, "$task turret at $distance outside the field of $radius")
             }
-            val wanted = mapOf("A" to 10.0, "B" to 3.0)
-            val achieved = (meta["achievedTurretSpacingTiles"] as Number).toDouble()
-            assertTrue(achieved >= 3.0, "$task spacing $achieved")
+            val achieved = meta["achievedTurretSpacingTiles"] as Map<*, *>
+            if (turrets.count { it["role"] == "long" } >= 2)
+                assertTrue((achieved["long"] as Number).toDouble() >= 10.0, "$task long spacing ${achieved["long"]}")
+            if (turrets.count { it["role"] == "short" } >= 2)
+                assertTrue((achieved["short"] as Number).toDouble() >= 3.0, "$task short spacing ${achieved["short"]}")
             for (a in turrets) for (b in turrets) if (a !== b) {
                 val gap = Math.hypot(((a["tileX"] as Int) - (b["tileX"] as Int)).toDouble(),
                     ((a["tileY"] as Int) - (b["tileY"] as Int)).toDouble())
-                val minimum = if (a["ring"] == b["ring"]) wanted[a["ring"] as String]!! else 0.0
-                assertTrue(gap >= minOf(minimum, achieved), "$task turret gap $gap")
+                val same = a["role"] == b["role"]
+                val minimum = if (same && a["role"] == "long") 10.0 else 3.0
+                assertTrue(gap >= minimum, "$task turret gap $gap")
             }
         }
+    }
+    @Test fun `long range turrets lean to the upper left of the field`() {
+        // Two guns per seed are far too few to see a bias in, so the whole sample is pooled first.
+        var sumX = 0.0
+        var sumY = 0.0
+        var count = 0
+        var upperLeft = 0
+        for (task in listOf("4_2_1", "4_3_1")) {
+            for (seed in 1..8) {
+                val meta = layout(task, seed.toString())
+                val region = meta["region"] as Map<*, *>
+                val centreX = (region["centreTileX"] as Number).toDouble()
+                val centreY = (region["centreTileY"] as Number).toDouble()
+                for (gun in rows(meta, "turrets").filter { it["role"] == "long" }) {
+                    val dx = (gun["tileX"] as Int) - centreX
+                    val dy = (gun["tileY"] as Int) - centreY
+                    sumX += dx; sumY += dy; count++
+                    if (dx < 0 && dy < 0) upperLeft++
+                }
+            }
+        }
+        assertTrue(count >= 12, "only $count long-range guns sampled")
+        // The bias points at 225 degrees (up-left, i.e. away from the player's corner); a fifth of
+        // the guns is allowed to ignore it, so the pooled mean still has to point up-left.
+        assertTrue(sumX / count < -2.0, "mean x offset ${sumX / count} is not to the left")
+        assertTrue(sumY / count < -2.0, "mean y offset ${sumY / count} is not upward")
+        assertTrue(upperLeft * 10 >= count * 6, "only $upperLeft of $count guns are up-left")
     }
     @Test fun `repair bays form an L and the tanks start beside them`() {
         for (task in listOf("4_1_1", "4_2_1", "4_3_1")) {

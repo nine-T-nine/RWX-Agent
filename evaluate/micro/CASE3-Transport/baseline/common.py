@@ -11,11 +11,13 @@ Deterministic policy (only public observations; never meta/evidence/replays):
 3. loading: the lowest-id transport with free slots takes the lowest-id idle target units that fit
    its real free slots.  Issued loads are remembered per transport until the units are really in
    the cargo hold, so a walking unit is never ordered twice and its transport never leaves early;
-4. departure: a transport leaves only when it is full, or when every required unit already exists
-   and nothing is left to board.  That keeps one wave per batch instead of one exposed trip per
-   unit, and a transport already sailing is not re-ordered every poll;
-5. shipping: fly to the landing point, unload there, then leave the coast again so the turrets
-   stop firing; the delivered ground units then fight whatever is left on the island;
+4. departure: a transport leaves when it is full, when its hold cannot take any more, or when
+   nothing is left that could still arrive (every type is either delivered, alive or in the air).
+   Empty transports fly home for a second and third trip, so a batch that does not fit one wave is
+   still delivered instead of being stranded at the base;
+5. shipping: fly to the landing point and unload only while actually above the island (a hold
+   released over lava loses its cargo), then leave the coast again so the turrets stop firing; the
+   delivered ground units then fight whatever is left on the island;
 6. the loop polls public observations every 2 s.
 """
 from __future__ import annotations
@@ -129,7 +131,7 @@ def choose_landing(client):
     land, size = land_tiles(client)
     if not land:
         print(json.dumps({"landing": "fallback", "reason": "no land in terrain window"}), flush=True)
-        return TARGET_CENTRE
+        return TARGET_CENTRE, land, size
     enemies = [(u["x"], u["y"]) for u in client.call("rwx-game-unit-list --owner enemy --json")["units"]]
     interior = [t for t in land
                 if all((t[0] + dx, t[1] + dy) in land for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
@@ -141,11 +143,16 @@ def choose_landing(client):
         if best is None or cost < best[0]:
             best = (cost, point)
     print(json.dumps({"landing": best[1], "landTiles": len(land), "enemies": len(enemies)}), flush=True)
-    return best[1]
+    return best[1], land, size
+
+
+def over_land(position, land, size):
+    """True when the transport is above an island tile, so an unload cannot drop units into lava."""
+    return (int(position[0] // size), int(position[1] // size)) in land
 
 
 def play(client):
-    landing = choose_landing(client)
+    landing, land, tile_size = choose_landing(client)
     boarding = {}   # transport id -> {"units": [ids], "deadline": monotonic}
     unloading = {}  # transport id -> monotonic deadline
     sailing = set()  # transports already ordered to the landing point
@@ -168,16 +175,36 @@ def play(client):
             grew = max(0, produced.get(kind, 0) - seen.get(kind, 0))
             inflight[kind] = max(0, inflight.get(kind, 0) - grew)
             seen[kind] = produced.get(kind, 0)
+        # Cargo ids carry no type, so the hold is spread over the types that are still short, largest
+        # gap first. Without this a transport in the air looks like three units that were never built
+        # and the factories would keep churning out duplicates.
+        alive_free = {}
+        for unit in units:
+            # Units already standing on the target island are counted by `delivered`, not here;
+            # counting them twice would make the shortfall vanish and stop production early.
+            if unit["type"] in missing and not near((unit["x"], unit["y"]), landing, ON_ISLAND):
+                alive_free[unit["type"]] = alive_free.get(unit["type"], 0) + 1
+        cargo_left = sum(len(transport["cargo"]) for transport in fleet)
+        cargo_cover = {}
+        for need in sorted(goal["requirements"], key=lambda r: -r["remaining"]):
+            kind = need["type"]
+            gap = max(0, need["remaining"] - alive_free.get(kind, 0) - inflight.get(kind, 0))
+            take = min(cargo_left, gap)
+            cargo_cover[kind] = take
+            cargo_left -= take
+        shortfall = {need["type"]: max(0, need["remaining"] - alive_free.get(need["type"], 0)
+                                       - inflight.get(need["type"], 0) - cargo_cover[need["type"]])
+                     for need in goal["requirements"]}
         # 1) Production: keep each idle factory working on the first type still short of its target.
         for factory in sorted(production["factories"], key=lambda f: f["factoryId"]):
             if not factory["alive"] or factory["busy"]:
                 continue
             for need in goal["requirements"]:
-                short = need["required"] - produced.get(need["type"], 0) - inflight.get(need["type"], 0)
-                if short > 0 and need["type"] in production["allowedUnitTypes"]:
+                if shortfall[need["type"]] > 0 and need["type"] in production["allowedUnitTypes"]:
                     print(json.dumps({"produce": {"factory": factory["factoryId"], "unit": need["type"]}}), flush=True)
                     if try_call(client, f'rwx-micro-3-produce --factory {factory["factoryId"]} --unit {need["type"]}') is not None:
                         inflight[need["type"]] = inflight.get(need["type"], 0) + 1
+                        shortfall[need["type"]] -= 1
                     break
         # 2) Cargo bookkeeping: a remembered load ends when the units really boarded or timed out.
         carried = {unit for transport in fleet for unit in transport["cargo"]}
@@ -190,8 +217,9 @@ def play(client):
             if now > unloading[transport_id]:
                 unloading.pop(transport_id, None)
         pending = {unit for row in boarding.values() for unit in row["units"]}
-        # Every required unit already exists, so nothing more will arrive to fill a partial hold.
-        everything_built = all(produced.get(r["type"], 0) >= r["required"] for r in goal["requirements"])
+        # Nothing more is coming for a type that is neither alive nor in the air, so a partial hold
+        # may leave even though some type is still short (a second trip will pick the rest up).
+        everything_built = all(shortfall[need["type"]] <= 0 for need in goal["requirements"])
         idle = sorted((u for u in units
                        if u["type"] in missing and u["id"] not in carried and u["id"] not in pending
                        and not near((u["x"], u["y"]), landing, ON_ISLAND)), key=lambda u: u["id"])
@@ -204,7 +232,8 @@ def play(client):
             order = transport["order"]
             if transport["id"] in boarding:
                 continue  # never move a transport whose units are still walking over
-            if transport["cargo"] and near(position, landing, NEAR_LANDING):
+            # Only drop while actually above the island: a hold released over lava loses its cargo.
+            if transport["cargo"] and near(position, landing, NEAR_LANDING) and over_land(position, land, tile_size):
                 sailing.discard(transport["id"])
                 if transport["id"] not in unloading:
                     print(json.dumps({"unload": transport["id"]}), flush=True)
