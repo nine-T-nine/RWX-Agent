@@ -22,11 +22,11 @@ const CODE_CATEGORY=Object.freeze({STALE_OBJECT:'STALE_OBJECT',NOT_CONTROLLABLE:
  * temporarily unavailable action, while a bare `has no action 'x'` means the action name is invalid.
  */
 const RULES=Object.freeze([
-  ['STALE_OBJECT',/skipped dead\/missing|no controllable unit remains|not currently observable|dead or hidden/i],
+  ['STALE_OBJECT',/skipped dead\/missing|no controllable unit remains|not currently observable|dead or hidden|unit not found|no pending order/i],
   ['PLACEMENT_BLOCKED',/cannot place|位置被阻挡|blockedby:|placement blocked/i],
   ['INVALID_ARGUMENT',/unknown option|unrecognized option|missing required|requires (an? )?--|invalid argument|invalid value|must be (an? )?(integer|number)/i],
-  ['UNAVAILABLE_ACTION',/has no action .*right now|not available right now|正在升级|upgrade .*in progress/i],
-  ['INVALID_ACTION',/has no action|no such action|unknown action|未找到动作/i],
+  ['UNAVAILABLE_ACTION',/has no action .*right now|not available right now|正在升级|upgrade .*in progress|cannot build /i],
+  ['INVALID_ACTION',/has no action|no such action|unknown action|未找到动作|is not an unfinished building/i],
 ]);
 const CATEGORIES=Object.freeze(['INVALID_ARGUMENT','INVALID_ACTION','UNAVAILABLE_ACTION','STALE_OBJECT','PLACEMENT_BLOCKED','OTHER']);
 

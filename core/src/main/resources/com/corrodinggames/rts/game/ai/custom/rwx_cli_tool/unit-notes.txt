@@ -182,7 +182,7 @@ features=需要建造反核导弹, 最多建造 12 枚
 
 [commandCenter]
 about=指挥中心：生产建造者、提供资金，并具备对地/对空防御火力，容易被快攻单位或者成群低级单位拿下
-features=生产建造者, 对地对空, +18/s收入，攻速慢，血量高
+features=生产建造者, 对地对空, +28.1/s收入，攻速慢，血量高
 
 [c_turret_t2_gun]
 about=机枪 T2：通用的陆地防御设施，防御中等，射程中等
@@ -208,30 +208,30 @@ about=瞭望塔 T2，提供大范围视野的后勤建筑。
 features=提供大范围视野
 
 [fabricatorT1]
-about=资源制造仪：不依赖资源池，收入+2/s，可升级。
+about=资源制造仪：不依赖资源池，收入+3.1/s，可升级。
 
 [fabricatorT2]
-about=资源制造仪 T2,收入+7/s
+about=资源制造仪 T2,收入+10.9/s
 
 [fabricatorT3]
 tier=3
-about=资源制造仪 T3,收入+14/s
+about=资源制造仪 T3,收入+21.9/s
 features=生成资金
 
 [extractorT1]
-about=资源抽取器：建在资源池上,收入+8/s，可升级到 T3。
+about=资源抽取器：建在资源池上,收入+12.5/s，可升级到 T3。
 
 [extractorT2]
-about=资源抽取器 T2,收入+12/s。
+about=资源抽取器 T2,收入+18.8/s。
 
 [extractorT3]
-about=资源抽取器 T3：收入+20/s，可继续转为超频/强化。
+about=资源抽取器 T3：收入+28.1/s，可继续转为超频/强化。
 
 [extractorT3_overclocked]
-about=超频资源抽取器：牺牲生命值换取更高产出,收入+30/s，升级可撤销。
+about=超频资源抽取器：牺牲生命值换取更高产出,收入+46.9/s，升级可撤销。
 
 [extractorT3_reinforced]
-about=强化资源抽取器：血量、护盾与自修更强,收入和T3一样+20/s，升级可撤销。
+about=强化资源抽取器：血量、护盾与自修更强,收入和 T3 一样 +28.1/s，升级可撤销。
 
 [c_turret_t3_gun]
 about=重机枪塔 T3：地面炮塔的最终形态，仅1台就能有很高的防御能力

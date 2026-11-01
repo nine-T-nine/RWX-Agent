@@ -602,12 +602,19 @@ public final class EngineEvidence extends UnitEventListener {
     private static final String[][] FAILURE_RULES={
             {"STALE_OBJECT","skipped dead/missing"},{"STALE_OBJECT","no controllable unit remains"},
             {"STALE_OBJECT","not currently observable"},{"STALE_OBJECT","dead or hidden"},
+            // 这两条实测占了一局里七次"INTERNAL"中的四次：Agent 拿着已经消失的 id 在操作，
+            // 正是"世界模型过期"最直接的证据，不能落进 INTERNAL 这个垃圾桶。
+            {"STALE_OBJECT","unit not found"},{"STALE_OBJECT","no pending order"},
             {"NOT_CONTROLLABLE","is not controllable"},{"NOT_CONTROLLABLE","not a controllable"},
             {"NOT_CONTROLLABLE","is not an owned"},{"NOT_CONTROLLABLE","has no nuclear launch action"},
             {"PLACEMENT_BLOCKED","cannot place"},{"PLACEMENT_BLOCKED","placement blocked"},
             {"PLACEMENT_BLOCKED","blockedby:"},{"PLACEMENT_BLOCKED","位置被阻挡"},
             // "has no action 'x' right now" is a timing problem; a bare "has no action" is a typo.
             {"UNAVAILABLE_ACTION","right now"},{"UNAVAILABLE_ACTION","正在升级"},
+            // 建造者没有该科技/该动作（钱不够会先被 isCreditShortage 拦下）。
+            {"UNAVAILABLE_ACTION","cannot build "},
+            // 目标存在，但引擎没有"对已完成工厂加速"这类指令：不是参数错，是动作本身不适用。
+            {"INVALID_ACTION","is not an unfinished building"},
             {"INVALID_ACTION","has no action"},{"INVALID_ACTION","no such action"},
             {"INVALID_ACTION","unknown action"},{"INVALID_ACTION","未找到动作"},
             {"INVALID_ARGUMENT","unknown option"},{"INVALID_ARGUMENT","unrecognized option"},

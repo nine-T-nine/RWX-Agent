@@ -85,3 +85,6 @@ evaluate/output/*
 /web/resource/gpt*.mp4
 /web/resource/claudevsveryHard-利用暂停.mp4
 tmp*.*
+
+# 会话复盘存档（模型推理原文 + 分析），本地留存，不进仓库
+/evaluate/session-cast/

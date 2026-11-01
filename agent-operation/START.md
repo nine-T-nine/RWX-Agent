@@ -57,6 +57,13 @@ python agent-operation/tools/rwx-cli.py rwx-ping
 
 Linux / WSL 使用 `python3`。`rwx-ping` 返回 `pong` 即表示连接正常。之后把 `rwx-ping` 换成需要执行的命令，例如：
 
+> **WSL 环境注意**：如果每条命令回执前面都带一行
+> `wsl: 检测到 localhost 代理配置，但未镜像到 WSL…`，说明 Windows 侧设了 `HTTP_PROXY` 而 WSL 处在 NAT 模式。
+> 这行告警会污染每一次工具返回（还是 UTF-16，读起来是乱码）。在 `%UserProfile%\.wslconfig` 的
+> `[experimental]` 段加 `autoProxy=false`，然后 `wsl --shutdown` 重启一次 WSL 即可消除；
+> 另可设用户环境变量 `WSL_UTF8=1`，让 `wsl.exe` 输出统一为 UTF-8。本机已按此配置。
+
+
 ```powershell
 python agent-operation/tools/rwx-cli.py rwx-game-state --summary
 ```

@@ -8,6 +8,9 @@ const {identity,stamp,directB,argsObject,CommandMatcher,EconomyRecorder}=require
 const detectors=require('./events/detectors');const {stageDirectory}=require('./utils/paths');
 const {EconomyTimeline}=require('./events/economy');
 
+/** 同一个原因码在这个窗口内再次出现，算一次"没从回执里改过来"。 */
+const REJECT_REPEAT_MS=30000;
+
 async function *records(file) {
   const stream=fs.createReadStream(file,{encoding:'utf8'}),lines=readline.createInterface({input:stream,crlfDelay:Infinity});
   let line=0,lastSeq=-1,lastTime=-1;
@@ -109,6 +112,9 @@ class Session {
     this.commandCoverage=meta.commandCoverage??(meta.source==='replay'?null:{start:meta.timeMs??0,end:Infinity});
     this.output=emit;this.counter=0;this.now=meta.timeMs??0;this.counts={};this.statuses={};this.strict={};
     this.builderIntervals=[];this.latencies={};
+    // 被拒命令是"世界模型过期"最直接的证据，但它常常分散在整局里，凑不出 C 类的突发窗口，
+    // 所以单独按"拒绝率"统计一份，见 rejectionSummary()。
+    this.rejections={issued:0,rejected:0,byCode:{},items:[]};
     this.diagnostics={inputKinds:{},detectors:{},commands:{total:commands.length,direct:this.matcher.commands.length}};
     this.detectors=detectors.createDetectors(this);this.economy=new EconomyRecorder(this.config.T_ECONOMY_SAMPLE);
   }
@@ -141,6 +147,7 @@ class Session {
     if(row.kind==='death'){this.units.set(identity(row.unit),{...row.unit,alive:false});this.deaths.set(identity(row.unit),{timeMs:row.timeMs,seq:row.seq});}
     if(row.kind==='region')this.regionNeighbors.set(row.anchorId,row.nearby||[]);
     if(row.kind==='economy')this.economy.sample(row);
+    if(row.kind==='result')this.result(row);
     if(command?.legacy){
       command.controlled=command.units.map(id=>[...this.units.values()].find(u=>u.id===id)).filter(Boolean);
       command.refs=command.controlled.filter(u=>u.alive===false||u.side!=='self').map(u=>({id:u.id,life:u.life,role:'controlled',
@@ -183,6 +190,35 @@ class Session {
         checkedMs:command.timeMs,synthesized:true,deathTimeMs:death?.timeMs??null,deathSeq:death?.seq??null});
     }
   }
+  /** 一条命令的最终回执。只有"被拒"才计入拒绝率，成功回执只用来做分母。 */
+  result(row) {
+    this.rejections.issued++;
+    if (row.accepted !== false) return;
+    this.rejections.rejected++;
+    const code = row.code ?? null;
+    if (code) this.rejections.byCode[code] = (this.rejections.byCode[code] || 0) + 1;
+    this.rejections.items.push({timeMs: row.timeMs, commandId: row.commandId ?? null, code});
+  }
+  /**
+   * 拒绝率 + 重复拒绝。
+   *
+   * <p>第一版只有 C 类（10 秒内 ≥3 批、250ms 一批）才出事件，一局里散落的十几次被拒会全部漏掉——
+   * 实测一局 113 次调用里有 12 次被拒，C 类只报 1 条。这里补两个不依赖突发性的量：
+   * <b>拒绝率</b>（被拒 / 有回执的命令）和 <b>重复拒绝</b>（30 秒内再次出现同一个原因码，
+   * 说明它没从回执里改过来）。</p>
+   */
+  rejectionSummary() {
+    const {issued, rejected, byCode, items} = this.rejections;
+    const sorted = [...items].sort((a, b) => a.timeMs - b.timeMs);
+    let repeated = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i - 1; j >= 0; j--) {
+        if (sorted[i].timeMs - sorted[j].timeMs > REJECT_REPEAT_MS) break;
+        if (sorted[j].code === sorted[i].code) { repeated++; break; }
+      }
+    }
+    return {issued, rejected, rate: issued ? Number((rejected / issued).toFixed(4)) : null, repeated, byCode};
+  }
   finish(){for(const detector of this.detectors)detector.finish(this.now);}
   summary(complete,endReason=null) {
     const sweep=this.builderIntervals.flatMap(i=>[{time:i.start,delta:1},{time:i.end,delta:-1}]).sort((a,b)=>a.time-b.time||a.delta-b.delta);
@@ -192,6 +228,7 @@ class Session {
       counts:this.counts,statuses:this.statuses,strict:this.strict,economySamples:this.economy.entries.length,
       economyComplete:this.economy.complete&&this.meta.timeMs===0,diagnostics:this.diagnostics,
       commandFailures:this.commandFailures??null,
+      rejections:this.rejectionSummary(),
       builderOverlap:{milliseconds:overlap,maxConcurrent:max},
       responseLatencyMs:Object.fromEntries(Object.entries(this.latencies).map(([key,values])=>[key,{count:values.length,
         mean:values.reduce((a,b)=>a+b,0)/values.length,max:Math.max(...values)}])),

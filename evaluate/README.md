@@ -275,6 +275,30 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 注意 `economy.log` 里的收入字段单位是"每 `resourceIncomeRatePeriod`（40 tick）"，不是每秒；换算与实测差异见 `economy_seconds.csv` 的 `fundsDelta` 列。
 
+### 命令拒绝率（`summary.json` 的 `rejections`）
+
+`stage_2/summary.json` 里有一块独立的命令质量统计：
+
+```json
+"rejections": {"issued": 153, "rejected": 13, "rate": 0.085, "repeated": 2,
+               "byCode": {"INTERNAL": 7, "UNAVAILABLE_ACTION": 3, "INSUFFICIENT_CREDITS": 2, "STALE_OBJECT": 1}}
+```
+
+- `rate` = 被拒 / 有回执的命令。它和 C 类（`STALE_BURST`，10 秒内 ≥3 批）互补：C 类只抓突发，一局里散落的十几次被拒会全部漏掉（实测某局 13 次被拒、C 类只出 1 条事件）。
+- `repeated` = 30 秒内同一个原因码再次出现，说明 Agent 没有从回执里改过来。这衡量的是"错误恢复"，不是"反应速度"。
+- 目前只报数，**不参与计分**：权重还没标定，等几局样本再决定。
+
+### 会话复盘（`evaluate/session-cast/`）
+
+Agent 的思考链是评测的重要旁证。把 Pi 的会话文件归档并生成基本分析：
+
+```powershell
+node evaluate/tools/session_cast.js C:\Users\<你>\.pi\agent\sessions\<目录>\<会话>.jsonl `
+     --name "<对局名>" --match "<对局名>"
+```
+
+产出 `evaluate/session-cast/<对局名>/{session.jsonl, analysis.md}`：工具调用次数、被拒命令及引擎回执、思考量、单轮间隔、WSL 告警条数。整个目录被 `.gitignore` 忽略——会话是模型自己的推理记录，本地留存、不随仓库分发。
+
 ## 清理测试产物
 
 微操每跑一次就写一个 `evaluate/output/micro/<CASE>/<run>/`，同一配置反复重跑会留下大量只差时间戳的兄弟目录；根目录 `replays/` 还会为每个 run 留一份 `<run>.replay`。整理时用：
