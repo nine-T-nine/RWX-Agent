@@ -1267,6 +1267,9 @@ public final class TileMap {
         if (!gameEngine.minimap.isSetup || gameEngine.minimap.unitsTexture == null) {
             gameEngine.minimap.setup();
         }
+        // A paused first frame (micro briefing at gameSpeed 0) never runs the game loop, so the
+        // buffer grid would still be null here and setRenderScale would throw.
+        layerBufferManager.ensureInitialized();
         layerBufferManager.setRenderScale(f);
     }
 

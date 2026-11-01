@@ -29,6 +29,7 @@ internal class SessionActions(
     }
 
     fun returnRwGameToBattleRoom() {
+        gameSession.finishNetworkRound()
         warmupController.clear()
         pendingStartController.clear()
         navigateTo(AppScreen.BattleRoom)

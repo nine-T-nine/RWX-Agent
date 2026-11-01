@@ -36,6 +36,8 @@ internal class BattleRoomController(
     private var roomOpen = false
     private var previewMapPath: String? = null
     private var cachedPreview: String? = null
+    /** Map display name -> preview asset, used because a client's engine map path stays stale in the lobby. */
+    private val previewByName = HashMap<String, String?>()
 
     private fun beginRoom() {
         roomOpen = true
@@ -43,6 +45,7 @@ internal class BattleRoomController(
         chatLines.clear()
         previewMapPath = null
         cachedPreview = null
+        previewByName.clear()
         sceneHost.beginRoom()
     }
 
@@ -67,6 +70,18 @@ internal class BattleRoomController(
             selectedMap = map
             logger.info { "Selected default RW map: ${map.mapAssetPath}" }
         }
+    }
+
+    /** Default map for the no-argument local-control smoke command. */
+    fun selectCommandSkirmishMap(): MapEntry? = runCatching {
+        levelSelectViewModelFactory.create(LevelSelectMode.Skirmish).items()
+            .firstOrNull { it.fileName.contains("King of the Middle", ignoreCase = true) }
+            ?: selectDefaultMap()
+    }.onFailure { error ->
+        logger.warn(error) { "Unable to select the command skirmish map" }
+    }.getOrNull()?.also { map ->
+        selectedMap = map
+        logger.info { "Selected command skirmish map: ${map.mapAssetPath}" }
     }
 
     fun currentSnapshot(refreshNetworkStatus: Boolean = true): BattleRoomSnapshot? =
@@ -168,6 +183,11 @@ internal class BattleRoomController(
     fun allowedMapSelectModes(): List<LevelSelectMode> =
         if (isMultiplayerRoom()) MULTIPLAYER_MAP_MODES else LevelSelectMode.entries
 
+    /** Maps which the current room is allowed to select, independent of the map-selection UI. */
+    fun enabledMaps(): List<MapEntry> = allowedMapSelectModes()
+        .flatMap { mode -> levelSelectViewModelFactory.create(mode).items() }
+        .distinctBy { it.mapAssetPath }
+
     fun openMapSelect(): LevelSelectMode {
         if (isMultiplayerRoom() && selectedMode !in MULTIPLAYER_MAP_MODES) {
             selectedMode = LevelSelectMode.Skirmish
@@ -202,8 +222,15 @@ internal class BattleRoomController(
 
     private fun previewFor(snapshot: BattleRoomSnapshot): String? {
         val path = snapshot.room.mapPath
-        if (snapshot.room.isSavedGame || path.isBlank()) return null
-        selectedMap?.takeIf { it.mapAssetPath == path }?.previewAssetPath?.let { return it }
+        if (snapshot.room.isSavedGame) return null
+        val name = snapshot.mapDisplayName
+        selectedMap?.takeIf { it.mapAssetPath == path || it.displayName.equals(name, ignoreCase = true) }
+            ?.previewAssetPath?.let { return it }
+        // A client's room.mapPath (networkEngine.selectedMapPath / engine.currentMapPath) is only refreshed when a
+        // round starts, so it keeps pointing at the previous map in the lobby. The synced settings carry the current
+        // map *name*, so resolve the preview from that name first and fall back to the path lookup.
+        previewForName(name)?.let { return it }
+        if (path.isBlank()) return null
         // A remote map/preview may arrive after the first room snapshot. Cache successful
         // lookups, but keep retrying a missing preview on the existing network refresh cadence.
         if (previewMapPath != path || cachedPreview == null) {
@@ -211,6 +238,22 @@ internal class BattleRoomController(
             cachedPreview = runCatching { previewForMap(path, selectedMode) }.getOrNull()
         }
         return cachedPreview
+    }
+
+    /** Resolves a preview by the map's display name, covering built-in and custom/mod maps. */
+    private fun previewForName(displayName: String): String? {
+        if (displayName.isBlank()) return null
+        if (previewByName.containsKey(displayName)) return previewByName[displayName]
+        val preview = runCatching {
+            enabledMaps().firstOrNull { map ->
+                map.displayName.equals(displayName, ignoreCase = true) ||
+                    map.fileName.equals(displayName, ignoreCase = true) ||
+                    map.fileName.removeSuffix(".tmx").equals(displayName, ignoreCase = true)
+            }
+        }.getOrNull()?.previewAssetPath
+        previewByName[displayName] = preview
+        logger.info { "BattleRoom preview name=$displayName preview=$preview" }
+        return preview
     }
 
     fun appendChat(text: String, teamColorIndex: Int = -1) {

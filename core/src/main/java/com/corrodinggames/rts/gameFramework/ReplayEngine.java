@@ -9,6 +9,7 @@ import com.corrodinggames.rts.game.units.custom.logicBooleans.VariableScope;
 import com.corrodinggames.rts.game.units.custom.price.UnitPrice;
 import com.corrodinggames.rts.gameFramework.file.FileHelper;
 import com.corrodinggames.rts.gameFramework.network.*;
+import com.corrodinggames.rts.gameFramework.utility.SlickToAndroidKeycodes;
 
 import java.io.*;
 import java.util.Iterator;
@@ -42,6 +43,8 @@ public class ReplayEngine {
     /* JADX INFO: renamed from: s */
     boolean isStopped;
     public volatile boolean P;
+    /** Set by the CLI before a local match starts; consumed by {@link #a(boolean)}. */
+    private static volatile boolean requestLocalReplayRecording;
     /* JADX INFO: renamed from: t */
     String replayFilePath;
     /* JADX INFO: renamed from: u */
@@ -192,6 +195,7 @@ public class ReplayEngine {
     }
 
     public void a(Command command, int i) {
+        if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(command)) return;
         ReplayWriter replayWriter = this.replayWriter;
         if (this.P && !this.isReplaying) {
             if (replayWriter == null) {
@@ -202,6 +206,7 @@ public class ReplayEngine {
             replayCommand.command = command.cloneCommand();
             replayCommand.tick = i;
             replayWriter.a(replayCommand);
+            com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.nativeRecorded(command);
             this.checksumCounter++;
             if (this.checksumCounter > 5) {
                 this.checksumCounter = 0;
@@ -430,6 +435,7 @@ public class ReplayEngine {
             this.N = true;
             a("Loading replay initial save");
             gameEngine.gameSaver.readSaveFromStream(this.gameInputStream, false, false, false);
+            com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.replayLoaded();
             this.N = false;
             this.gameInputStream.d("gamesave");
             if (!this.hasGameSetupRead) {
@@ -465,7 +471,20 @@ public class ReplayEngine {
         }
     }
 
+    /** Entry point from the map-load path; menu background loads must not consume a local arm. */
+    public void a(boolean z, GameMode gameMode) {
+        if (gameMode == GameMode.menu) {
+            return;
+        }
+        aInternal(z, true);
+    }
+
     public void a(boolean z) {
+        aInternal(z, false);
+    }
+
+    private void aInternal(boolean z, boolean allowLocalRecording) {
+        boolean localRequested = allowLocalRecording && requestLocalReplayRecording;
         if (GameEngine.isPCOrIOSVersion) {
             if (!GameEngine.isReplayRecordingEnabledOnPCOrIOS) {
                 return;
@@ -475,8 +494,51 @@ public class ReplayEngine {
         }
         GameEngine gameEngine = GameEngine.getInstance();
         if (gameEngine.networkEngine.networkGameActive && !z && !this.N && gameEngine.settingsEngine.saveMultiplayerReplays) {
+            requestLocalReplayRecording = false;
             d(gameEngine.getCurrentMapName() + " [v" + gameEngine.getVersionString() + "] (" + Utility.formatCurrentDate("d MMM yyyy HH.mm.ss") + ").replay");
+            return;
         }
+        // Local single-player disables networkEngine.networkGameActive before this point, so the
+        // multiplayer branch above never runs. An explicit arm request records from tick 0 instead.
+        // Keep the arm armed while z is set (menu background / save / replay load) so it survives
+        // until the real match starts.
+        if (localRequested && !z && !this.N && !this.isReplaying && !this.P) {
+            d("[local] " + gameEngine.getCurrentMapName()
+                    + " [v" + gameEngine.getVersionString() + "] ("
+                    + Utility.formatCurrentDate("d MMM yyyy HH.mm.ss") + ").replay");
+            if (isRecording()) requestLocalReplayRecording = false;
+        }
+    }
+
+    /** Arms replay recording for the next local game; consumed when the map finishes loading. */
+    public static void requestLocalRecording() {
+        requestLocalReplayRecording = true;
+    }
+
+    public static boolean isLocalRecordingRequested() {
+        return requestLocalReplayRecording;
+    }
+
+    public static void clearLocalRecordingRequest() {
+        requestLocalReplayRecording = false;
+    }
+
+    /** True while a replay is being written (not while one is being played back). */
+    public boolean isRecording() {
+        return this.P && !this.isReplaying;
+    }
+
+    public boolean isReplaying() {
+        return this.P && this.isReplaying;
+    }
+
+    public String getReplayFilePath() {
+        return this.replayFilePath;
+    }
+
+    /** Number of commands actually written to the replay file (not playback command index). */
+    public int getRecordedCommandCount() {
+        return this.recordedCommandCount;
     }
 
     public void d(String str) {
@@ -680,6 +742,8 @@ public class ReplayEngine {
             return true;
         }
         if ("end".equals(strStartBlockAndGetName)) {
+            com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.replayEnded();
+            evaluate.utils.EngineEvidence.replayEnded();
             GameEngine.log("replay:updateGameFrame", "end of replay block found");
             gameEngine.gameUI.messageManager.addMessage(VariableScope.nullOrMissingString, "Replay has ended");
             if (!gameEngine.isGameStarted) {
@@ -760,6 +824,7 @@ public class ReplayEngine {
                                 if (this.nextCommand.command.isSystemAction && this.nextCommand.command.systemActionType != 0) {
                                     GameEngine.log("replay:issueCommand", "systemAction_action:" + this.nextCommand.command.systemActionType);
                                 }
+                                evaluate.utils.EngineEvidence.replayCommand(this.nextCommand.command, this.executedCommandCount + 1);
                                 this.nextCommand.command.executeCommand();
                                 if (d) {
                                     if (this.nextCommand.command.sourceTeam != null) {
@@ -845,5 +910,28 @@ public class ReplayEngine {
 
     public boolean k() {
         return this.P && !this.isReplaying;
+    }
+
+    /**
+     * Q toggles the replay pause from the render-loop input path.
+     *
+     * <p>The stock pause key lives in {@code GameUI.updateInput}, which only runs inside
+     * {@code gameLoop}; a paused frame never drives gameLoop, so the keyboard can start a pause but
+     * never end one. The pause button in the replay bar calls {@link #a()}; this is the same
+     * toggle, reachable while paused. Only an active replay consumes the key, so the in-game Q
+     * (patrol) hotkey keeps working everywhere else.</p>
+     *
+     * @return true when an active replay consumed the key
+     */
+    public static boolean togglePauseForKey(int androidKeyCode) {
+        if (androidKeyCode != SlickToAndroidKeycodes.AndroidCodes.KEYCODE_Q) {
+            return false;
+        }
+        GameEngine gameEngine = GameEngine.getInstance();
+        if (gameEngine == null || gameEngine.replayEngine == null || !gameEngine.replayEngine.j()) {
+            return false;
+        }
+        gameEngine.replayEngine.a();
+        return true;
     }
 }

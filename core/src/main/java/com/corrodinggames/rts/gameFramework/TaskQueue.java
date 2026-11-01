@@ -2,8 +2,6 @@ package com.corrodinggames.rts.gameFramework;
 
 import com.corrodinggames.rts.gameFramework.utility.FastArrayList;
 
-import java.util.Iterator;
-
 /* JADX INFO: renamed from: com.corrodinggames.rts.gameFramework.q */
 /* JADX INFO: loaded from: game-lib.jar:com/corrodinggames/rts/gameFramework/q.class */
 public class TaskQueue {
@@ -12,25 +10,39 @@ public class TaskQueue {
     FastArrayList tasks = new FastArrayList();
 
     public void a(Runnable runnable) {
-        this.tasks.add(runnable);
+        // Producers are the CLI client threads, the micro clock and the observation sampler, while
+        // the game thread drains this queue every frame.
+        synchronized (this) {
+            this.tasks.add(runnable);
+        }
     }
 
     public void a() {
-        if (this.tasks.size > 0) {
-            Iterator it = this.tasks.iterator();
-            while (it.hasNext()) {
-                ((Runnable) it.next()).run();
+        Object[] batch;
+        synchronized (this) {
+            if (this.tasks.size == 0) {
+                return;
             }
+            batch = this.tasks.toArray();
+        }
+        for (Object task : batch) {
+            ((Runnable) task).run();
         }
     }
 
     public void b() {
-        if (this.tasks.size > 0) {
-            Iterator it = this.tasks.iterator();
-            while (it.hasNext()) {
-                ((Runnable) it.next()).run();
+        Object[] batch;
+        synchronized (this) {
+            if (this.tasks.size == 0) {
+                return;
             }
+            batch = this.tasks.toArray();
             this.tasks.clear();
+        }
+        // Tasks queued while running wait for the next frame; iterating the live list would throw
+        // ConcurrentModificationException when a producer adds during the drain.
+        for (Object task : batch) {
+            ((Runnable) task).run();
         }
     }
 }

@@ -137,6 +137,11 @@ public abstract class FactoryWithQueue extends BaseBuilding implements FactoryQu
     }
 
     @Override // com.corrodinggames.rts.game.units.buildings.FactoryQueueInterface
+    public PointF getRallyPoint() {
+        return this.queueManager.b;
+    }
+
+    @Override // com.corrodinggames.rts.game.units.buildings.FactoryQueueInterface
     public boolean dA() {
         return false;
     }

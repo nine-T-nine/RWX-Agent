@@ -3,6 +3,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 .kotlin
 **.log
+*.log
 
 ### IntelliJ IDEA ###
 .idea/
@@ -44,7 +45,7 @@ bin/
 .httpCache/
 
 ### Local game runtime state ###
-/.agents/
+
 /cache/
 /logs/
 /replays/
@@ -55,3 +56,32 @@ bin/
 ### JVM runtime diagnostics ###
 /hs_err_pid*.log
 /replay_pid*.log
+saves/*
+images/*
+.agent-tmp/
+.agent-scratch/
+**/tmp/
+tmp.*
+docs/*
+
+observe*.txt
+# 临时目录按目录名匹配，子工程里的 agent-tmp/（构建重定向产物）一并忽略
+agent-tmp/
+/agent-operation/tmp/
+**/__pycache__/
+mods/*
+logs/*
+evaluate/output/*
+
+# JVM 构建产物兜底：编译输出与 Kotlin 元数据不入库
+*.class
+*.kotlin_module
+
+# Agent-local notes and instructions; each checkout keeps its own copy out of version control.
+/AGENTS.md
+/.agent-memory/
+
+# Original showcase recordings; browser-ready copies are tracked under matches/.
+/web/resource/gpt*.mp4
+/web/resource/claudevsveryHard-利用暂停.mp4
+tmp*.*

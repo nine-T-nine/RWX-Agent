@@ -132,7 +132,14 @@ public class GameSaver {
         }
         if (!FileHelper.renameFileInternal(fileIsAutosaveEnabled2, fileIsAutosaveEnabled)) {
             GameEngine.log("Failed to rename to final file");
-            throw new IOException("Failed to rename to final file. Check file permissions of storage.");
+            IOException error = new IOException("Failed to rename to final file. Check file permissions of storage.");
+            if (z) {
+                // Autosave must never abort the game loop; report a failed temporary-file
+                // promotion for diagnosis instead.
+                GameEngine.log("Auto save failed: " + error.getMessage());
+                return;
+            }
+            throw error;
         }
         FileHelper.scanFile(fileIsAutosaveEnabled);
         z2 = true;

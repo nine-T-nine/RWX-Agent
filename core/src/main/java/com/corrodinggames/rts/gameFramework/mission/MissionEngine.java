@@ -1212,6 +1212,12 @@ public class MissionEngine extends Serializable {
     public void c(float f) {
         WaveUnitGroup waveunitsVarC;
         GameEngine gameEngine = GameEngine.getInstance();
+        // Micro cases decide their own outcome (MicroRuntime.afterTick). The stock win/lose path
+        // would also start the end-game screen, and its stats chart loads GL textures on whatever
+        // thread issued `begin`/`next` — a hard JVM abort once the window is open.
+        if (com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.controllingMatch()) {
+            return;
+        }
         int i = gameEngine.gameTimeMillis;
         this.M = Utility.moveTowardsZero(this.M, f);
         if (gameEngine.isStopped && gameEngine.isMenuBackgroundMap) {

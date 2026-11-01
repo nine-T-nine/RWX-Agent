@@ -1,0 +1,112 @@
+你正在 RWX 仓库中实现一个新的 RTS 微操评测 Case：**CASE3-Transport（军事运输）**。
+
+先完整阅读本目录的 README.md、START.md、command.md、METRICS.md；再阅读 CASE2-LTE 五份文档、CASE1-duel 的实现/文档、完整游戏 CLI 手册 help_zh.md，以及相关游戏源码。CASE3 文档是设计目标，实际机制必须以当前源码和引擎运行结果为准。
+
+# 1. 首要目标
+
+实现一个确定性、可复现、仅 realtime 的运输任务：给定运输单位、工厂、资源收入建筑和初始资金；生产指定陆军；将指定数量的陆军跨越岩浆运到左上角目标岛；目标岛上存活、未装载的目标单位组成首次达标即成功。全部运输单位阵亡即失败。
+
+核心评估：生产与运输的并行调度、任务工期估计、运输席位利用、受击风险和观察时机。不是经济最优竞赛，不增加建造/扩建/复杂 AI。
+
+# 2. 先源码勘察，不得猜机制
+
+修改代码前先定位并核实，输出简短勘察表（文件/类/方法/事实/证据）：
+
+1. CASE1/CASE2 的 Case 注册、run 隔离、CLI、Gateway、Replay、EngineEvidence、result 和外部 metrics 插件架构。
+2. 所有目标单位、运输机、飞行堡垒、T1 防空炮塔、T2/T3 炮塔的精确内部 ID、显示名和单位分类。
+3. 各工厂实际可生产的目标单位、生产动作 ID、价格、生产工作量/时间、队列规则、并行规则、工厂忙闲语义。
+4. 普通运输机与飞行堡垒的运输容量、席位权重、cargo 限制、目标单位是否可装载、装载距离/条件。
+5. 原生 load / load-up / unload 的真实命令类、执行入口、货舱成员更新、卸载位置规则、卸载失败条件；当前 help_zh 只列出 load-into/load-up，不能据此臆造 unload API。
+6. 运输单位飞行速度、路径/转向、移动开始/到达事件；目标陆军移动速度、地形限制、是否能在目标岛卸载后正常活动。
+7. 防空炮塔的攻击类别、射程、伤害、射速、索敌/开火事件；运输单位受击、HP 变化、死亡和 cargo 处理。
+8. 一次性迷雾配置的真实语义。
+9. 资源提取器收入、初始资金、生产扣款、入账周期；核算每个 task+level 是否可负担。
+10. 地图格坐标与世界坐标换算、岩浆/草地可通行规则、建筑占地、运输单位出生与卸载合法性。
+11. Replay 原生命令格式及如何与 Gateway requestId、actor、目标和 native index 关联；所有来源如何共用 run-relative 单调 wallMs 原点。
+
+**关键机制未核实前不要写死数值或伪造命令。** 特别是飞行堡垒容量、每种陆军的席位权重和原生卸载方式。如果实际机制与草稿不兼容，先报告最小差异和建议，不要偷偷改任务目标。
+
+# 3. 场景配置
+
+任务 ID：`3_<type>_<level>`；type=1..4，level=a=1..3。目标数量按 a 倍率：
+
+- type1：重型坦克 3a、等离子坦克 2a、自行火炮 3a；运输机×3、超频提取器×5、T2 陆军工厂×2、初始资金 2000、游戏上限 15 分钟。
+- type2：机枪机甲 a、火炮机甲 2a；运输机×3、超频提取器×5、T2 机甲工厂×2、初始资金 4000、上限 20 分钟。
+- type3：喷火机甲 a、特斯拉机甲 a、猛犸坦克 2a、重型坦克 3a；运输机×3、超频提取器×5、T2 机甲工厂×2、T2 陆军工厂×2、初始资金 4000、上限 25 分钟。
+- type4：实验型悬浮坦克 2a、实验型概念坦克 a；飞行堡垒×2、超频提取器×10、实验工厂×2、初始资金 20000、上限 30 分钟。
+
+`a=1..3`。以上中文单位名仅作语义标签，最终配置必须写精确内部 ID 和真实生产动作。游戏时间上限按表执行；建议 wallLimit=gameLimit+120s、startTimeout=600s，写入配置并标明这是沿用 CASE2 的建议口径。
+
+# 4. 地图生成
+
+- 固定 130×130 格，岩浆底图；左上角目标岛恰好 400 草地格，右下角基地岛恰好 625 草地格。
+- 使用 seeded、紧凑、连通的块状区域生成算法；禁止生成细长线状岛、单格颈部、孤立草地格或两岛意外连接。
+- 基地岛放置顺序：超频提取器优先；工厂放在岛屿中心，横向尽量相邻，纵向至少间隔 10 格；运输单位最后放在基地岛边缘随机合法点。
+- type1–3 在目标岛沿岸生成 4 个 T1 敌方防空炮塔，间距至少 10 格；type4 不添加草稿未要求的防空炮塔。
+- 地图使用项目的一次性迷雾设置。先核实语义，再配置。
+- 同一 `(task, seed)` 地图、建筑、单位、出生点完全一致。随机位置必须由 seed 驱动，不能使用系统时间或不稳定集合遍历顺序。
+- 对每个 task+level 做布局合法性、岛屿面积、目标岛容量、工厂占地、出生点、资源建筑、AA 间距、运输路线和卸载区域验证。
+
+# 5. 开局、目标和规则
+
+- 启动后立即 1× realtime，tick 持续运行；自动输出一次初始状态，不提供 begin/pause/step/speed。
+- 目标配置只在进入游戏后通过 `rwx-micro-3-goal` 公开；启动前不得泄露目标组成。
+- 目标岛计数只包含存活、未装载、位于目标岛草地 tile 集合内的我方目标陆军。
+- 全部运输单位阵亡立即 defeat；目标达成 success；预算耗尽 timeout；异常 error。
+- 禁止建造任何建筑、生产目标以外单位、超量生产、升级工厂、直接移动/攻击/停止目标陆军、操控非本局实体或通过通用命令绕过 Case 白名单。
+- 违规执行前拒绝，独立写 violations.jsonl，不进入 Replay、不改变游戏状态。普通参数错误和行为违规分开。
+
+# 6. 命令接口
+
+按 command.md 实现受限接口：
+
+A：`rwx-micro-3-state/goal/production/fleet`；复用只读 `rwx-game-map-show`、`rwx-game-unit-list --full --json`、`rwx-game-unit-show`、`rwx-game-unit-actions`。
+B：受限 `rwx-micro-3-produce`、`load`、`move`、`unload`。包装层必须转成真实原生引擎命令并写 Replay；不能瞬移、直接改 cargo 内存或伪造完成。
+C：help、ping。
+
+检查所有可提交命令入口：Case CLI parser、RwxCliTool、Gateway、RwxEngineLocalGameService、CommandController、原生 Command、ReplayWriter。不能只在 parser 层做白名单。任何未授权通用 `rwx-game-*` 入口必须拒绝。
+
+# 7. 生命周期证据
+
+事件驱动记录，不做每 tick 全量世界扫描。至少记录：
+
+- Gateway A/B/C：requestId、类别、命令、wallRecv/wallReply、gameMs/tick、status/error。
+- 生产：订单、工厂、单位类型、队列、开始、完成、spawn unitId、实际费用、取消/覆盖/失败。
+- 运输：load issue/accepted/loaded、cargo 成员、move issue/moving/arrived、unload issue/unloading/unloaded、单位进入目标岛、运输单位死亡。
+- 伤害：运输单位 HP 变化、受击时刻/位置、攻击来源（仅在引擎能确认时）。
+- 目标：目标岛逐类型存活数量变化和首次达成时刻。
+- 违规：请求、actor/target、原因、tick/gameMs/wallMs、rejected=true。
+
+Replay 是原生命令主要证据；引擎生命周期补充开始/完成。尽可能使用稳定 native index、actor、动作签名和 tick 关联。歧义保留 ambiguous/unmatched，禁止按最近时间强行匹配。所有 wallMs 使用同一 run 初始化单调原点。
+
+# 8. 离线 metrics
+
+实现 METRICS.md 中的 outcome、mission_phases、production_lifecycle、delivery、transport_utilization、transport_damage、anti_air_exposure、AB timing、wake alignment、agent timing 和 violations。引擎只记录事实，外部 Python 插件计算指标，不加权总分。
+
+目标完成时刻必须由引擎首次满足目标条件的 tick 给出，不以 Agent 查询时刻替代。工作量/理论时间不能代替真实完成时间。A→B 包含模型、Runtime 和工具调度开销，不等于纯思考时间。
+
+# 9. Baseline
+
+提供 `baseline/type1.py` 至 `type4.py`，共享 `baseline/common.py`。只使用 Agent 可见状态和公开命令，不读取隐藏 meta、证据、Replay 或其他 run。按目标清单排生产队列，生产与运输并行；按真实容量分配 cargo；稳定 tie-break；基于可见地图/威胁信息选卸载点。记录并文档化算法、排序、并行规则和 sleep/唤醒方式。每个 type 的策略可不同，但必须确定性。
+
+# 10. 验收
+
+至少测试：
+
+1. 同 task+seed 完全复现；不同 seed 只改变允许随机的位置。
+2. 岛屿面积、连通性、紧凑度、岩浆隔离、工厂/资源建筑/运输出生点合法。
+3. 每个任务恰好有配置数量的单位/建筑，无额外实体。
+4. 工厂只能生产目标单位；生产价格/时间/队列与源码和实际引擎一致。
+5. 每种陆军的运输席位权重、运输机/飞行堡垒容量与实际 cargo 一致。
+6. 装载超容量、非目标单位、敌方单位、非本局运输机均在执行前拒绝。
+7. 卸载真实执行，不瞬移；卸载后目标岛归属判断正确。
+8. 防空塔生成数、间距、射程和实际伤害行为正确。
+9. 运输单位受伤、死亡、cargo 处理与结果判定正确。
+10. 目标岛首次达成、全部运输单位阵亡、timeout、error 结果正确。
+11. 违规请求不改变状态、不进入 Replay；native authority diagnostics 正确。
+12. Gateway、Replay、EngineEvidence 时间原点一致；ambiguous/unmatched 不强行归因。
+13. metrics 对相同证据重复运行可复现。
+14. 四个 type 的 baseline 同 task+level+seed 可复现。
+15. Gradle build/test 与至少一局 headless smoke test 通过；覆盖窗口模式结算路径。
+
+不要修改 CASE1/CASE2 行为或既有命令语义，不做大规模通用重构，不增加自动轮询、固定游戏内 wait、自动补产或子 Agent 管理器。完成后更新本目录四份文档，补入真实 ID/动作/容量/经济表/预算/基线公式，汇报源码勘察表、修改文件、测试结果和仍存在的限制。

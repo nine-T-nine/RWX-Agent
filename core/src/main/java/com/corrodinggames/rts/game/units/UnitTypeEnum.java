@@ -1907,6 +1907,7 @@ public enum UnitTypeEnum implements UnitType {
     int buildPriority;
     String ac;
     String ad;
+    /** Registry of every unit prototype in the game; the AI build strategies iterate it. */
     public static ArrayList<UnitType> ae;
     UnitContainer[] af;
     public static boolean ag;
@@ -2374,6 +2375,7 @@ public enum UnitTypeEnum implements UnitType {
     }
 
     @Override // com.corrodinggames.rts.game.units.UnitType
+    /** Movement type, taken from the prototype's shared unit instance. */
     public UnitMovementType o() {
         BaseUnit baseUnitFindTurretPosition = BaseUnit.findTurretPosition(this);
         if (baseUnitFindTurretPosition == null) {

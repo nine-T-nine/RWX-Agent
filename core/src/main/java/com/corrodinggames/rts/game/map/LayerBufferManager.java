@@ -80,6 +80,17 @@ public final class LayerBufferManager {
                 && graphicsEngine.backendCapabilities().getSupportsSmoothFogLayerBuffers();
     }
 
+    /**
+     * Paused frames can be drawn before the game loop ever ran (micro briefing runs at gameSpeed 0
+     * from the first frame), so the buffer grid may not exist yet. The fog pass needs it, and the
+     * game loop's own {@link #update()} never runs while paused.
+     */
+    public void ensureInitialized() {
+        if (this.gridCells == null) {
+            update();
+        }
+    }
+
     public void releaseLayerBuffers() {
         io.github.rwx.mod.registry.TerrainRegistry.releaseGraphics();
         GraphicsEngine previousBackend = this.graphicsBackend;

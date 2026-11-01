@@ -631,6 +631,13 @@ public class FileLoader {
                 return false;
             }
         }
+        // File.renameTo cannot replace an existing destination on Windows. GameSaver writes an
+        // autosave to a temporary file and then promotes it to a stable filename, so leaving the
+        // previous autosave in place made every later autosave fail on desktop.
+        if (GameEngine.isPC() && file2.exists() && !file2.delete()) {
+            GameEngine.log("renameFile: Failed to delete existing destination: " + file2.getAbsolutePath());
+            return false;
+        }
         boolean zRenameTo = file.renameTo(file2);
         FileLoaderFactory.closeModFile(file2.getAbsolutePath());
         return zRenameTo;

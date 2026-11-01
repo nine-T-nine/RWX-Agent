@@ -607,6 +607,10 @@ public class GameLogic extends GameEngine {
     @Override // com.corrodinggames.rts.gameFramework.GameEngine
     /* JADX INFO: renamed from: a */
     public void loadLevel(boolean z, boolean z2, GameMode gameMode) {
+        if (z && !z2 && gameMode == GameMode.normal && this.networkEngine.singleplayerServer
+                && !this.networkEngine.networkGameActive && !this.replayEngine.j()) {
+            com.corrodinggames.rts.gameFramework.network.LocalSkirmishLifecycle.prepareRestart(this);
+        }
         beginLoadingStatus("Loading map data", 8);
         loadLevel("Loading map data");
         InGameMenuController surfaceHolder;
@@ -969,7 +973,7 @@ public class GameLogic extends GameEngine {
                 if (gameMode == GameMode.normalSave) {
                     GameEngine.log("Not starting replay recording as we are loading a save");
                 } else {
-                    this.replayEngine.a(z2);
+                    this.replayEngine.a(z2, gameMode);
                 }
             }
             if (PathEngine.m) {
@@ -1080,6 +1084,9 @@ public class GameLogic extends GameEngine {
     /* JADX WARN: Removed duplicated region for block: B:314:0x0948 A[EXC_TOP_SPLITTER, SYNTHETIC] */
     /* JADX INFO: renamed from: b */
     public void runGameLoopFrame(float float1, int integer) throws IOException, ConfigParseException {
+        // Record who actually drives the simulation: GUI render thread, headless Swing EDT or a
+        // dedicated game thread. Nested game-thread hand-offs compare against this identity.
+        GameEngine.gameLoopThread = Thread.currentThread();
         if (this.currentTick == 2) {
             this.probeLowMemory();
         } else if (this.currentTick % 10000 == 0 && this.currentTick != 0) {
@@ -1470,6 +1477,7 @@ public class GameLogic extends GameEngine {
 
     /* JADX INFO: renamed from: a */
     public void update(float deltaSpeed) throws IOException {
+        if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowTick()) return;
         if (isInNetworkOrReplay() && deltaSpeed < 0.1f) {
             NetworkEngine.reportDesync("updateAllGame1: deltaSpeed:" + deltaSpeed + " frame:" + this.currentTick + " network.currentStepRate:" + this.networkEngine.getCurrentStepRate());
         }
@@ -1479,13 +1487,13 @@ public class GameLogic extends GameEngine {
         float f = deltaSpeed * this.speedMultiplier;
         this.I = f + 2.0f;
         this.lastDelta = f;
+        evaluate.utils.EngineEvidence.beforeTick();
         this.networkEngine.update(f);
         this.gameTimeMillis = (int) (this.gameTimeMillis + (f * 16.666666f));
         CommandQueue.drain();
-        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.applyPending(this);
         this.commandController.executeAllCommands();
-        com.corrodinggames.rts.gameFramework.agent.LocalAgentRuntime.publish(this);
         this.replayEngine.update(f);
+        if (com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.playbackFinished()) return;
         this.currentTick++;
         ModScheduler.tick();
         PlayerTeam.g(f);
@@ -1507,6 +1515,7 @@ public class GameLogic extends GameEngine {
                 f = this.lastDelta;
             }
             gameObject.update(f);
+            evaluate.utils.EngineEvidence.observeObject(gameObject);
         }
         if (isInNetworkOrReplay() && f < 0.1f) {
             NetworkEngine.reportDesync("updateAllGame3: deltaSpeed:" + f + " frame:" + this.currentTick);
@@ -1518,6 +1527,7 @@ public class GameLogic extends GameEngine {
                 GameObject gameObject2 = (GameObject) listOperationEntry.value;
                 if (!gameObject2.isDestroyed) {
                     gameObject2.update(f);
+                    evaluate.utils.EngineEvidence.observeObject(gameObject2);
                 }
             }
         }
@@ -1567,6 +1577,8 @@ public class GameLogic extends GameEngine {
             this.teamStats.update();
         }
         this.gameStatistics.b();
+        evaluate.utils.EngineEvidence.afterTick();
+        com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.afterTick();
     }
 
     /* JADX INFO: renamed from: a */

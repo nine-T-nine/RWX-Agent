@@ -21,6 +21,14 @@ internal class GameLaunchController(
     private val currentScreen: () -> AppScreen,
     private val navigateTo: (AppScreen) -> Unit,
 ) {
+    fun enterMicro(mapPath: String) {
+        warmupController.clear()
+        pendingStartController.set(mapPath, AppScreen.MainMenu)
+        if (gameSession.usesFrameCommandRendering) gameSession.prepareMapAsync(mapPath, viewport())
+        else gameSession.requestMap(mapPath)
+        navigateTo(AppScreen.InGame)
+    }
+
     fun enterRwGame(startNew: Boolean = false, launchConfig: BattleRoomLaunchConfig? = null) {
         val mapPath = launchConfig?.room?.mapPath ?: battleRoomController.selectedOrDefaultMap()?.mapAssetPath
         warmupController.clear()

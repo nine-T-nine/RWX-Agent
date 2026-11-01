@@ -535,7 +535,7 @@ class ApiImpl private constructor(
 private class GameImpl(private val api: Api) : Game {
     override val gameVersion: String get() = GameEngine.getInstance().version
     override val tick: Long get() = GameEngine.getInstance().currentTick.toLong()
-    override val headless: Boolean get() = false
+    override val headless: Boolean get() = GameEngine.isHeadlessMode
     override fun log(level: LogLevel, message: String, cause: Throwable?) {
         val tag = "JVM_MOD:${(api as ApiImpl).manifest.name}"
         when (level) {

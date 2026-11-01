@@ -61,6 +61,7 @@ public class ProjectileInterceptorHook extends CustomUnitRenderHook {
             Projectile projectileA = customUnit.a((BaseUnit) null, projectile.posX, projectile.posY, turretConfig.turretIndex, (CustomProjectileTemplate) null, 0);
             projectileA.fliesToPosition = true;
             projectileA.parentProjectile = projectile;
+            customUnit.lastInterceptionMillis = com.corrodinggames.rts.gameFramework.GameEngine.getInstance().gameTimeMillis;
         }
     }
 

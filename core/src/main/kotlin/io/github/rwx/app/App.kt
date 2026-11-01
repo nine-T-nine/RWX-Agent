@@ -1,5 +1,10 @@
 package io.github.rwx.app
 
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalBattleRoomCommands
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxCliCommands
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxDelivery
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxLocalGameCommands
+import com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxUnitQueryCommands
 import io.github.rwx.ui.model.ModsAction
 import io.github.rwx.ui.model.ResourceBrowserAction
 import io.github.rwx.ui.model.ReplaySelectAction
@@ -8,6 +13,7 @@ import io.github.rwx.ui.model.ReplayEntry
 import io.github.rwx.logger
 import io.github.rwx.render.frame.GameFrame
 import io.github.rwx.render.frame.GameViewport
+import io.github.rwx.session.GameSession
 import io.github.rwx.ui.*
 import io.github.rwx.ui.model.BattleRoomAction
 import io.github.rwx.ui.model.DialogUiAction
@@ -26,6 +32,7 @@ import io.github.rwx.ui.model.SettingsUiAction
 import kotlinx.coroutines.*
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.CompletableFuture
 import kotlin.coroutines.CoroutineContext
 
 const val RWX_GAME_FRAME_READY_MARKER: String = "RWX_GAME_FRAME_READY"
@@ -49,11 +56,19 @@ fun launchOnIO(name: String?=null,
 class AppSession internal constructor(
     val navigator: ScreenNavigator,
     private val uiController: AppUiController,
+    private val gameSession: GameSession,
+    private val cliBattleRoomCommand: (RwxCliCommands.Command, List<String>) -> String,
+    private val cliSessionCommands: RwxSessionCommands,
     private val onQuit: () -> Unit,
     private val onBack: () -> Unit,
     private val onClose: () -> Unit = {},
 ) : AutoCloseable {
     private var closed = false
+    private val cliLocalGameCommands = RwxLocalGameCommands()
+    private val cliUnitQueryCommands = RwxUnitQueryCommands()
+
+    /** Incremental alert delivery (harness level L1) attached to every CLI reply. */
+    val cliDelivery: RwxDelivery get() = cliLocalGameCommands.delivery()
     override fun close() {
         if (closed) return
         closed = true
@@ -66,6 +81,7 @@ class AppSession internal constructor(
         navigator.current != AppScreen.Loading
 
     fun quit() = onQuit()
+    internal fun driveCliSession() = cliSessionCommands.drive()
 
     val uiState: StateFlow<AppUiState> get() = uiController.state
 
@@ -102,6 +118,32 @@ class AppSession internal constructor(
 
     /** Unconsumed input from an active non-modal game overlay. */
     fun dispatchGameInput(event: GameInputEvent) = uiController.dispatchGameInput(event)
+
+    /** Routes room changes to the UI owner, in-game reads/orders to the simulation-thread adapter,
+     *  and the read-only unit/building catalog queries to a plain background read. */
+    fun executeCliCommand(command: RwxCliCommands.Command, arguments: List<String>): CompletableFuture<String> =
+        when {
+            command.domain() == RwxCliCommands.Domain.SESSION ->
+                uiController.runAtomic { cliSessionCommands.execute(command, arguments) }
+            command.domain() == RwxCliCommands.Domain.UNIT_QUERY ->
+                CompletableFuture.supplyAsync { cliUnitQueryCommands.execute(command, arguments) }
+            command == RwxCliCommands.Command.RESTART -> {
+                // The shell interprets a transient canResume()==false as "the external game
+                // closed" and returns to the main menu. Mark the reload so it keeps the match
+                // (and the game surface) while the engine reloads the map.
+                gameSession.beginInternalRestart()
+                try {
+                    CompletableFuture.supplyAsync { cliLocalGameCommands.execute(command, arguments) }
+                        .whenComplete { _, _ -> gameSession.endInternalRestart() }
+                } catch (error: RuntimeException) {
+                    gameSession.endInternalRestart()
+                    throw error
+                }
+            }
+            command.domain() == RwxCliCommands.Domain.LOCAL_GAME ->
+                CompletableFuture.supplyAsync { cliLocalGameCommands.execute(command, arguments) }
+            else -> uiController.runAtomic { cliBattleRoomCommand(command, arguments) }
+        }
 }
 
 fun installApp(
@@ -111,6 +153,7 @@ fun installApp(
     options: AppOptions = AppOptions(),
     onQuit: () -> Unit = {},
 ): AppSession {
+    options.applyEvaluationDefaults()
     val bootstrap = createAppBootstrap(options)
     val platformBridge = bootstrap.platformBridge
     val appMetadata = bootstrap.appMetadata
@@ -455,6 +498,14 @@ fun installApp(
     val session = AppSession(
         navigator = navigator,
         uiController = uiController,
+        gameSession = gameSession,
+        cliBattleRoomCommand = RwxLocalBattleRoomCommands(
+            gameSession,
+            battleRoomController,
+            battleRoomLaunchController,
+            navigator,
+        )::execute,
+        cliSessionCommands = RwxSessionCommands(gameSession, battleRoomController, battleRoomLaunchController, navigator, sessionActions::quitApp),
         onClose = {
             p2pPreparation.close()
             frameLoop?.close()
@@ -508,7 +559,7 @@ fun installApp(
     frameLoop = FrameLoopInstaller(
         viewportProvider = ::rwGameViewport,
         scheduler = scheduler,
-        onFrame = { uiController.refresh() },
+        onFrame = { session.driveCliSession(); uiController.refresh() },
         gameSession = gameSession,
         screenPresenter = screenPresenter,
         warmupController = warmupController,
@@ -563,6 +614,7 @@ fun installApp(
             startNew = true,
         )
     }
+    com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.mapPath()?.let { gameLaunchController.enterMicro(it) }
     uiController.refresh(force = true)
     return session
 }

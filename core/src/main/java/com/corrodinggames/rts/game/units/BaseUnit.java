@@ -48,6 +48,7 @@ import java.util.*;
 /* JADX INFO: loaded from: game-lib.jar:com/corrodinggames/rts/game/units/am.class */
 public abstract class BaseUnit extends SizedObject {
     public float br;
+    /** Time of the last damage taken, in game milliseconds (-9999 when never hit). */
     public int bs;
 
     /* JADX INFO: renamed from: bt */
@@ -82,6 +83,11 @@ public abstract class BaseUnit extends SizedObject {
 
     /* JADX INFO: renamed from: bD */
     public boolean isVisible;
+    /**
+     * Every live unit on the map. Units add themselves in the constructor and remove themselves
+     * on death, so this is the list every AI pass iterates. Named by the de-obfuscation mapping
+     * only (no readable alias exists).
+     */
     public static final UnitList bE = new UnitList();
     private static final TransactionalArrayList a = new TransactionalArrayList();
     public static HashMap bF = new HashMap();
@@ -344,6 +350,7 @@ public abstract class BaseUnit extends SizedObject {
 
     public abstract boolean i();
 
+    /** True while the unit sits below the water surface (posZ below -1). */
     public abstract boolean Q();
 
     /* JADX INFO: renamed from: aj */
@@ -587,6 +594,7 @@ public abstract class BaseUnit extends SizedObject {
         UnitTypeEnum.loadUnitTypeSounds();
     }
 
+    /** True for buildings. The AI uses this to separate buildings from mobile units. */
     public boolean bI() {
         return false;
     }
@@ -1443,6 +1451,26 @@ public abstract class BaseUnit extends SizedObject {
         return true;
     }
 
+    /**
+     * True when this team has seen the unit and the engine still remembers it.
+     *
+     * <p>This is the flag behind the last-known building ghosts: the fog maintenance pass calls
+     * {@link #g(PlayerTeam)} for every building and {@link #updateFogOfWarPreview()} turns an
+     * "seen before, not visible now" building into a {@code BuildPreview}. Mobile units never get
+     * such a ghost, so callers that draw fogged areas must keep using {@link #d(PlayerTeam)} for
+     * them.</p>
+     */
+    public boolean isKnownTo(PlayerTeam playerTeam) {
+        if (playerTeam == null || playerTeam.teamId < 0 || playerTeam.teamId >= PlayerTeam.TEAM_NEUTRAL) {
+            return false;
+        }
+        if (this.unitEffects == null || this.unitEffects.length <= playerTeam.teamId) {
+            return false;
+        }
+        UnitEffectData data = this.unitEffects[playerTeam.teamId];
+        return data != null && data.isActive;
+    }
+
     /* JADX INFO: renamed from: cg */
     public boolean isVisibleToEnemies() {
         return true;
@@ -1559,6 +1587,8 @@ public abstract class BaseUnit extends SizedObject {
 
     /* JADX INFO: renamed from: a */
     public float applyDamage(BaseUnit baseUnit, float f, Projectile projectile) {
+        float healthBeforeObservation = this.currentHealth;
+        float shieldBeforeObservation = this.shield;
         GameEngine gameEngine = GameEngine.getInstance();
         if (this.buildProgress < 1.0f) {
             f *= 1.75f;
@@ -1607,6 +1637,10 @@ public abstract class BaseUnit extends SizedObject {
         } else {
             this.unitTarget1 = null;
         }
+        if (this.currentHealth < healthBeforeObservation || this.shield < shieldBeforeObservation) {
+            com.corrodinggames.rts.gameFramework.GameStatistics.f.damaged(this, baseUnit);
+        }
+        com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.damage(this, baseUnit, healthBeforeObservation, shieldBeforeObservation);
         checkDeathOnZeroHp();
         return f5;
     }
@@ -1658,6 +1692,9 @@ public abstract class BaseUnit extends SizedObject {
 
     /* JADX INFO: renamed from: ci */
     public void removeFromGame() {
+        if (this.currentHealth <= 0.0f) {
+            com.corrodinggames.rts.gameFramework.GameStatistics.f.removed(this, q(2.0f));
+        }
         bu();
         remove();
         bt();
@@ -1669,6 +1706,7 @@ public abstract class BaseUnit extends SizedObject {
     }
 
     public void bv() {
+        com.corrodinggames.rts.gameFramework.GameStatistics.f.removed(this, q(2.0f));
         bu();
         if (!e()) {
             remove();
@@ -1800,6 +1838,7 @@ public abstract class BaseUnit extends SizedObject {
         return false;
     }
 
+    /** The unit action currently being executed; AI uses it for its upgrade decision. */
     public ActionId cm() {
         return AbstractUnitAction.NONE_ACTION_ID;
     }
@@ -2254,6 +2293,7 @@ public abstract class BaseUnit extends SizedObject {
         return 1;
     }
 
+    /** Underlying flag of {@link #isExcludedFromDefeatCheck()}. */
     public boolean u() {
         return false;
     }
@@ -2268,6 +2308,7 @@ public abstract class BaseUnit extends SizedObject {
         return !u();
     }
 
+    /** Underlying flag of {@link #isUnselectableAsTarget()}. */
     public boolean t() {
         return false;
     }
@@ -2443,6 +2484,7 @@ public abstract class BaseUnit extends SizedObject {
                 PlayerTeam.b(this);
                 this.buildProgress = 1.0f;
                 PlayerTeam.c(this);
+                com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this, null, "construction-finished");
                 return;
             }
             return;

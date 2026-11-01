@@ -1,0 +1,262 @@
+[aaBeamGunship]
+about=AA激光射束战机，拦截机的终极版本，重甲高血量
+features=仅对空, 慢攻速, 有点火加速技能
+
+[amphibiousJet]
+about=两栖喷气机，标准的空中单位，各方面数值均中等
+features=电击可绕过防护盾, 对接地的建筑伤害稍低, 可潜水
+
+[scout]
+about=侦察者，悬浮、视野远的低级单位、适合早期侦查与骚扰。
+features=悬浮, 对地对空
+
+[mechFlame]
+about=喷火机甲，高血量，成群坦克的绞杀者
+features=仅对地, 范围喷火伤害, 射程短, 无视山地地形阻挡
+
+[c_tank]
+about=廉价快速的低级单位，适合骚扰与偷袭。
+features=移动速度快、生命值低, 无防空
+
+[mechGun]
+about=基础机甲，较为廉价，适合前期骚扰，成群后也能打击防御较弱的据点
+features=对地攻击, 较快移速
+
+[c_experimentalTank]
+about=实验坦克，高血量的重型火炮单位。
+features=能攻击地面单位, 对空较弱, 移速慢
+
+[missileShip]
+features=低伤害、高移速，对地对空，也能打击潜艇
+
+[missileAirship]
+about=导弹飞艇，重甲的空中单位，后期用于强行突破防线
+features=轻微导弹溅射伤害，也能对空,攻速较慢
+
+[builder]
+features=可建造建筑，可维修建筑与单位, 不能攻击
+
+[hoverTank]
+about=轻型悬浮坦克，前期骚扰的低级单位
+features=低血量，悬浮，对空
+
+[battleShip]
+about=战列舰，常用的中前期海上主力单位
+features=中程对地攻击，射程略大于T2机枪
+
+[combatEngineer]
+about=T2 重型工程单位，既能建造单位和 T2 建筑，也能对地作战，自带轻微回血，血量较高
+features=可直接建造部分单位与 T2 建筑、瞭望塔, 轻微对地攻击，悬浮，在水上时可以攻击潜艇, 自我修复并+1/s收入
+
+[c_interceptor]
+features=血量低，高移速、只能攻击空中单位
+
+[mechMinigun]
+about=机枪机甲，陆地高级主力单位，射程略大于大多炮塔和中低级单位
+features=对地攻击, 射速高、带护甲、无视山地阻碍
+
+[gunBoat]
+about=机枪艇，低伤害低血量的炮灰，除了勘探迷雾，也许只有建造者会害怕他
+features=移动速度快, 低伤害低血量的炮灰，仅对地
+
+[mechEngineer]
+about=机甲的工程单位，建造、维修、防空、回收，各数值都适中
+features=可直接建造部分机甲与 T2 建筑、瞭望塔,配备防空导弹，无视山地阻碍
+
+[experimentalHoverTank]
+about=概念型悬浮坦克，带护盾的两栖实验单位，对单兵的持续高伤害在特定场景很有用。
+features=带轻度回复的护盾，炮口转向慢，对单个单位持续伤害
+
+[gunShip]
+about=武装直升机，空中的主力之一，操作得当拆家速度是毁灭级的
+features=仅对地, 快攻、血量较低
+
+[lightSub]
+features=非常弱, 只能使用轻型鱼雷攻击，移速慢
+
+[attackSubmarine]
+features=可上浮对地对空并有更快移速，伤害偏低
+
+[c_laserTank]
+about=激光坦克，对地的蓄力单位，血量偏低
+features=蓄力射出激光，2发就能摧毁T1机枪，仅对地
+
+[mechArtillery]
+about=-火炮机甲，T1工厂就能生产，价格适中，火炮主力之一
+features=无视山地阻挡，移动灵活，仅对地
+
+[fireBee]
+about=火蜂战机，各数值中等，攻击偏高
+features=对地对空，血量高、重甲
+
+[mechLightning]
+about=特斯拉机甲，伤害不高但是破盾伤害高
+features=电击破盾，血量较低，攻速略慢，无视山地阻碍，仅对地
+
+[c_mammothTank]
+about=猛犸坦克，攻击适中，适合前线当肉盾，又能造成较高伤害。同时也能克制机甲单位
+features=电击破盾、仅对地、慢移速的肉盾
+
+[c_helicopter]
+about=基础直升机，偷袭建造者和偷袭矿脉的炮灰
+features=移速较快，炮灰，对地对空
+
+[mechBunker]
+about=移动炮塔，名副其实的移动炮塔，本体血量偏低
+features=可原地部署，获得护盾和更远射程，仅对地，中等距离火炮伤害，无视山地阻挡
+
+[plasmaTank]
+features=带护盾，仅对地
+
+[mechLaser]
+about=等离子机甲，高单发伤害，血量适中
+features=对地与对空，射程远，无视山地阻挡
+
+[c_artillery]
+about=远程自行火炮，射程远但装甲薄、射速慢，攻击适中
+features=转向笨拙、血量低，仅对地
+
+[bomber]
+about=轰炸机，高血量非常适合强行冲进前线轰炸重点单位
+features=仅对地轰炸，龟速，填充弹药要花时间
+
+[lightGunship]
+about=轻型武装直升机，俗称“微型机”，前期打击建造者，集结20个可以拿下指挥中心，但使用不当就是炮灰
+
+[heavyMissileShip]
+about=重型导弹舰。高伤害的海上火炮单位，一次连发4枚导弹，血量低，填充较慢
+features=火炮级别的射程，可对空，射程略大于T3机枪，还能生产水下探测器
+
+[heavyBattleship]
+about=重型战舰，中后期海上主力，射程较远
+features=对空较弱，可打击潜艇
+
+[heavyInterceptor]
+about=重型拦截机，空军主力之一，既能侦查又能对空
+features=高移速，带护盾，仅对空
+
+[heavyHoverTank]
+about=重型气垫坦克，悬浮单位主力之一，各项数值中等，移速偏慢
+features=悬浮，对地对空
+
+[heavyArtillery]
+about=重型火炮，陆地火炮主力之一，伤害高，射程远，血量低
+features=带有少量激光防御，仅对地
+
+[mechHeavyMissile]
+about=-非常强的远程对空能力，本体血量低，护盾血量高
+features=陆地专职高级防空机甲，带护盾和轻量对地机枪，无视山地阻碍
+
+[heavyAAShip]
+about=重型防空舰。发射海上防空导弹，射程、血量中等，防空能力接近高射炮
+features=海上防空舰，带有护盾
+
+[spyDrone]
+about=间谍无人机，血量较高，移速渐进增长，专门用于侦查
+features=侦查, 不能攻击
+
+[missileTank]
+about=防空导弹坦克，专打空中目标，射程远
+features=陆地专职防空坦克，带护盾
+
+[mechMissile]
+about=防空机甲，首选的低级防空单位，射程偏近，单发防空导弹伤害较高
+features=仅对空，移动灵活
+
+[nautilusSubmarine]
+about=可下潜/上浮的实验潜艇：能建造舰船、运输单位，并可在陆地上行动，具备远程导弹攻击能力，且伤害较高
+
+[c_antiAirTurretT2]
+about=T2 防空炮塔，射程较远，具备中级防空能力
+
+[antiAirTurretFlak]
+about=T2 高射炮：溅射伤害，但射程较短，并且攻击较高
+features=攻击空中单位，溅射伤害, 距离较短，带护盾
+
+[c_antiAirTurretT3]
+about=T3 防空炮塔，火炮级别的射程，仅1台就能带来极高防空能力
+
+[antiNukeLauncherC]
+about=反核防御：自动拦截来袭核弹，范围极广，一发拦截只需要几千并且生产快，但一发核弹却要上万
+features=需要建造反核导弹, 最多建造 12 枚
+
+[commandCenter]
+about=指挥中心：生产建造者、提供资金，并具备对地/对空防御火力，容易被快攻单位或者成群低级单位拿下
+features=生产建造者, 对地对空, +18/s收入，攻速慢，血量高
+
+[c_turret_t2_gun]
+about=机枪 T2：通用的陆地防御设施，防御中等，射程中等
+features=由基础炮塔升级，仅对地
+
+[c_turret_t2_artillery]
+about=火炮 T2，中等攻速、血量与较高伤害，是阵地战让敌人头疼的设施
+features=全场最远射程
+
+[c_turret_t2_flame]
+about=火焰喷射器：短距离范围群伤，廉价、血量较高
+features=较慢自我修复
+
+[c_turret_t1]
+about=基础炮塔，攻击地面单位，可升级成多种分支，本身攻击力较弱
+
+[outpostT1]
+about=瞭望塔：提供视野的后勤建筑。
+features=提供大范围视野，升级T2可进一步提升视野
+
+[outpostT2]
+about=瞭望塔 T2，提供大范围视野的后勤建筑。
+features=提供大范围视野
+
+[fabricatorT1]
+about=资源制造仪：不依赖资源池，收入+2/s，可升级。
+
+[fabricatorT2]
+about=资源制造仪 T2,收入+7/s
+
+[fabricatorT3]
+tier=3
+about=资源制造仪 T3,收入+14/s
+features=生成资金
+
+[extractorT1]
+about=资源抽取器：建在资源池上,收入+8/s，可升级到 T3。
+
+[extractorT2]
+about=资源抽取器 T2,收入+12/s。
+
+[extractorT3]
+about=资源抽取器 T3：收入+20/s，可继续转为超频/强化。
+
+[extractorT3_overclocked]
+about=超频资源抽取器：牺牲生命值换取更高产出,收入+30/s，升级可撤销。
+
+[extractorT3_reinforced]
+about=强化资源抽取器：血量、护盾与自修更强,收入和T3一样+20/s，升级可撤销。
+
+[c_turret_t3_gun]
+about=重机枪塔 T3：地面炮塔的最终形态，仅1台就能有很高的防御能力
+features=由机枪 T2 升级,射程仅略低于T2火炮，高攻速机枪
+
+[c_turret_t1_lightning]
+about=闪电炮塔：电击伤害，伤害中等，攻速较慢，可被多个中低级单位轻松拿下
+features=电击伤害, 对建筑伤害较低
+
+[c_turret_t2_lightning]
+about=闪电炮塔 T2，蓄力慢，射程中等，1发就能让机枪机甲残疾，1台就能抵御1台机枪机甲
+features=高电击伤害
+
+[c_antiAirTurret]
+about=防空炮塔，基础防空能力，通常升级才能有良好的防空能力
+features=可升级
+
+[tankDestroyer]
+name=Tank Destroyer
+
+[modularSpider]
+weapon_damage=varies by module
+
+[nukeLauncherC]
+actions_extra=buildNuke
+
+[antiNukeLauncherC]
+actions_extra=buildAntiNuke

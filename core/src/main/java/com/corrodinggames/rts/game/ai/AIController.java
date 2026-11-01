@@ -3,6 +3,11 @@ package com.corrodinggames.rts.game.ai;
 import com.corrodinggames.rts.game.PlayerTeam;
 import com.corrodinggames.rts.game.ai.behaviors.AIBehavior;
 import com.corrodinggames.rts.game.ai.behaviors.AIBehaviorType;
+import com.corrodinggames.rts.game.ai.strategy.AiContext;
+import com.corrodinggames.rts.game.ai.strategy.AiDefinition;
+import com.corrodinggames.rts.game.ai.strategy.AiPhase;
+import com.corrodinggames.rts.game.ai.strategy.AiRegistry;
+import com.corrodinggames.rts.game.ai.strategy.AiRuntime;
 import com.corrodinggames.rts.game.units.*;
 import com.corrodinggames.rts.game.units.actions.AbstractUnitAction;
 import com.corrodinggames.rts.game.units.actions.ActionId;
@@ -36,7 +41,124 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /* JADX INFO: renamed from: com.corrodinggames.rts.game.a.a */
 /* JADX INFO: loaded from: game-lib.jar:com/corrodinggames/rts/game/a/a.class */
+/**
+ * The high level ("skirmish") AI of one team: easy / normal / hard / insane difficulty, the AI the
+ * player picks in the lobby. It owns every AIStrategyNode (BaseZone, UnitGroup, RallyGroup,
+ * TransporterGroup) and only ever acts by pushing Commands through
+ * CommandController.newCommandForTeam, the same entry point the player's clicks use.
+ *
+ * Unit level auto behaviour - pathfinding, auto target acquisition, formation keeping - lives in
+ * game.units (OrderableUnit, FormationEngine, PathEngine) and is NOT part of this package.
+ *
+ * Tick cadence (see updateTeam): updateAILogic every ~80 frames (tactics), updateCoreLogic every
+ * ~250 frames (strategy / economy), and the BaseZone economy pass every ~25 frames for the two
+ * highest scoring zones.
+ *
+ * Field and method names come from a partial de-obfuscation mapping. Members it does not cover
+ * keep their original obfuscated names; the unit side symbols this package leans on are annotated
+ * at their declarations. The important ones:
+ *
+ *   BaseUnit.bE                    all live units on the map
+ *   BaseUnit.bI()                  is a building
+ *   BaseUnit.u() / t()             excluded from defeat check / unselectable as target
+ *   BaseUnit.bs                    time of last damage taken (game millis)
+ *   OrderableUnit.aB / aC / aD     AI bookkeeping: group, assigned zone, path-to-zone cached
+ *   OrderableUnit.aN               is holding a repair or reclaim target
+ *   OrderableUnit.I()              unit body takes part in movement and collision
+ *   OrderableUnit.Q()              unit is below the water surface
+ *   OrderableUnit.cm()             action currently being executed
+ *   UnitType.m() / n() / p()       useAsBuilder / useAsHarvester / placeOnlyOnResPool
+ *   UnitType.l() / k()             isBuilder / ignoreInUnitCapCalculation
+ *   UnitType.o() / c()             movement type / build price
+ *   UnitType.w()                   blocked by room rules (for example noNukes)
+ *   UnitTypeEnum.ae                registry of every unit prototype
+ *   FactoryQueueInterface.h(t)     how many of that type already sit in the build queue
+ *   FactoryQueueInterface.dy()     build queue is empty
+ *   PathCostMap.i                  highest isolated-group value, the map fragmentation signal
+ *                                  (reached through PathEngine.airCostMap, which is really the
+ *                                  WATER cost map)
+ */
 public final class AIController extends PlayerTeam {
+
+    private AiContext customAiContext;
+    private AiRuntime customAiRuntime;
+    private boolean transportCapacityRequested;
+
+    public boolean hasCustomAi() {
+        AiDefinition definition = AiRegistry.find(getTeamColorId());
+        return definition != null && definition.isCustom();
+    }
+
+    public boolean overridesUnitProduction() {
+        return customAiRuntime != null && customAiRuntime.overridesUnitProduction();
+    }
+
+    /** True when the selected custom policy owns building choice, placement and construction. */
+    public boolean overridesBuildingProduction() {
+        return customAiRuntime != null && customAiRuntime.overridesBuildingProduction();
+    }
+
+    /** True when the selected custom policy owns the upgrade draw instead of the original lottery. */
+    public boolean overridesUpgrades() {
+        return customAiRuntime != null && customAiRuntime.overridesUpgrades();
+    }
+
+    /** Custom policy may keep cross-water reinforcements at their pickup point. */
+    public boolean overridesTransportWaiting() {
+        return customAiRuntime != null && customAiRuntime.overridesTransportWaiting();
+    }
+
+    /** At most four waiting passengers per currently idle transport. */
+    public boolean canQueueTransportWaiter() {
+        int waiting = 0;
+        for (AIStrategyNode node : this.strategyNodes) {
+            if (node instanceof AIUnitGroupBase) waiting += ((AIUnitGroupBase) node).getTransportWaiterCount();
+        }
+        int idleTransports = 0;
+        for (BaseUnit unit : BaseUnit.bE) {
+            if (unit.team == this && !unit.isDead && unit instanceof OrderableUnit) {
+                OrderableUnit orderable = (OrderableUnit) unit;
+                if (orderable.canTransportUnits() && orderable.getTransportedUnitCount() == 0
+                        && orderable.hasNoCurrentWaypoint()) idleTransports++;
+            }
+        }
+        return waiting < idleTransports * 4;
+    }
+
+    /** Records a cross-water request even when no idle transport exists yet. */
+    public void requestTransportCapacity() {
+        this.transportCapacityRequested = true;
+    }
+
+    public boolean hasTransportCapacityRequest() {
+        return this.transportCapacityRequested;
+    }
+
+    public void markTransportCapacityQueued() {
+        this.transportCapacityRequested = false;
+    }
+
+    /** Original transport candidate pool, in its original shuffled tryBuildFromStrategy order. */
+    public java.util.List<UnitType> getShuffledTransportUnitTypes() {
+        java.util.ArrayList<UnitType> result = new java.util.ArrayList<>();
+        if (this.antiNukeUnitBuildStrategy == null) return result;
+        for (Object entry : this.antiNukeUnitBuildStrategy.getShuffledUnits()) {
+            result.add(((UnitBuildPriority) entry).unitType);
+        }
+        return result;
+    }
+
+    /** Snapshot for custom policies that reuse the original AI's bases and groups. */
+    public java.util.List<AIStrategyNode> getAiNodes() {
+        return new ArrayList<>(this.strategyNodes);
+    }
+
+    private AiContext customAiContext() {
+        if (customAiContext == null) {
+            customAiContext = new AiContext(this);
+        }
+        return customAiContext;
+    }
 
     /* JADX INFO: renamed from: as */
     public static boolean unitCountsUpdated;
@@ -244,6 +366,8 @@ public final class AIController extends PlayerTeam {
 
     /* JADX INFO: renamed from: bK */
     private static ArrayList tempUnitList = new ArrayList();
+    /* JADX INFO: renamed from: bI */
+    /** Scratch unit list reused by countUnitsOfTypeInRange; the only member left unmapped here. */
     public static final UnitList bI = new UnitList();
 
     /* JADX INFO: renamed from: bJ */
@@ -575,7 +699,9 @@ public final class AIController extends PlayerTeam {
             gameOutputStream.writeInt(aIStrategyNode2.strategyId);
             aIStrategyNode2.a(gameOutputStream);
         }
-        gameOutputStream.writeByte(9);
+        // All original presets retain the exact legacy layout; custom policies use one extension.
+        boolean writeCustomAi = hasCustomAi() || this.customAiRuntime != null;
+        gameOutputStream.writeByte(writeCustomAi ? 10 : 9);
         gameOutputStream.writeInt(this.nextStrategyId);
         gameOutputStream.writeBoolean(this.enableNaval);
         gameOutputStream.writeBoolean(this.isReadyForAttack);
@@ -597,6 +723,10 @@ public final class AIController extends PlayerTeam {
             aIBehavior.a(gameOutputStream);
         }
         gameOutputStream.writeMagicShort();
+        if (writeCustomAi) {
+            (this.customAiRuntime != null ? this.customAiRuntime
+                    : new AiRuntime(AiRegistry.find(getTeamColorId()))).writeTo(gameOutputStream);
+        }
         super.a(gameOutputStream);
     }
 
@@ -698,6 +828,8 @@ public final class AIController extends PlayerTeam {
             }
             gameInputStream.a("ai-c e");
         }
+        this.customAiRuntime = b >= 10 ? AiRuntime.readFrom(gameInputStream) : null;
+        this.customAiContext = null;
         super.readExtendedTeamState(gameInputStream);
         updateUnitCounts();
     }
@@ -1252,7 +1384,30 @@ public final class AIController extends PlayerTeam {
                 return;
             }
             this.difficultyLevel = getTeamColorId();
-            if (this.enableAirForce && gameEngine.gameTimeMillis > 3000) {
+            AiDefinition selectedAi = AiRegistry.find(this.difficultyLevel);
+            if (selectedAi != null && selectedAi.isCustom()) {
+                if (gameEngine.replayEngine.j()) return;
+                if (this.customAiRuntime != null && !this.customAiRuntime.matches(selectedAi)) {
+                    if (!this.customAiRuntime.isStarted()) {
+                        throw new IllegalStateException("Saved AI definition does not match difficulty " + getTeamColorId());
+                    }
+                    this.customAiRuntime.stop(customAiContext());
+                    this.customAiRuntime = null;
+                }
+                if (this.customAiRuntime == null) this.customAiRuntime = new AiRuntime(selectedAi);
+                this.difficultyLevel = selectedAi.originalDifficulty();
+                this.customAiRuntime.update(customAiContext(), f, selectedAi);
+                if (!selectedAi.runsAnyOriginal()) return;
+            } else if (this.customAiRuntime != null) {
+                if (!this.customAiRuntime.isStarted()) {
+                    throw new IllegalStateException("Missing registered AI for saved difficulty " + getTeamColorId());
+                }
+                this.customAiRuntime.stop(customAiContext());
+                this.customAiRuntime = null;
+            }
+            // These phase gates are the only changes to the original decision pipeline below.
+            boolean originalInitialization = selectedAi == null || selectedAi.runsOriginal(AiPhase.INITIALIZATION);
+            if (originalInitialization && this.enableAirForce && gameEngine.gameTimeMillis > 3000) {
                 this.enableAirForce = false;
                 BaseUnit[] baseUnitArrA = BaseUnit.bE.a();
                 int i = 0;
@@ -1271,7 +1426,7 @@ public final class AIController extends PlayerTeam {
                     }
                 }
             }
-            if (this.enableNaval) {
+            if (originalInitialization && this.enableNaval) {
                 this.enableNaval = false;
                 this.isReadyForAttack = true;
                 this.hasSufficientUnitsForAttack = true;
@@ -1307,7 +1462,7 @@ public final class AIController extends PlayerTeam {
             }
             this.resourceMultiplierEasy += f;
             this.resourceMultiplierNormal += f;
-            if (this.resourceMultiplierEasy > 25.0f) {
+            if ((selectedAi == null || selectedAi.runsOriginal(AiPhase.ECONOMY)) && this.resourceMultiplierEasy > 25.0f) {
                 this.resourceMultiplierEasy -= 25.0f;
                 if (this.resourceMultiplierEasy > 25.0f) {
                     this.resourceMultiplierEasy = 25.0f;
@@ -1342,7 +1497,7 @@ public final class AIController extends PlayerTeam {
             }
             this.attackTimerEasy += f;
             this.attackTimerNormal += f;
-            if (this.attackTimerEasy > 80.0f) {
+            if ((selectedAi == null || selectedAi.runsOriginal(AiPhase.TACTICS)) && this.attackTimerEasy > 80.0f) {
                 updateAILogic(this.attackTimerNormal);
                 this.attackTimerEasy -= 80.0f;
                 if (this.attackTimerEasy > 80.0f) {
@@ -1355,7 +1510,7 @@ public final class AIController extends PlayerTeam {
             }
             this.attackTimerHard += f;
             this.attackTimerInsane += f;
-            if (this.attackTimerHard > 250.0f) {
+            if ((selectedAi == null || selectedAi.runsOriginal(AiPhase.STRATEGY)) && this.attackTimerHard > 250.0f) {
                 updateCoreLogic(this.attackTimerInsane);
                 this.attackTimerHard -= 250.0f;
                 if (this.attackTimerHard > 250.0f) {
@@ -1628,7 +1783,8 @@ public final class AIController extends PlayerTeam {
                     }
                 }
             }
-            if (hasCredits(4100.0d) || this.resourceMultiplierInsane > 2400.0f || this.constructingBaseCount == 0) {
+            if (!overridesUpgrades()
+                    && (hasCredits(4100.0d) || this.resourceMultiplierInsane > 2400.0f || this.constructingBaseCount == 0)) {
                 for (BaseUnit baseUnit5 : BaseUnit.bE) {
                     if (baseUnit5.team == this && (baseUnit5 instanceof OrderableUnit)) {
                         OrderableUnit orderableUnit4 = (OrderableUnit) baseUnit5;
@@ -1711,6 +1867,16 @@ public final class AIController extends PlayerTeam {
                                     } else {
                                         z4 = true;
                                     }
+                                    if (!z4 && overridesUnitProduction()
+                                            && abstractUnitActionA.getUnitType() != null
+                                            && !abstractUnitActionA.getUnitType().isBuildingUnit()) {
+                                        z4 = true;
+                                    }
+                                    if (!z4 && overridesBuildingProduction()
+                                            && abstractUnitActionA.getUnitType() != null
+                                            && abstractUnitActionA.getUnitType().isBuildingUnit()) {
+                                        z4 = true;
+                                    }
                                     if (!z4) {
                                         issueCommand(orderableUnit5, actionIdCm);
                                         processAIVariable(orderableUnit5, abstractUnitActionA.getPrice(), true);
@@ -1750,6 +1916,13 @@ public final class AIController extends PlayerTeam {
     /* JADX INFO: renamed from: a */
     public boolean issueUnitAction(OrderableUnit orderableUnit, AbstractUnitAction abstractUnitAction) {
         GameEngine gameEngine = GameEngine.getInstance();
+        UnitType producedType = abstractUnitAction.getUnitType();
+        if (overridesUnitProduction() && producedType != null && !producedType.isBuildingUnit()) {
+            return false;
+        }
+        if (overridesBuildingProduction() && producedType != null && producedType.isBuildingUnit()) {
+            return false;
+        }
         if (abstractUnitAction.b(orderableUnit) && abstractUnitAction.canAfford((BaseUnit) orderableUnit, false)) {
             Command commandNewCommandForTeam = gameEngine.commandController.newCommandForTeam(this);
             commandNewCommandForTeam.addUnitToCommand(orderableUnit);

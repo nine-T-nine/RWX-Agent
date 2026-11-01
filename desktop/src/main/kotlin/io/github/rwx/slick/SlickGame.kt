@@ -2,12 +2,14 @@ package io.github.rwx.slick
 
 import com.corrodinggames.rts.R
 import com.corrodinggames.rts.game.GameLogic
+import com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime
 import com.corrodinggames.rts.game.map.LayerBufferManager
 import com.corrodinggames.rts.game.map.TileMap
 import com.corrodinggames.rts.gameFramework.GameEngine
 import com.corrodinggames.rts.gameFramework.GameMode
 import com.corrodinggames.rts.gameFramework.InputController
 import com.corrodinggames.rts.gameFramework.PlatformCallbacks
+import com.corrodinggames.rts.gameFramework.ReplayEngine
 import com.corrodinggames.rts.gameFramework.network.GameInputStream
 import com.corrodinggames.rts.gameFramework.network.GameModeType
 import com.corrodinggames.rts.gameFramework.network.PasswordHandler
@@ -200,6 +202,14 @@ class SlickGame(
     private val keyStates = BooleanArray(SLICK_KEY_COUNT)
     private var engine: GameEngine? = null
 
+    init {
+        // This frame loop owns the GL context and drains engine work every frame — including
+        // paused frames. External CLI callers may then queue game-thread work instead of running
+        // it on their own (context-less) thread.
+        GameEngine.guiFrameLoopDrainsGameTasks = true
+        GameEngine.guiPresent = true
+    }
+
     /**
      * The one thing this renderer has been asked to show but has not loaded yet.
      *
@@ -347,6 +357,7 @@ class SlickGame(
 
     override fun render(container: GameContainer, graphics: Graphics) {
         val activeEngine = engine ?: return
+        GameEngine.guiRenderThread = Thread.currentThread()
         val probeOn = frameProbe.isEnabled
         val startNanos = if (probeOn) System.nanoTime() else 0L
         try {
@@ -362,6 +373,10 @@ class SlickGame(
         val pausedFrame = shouldRenderPausedFrame(activeEngine)
         val gameLoopDriven = !pausedFrame && shouldDriveGameLoop(activeEngine)
         if (pausedFrame) {
+            // The paused branch never calls gameLoop, so nothing else would consume queued
+            // game-thread work (CLI commands, micro turns). Run it with the GL context current,
+            // exactly like a normal frame does at the top of runGameLoopFrame.
+            drainPendingGameThreadTasks(activeEngine)
             (activeEngine as GameLogic).drawWorldOnlyThreadSafe(0f)
         } else if (gameLoopDriven) {
             activeEngine.gameLoop(legacySlickDeltaSpeed(deltaMillis), deltaMillis)
@@ -383,6 +398,13 @@ class SlickGame(
         applyPendingTextInputResponses()
         updatePointerCursor(container, activeEngine)
         abortStartedGameAfterDisconnect(activeEngine)
+    }
+
+    private fun drainPendingGameThreadTasks(activeEngine: GameEngine) {
+        if (!activeEngine.hasLoadedLevel || activeEngine.tileMap == null) return
+        synchronized(activeEngine.gameStateLock) {
+            activeEngine.pendingGameThreadTasks.b()
+        }
     }
 
     private fun renderPendingLayerRedraws(activeEngine: GameEngine) {
@@ -627,6 +649,7 @@ class SlickGame(
             activeEngine.networkEngine.roomSettings.revealedMap = true
         }
         activeEngine.loadGame(true, GameMode.normal)
+        com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.mapLoaded(activeEngine)
     }
 
     private fun loadSavedGame(activeEngine: GameEngine, saveName: String) {
@@ -1056,6 +1079,12 @@ class SlickGame(
             }
 
             is SlickInputEvent.Key -> {
+                // Micro human mode and replay playback: Q toggles pause from the render loop,
+                // which also runs while the game is paused (the stock pause key only lives
+                // inside gameLoop, so it can start a pause but never end one).
+                val androidKey = SlickToAndroidKeycodes.convertSlickToAndroidKeyCode(event.slickKey)
+                if (event.down && MicroRuntime.togglePauseForKey(androidKey)) return
+                if (event.down && ReplayEngine.togglePauseForKey(androidKey)) return
                 setKeyState(activeEngine, event.slickKey, event.down)
             }
         }

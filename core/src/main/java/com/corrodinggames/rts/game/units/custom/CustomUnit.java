@@ -1778,6 +1778,7 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
                 this.buildProgress = 1.0f;
                 this.paidBuildProgress = 1.0f;
                 PlayerTeam.c(this);
+                com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this, null, "construction-finished");
             } else {
                 this.buildProgress = f3;
                 this.paidBuildProgress = f3;
@@ -3315,6 +3316,9 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
                     pointF != null ? pointF.y : null,
                     baseUnit
             );
+            if (z && customAction.actionTypeForUnit == ActionType.upgrade && customAction.getPrice().c()) {
+                com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this, null, "upgrade-finished");
+            }
             if (!z && customActionDef.addToBuildQueue) {
                 GameEngine.log("completeQueueItem:" + customAction.getActionId() + " had no effect (but should have)");
                 return true;
@@ -3454,6 +3458,11 @@ public class CustomUnit extends MovableUnit implements TransportUnitInterface, U
         if (this.unitConfig.hasSetRallyAction) {
             this.factoryQueueManager.b = pointF;
         }
+    }
+
+    @Override // com.corrodinggames.rts.game.units.buildings.FactoryQueueInterface
+    public PointF getRallyPoint() {
+        return this.factoryQueueManager.b;
     }
 
     @Override // com.corrodinggames.rts.game.units.BaseUnit

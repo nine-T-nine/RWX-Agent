@@ -1,0 +1,247 @@
+你正在 RWX 仓库中实现一个新的 RTS 微操评测 Case：**CASE2-LTE（Limited-Time Economy）**。
+
+请先完整阅读：
+- `CASE2-LTE/README.md`
+- `CASE2-LTE/START.md`
+- `CASE2-LTE/METRICS.md`
+- `CASE2-LTE/commands.md`
+- 现有 CASE1-duel 的实现和对应 README/START/commands/METRICS
+- 完整游戏 CLI 手册 `help_zh.md` 及相关游戏源码
+
+这些 CASE2-LTE 文件是设计目标。实际机制必须以当前源码为准；文档中的示例数字不是游戏事实。
+
+# 1. 首要目标
+
+实现一个极简、确定性、可复现的实时经济任务：
+
+- 只生成 1 个指定建造者。
+- 给定设计过的初始资金。
+- 地图上放置若干空闲资源矿脉。
+- Agent 通过建造资源提取器、升级资源提取器，把真实 `incomePerSecond` 提高到指定阈值。
+- 达到 `incomePerSecond >= targetIncomePerSecond` 即完成。
+- 第一版只支持 realtime，不支持 pause/step/speed。
+- 核心评估目标是 Agent 对经济子任务耗时的把握，以及它是否能根据真实进度安排下一次观察/决策。
+
+这不是经济最优策略竞赛。不要加入敌人、战斗、生产链、多建造者或复杂 AI。
+
+# 2. 先做源码勘察，不要猜机制
+
+修改代码前先定位并核实：
+
+1. 建造者真实内部 ID、移动速度、建造能力和可建造列表。
+2. 资源矿脉真实表示、坐标、占用判定和建造放置规则。
+3. 资源提取器 T1/T2/T3 的内部 ID。
+4. T1/T2/T3 各级每秒收入、费用、建造时间。
+5. T1→T2、T2→T3 的升级动作 ID、升级条件、费用和升级时间。
+6. T3 护盾模式和超频模式对应的动作 ID、实现入口和所有可能绕过 Case 命令层的调用路径。
+7. 升级由谁执行；是否需要建造者；能否与建造者移动/施工并行。
+8. 建造者移动、施工、升级、等待资金、收入生效的真实事件和时间戳。
+9. Replay 底层指令记录格式，如何与 Gateway B 请求匹配。
+10. CASE1 的 Case 注册、启动参数、CLI、Gateway、Replay、EngineEvidence 和外部 metrics 插件架构。
+
+可用现有静态查询命令辅助，但最终以源码和引擎实际执行为准。输出简短源码勘察表，列出文件/类/方法和核实结果。
+
+**不得凭经验补齐任何费用、收入、时间、动作 ID 或行为。** 关键事实无法确认时先报告缺口。
+
+# 3. 场景生成
+
+- 固定地图尺寸、地形、建造者出生点和建造者属性。
+- 固定 1 个建造者；不生成其他单位、建筑、敌方队伍或战斗干扰。
+- 初始资金由 task 配置指定，同一 task 下不随 seed 变化。
+- 资源点数量由 task 配置指定，位置由 seed 确定。
+- 目标收入由 task 配置指定。
+- 同一 `(task, seed)` 完全复现。
+- 资源点全部可到达、可建造、占地不重叠。
+- 开局前验证目标可达、初始收入低于目标、初始资金可以启动任务。
+- 不增加隐藏补贴、随机收入、额外建造者或障碍。
+
+`meta.json` 至少包含：
+`task`、`seed`、`builderId/type/spawn`、`initialCredits`、`resourceCount`、`resourceNodes[]`、`targetIncomePerSecond`、地图参数、预算、完整资源提取器等级经济表、允许/禁止动作 ID。
+
+# 4. 资源提取器经济等级
+
+仅开放标准等级路径：
+- 建造 T1；
+- T1→T2；
+- T2→T3。
+
+从源码提取并公开：
+- T1/T2/T3 每秒收入；
+- 每级建造费用和建造时间（若能直接建造）；
+- T1→T2、T2→T3 升级费用和升级时间；
+- 各等级合法升级条件、动作 ID。
+
+明确禁止：
+- T3 护盾模式及相关动作；
+- 超频模式及相关动作；
+- 任何非标准经济分支或与基础收入增长无关的升级。
+
+禁止动作不得出现在 `resources` 的可用动作列表，也不得通过底层通用命令绕过白名单。
+
+# 5. 建造者硬性行为约束
+
+唯一建造者只允许两种意图：
+1. 在本局空闲资源矿脉上建造指定 T1 资源提取器；
+2. 将本局资源提取器升级到下一标准等级（T1→T2、T2→T3）。
+
+合法建造订单内部触发的自动寻路属于建造行为。Agent 不得直接向建造者发任意移动命令。
+
+必须在游戏执行前拒绝并记录：
+- 建造非资源提取器建筑；
+- 在非资源点建造；
+- 回收/拆除建筑；
+- 直接移动、攻击、停止、巡逻、修理等无关指令；
+- 升级非资源提取器或跳级；
+- T3 护盾模式、超频模式；
+- 操控其他单位/建筑；
+- 通过通用 `rwx-game-*` 命令绕过 Case 白名单。
+
+每次违规写独立违规证据，至少包含：
+`violationId`、request/command、actor、target、`wallMs/gameMs/tick`、violationType、reason、`rejected=true`。
+
+违规命令不能进入游戏执行层、不能改变游戏状态、不能进入 Replay；但拒绝记录必须保留。普通参数错误与明确行为违规分开分类。违规次数单独统计，不隐式改变游戏状态或任务胜负。
+
+注意：不能只在 CLI parser 层做限制。检查所有可能向引擎提交建造者命令的入口，防止 Agent 通过其他开放命令绕过。
+
+# 6. 命令接口
+
+新增 `rwx-micro-2-*` 命名空间：
+
+A 观察：
+- `rwx-micro-2-state [--json]`
+- `rwx-micro-2-builder [--json]`
+- `rwx-micro-2-resources [--json]`
+
+B 经济操作：
+- `rwx-micro-2-build --resource <resourceId>`
+- `rwx-micro-2-upgrade --building <buildingId>`
+
+C 生命周期：
+- `rwx-micro-2-begin`
+
+通用：
+- `rwx-ping`
+- `rwx-micro-2-help`
+
+不实现 forecast/ETA 上报命令，不要求 Agent 声明预计时间。也不开放 wait、pause、next、step、speed、restart、surrender、任意坐标、任意建筑类型或任意 action ID。
+
+A 只读；B 调用真实引擎动作并进入 Replay；C begin 启动 realtime。B 请求回执不能被误报为开始或完成。稳定 JSON 字段、错误 reason 和状态词保持简洁英文。
+
+# 7. 指令生命周期监控与证据
+
+用户希望对每条 B 指令进行完整的“下达→完成”监控，并在对局结束后离线分析。请实现低开销、事件驱动的生命周期证据，不要每 tick 全量扫描。
+
+Replay 是实际底层原生命令的主要证据；引擎生命周期日志负责补足开始、阶段和完成时间。尽可能使用稳定 ID 关联：
+- Gateway request ID；
+- Replay native command ID/index；
+- actor、目标、原生动作签名。
+
+每条经济指令至少记录：
+- Gateway 请求接收、受理/拒绝时间；
+- 对应 Replay 原生命令及 tick；
+- 引擎开始执行时间；
+- 移动开始/到达（可可靠识别时）；
+- 施工开始/完成；
+- 升级开始/完成；
+- 等待资金开始/结束；
+- 完成、失败、取消、被覆盖的终态；
+- `tick/gameMs/wallMs`；
+- 实际费用、收入变化和关联建筑 ID。
+
+终态定义：
+- build：提取器施工完成且收入变化生效；
+- upgrade：目标等级实际生效且收入变化生效；
+- rejected：请求被拒绝，不属于执行成功的 B 指令；
+- failed/cancelled/superseded/timeout 分别记录。
+
+端到端 `issueToComplete` 包含等待资金；另行拆分移动、施工、升级和等待阶段。Replay 不一定包含完成事件，必须从引擎事件补充。匹配歧义不得强行归因。
+
+Gateway 对 A/B 每条请求记录：
+`requestId`、类别、命令名、`wallRecvMs/wallReplyMs`、可获得的 `gameMs/tick`、结果、错误/拒绝状态。所有来源共享 run-relative 单调墙钟原点。
+
+收入锚点：
+- 初始收入必须记录；
+- 每次真实 `incomePerSecond` 变化都记录；
+- 包含 `tick/gameMs/wallMs/incomePerSecond/deltaIncome/cause/buildingIds`；
+- 同 tick 多个变化可合并并保留全部原因；
+- 收入下降也记录；
+- 不可靠归因写 unknown，不猜测。
+
+违规请求写独立 `violations.jsonl` 或等价证据。违规尝试不进入 Replay；如果出现，metrics diagnostics 必须报严重不一致。
+
+优先事件驱动和状态变化采样，控制日志体积。
+
+# 8. 离线评测指标
+
+复用 CASE1 的外部评估架构：引擎写证据，外部 `evaluate/micro/` 计算指标，不在引擎内计算分数。
+
+T1：
+- `outcome`：success/timeout/error、最终收入、目标完成游戏/墙钟时间；
+- `income_anchors`：完整收入变化序列和各锚点时刻；
+- `instruction_lifecycle`：每条 B 指令从下达到完成的时间区间、阶段耗时、费用、结果；
+- `violations`：违规次数、类型、是否在执行前拦截、是否有违规命令进入 Replay。
+
+T2：
+- `ab_timing`：A→B 决策延迟、B→下一 A 等待间隔、B→B 决策间隔、A→A 观察间隔、决策周期；
+- `wake_alignment`：将 B→下一 A 间隔与对应指令实际完成时间比较，统计提前观察、完成后唤醒延迟、完成前轮询次数；
+- `agent_timing`：A/B 数量、请求处理耗时、错误/拒绝比例及各类间隔统计。
+
+对间隔至少报告样本数、mean、median、p50、p90、max、离群值；必要时按资金积累、移动、施工、升级、等待资金、目标接近等阶段分段。
+
+A→B 延迟包含模型推理、Agent Runtime 和工具调度开销，不等同于纯模型思考时间。AB 只能估计隐式时间预估/调度行为，不能声称获得模型内部 ETA。
+
+不增加 forecast 命令，不把所有指标合并成加权总分。
+
+# 9. Greedy Baseline
+
+实现简单、确定性、可复现的 Greedy Baseline：
+- 需要建造时选择路径距离最近的可用矿脉；距离相同按稳定 ID。
+- 在新建 T1、升级 T1→T2、升级 T2→T3 的合法候选中，按公开费用、收入增量、当前资金/收入、移动距离、施工/升级时间做简单贪心选择。
+- 建议准则：`预期收入增量 / 预计完成时间` 最大。
+- 资金不足时按当前收入估计最早可支付时刻，不使用固定轮询。
+- 不允许护盾模式、超频模式。
+- Baseline 只能使用 Agent 可见状态，不读隐藏证据。
+
+将公式、并行规则和 tie-break 写入 README。若该准则与实际引擎机制不适配，先报告原因和最小替代方案。
+
+# 10. 实现约束
+
+- 先阅读 CASE1 并复用 Case 注册、run 隔离、CLI、Gateway、Replay、EngineEvidence、结果输出和 metrics 插件架构。
+- 不复制 CASE1 战斗指标。
+- 不修改 CASE1 行为或既有命令语义。
+- 不增加游戏内固定 wait、自动轮询、自动补产、子 Agent 管理器或通用调度器。
+- 不为单个 Case 引入大规模抽象重构。
+- 文档必须与真实命令、参数、字段、时间口径和限制一致。
+
+# 11. 验收测试
+
+至少覆盖：
+1. 同一 task+seed 布景完全一致。
+2. 不同 seed 只改变允许变化的资源点位置/数量。
+3. 开局恰好 1 个建造者，无敌人和额外单位/建筑。
+4. 资源点可到达、可建造、占地不重叠。
+5. 目标可达，初始收入低于目标。
+6. T1/T2/T3 收入、费用、建造和升级时间与源码/实际引擎一致。
+7. T1→T2、T2→T3 正常；T3 护盾、超频及其他非法升级被拒绝。
+8. 非经济建筑建造、回收、直接移动/攻击/停止等违规指令均在执行前拒绝并记录。
+9. 违规命令不改变游戏状态且不进入 Replay。
+10. build/upgrade 的 issue、开始、阶段、完成时间正确。
+11. 收入锚点与引擎实际收入变化一致，达到 tick 级。
+12. Gateway、Replay、EngineEvidence 时间原点一致。
+13. Replay/Gateway/生命周期匹配正确处理 ambiguous/unmatched。
+14. AB 间隔、决策周期、wake alignment 离线结果可复现。
+15. success、timeout、error 均输出正确 result 和 metrics。
+16. Greedy Baseline 在相同 task+seed 可重复运行。
+
+完成后更新五份 CASE2-LTE 文档，列出实际内部 ID、动作 ID、经济数值、预算和 Greedy 公式；运行 Gradle build/test 和至少一局 headless smoke test；汇报修改文件、测试结果和限制。
+
+# 实现对照（2026-10-30）
+
+- 任务 ID：`2_<矿脉数 4-8>_<档次 1-5>`，初始资金固定 2100；目标按档次由 T1/T2/T3 标称收入组合（Y×T1 / Y÷2×T1+Y÷2×T2 / Y×T2 / Y÷2×T2+Y÷2×T3 / Y×T3，奇数 Y 时下取整给低等级）。
+- 地图：边长 `a=ceil(sqrt(Y·20²/0.7+π·15²))`（Y=4..8 → 55/60/65/69/73 格），泊松盘最小间距 20 格，建造者中心 15 格净空；Bridson 采样后按 seed 洗牌取 Y 个。
+- 运行参数：track=realtime、mode=agent；默认 gameLimitSeconds=1200（20 分钟）、wallLimitSeconds=1320、startTimeoutSeconds=600，必须显式 begin；支持 `--window` 观看，结算动画后等待 10 秒退出（无头同样等待 10 秒）。
+- 实际经济：builder；extractorT1/T2/T3 标称 incomePerSecond=8/12/20；建造700/1000工作tick，升级1400/约1666.667工作tick、4000/约3333.333工作tick。动作 b_extractorT1、extractorT2_0、extractorT3_0；禁止 extractorT3_overclocked_0、extractorT3_reinforced_1 以及降级分支。
+- 引擎默认每40tick发放标称收入，1×名义每墙钟秒60tick；gameMs每tick加16。所有 wallMs 共用 run 初始化的单调原点（包含加载），首条请求的预算原点和 beginWallMs 单列。
+- 复用 MicroCaseRegistry/MicroRuntime/Gateway/Replay/外部 metrics 插件结构；LteSession 记录实际扣款、指令阶段和收入变化，原生命令录制及执行前均有 Case 授权。
+- Greedy 的公式、并行规则和稳定 tie-break 见 README §4；源码勘察表见 README §5；验收工具为 test/smoke.py、test/run_configs.py 与 test/NativeAuthorityProbe.java。
+- 本版 Replay 用于核对底层命令；生命周期使用 live 引擎记录，未宣称独立 re-sim 或 GUI 验证。实际完成tick以引擎进度累积为准，不用工作tick倒数替代真实完成时刻。

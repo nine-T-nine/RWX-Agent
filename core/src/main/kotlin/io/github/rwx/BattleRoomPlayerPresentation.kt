@@ -24,14 +24,6 @@ fun battleRoomPlayerDisplayName(rawName: String?, isAi: Boolean, slotIndex: Int)
 }
 
 fun battleRoomAiDifficultyLabel(aiDifficulty: Int): String =
-    when (aiDifficulty) {
-        -2 -> "Very Easy"
-        -1 -> "Easy"
-        0 -> "Medium"
-        1 -> "Hard"
-        2 -> "Very Hard"
-        3 -> "Impossible"
-        else -> "Unknown"
-    }
+    com.corrodinggames.rts.game.ai.strategy.AiRegistry.displayName(aiDifficulty)
 
 fun battleRoomPlayerPingLabel(player: PlayerTeam): String = player.z()

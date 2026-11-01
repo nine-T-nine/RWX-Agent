@@ -136,6 +136,7 @@ public class FactoryQueueManager {
         baseUnitA.f(this.a.team);
         baseUnitA.setCommandTargetUnit(this.a);
         a(baseUnitA, f, z);
+        com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this.a, baseUnitA, "produced");
         GameEngine gameEngine = GameEngine.getInstance();
         if (baseUnitA.team == gameEngine.playerTeam) {
             gameEngine.gameUI.warLogDisplay.logUnitCreated(baseUnitA);
@@ -240,6 +241,13 @@ public class FactoryQueueManager {
                 if (projectile.m < 0.0f) {
                     projectile.m = 0.0f;
                     ((FactoryQueueInterface) this.a).b(projectile);
+                    AbstractUnitAction observedAction = this.a.validateActionId(projectile.j);
+                    if (observedAction != null && (observedAction.getActionDisplayType()
+                            == com.corrodinggames.rts.game.units.actions.ActionDisplayType.upgrade
+                            || observedAction.getActionTypeForUnit(this.a)
+                            == com.corrodinggames.rts.game.units.custom.logic.ActionType.upgrade)) {
+                        com.corrodinggames.rts.gameFramework.GameStatistics.f.info(this.a, null, "upgrade-started");
+                    }
                 }
                 if (this.f != null) {
                     this.e = projectile.m;

@@ -456,6 +456,8 @@ public class Command {
         this.rallyPoint = pointF;
     }
 
+    public boolean hasRallyPoint() { return this.rallyPoint != null; }
+
     /* JADX INFO: renamed from: i */
     public synchronized void resolvePendingUnitIds() {
         Iterator it = this.pendingUnitIds.iterator();
@@ -476,6 +478,7 @@ public class Command {
 
     /* JADX INFO: renamed from: j */
     public void applyCommandToUnits() {
+        if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(this)) return;
         if (AbstractUnitAction.isActionIdSpecified(this.actionId)) {
             for (OrderableUnit orderableUnit : this.selectedUnits) {
                 orderableUnit.stopMoving(orderableUnit.validateActionId(this.actionId), this.stopCurrentAction);
@@ -485,6 +488,32 @@ public class Command {
 
     /* JADX INFO: renamed from: k */
     public void executeCommand() {
+        if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(this)) return;
+        evaluate.utils.EngineEvidence.Application observation = null;
+        if (System.getProperty("rwx.evaluate.dir") != null) {
+            java.util.List<Long> ids = new java.util.ArrayList<>();
+            for (OrderableUnit unit : this.selectedUnits) ids.add(unit.objectId);
+            for (Object id : this.pendingUnitIds) if (!ids.contains((Long) id)) ids.add((Long) id);
+            observation = evaluate.utils.EngineEvidence.beforeCommand(this, ids);
+        }
+        try {
+            executeObservedCommand();
+            if (com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.collecting())
+                com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.commandApplied(this, getUnitIds());
+        } finally {
+            evaluate.utils.EngineEvidence.afterCommand(this, observation);
+        }
+    }
+
+    /** Defensive identity view for read-only pending-order and replay evidence consumers. */
+    public java.util.List<Long> getUnitIds() {
+        java.util.List<Long> ids = new java.util.ArrayList<>();
+        for (OrderableUnit unit : this.selectedUnits) ids.add(unit.objectId);
+        for (Object id : this.pendingUnitIds) if (!ids.contains((Long) id)) ids.add((Long) id);
+        return ids;
+    }
+
+    private void executeObservedCommand() {
         UnitCommand lastWaypoint;
         String str;
         GameEngine gameEngine = GameEngine.getInstance();

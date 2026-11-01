@@ -9,6 +9,7 @@ import io.github.rwx.ui.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.CompletableFuture
 
 /** The frontend owns all mutable game/UI state; other UI threads only receive snapshots. */
 internal class AppUiController(
@@ -209,6 +210,21 @@ internal class AppUiController(
         if (composeEnabled && published.showComposeOverlay && published.loadingDialog?.revision == revision) {
             bootstrap.loadingDialogSceneHost.cancel(revision)
         }
+    }
+
+    /** Runs a privileged local-control operation on the same UI owner as normal UI actions. */
+    fun runAtomic(action: () -> String): CompletableFuture<String> {
+        val result = CompletableFuture<String>()
+        scope.launch {
+            try {
+                result.complete(action())
+            } catch (error: Throwable) {
+                result.completeExceptionally(error)
+            } finally {
+                refresh(force = true)
+            }
+        }
+        return result
     }
 
     private fun submit(action: () -> Unit) {

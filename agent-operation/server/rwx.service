@@ -1,0 +1,27 @@
+[Unit]
+Description=RWX headless multiplayer game host
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=rwx
+Group=rwx
+StateDirectory=rwx
+WorkingDirectory=/var/lib/rwx
+Environment=JAVA_HOME=/opt/rwx/java25
+Environment=RWX_DATA_DIR=/var/lib/rwx
+Environment="RWX_JAVA_OPTS=-Xms128m -Xmx768m"
+EnvironmentFile=-/etc/rwx/rwx.env
+ExecStart=/usr/bin/bash /opt/rwx/current/bin/rwx-headless
+ExecStartPost=/usr/bin/python3 /opt/rwx/current/agent-operation/server/host-service.py --port-file /var/lib/rwx/agent-operation/tmp/port --game-port 5123 --map "Lake (2p)"
+TimeoutStartSec=180
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

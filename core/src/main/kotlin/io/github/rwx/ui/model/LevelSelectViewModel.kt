@@ -8,6 +8,7 @@ import io.github.rwx.i18n.I18n
 import io.github.rwx.i18n.I18nText
 import io.github.rwx.p2p.FeatureIds
 import io.github.rwx.p2p.MapFeatureDetector
+import io.github.rwx.trimAssetPath
 import io.github.rwx.ui.AppScreen
 import java.io.File
 
@@ -341,9 +342,47 @@ class LevelSelectViewModel(
             mapAssetPath = mapAssetPath,
             playerCount = playerCount(fileName),
             requiredRwxFeatures = MapFeatureDetector.requiredFeaturesForMap(mapAssetPath),
-            previewOverride = MapEntry.cachedPreview(mapAssetPath),
+            previewOverride = MapEntry.cachedPreview(mapAssetPath) ?: resolvePreviewForPath(mapAssetPath),
             hasSiblingIndex = true,
         )
+    }
+
+    /**
+     * Resolve the sibling `_map.png` of a single map directly from storage.
+     *
+     * <p>[mapEntry] used to rely on [MapEntry.cachedPreview], which is only filled while a level list is scanned.
+     * A battle room that never opened the level list (hosting the default map, or joining someone else's room) got a
+     * null preview and rendered "no preview" even though the asset exists next to the map.
+     */
+    fun resolvePreviewForPath(mapAssetPath: String): String? {
+        MapEntry.cachedPreview(mapAssetPath)?.let { return it }
+        val cleanPath = mapAssetPath.stripMergedTag().trimAssetPath()
+        val fileName = cleanPath.substringAfterLast('/')
+        val dir = cleanPath.substringBeforeLast('/', "")
+        val dirPrefix = if (dir.isEmpty()) "" else dir + "/"
+        val names = when {
+            dir.isEmpty() -> emptyList()
+            else -> runCatching { storage.listAssets(dir) }.getOrDefault(emptyList())
+                .map { it.substringAfterLast('/') }
+                .ifEmpty {
+                    runCatching { FileHelper.listFiles(dir)?.toList() }.getOrNull().orEmpty()
+                }
+        }
+        val preview = matchSiblingPreviewName(fileName, names)?.let { dirPrefix + it }
+        if (preview != null) MapEntry.cachePreview(mapAssetPath, preview)
+        return preview
+    }
+
+    private fun matchSiblingPreviewName(mapFileName: String, names: Collection<String>): String? {
+        if (!mapFileName.endsWith(".tmx", ignoreCase = true)) return null
+        val fileBase = mapFileName.substring(0, mapFileName.length - 4)
+        val cleanNames = names.map { it.substringAfterLast('/') }
+        for (suffix in SIBLING_PREVIEW_SUFFIXES) {
+            val candidate = fileBase + "_map" + suffix
+            val realName = cleanNames.firstOrNull { it.equals(candidate, ignoreCase = true) }
+            if (realName != null) return realName
+        }
+        return null
     }
 
     companion object {

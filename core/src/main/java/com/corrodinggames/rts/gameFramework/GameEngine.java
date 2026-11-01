@@ -71,6 +71,28 @@ public abstract class GameEngine {
     /* JADX INFO: renamed from: ay */
     public static boolean isMenuBackgroundDisabled;
 
+    /**
+     * True when a GUI frame loop drains {@link #pendingGameThreadTasks} every frame, including
+     * paused ones. External CLI callers then queue work for that thread instead of running it
+     * inline: simulation can touch GL (scorch marks, minimap, end screens), and only the render
+     * thread has a current context.
+     */
+    public static volatile boolean guiFrameLoopDrainsGameTasks;
+
+    /** The thread that owns the GL context while a GUI window is open (null when headless). */
+    public static volatile Thread guiRenderThread;
+
+    /**
+     * The thread that most recently entered the simulation frame. Set at the top of every
+     * {@code runGameLoopFrame}, so it names whoever actually runs the game loop: the render thread
+     * in a window, the Swing EDT in headless mode, or a dedicated game thread. Callers that already
+     * run on it must execute their work inline instead of queueing it back to itself.
+     */
+    public static volatile Thread gameLoopThread;
+
+    /** True when any GUI renderer is showing the game (Slick or Skia), false when headless. */
+    public static volatile boolean guiPresent;
+
     /* JADX INFO: renamed from: az */
     public static boolean isDesktopVersion;
 

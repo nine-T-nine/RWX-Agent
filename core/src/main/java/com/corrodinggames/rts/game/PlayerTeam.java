@@ -1107,23 +1107,10 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
 
     /* JADX INFO: renamed from: E */
     public final float getSpectatorEnergyFactor() {
-        float f;
         if (!this.isTeamSpectator) {
             return 1.0f;
         }
-        int teamColorId = getTeamColorId();
-        if (teamColorId > 0) {
-            f = 1.0f + (teamColorId * 0.4f);
-        } else {
-            f = 1.0f + (teamColorId * 0.3f);
-        }
-        if (teamColorId == 3) {
-            f += 1.5f;
-        }
-        if (f < 0.1f) {
-            f = 0.1f;
-        }
-        return f;
+        return com.corrodinggames.rts.game.ai.strategy.AiRegistry.incomeMultiplier(getTeamColorId());
     }
 
     public final void b(float f) {
@@ -1420,7 +1407,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
 
     public static Texture[] a(Texture texture, ColorMode colorMode) {
         Texture[] textureArr = new Texture[10];
-        if ((GameEngine.isNonAndroidVersion && !GameEngine.isPCOrIOSVersion) || colorMode == ColorMode.disabled || texture.A()) {
+        if (GameEngine.isHeadlessMode || (GameEngine.isNonAndroidVersion && !GameEngine.isPCOrIOSVersion) || colorMode == ColorMode.disabled || texture.A()) {
             for (int i = 0; i < textureArr.length; i++) {
                 textureArr[i] = texture;
             }
@@ -1444,7 +1431,7 @@ public abstract class PlayerTeam extends Serializable implements Comparable<Play
 
     public static Texture[] b(Texture texture, ColorMode colorMode) {
         Texture[] textureArr = new Texture[10];
-        if ((GameEngine.isNonAndroidVersion && !GameEngine.isPCOrIOSVersion) || colorMode == ColorMode.disabled || texture.A()) {
+        if (GameEngine.isHeadlessMode || (GameEngine.isNonAndroidVersion && !GameEngine.isPCOrIOSVersion) || colorMode == ColorMode.disabled || texture.A()) {
             for (int i = 0; i < textureArr.length; i++) {
                 textureArr[i] = texture;
             }

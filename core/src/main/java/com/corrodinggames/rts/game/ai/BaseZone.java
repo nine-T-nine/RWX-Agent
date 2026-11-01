@@ -317,8 +317,21 @@ public class BaseZone extends AIStrategyNode {
         return false;
     }
 
+    /**
+     * 打分微调钩子：拿到原版算好的分数，返回调整后的分数（返回负数等于排除该建筑）。
+     * 用 {@link #getBestBuildingToBuild(ScoreAdjuster)} 注入；无参版本行为与原版完全一致。
+     */
+    public interface ScoreAdjuster {
+        float adjust(UnitType unitType, float score);
+    }
+
     /* JADX INFO: renamed from: c */
     public UnitType getBestBuildingToBuild() {
+        return getBestBuildingToBuild(null);
+    }
+
+    /* JADX INFO: renamed from: c */
+    public UnitType getBestBuildingToBuild(ScoreAdjuster adjuster) {
         GameEngine gameEngine = GameEngine.getInstance();
         if (this.aiController.isAggressive) {
             return null;
@@ -454,6 +467,9 @@ public class BaseZone extends AIStrategyNode {
                     if (this.aiController.credits > 55000.0d && iAssignTaskToUnitTypeOnCommand == 1) {
                         f2 = 0.03f;
                     }
+                }
+                if (adjuster != null) {
+                    f2 = adjuster.adjust(unitType2, f2);
                 }
                 if (f2 >= 0.0f && (f2 > f || Utility.randomFloatInRange(0.0f, 1.0f) < 0.01d)) {
                     f = f2;
@@ -748,7 +764,8 @@ public class BaseZone extends AIStrategyNode {
     }
 
     /* JADX INFO: renamed from: g */
-    private boolean tryBuildUnit(UnitType unitType) {
+    /** Original builder-based construction: original location, original builder choice, one build order. */
+    public boolean tryBuildUnit(UnitType unitType) {
         PointF pointFE;
         OrderableUnit orderableUnitA;
         this.lastBuiltUnitType = unitType;
@@ -875,6 +892,10 @@ public class BaseZone extends AIStrategyNode {
             GameEngine.log("AI", "buildUnit: quantity cannot be < 1");
             return false;
         }
+        // Factory-queued buildings belong to the policy that owns building production; units stay here.
+        if (unitType.isBuildingUnit() && this.aiController.overridesBuildingProduction()) {
+            return false;
+        }
         OrderableUnit orderableUnitA = findFactoryForUnitType(unitType, true, z);
         if (orderableUnitA == null) {
         }
@@ -934,10 +955,18 @@ public class BaseZone extends AIStrategyNode {
             PointF pointFW = getRandomPointInside();
             if (GameViewUtils.a(orderableUnitX, pointFW.x, pointFW.y)) {
                 boolean zIsPathPossibleForUnit = this.aiController.isPathPossibleForUnit(orderableUnitX, pointFW.x, pointFW.y);
-                if (zIsPathPossibleForUnit || this.aiController.activeTransporterGroupCount != 0) {
-                    Command commandNewCommandForTeam = gameEngine.commandController.newCommandForTeam(this.aiController);
-                    commandNewCommandForTeam.addUnitToCommand(orderableUnitX);
-                    commandNewCommandForTeam.setMoveTarget(pointFW.x, pointFW.y);
+                // AI_S must be able to request its first transport too. The vanilla
+                // transporter-group guard otherwise suppresses every unreachable
+                // reinforcement before a transport unit has ever been produced.
+                if (zIsPathPossibleForUnit || this.aiController.activeTransporterGroupCount != 0 || this.aiController.overridesTransportWaiting()) {
+                    boolean waitForTransport = !zIsPathPossibleForUnit && this.aiController.overridesTransportWaiting();
+                    if (waitForTransport) this.aiController.requestTransportCapacity();
+                    if (waitForTransport && !this.aiController.canQueueTransportWaiter()) return;
+                    if (!waitForTransport) {
+                        Command commandNewCommandForTeam = gameEngine.commandController.newCommandForTeam(this.aiController);
+                        commandNewCommandForTeam.addUnitToCommand(orderableUnitX);
+                        commandNewCommandForTeam.setMoveTarget(pointFW.x, pointFW.y);
+                    }
                     this.lastAttackedTimer++;
                     this.updateTimer = Utility.getRandomIntInRange(1800, 2500);
                     if (this.lastAttackedTimer >= 2) {
@@ -952,7 +981,7 @@ public class BaseZone extends AIStrategyNode {
                             } else {
                                 z = false;
                                 if (!orderableUnitX.aB.unitsNeedingTransport.contains(orderableUnitX)) {
-                                    orderableUnitX.aB.unitsNeedingTransport.add(orderableUnitX);
+                                    orderableUnitX.aB.addUnitNeedingTransport(orderableUnitX);
                                 }
                             }
                         }
@@ -1115,7 +1144,7 @@ public class BaseZone extends AIStrategyNode {
             repairDamagedBuildings();
         }
         if (this.isPrimary && this.numberOfExtractors > 0) {
-            buildRecommendedHarvesters();
+            if (!this.aiController.overridesUnitProduction()) buildRecommendedHarvesters();
             retargetHarvestersToBetterBuilding();
             sendHarvesterToReclaim();
         }
@@ -1124,7 +1153,8 @@ public class BaseZone extends AIStrategyNode {
             int iShouldWriteForUnitType = this.aiController.countUnitsForBuildStrategyWithFilter(this.aiController.fabricatorUnitBuildStrategy, UnitFilterMode.include);
             if (!this.isUnderAttack || iShouldWriteForUnitType <= 2) {
                 boolean z = Utility.getRandomIntInRange(0, 100) < 5;
-                if (!z && tryBuildFromStrategy(this.aiController.fabricatorUnitBuildStrategy, true)) {
+                if (!z && !this.aiController.overridesUnitProduction()
+                        && tryBuildFromStrategy(this.aiController.fabricatorUnitBuildStrategy, true)) {
                     this.isInitialized = false;
                     this.landUnitsScore = 900.0f;
                 } else {
@@ -1194,6 +1224,40 @@ public class BaseZone extends AIStrategyNode {
     /* JADX INFO: renamed from: u */
     public int getNumberOfExtractors() {
         return this.numberOfExtractors;
+    }
+
+    /* JADX INFO: renamed from: r */
+    public int getNumberOfFactories() {
+        return this.numberOfFactories;
+    }
+
+    public BaseZoneStage getStage() {
+        return this.stage;
+    }
+
+    /** Zone role is read by custom building policies; it remains owned by the native AI. */
+    public BaseZoneType getZoneType() {
+        return this.zoneType;
+    }
+
+    /** True while enemies are inside or near this base; the original scoring reacts to it. */
+    public boolean isUnderAttack() {
+        return this.isUnderAttack;
+    }
+
+    /** True for the base that currently sits on resource pools. */
+    public boolean isPrimary() {
+        return this.isPrimary;
+    }
+
+    /** Priority the original scoring table last produced; the original credit gates key off it. */
+    public float getLastFoundBuildingPriority() {
+        return this.lastFoundBuildingPriority;
+    }
+
+    /** Original builder choice for an explicit spot, so a policy can keep the choice and move the spot. */
+    public OrderableUnit findBuilderForBuilding(UnitType unitType, float f, float f2) {
+        return findBuilderForUnitType(unitType, new PointF(f, f2), false);
     }
 
     /* JADX WARN: Multi-variable type inference failed */
@@ -1286,7 +1350,11 @@ public class BaseZone extends AIStrategyNode {
             if (this.lastFoundBuildingPriority < 0.08d) {
                 this.defensiveScore += 180.0f;
             }
-            if ((findAvailableBuilder() != null) && (bestBuildingToBuild = getBestBuildingToBuild()) != null && ((this.lastFoundBuildingPriority > 0.8d || this.aiController.hasCredits(1300.0d)) && ((this.lastFoundBuildingPriority > 0.4d || this.aiController.hasCredits(1700.0d)) && ((this.lastFoundBuildingPriority > 0.2d || this.aiController.hasCredits(2100.0d)) && ((this.lastFoundBuildingPriority > 0.1d || this.aiController.hasCredits(2800.0d)) && ((this.lastFoundBuildingPriority > 0.05d || this.aiController.hasCredits(3100.0d)) && (this.lastFoundBuildingPriority > 0.01d || this.aiController.hasCredits(4800.0d)))))))) {
+            if ((findAvailableBuilder() != null) && (bestBuildingToBuild = getBestBuildingToBuild()) != null
+                    // The choice above still runs so lastFoundBuildingPriority keeps feeding reclaimScore;
+                    // only the construction order itself moves to the custom policy that owns buildings.
+                    && !this.aiController.overridesBuildingProduction()
+                    && ((this.lastFoundBuildingPriority > 0.8d || this.aiController.hasCredits(1300.0d)) && ((this.lastFoundBuildingPriority > 0.4d || this.aiController.hasCredits(1700.0d)) && ((this.lastFoundBuildingPriority > 0.2d || this.aiController.hasCredits(2100.0d)) && ((this.lastFoundBuildingPriority > 0.1d || this.aiController.hasCredits(2800.0d)) && ((this.lastFoundBuildingPriority > 0.05d || this.aiController.hasCredits(3100.0d)) && (this.lastFoundBuildingPriority > 0.01d || this.aiController.hasCredits(4800.0d)))))))) {
                 this.numberOfLandUnits++;
                 if (!tryBuildUnit(bestBuildingToBuild)) {
                     this.defensiveScore -= 120.0f;
@@ -1339,7 +1407,7 @@ public class BaseZone extends AIStrategyNode {
             this.reclaimScore = 3.5f;
         }
         for (int i = 0; i < 12; i++) {
-            tryBuildCombatUnits();
+            tryBuildCombatUnits(this.aiController.overridesUnitProduction());
             if (this.reclaimScore < 3.0f) {
                 return;
             }
@@ -1360,6 +1428,11 @@ public class BaseZone extends AIStrategyNode {
 
     /* JADX INFO: renamed from: v */
     public void tryBuildCombatUnits() {
+        tryBuildCombatUnits(false);
+    }
+
+    /** Keep the original transport selection when a custom AI owns other unit production. */
+    private void tryBuildCombatUnits(boolean transportOnly) {
         UnitMovementType unitMovementType;
         BaseUnit closestEnemyUnit;
         int iCountIdleCombatUnits = countIdleCombatUnits();
@@ -1392,12 +1465,12 @@ public class BaseZone extends AIStrategyNode {
             unitMovementType = UnitMovementType.AIR;
         }
         if ((this.aiController.hasCredits(1300.0d) && this.reclaimScore >= 1.0f) || (this.aiController.hasCredits(300.0d) && this.reclaimScore >= 3.0f)) {
-            if (this.aiController.isPathfindingOverloaded() && this.aiController.buildingCount < i && Utility.getRandomInt(100) < 35) {
+            if (!transportOnly && this.aiController.isPathfindingOverloaded() && this.aiController.buildingCount < i && Utility.getRandomInt(100) < 35) {
                 addRandomUnitTypesForBuild(arrayList, this.aiController.seaUnitBuildStrategy, null, 2);
                 if (zA) {
                 }
             }
-            if (iCountIdleCombatUnits < 3 && this.aiController.unitProductionTimer < i2) {
+            if (!transportOnly && iCountIdleCombatUnits < 3 && this.aiController.unitProductionTimer < i2) {
                 if (unitMovementType == UnitMovementType.LAND) {
                     addRandomUnitTypesForBuild(arrayList, this.aiController.builderUnitBuildStrategy, null, 4);
                     if (zA) {

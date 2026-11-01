@@ -1,0 +1,7 @@
+/commands-*.txt
+/commands-*.txt.tmp
+
+# 回放反解析产物（evaluate/utils/replay.py 生成）
+/replay-*.txt
+/replay-*.jsonl
+/replays.index.txt

@@ -102,6 +102,7 @@ public class CommandController {
         int i = gameEngine.currentTick;
         int i2 = 0;
         for (Command command : this.pendingCommands) {
+            if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(command)) continue;
             gameEngine.replayEngine.a(command, i);
             command.executeCommand();
             i2++;
@@ -121,6 +122,7 @@ public class CommandController {
         while (it.hasNext()) {
             Command command = (Command) it.next();
             if (command.scheduledTick == i) {
+                if (!com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.allowNative(command)) { it.remove(); continue; }
                 gameEngine.replayEngine.a(command, i);
                 command.executeCommand();
                 it.remove();

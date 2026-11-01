@@ -1,6 +1,8 @@
 package io.github.rwx.skia
 
+import com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime
 import com.corrodinggames.rts.gameFramework.GameEngine
+import com.corrodinggames.rts.gameFramework.ReplayEngine
 import io.github.rwx.DesktopRenderBackend
 import io.github.rwx.PlatformStorage
 import io.github.rwx.app.launchOnIO
@@ -65,6 +67,7 @@ class SkiaGameSession(
     private val frameProbe by lazy { BenchFrameProbe() }
 
     init {
+        GameEngine.guiPresent = true
         configureRendererProfile(
             GameSessionRendererProfile(
                 usesFrameCommandRendering = false,
@@ -320,7 +323,14 @@ class SkiaGameSession(
             when (event) {
                 is SkiaGameInputQueue.Event.Pointer -> view.submitPointer(event.x, event.y, event.down, event.button)
                 is SkiaGameInputQueue.Event.Move -> view.movePointer(event.x, event.y)
-                is SkiaGameInputQueue.Event.Key -> engine.setKeyState(event.code, event.down)
+                is SkiaGameInputQueue.Event.Key ->
+                    // Micro human mode and replay playback: Q toggles pause even while paused
+                    // (the stock pause key only runs inside gameLoop, which a paused frame never
+                    // drives).
+                    if (!event.down || !(MicroRuntime.togglePauseForKey(event.code)
+                                || ReplayEngine.togglePauseForKey(event.code))) {
+                        engine.setKeyState(event.code, event.down)
+                    }
                 is SkiaGameInputQueue.Event.Wheel -> engine.queueMouseWheelDelta(event.amount)
                 SkiaGameInputQueue.Event.Reset -> {
                     view.submitPointer(0f, 0f, false, -1)

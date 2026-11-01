@@ -50,6 +50,10 @@ public final class PathEngine {
     /* JADX INFO: renamed from: z */
     public PathCostMap buildingCostMap;
     /* JADX INFO: renamed from: A */
+    /**
+     * Water movement cost map - the field name is a mis-mapping: it is constructed with
+     * UnitMovementType.WATER. The AI reads PathCostMap.i on it to detect a fragmented map.
+     */
     public PathCostMap airCostMap;
     public PathCostMap B;
     public PathCostMap C;

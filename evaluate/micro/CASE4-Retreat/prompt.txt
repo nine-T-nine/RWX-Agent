@@ -1,0 +1,119 @@
+你正在 RWX 仓库中实现一个新的 RTS 微操评测 Case：**CASE4-Retreat（战地撤退）**。
+
+先完整阅读本目录 README.md、START.md、command.md、METRICS.md；再阅读 CASE2-LTE 五份文档、CASE1-duel 的实现和文档、完整游戏 CLI 手册 help_zh.md，以及相关游戏源码。文档是设计目标，实际机制必须以当前源码和引擎运行结果为准。
+
+# 1. 首要目标
+
+实现一个仅 realtime 的战损/撤退任务：给定少量屏蔽气垫坦克和维修湾，摧毁左上角区域的全部敌方炮塔。Agent 只知道目标，不知道敌方具体组成、数量和隐藏坐标。Agent 必须通过可见情报、己方 HP 和实际维修效果判断推进、撤退、维修和再次投入时机。
+
+评测核心是：战损评估是否及时、撤退是否合理、维修湾是否被有效利用、维修后是否及时重返战场，以及任务拖延带来的真实额外战损。不得添加草稿没有定义的人工伤害倍率或加权总分。
+
+# 2. 源码勘察（先做，不能猜）
+
+输出简短源码勘察表，列出文件/类/方法/核实结论：
+
+1. CASE1/CASE2 的 Case 注册、Runtime、Gateway、Replay、EngineEvidence、run 目录和 metrics 插件架构。
+2. 屏蔽气垫坦克精确内部 ID、移动速度、HP、武器、攻击范围、攻击姿态、移动/攻击命令行为。
+3. 维修湾精确内部 ID、占地、治疗半径、治疗速率、治疗目标类别、是否自动治疗、是否需要 repair/其他指令、满血时行为、治疗冷却和治疗事件入口。
+4. T1 电击塔、T1 火炮、T2 火炮、T2 机枪、T3 机枪的内部 ID、HP、占地、射程、伤害、射速、攻击类别和目标选择机制。
+5. 伤害/治疗/销毁事件的引擎入口，是否能获取 HP before/after、攻击者、武器、位置和 tick。
+6. 普通持续迷雾与一次性迷雾的配置差异；敌方实体何时对 CLI 可见。
+7. `map-show` 的地形编码、窗口裁剪、fog mask、资源/建筑统计逻辑；如何复用完整游戏地图实现并减少 Case 无关统计。
+8. `unit-list`、`unit-show`、`threat-list`、`map-path` 的可见性和 JSON 字段。
+9. 真实 Replay 命令格式、native index、Gateway requestId 关联方式和共享 wallMs 时间原点。
+10. 当前 `rwx-game-order-move/attack/attack-move/stop` 的授权与执行路径。
+
+不能根据“维修湾”名称假设它自动治疗；不能根据武器射程推断实际正在开火；无法确认攻击来源时必须记 unknown。
+
+# 3. 需求配置与未确定项
+
+任务 ID `4_<type>_<level>`。暂按 level=a=1..3 且只放大敌方数量理解：
+
+- type1：我方屏蔽气垫坦克×2、维修湾×2；敌方 T2 机枪×5a、T1 电击塔×3a；无迷雾。
+- type2：我方坦克×2、维修湾×4；敌方 T2 机枪×3a、T1 火炮×4a、T2 电击塔×2a；普通持续迷雾。
+- type3：我方坦克×3、维修湾×4；敌方 T3 机枪×a、T2 火炮×a、T2 机枪×5a；普通持续迷雾。
+
+开始实现前必须把以下缺口列入勘察报告并请求确认，不得擅自填值：
+- `a` 是否确定为 1..3、是否只乘敌军数量。
+- 游戏时间上限、墙钟预算、是否有额外超时倍率。
+- 我方全部坦克阵亡是否立即判负。
+- A/B 区域半径是否为 20–30/30–50，单位是格还是世界坐标。
+- “角形维修湾”是否按 L 形理解。
+- 地图是否为全陆地，是否存在未写明的障碍。
+
+接口可以先支持可配置 `gameLimitSeconds/wallLimitSeconds/startTimeoutSeconds`，但没有默认数字前不得宣称任务预算已定。
+
+# 4. 地图生成
+
+- 固定 180×180 格。敌军在左上角；我方维修湾在右下角；坦克出生在维修湾旁。
+- 敌军按真实射程从远到近放置。暂定以左上角 `(0,0)` 为中心，A 环带半径 20–30 格，B 环带半径 30–50 格；A 放 T3 机枪和 T2/T1 火炮，其余放 B。A 区中心间距至少 10 格，B 区至少 3 格。以上均须作为显式待确认假设；实现不得混淆 tile 与 world units。
+- 维修湾暂按折角/L 形布局；坦克在维修湾旁，保留可进出通道。记录全部 tile/world 坐标。
+- 地形草稿未定义。建议先使用连续可通行陆地，不添加额外障碍；须在报告中确认。
+- type1 fog=none；type2/3 使用普通持续迷雾，不能配置成一次性揭示。
+- 使用 seed 生成稳定位置；同 task+seed 完全复现，炮塔占地不重叠，维修湾/坦克位置合法。
+
+# 5. 隐藏信息边界
+
+Agent 只知道任务描述“摧毁左上角区域内全部敌人，并妥善利用维修湾”。不要向 Agent 暴露敌军类型、数量、精确位置、ID、私有目标数组或 `meta.json` 私有字段。
+
+- `unit-list --owner enemy` 仅返回当前可见敌方实体。
+- `unit-show` 对隐藏敌方 ID 统一返回 `unknown_or_not_visible`，不能区分隐藏存在与不存在。
+- `threat-list` 只统计当前可见敌人，不能返回隐藏总数。
+- map-show 的 fog mask 必须先于敌方建筑叠加应用；不能通过建筑 ID、地形编码、资源/建筑统计泄露迷雾实体。
+- `state` 只显示通用目标描述、时间、阶段和目标是否完成；不显示 remaining enemy count/type。
+- 私有 `meta.json` 仅评测器可读，不能由 Agent 访问路径或连接器读取。
+
+# 6. 命令与权限
+
+按 command.md 实现：
+
+A：`rwx-micro-4-state`、完整游戏只读 `map-show`、`unit-list`、`unit-show`、`threat-list`、必要的 `map-path`。
+B：本局坦克的 `order-move`、`order-attack`、`order-attack-move`、`order-stop`。只有源码证明维修湾需要显式命令时才增加受限 repair。
+C：`rwx-micro-4-begin`、help、ping。
+
+地图查询必须复用完整游戏 map-show 的地形分类、坐标、裁剪和 fog 实现；只简化 Case 无关统计。v1 不要求陆军/空军单位叠加图，unit-list 负责实体位置。
+
+检查所有命令入口：CLI parser、RwxCliTool、Gateway、RwxEngineLocalGameService、CommandController、原生 Command 和 ReplayWriter。不能只在 parser 层限制。禁止建造、生产、升级、回收、操控维修湾/敌军/其他单位、任意 action、全局自动化和 pause/step/speed/restart/surrender。
+
+违规请求执行前拒绝，写 violations.jsonl，不进入 Replay、不改变状态。普通参数错误和明确越权分开。
+
+# 7. 维修与战损证据
+
+优先订阅引擎真实 damage/heal/repair/destroy 事件。至少记录：
+
+1. 每座敌方炮塔每次 HP 变化：towerId/type、tick/gameMs/wallMs、HP before/after、delta、attacker/weapon/position（可确认时）。
+2. 每座炮塔摧毁时刻，以及摧毁后我方所有单位 HP、位置、存活状态、累计损失快照。
+3. 每个我方坦克的 HP 变化、受击时刻、攻击来源（无法确认则 unknown）、死亡。
+4. 每个坦克进入维修湾有效范围并实际治疗的连续 session。严格大于 5 游戏秒才写正式记录；字段至少包括 unitId、repairBayIds、start HP/time、end HP/time、leave time、duration、healed HP。重叠维修湾合并连续区间；满血但没有治疗不算治疗 session。
+5. 治疗事件若不存在，可对本局少量坦克做对象级位置/HP 监控，并记录采样精度；不允许每 tick 全量扫描整个世界。
+6. 所有 wallMs 使用 run 初始化时同一单调原点；Gateway/Replay/EngineEvidence 匹配保留 ambiguous/unmatched。
+
+# 8. 离线 metrics
+
+实现 METRICS.md：outcome、turret_progress、battle_damage、post_kill_snapshots、repair_sessions、repair_effectiveness、AB timing、受击到撤退响应延迟、维修结束到重新投入延迟、agent_timing、violations。引擎只写事实，Python 插件离线计算，无加权总分。
+
+“超时损失放大”不得转成未定义的数学惩罚。报告真实的累计 HP 损失、单位阵亡、伤害率、受击暴露时间、维修恢复量与任务耗时。只有需求方明确给出额外时间倍率后，才实现独立的 time_penalty 指标。
+
+# 9. Baseline
+
+实现一个通用 `baseline.py`，覆盖所有 type/level。只用 Agent 可见的 map/unit/threat/HP/维修湾状态，不读隐藏 meta、证据或 Replay。
+
+给出简单确定性策略：稳定排序可见目标；根据 HP/威胁触发撤退；选择最近可达维修湾；观察实际 HP 恢复；达到公开阈值后重返战场。所有阈值、目标 tie-break、重入条件必须写入 README。若治疗规则不是自动触发，按源码提供最小受限 repair 操作。
+
+# 10. 验收
+
+至少覆盖：
+1. 同 task+seed 完全复现；炮塔、维修湾、单位位置合法且不重叠。
+2. 每种 type/level 生成正确数量；Agent 无法查询隐藏敌军组成/数量/坐标。
+3. type1 无迷雾、type2/3 普通持续迷雾行为正确。
+4. map-show 地形/窗口/fog 与完整游戏一致，且不泄露隐藏实体。
+5. unit-list/threat-list 严格遵守可见性。
+6. 源码确认维修湾治疗触发、范围、速率；治疗 session >5s 过滤准确。
+7. 每座炮塔 HP 变化、摧毁事件和摧毁后战损快照正确。
+8. 受击、治疗、死亡、攻击来源不可靠时 unknown 处理正确。
+9. 违规请求执行前拒绝、不改变状态、不进入 Replay。
+10. AB/撤退响应/维修重入延迟和 metrics 离线结果可复现。
+11. success/timeout/error 和全灭策略按最终确认的规则测试。
+12. Gradle build/test、至少一局 headless smoke test、窗口结算路径通过。
+
+不要修改 CASE1/CASE2 行为或既有命令语义，不做大规模通用重构，不增加自动轮询、游戏内固定 wait、子 Agent 管理器或隐式自动撤退。完成后更新四份文档，补入真实内部 ID、武器参数、维修规则、预算、基线阈值与公式，并汇报所有未确认项。

@@ -681,7 +681,14 @@ public class UnitGroup extends AIUnitGroupBase {
             this.unitsNeedingTransport.clear();
             for (OrderableUnit orderableUnit2 : this.units) {
                 if (orderableUnit2.getMovementType() != UnitMovementType.WATER && !this.aiController.isPathPossibleForUnit(orderableUnit2, this.posX, this.posY)) {
-                    this.unitsNeedingTransport.add(orderableUnit2);
+                    if (!this.aiController.overridesTransportWaiting() || this.aiController.canQueueTransportWaiter()) {
+                        addUnitNeedingTransport(orderableUnit2);
+                        if (this.aiController.overridesTransportWaiting()) {
+                            Command waitCommand = GameEngine.getInstance().commandController.newCommandForTeam(this.aiController);
+                            waitCommand.addUnitToCommand(orderableUnit2);
+                            waitCommand.setClearExistingOrders();
+                        }
+                    }
                 }
             }
         }
