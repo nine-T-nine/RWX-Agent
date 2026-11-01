@@ -6,6 +6,13 @@
 
 RWX-Agent 基于 RWX 仓库扩展修改，并定期同步上游源码。网站源码与三场实机对局位于 [`web/`](web/)，维护和发布步骤见 [`web/README.md`](web/README.md)。
 
+## 最近更新
+
+- **同步官方 1.1.4**：并入上游 [`yomi2539/RWX`](https://github.com/yomi2539/RWX) 的 v1.1.4（地图联通多人、桌面无头批量运行、Skia 后端性能优化、P2P 功能消息等），本仓库的自定义 AI、命令终端与评测扩展全部保留。
+- **基本评测流程框架**：`evaluate/` 提供完整对局的启动、证据采集与两轮离线分析；评估等级与情报量是两根独立的轴，可组合成对照实验。管理员入口见 [`evaluate/README.md`](evaluate/README.md)。
+- **微操实验 ×4**：`CASE1-duel`、`CASE2-LTE`、`CASE3-Transport`、`CASE4-Retreat` 四组独立场景，各自带地图生成、授权命令集、自动录像与结果指标，见 [`evaluate/micro/`](evaluate/micro/)。
+- **微操开发接口**：运行时只认 `MicroCase` / `MicroSession` 两个接口，新增一个 case 只需在 case 自己的类里声明、并在 `MicroCaseRegistry` 注册一行，不必改 `MicroRuntime`、`MicroConfig`、`MicroCommandProfile`；见 [`evaluate/micro/README.md`](evaluate/micro/README.md) 第 4 节。
+
 ## 让Agent参战
 
 把`agent-operation/START.md`喂给AI
