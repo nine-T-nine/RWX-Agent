@@ -153,7 +153,7 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 
 ### D 空闲建造者（`BUILDER_IDLE`）/ E 空闲工厂（`FACTORY_IDLE`）
 
-一个采集端 `idle` 段对应一条事件。动作菜单决定 `roles`；兼有生产/建造能力的资产按工厂只出一条。**计分前必须证明 B 端点的实际工作在整个 `[A,B]` 持续可做。** 不再使用上次产物或最便宜动作代替 B 的工作。
+一个采集端 `idle` 段对应一条事件。动作菜单决定 `roles`；兼有生产/建造能力的资产按工厂只出一条。判据是"该资产确实闲了"这个引擎侧事实；`feasibility` 只用来**排除**（证明当时确实做不了），不用来放行。只有两种情形不计分：证明做不了的 `EXPLAINED`，和 Agent 自己碰过该资产的 `EXCLUDED`。
 
 | 证据 | 用法 |
 |---|---|
@@ -162,17 +162,17 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 | `feasibility.minFunds/minCap` | 区间内资金/单位剩余额度最低值；除每 tick 外，也在原生命令改动共享预算前采样 |
 | `feasibility.repairable` | 整段都存活、受损、可由该建造者维修的同一目标交集 |
 | `feasibility.complete/fromMs/toMs` | 每个 tick 覆盖完整且时间端点匹配；缺帧不可通过 |
-| `feasibility.placements` | 建造需要同一类型、坐标、数量在整个区间有效的落点证明；缺少则 `UNCERTAIN` |
+| `feasibility.placements` | 建造落点的全区间证明；`valid:false` 证明当时确实建不了 → `EXPLAINED`。缺失只改 `reason`，不再挡计分 |
 
-预筛选规则：工厂必须以真实生产关闭区间；B 的整批生产总成本不超过 `minFunds`，数量不超过 `minCap`，所有型号均在连续动作交集中。同一请求拆成多个原生包时使用索引汇总的整批数量；多工厂共享预算无法全程重建时为 `UNCERTAIN`。维修必须保证同一目标全程可维修。建造同时要求动作、整批资金与落点全程合法。明确中途不可做 → `EXPLAINED`；证据不足 → `UNCERTAIN`；两者都不计分。已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
+预筛选规则：工厂必须以真实生产关闭区间；B 的整批生产总成本不超过 `minFunds`，数量不超过 `minCap`，所有型号均在连续动作交集中。同一请求拆成多个原生包时使用索引汇总的整批数量；多工厂共享预算无法全程重建时为 `UNCERTAIN`。维修必须保证同一目标全程可维修。建造同时要求动作、整批资金与落点全程合法。明确中途不可做 → `EXPLAINED`（不计分）；证据不足 → `UNCERTAIN`（**仍按同一曲线计分**）。已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
 **先于预筛选的排除规则**：只要 `[A,B)` 内出现过任何**原生命令**涉及该资产的 id，这一段直接 `EXCLUDED`（`reason=native_order_during_gap`），不进预筛选也不扣分。判据只读原生命令行的 `units`（已解析的单位 id），不读高层请求，因此 `--units all-army` 之类的选择器不需要额外解释。计入的来源是 `agent`/`pending`/`keep`/`auto`：keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，算它碰过；`engine`（自动维修及一切引擎自发命令）与 `replay_unknown`（回放期间写出的命令）不算。被拒请求不会产生原生命令行，天然不计入。窗口是半开的 `[fromMs,toMs)`：关闭该区间的命令自己的原生命令行落在 `toMs`，不会把它结束的这段区间排除掉。排除事件仍保留 `durationMs` 与 `nativeTouched`，供审计。
 
-采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。当前采集器提供工厂/维修的连续证据，**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲保留但不扣分。死亡、证据结束或纯移动关闭的区间没有实际 B 工作，也不能用猜测的动作参评。历史日志只有两端资金时同样保留为 `UNCERTAIN`。
+采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。当前采集器提供工厂/维修的连续证据，**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲记为 `continuous_placement_unavailable` 的 `UNCERTAIN`，**照常按 D 曲线计分**——只有 `valid:false` 的落点证明才会把它降为 `EXPLAINED`。死亡、证据结束或纯移动关闭的区间同样计分（按已覆盖时长）。历史日志只有两端资金时也按 `UNCERTAIN` 计分。
 
-命令日志早于 B 结束时仍输出已覆盖前缀的 `durationMs`，完整观测时长写 `observedDurationMs`，并设 `durationIsLowerBound=true`；由于无法把 B 归入已覆盖窗口，此时 `reason=endpoint_outside_command_coverage`，不扣前缀的分。完整覆盖且有 `keep-set` 规则时为 `EXPLAINED`。
+命令日志早于 B 结束时仍输出已覆盖前缀的 `durationMs`，完整观测时长写 `observedDurationMs`，并设 `durationIsLowerBound=true`；此时 `reason=endpoint_outside_command_coverage`，**按已覆盖前缀的时长计分**。完整覆盖且有 `keep-set` 规则时为 `EXPLAINED`。
 
-通过预筛选并 `DETECTED` 的工厂/建造者可计分，`idleScoreBuilders` 默认 true，仍可显式关闭。`tier`（<10s/10–60s/≥60s）只作描述，不再阻止短建造者区间按曲线计分。`agentState` 的 `SILENT/OBSERVING/BUSY_ELSEWHERE` 只说明当时在做什么。
+`DETECTED` 与 `UNCERTAIN` 的工厂/建造者都计分，`idleScoreBuilders` 默认 true，仍可显式关闭。`tier`（<10s/10–60s/≥60s）只作描述，不再阻止短建造者区间按曲线计分。`agentState` 的 `SILENT/OBSERVING/BUSY_ELSEWHERE` 只说明当时在做什么，不改变判定。
 
 ### F 资金空余
 
@@ -270,7 +270,7 @@ GRINDER 从后果开始累计同一次投入的实际伤害，连续 3s 无新�
 }
 ```
 
-`EXPLAINED/UNCERTAIN/scoreable:false` 对所有评分族统一排除。逐项 `reason`、`items`、`unscored` 保留没有扣分的依据；缺证据不能解释成没有问题。旧事件名仍映射到相应族，但不再沿用旧的死亡计数/按分钟扣分替代新公式。
+`EXPLAINED`、`EXCLUDED`、`scoreable:false` 对所有评分族统一排除；`UNCERTAIN` 只对 D/E（`BUILDER_IDLE`/`FACTORY_IDLE`）计分，其余族仍排除——在那里 `UNCERTAIN` 表示事件本身没被确认，与"资产确实闲着但说不出为什么"不是一回事。逐项 `reason`、`items`、`unscored` 保留没有扣分的依据；缺证据不能解释成没有问题。旧事件名仍映射到相应族，但不再沿用旧的死亡计数/按分钟扣分替代新公式。
 
 ## 面向 Agent 的事件流（与第二轮判定无关）
 

@@ -20,10 +20,12 @@ test('natural functions and quadratics use original x coordinates and interpolat
   assert.ok(Math.abs(curve(.15,0,.3,10,0,'quadratic',3)-4.9325)<1e-10);
   assert.ok(Number.isFinite(curve(10000,0,20000,0,1,'exp')));
 });
-test('legacy names retain families but cannot fabricate missing scoring evidence',()=>{
+test('legacy names retain families; combat families still need HP evidence',()=>{
   assert.equal(FAMILY.FEED,'GRINDER');assert.equal(FAMILY.PRODUCTION_GAP,'FACTORY_IDLE');
   assert.equal(deduction(event('FEED',{losses:{tank:99}})).reason,'missing_hp_loss_evidence');
-  assert.equal(deduction(event('BUILDER_GAP',{gapMs:5000})).reason,'missing_continuous_feasibility');
+  // A legacy idle name keeps its family and now scores from duration alone, like the D/E pair it was
+  // replaced by: the evidence gap is no longer an excuse.
+  assert.equal(deduction(event('BUILDER_GAP',{gapMs:5000})).reason,'idle_with_endpoint_work_available');
 });
 test('HP impact uses each maximum HP and fixed category weights, excluding shield loss',()=>{
   assert.equal(impactWeight(loss(500,1),'AMBUSH'),1);
