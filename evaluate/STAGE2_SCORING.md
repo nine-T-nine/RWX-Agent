@@ -153,7 +153,7 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 
 ### D 空闲建造者（`BUILDER_IDLE`）/ E 空闲工厂（`FACTORY_IDLE`）
 
-一个采集端 `idle` 段对应一条事件。动作菜单决定 `roles`；兼有生产/建造能力的资产按工厂只出一条。判据是"该资产确实闲了"这个引擎侧事实；`feasibility` 只用来**排除**（证明当时确实做不了），不用来放行。只有两种情形不计分：证明做不了的 `EXPLAINED`，和 Agent 自己碰过该资产的 `EXCLUDED`。
+一个采集端 `idle` 段对应一条事件。动作菜单决定 `roles`；兼有生产/建造能力的资产按工厂只出一条。判据是"该资产确实闲了"这个引擎侧事实；`feasibility` 只用来**排除**（证明当时确实做不了），不用来放行。只有证明做不了的 `EXPLAINED` 与 `EXCLUDED` 不计分：后者指 Agent 的原生命令碰过该资产（建造者/工厂通用），或对工厂而言"别的工厂在排产"（见下）。
 
 | 证据 | 用法 |
 |---|---|
@@ -167,6 +167,8 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 预筛选规则：工厂必须以真实生产关闭区间；B 的整批生产总成本不超过 `minFunds`，数量不超过 `minCap`，所有型号均在连续动作交集中。同一请求拆成多个原生包时使用索引汇总的整批数量；多工厂共享预算无法全程重建时为 `UNCERTAIN`。维修必须保证同一目标全程可维修。建造同时要求动作、整批资金与落点全程合法。明确中途不可做 → `EXPLAINED`（不计分）；证据不足 → `UNCERTAIN`（**仍按同一曲线计分**）。已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
 **先于预筛选的排除规则**：只要 `[A,B)` 内出现过任何**原生命令**涉及该资产的 id，这一段直接 `EXCLUDED`（`reason=native_order_during_gap`），不进预筛选也不扣分。判据只读原生命令行的 `units`（已解析的单位 id），不读高层请求，因此 `--units all-army` 之类的选择器不需要额外解释。计入的来源是 `agent`/`pending`/`keep`/`auto`：keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，算它碰过；`engine`（自动维修及一切引擎自发命令）与 `replay_unknown`（回放期间写出的命令）不算。被拒请求不会产生原生命令行，天然不计入。窗口是半开的 `[fromMs,toMs)`：关闭该区间的命令自己的原生命令行落在 `toMs`，不会把它结束的这段区间排除掉。排除事件仍保留 `durationMs` 与 `nativeTouched`，供审计。
+
+**工厂空闲的额外排除（只对 E，建造者不受影响）**：产线是同一次决策，别的工厂在排产就说明 Agent 没停产，只是没在这条线上产。因此在上面那条之外，`[fromMs,toMs)` 内只要有任意一条**真实工厂**的原生命令（来源同样只认 `agent`/`pending`/`keep`/`auto`，不必是这条工厂自己），这一段即 `EXCLUDED`，`reason=factory_production_elsewhere`，命中明细写入事件的 `factoryProduction`。真实工厂指 `factory=true` 的**建筑**；**指挥中心的 id 不参与匹配**——它只负责补产建造者，把它算进来会让整局的工厂空闲全部免责。类工厂单位（鹦鹉螺号、航空母舰、飞行堡垒这类 `factory=true` 且可移动的单位）的空闲段用更宽的集合：真实工厂 id 或类工厂 id 任一命中都排除。建造者空闲仍只按它自己那个 id 的原生命令判断。
 
 采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。当前采集器提供工厂/维修的连续证据，**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲记为 `continuous_placement_unavailable` 的 `UNCERTAIN`，**照常按 D 曲线计分**——只有 `valid:false` 的落点证明才会把它降为 `EXPLAINED`。死亡、证据结束或纯移动关闭的区间同样计分（按已覆盖时长）。历史日志只有两端资金时也按 `UNCERTAIN` 计分。
 
@@ -213,7 +215,7 @@ python -W error::ResourceWarning evaluate/test/test_replay.py
 node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 ```
 
-输出 `score.json/score.txt/timeline.csv/economy_seconds.csv`；`--weights <json文件>` 覆盖配置，`--out <目录>` 指定输出。时间线复用同一次计分结果，覆盖参数同时作用于 JSON、文本和 CSV。新旧版本不可混榜，第二轮也不与 Stage1 相加。总分 `max(0,100−Σ min(类别上限,Σ事件扣分))`，输出保留 3 位小数。
+输出 `score.json/score.txt/timeline.csv/economy_seconds.csv`；`--weights <json文件>` 覆盖配置，`--out <目录>` 指定输出。时间线复用同一次计分结果，覆盖参数同时作用于 JSON、文本和 CSV。新旧版本不可混榜，第二轮也不并入 Stage1 的分数；两者的合成另见 [`score_match.js`](README.md#综合得分)：`stage1*0.4 + stage2*0.6`，只接受当前版本。总分 `max(0,100−Σ min(类别上限,Σ事件扣分))`，输出保留 3 位小数。
 
 ### A/B 实际 HP 损失与响应
 

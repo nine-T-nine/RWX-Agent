@@ -93,9 +93,11 @@ test('stale burst preserves receipt-time expiry age when a rejection duplicates 
   assert.equal(burst.commands.length,3);assert.deepEqual(burst.commands.map(c=>c.staleAgeMs),[19000,20000,21000]);
   assert.equal(deduction(burst).points,8);
 });
-/** Consume native rows first, then the idle pair that they may exclude. */
-function idleWith(row,natives,meta={},config={}){
+/** Consume unit snapshots, then native rows, then the idle pair that they may exclude. */
+function idleWith(row,natives,meta={},config={},units=[]){
   const events=[],s=new Session({schema:1,team:0,timeMs:0,X:160,...meta},[],config,e=>events.push(e));
+  for(const unit of units)s.consume({kind:'unit',timeMs:0,seq:0,unit:{life:0,side:'self',alive:true,factory:false,
+    building:false,mobile:false,...unit}});
   for(const [index,row2] of natives.entries())
     s.consume({kind:'native',phase:'before',timeMs:row2.timeMs,seq:index+1,source:row2.source,
       units:row2.units??[Number(row.unitId)],operation:row2.operation??'Move',commandId:row2.commandId??null});
@@ -125,4 +127,38 @@ test('the touch window is half-open and bound to the idle asset',()=>{
   assert.equal(idleWith(builder,[]).status,'UNCERTAIN');
   assert.equal(idleWith(builder,[{timeMs:30000,source:'agent'}]).status,'EXCLUDED');
   assert.equal(idleWith(builder,[{timeMs:30000,source:'engine'}]).status,'UNCERTAIN');
+});
+test('a factory idle pair is dropped when any real factory was producing elsewhere',()=>{
+  const land=(id,extra={})=>({id,type:'landFactory',factory:true,building:true,mobile:false,...extra});
+  const units=[land(7),land(9),{id:3,type:'commandCenter',factory:true,building:true,mobile:false},
+    {id:11,type:'experimentalCarrier',factory:true,building:false,mobile:true}];
+  const other=(units=[9],source='agent',timeMs=30000)=>({timeMs,source,units});
+  // The idle asset's own id is untouched; production on another factory is enough.
+  const e=idleWith(factory(),[other([9])],{}, {},units);
+  assert.equal(e.status,'EXCLUDED');assert.equal(e.reason,'factory_production_elsewhere');
+  assert.equal(e.scoreable,false);assert.equal(e.factoryProduction[0].unitId,9);
+  assert.equal(deduction(e).points,0);
+  // A command centre only refills builders, so it never explains a factory gap.
+  assert.equal(idleWith(factory(),[other([3])],{}, {},units).status,'DETECTED');
+  // A mobile producer's own line is a different decision from a building factory.
+  assert.equal(idleWith(factory(),[other([11])],{}, {},units).status,'DETECTED');
+  // Orders the Agent did not submit do not count, same whitelist as the touch rule.
+  assert.equal(idleWith(factory(),[other([9],'engine')],{}, {},units).status,'DETECTED');
+  // The window stays half-open: the order that closes the pair is at toMs.
+  assert.equal(idleWith(factory(),[other([9],'agent',60000)],{}, {},units).status,'DETECTED');
+});
+test('a mobile producer is excused by orders to factories or to other mobile producers',()=>{
+  const land=(id)=>({id,type:'landFactory',factory:true,building:true,mobile:false});
+  const carrier=(id)=>({id,type:'experimentalCarrier',factory:true,building:false,mobile:true});
+  const units=[land(9),carrier(11),carrier(12),{id:3,type:'commandCenter',factory:true,building:true,mobile:false}];
+  const row={...factory(),unitId:11,type:'experimentalCarrier'};
+  const hit=idleWith(row,[{timeMs:30000,source:'agent',units:[12]}],{}, {},units);
+  assert.equal(hit.status,'EXCLUDED');assert.equal(hit.reason,'factory_production_elsewhere');
+  assert.equal(idleWith(row,[{timeMs:30000,source:'agent',units:[9]}],{}, {},units).status,'EXCLUDED');
+  assert.equal(idleWith(row,[{timeMs:30000,source:'agent',units:[3]}],{}, {},units).status,'DETECTED');
+  // Builders are not factories: a factory order must not excuse a builder gap.
+  const builder={...factory(),roles:['builder'],closeReason:'BUILD',
+    closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},actions:{buildTurret:{kind:'build',type:'turret',cost:1000}},
+    feasibility:{complete:true,fromMs:0,toMs:60000,minFunds:5000,minCap:0,actions:{buildTurret:1000}}};
+  assert.equal(idleWith(builder,[{timeMs:30000,source:'agent',units:[9]}],{}, {},units).status,'UNCERTAIN');
 });

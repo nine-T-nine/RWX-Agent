@@ -28,6 +28,8 @@ const OUTPUT = path.join(ROOT, 'evaluate', 'output');
 function walk(dir, name, out = []) {
   if (!fs.existsSync(dir)) return out;
   for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
+    // `_old` 是"材料不全/旧版本"的归档约定：它们不参与复算，也不该被刷新。
+    if (entry.name.endsWith('_old')) continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(file, name, out);
     else if (entry.name === name) out.push(file);

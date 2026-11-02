@@ -450,7 +450,47 @@ const TOUCH_SOURCES=new Set(['agent','pending','keep','auto']);
  * no interpretation here.</p>
  */
 class IdleAssetDetector extends Detector {
-  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();this.touched=new Map();}
+  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();this.touched=new Map();this.activity=[];}
+  /**
+   * Class of a unit id seen in a native row. `factory` is a building that produces units, `factory_like`
+   * is a mobile producer (carrier / nautilus / flying fortress). The command centre is its own class so
+   * the factory-idle filter can ignore it: it keeps producing builders while every real factory idles,
+   * and counting it would excuse every factory gap in the match.
+   */
+  unitClass(id){
+    const unit=this.s.units.get(`${Number(id)}:0`);
+    if(!unit)return null;
+    if(unit.type==='commandCenter')return 'command_center';
+    if(unit.factory!==true)return null;
+    return unit.mobile===true?'factory_like':'factory';
+  }
+  /** Mobile producers are matched as a class because their own production line is the same decision. */
+  assetClass(row){
+    const unit=this.s.units.get(`${Number(row.unitId)}:${Number(row.life??0)}`)||this.s.units.get(`${Number(row.unitId)}:0`);
+    if(unit)return unit.type==='commandCenter'?'command_center':unit.mobile===true?'factory_like':'factory';
+    return /nautilus|carrier|fortress/i.test(String(row.type||''))?'factory_like':'factory';
+  }
+  /**
+   * Factory production is one decision spread over several buildings: if any real factory received an
+   * order inside the gap, this factory idling was not the Agent choosing to stop producing. Command
+   * centres are skipped on purpose (they only refill builders). A mobile producer's own gap is wider:
+   * orders to another mobile producer excuse it too, because they share the same production intent.
+   */
+  factoryActivity(row,fromMs,end){
+    const want=this.assetClass(row),hits=[];
+    for(const at of this.activity){
+      if(at.timeMs<fromMs||at.timeMs>=end)continue;
+      for(const id of at.units){
+        const kind=this.unitClass(id);
+        if(kind==='command_center'||kind==null)continue;
+        if(kind==='factory'||(want==='factory_like'&&kind==='factory_like')){
+          hits.push({timeMs:at.timeMs,unitId:Number(id),unitClass:kind,operation:at.operation,source:at.source,commandId:at.commandId});
+          break;
+        }
+      }
+    }
+    return hits;
+  }
   native(row){
     if(row.phase==='before'){
       if(!TOUCH_SOURCES.has(row.source))return;
@@ -459,6 +499,7 @@ class IdleAssetDetector extends Detector {
         const list=this.touched.get(unit);
         if(list)list.push(at);else this.touched.set(unit,[at]);
       }
+      this.activity.push({timeMs:row.timeMs,operation:row.operation,source:row.source,commandId:row.commandId,units:(row.units||[]).map(Number)});
       return;
     }
     if(row.phase!=='after')return;
@@ -506,6 +547,9 @@ class IdleAssetDetector extends Detector {
     // exclude the pair it ends. A touch is positive evidence on its own, so it outranks coverage.
     const touched=(this.touched.get(Number(row.unitId))||[])
       .filter(at=>at.timeMs>=Number(row.fromMs)&&at.timeMs<judgedEnd);
+    // Production ordered on another factory excuses this factory: the Agent was producing, just not
+    // here. The rule is factory-only and deliberately wider than the touch rule above.
+    const production=factory?this.factoryActivity(row,Number(row.fromMs),judgedEnd):[];
     const keepActive=this.keep.has(Number(row.unitId));
     const agent=agentState(this.s.commands,row.fromMs,judgedEnd);
     const affordableStart=ref?Number(row.startFunds)>=ref.cost&&Number(row.startCap)>=1:null;
@@ -513,6 +557,7 @@ class IdleAssetDetector extends Detector {
     const tier=judgedMs>=this.c.T_IDLE_LONG?'STALL':judgedMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
     let status,reason;
     if(touched.length){status='EXCLUDED';reason='native_order_during_gap';}
+    else if(production.length){status='EXCLUDED';reason='factory_production_elsewhere';}
     else if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
     else if(judgedEnd<Number(row.toMs)){status='UNCERTAIN';reason='endpoint_outside_command_coverage';}
     else if(keepActive){status='EXPLAINED';reason='automation_configured';}
@@ -530,6 +575,7 @@ class IdleAssetDetector extends Detector {
       closeAction:row.closeAction??null,tier,
       startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
       referenceAction:ref,affordableStart,affordableEnd,feasibility,endpointMs:row.toMs,nativeTouched:touched,
+      factoryProduction:production.length?production:null,
       agentState:agent.state,agentStateEvidence:agent.evidence,
       keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
       status,reason,strict:false,scoreable,visibility:'HIGH',

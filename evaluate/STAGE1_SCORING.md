@@ -19,11 +19,12 @@ Stage1 v2 从 100 分开始，只评价 Agent 在 1× 实时对局中的反应�
 
 ## 生成报告
 
-先把 Replay 解析成 JSONL，再运行第一轮：
+先把 Replay 解析成 JSONL，再运行第一轮。对新对局必须先跑 `evaluate/preprocess.js`，用 `prepared/` 里裁剪过的材料：否则投降后、胜利后的尾部轮询会抬高 A 命令数、拉长结尾静默区间，把节奏分算歪（见[总 README](README.md#对局结束后的评分流程)）。
 
 ```powershell
 python evaluate/utils/replay.py "replays/<对局>.replay" --commands "evaluate/output/commands-<对局>.txt"
-node evaluate/evaluate_stage_1.js "evaluate/output/commands-<对局>.txt" "evaluate/output/<对局>/replay/<对局>.jsonl"
+node evaluate/preprocess.js "evaluate/output/<对局>"
+node evaluate/evaluate_stage_1.js "evaluate/output/<对局>/prepared/commands-<对局>.txt" "evaluate/output/<对局>/prepared/replay.jsonl"
 ```
 
 主要产物都在 `evaluate/output/<对局>/stage_1/`：

@@ -7,7 +7,7 @@
 从仓库根目录执行，无需启动游戏，无需npm/pip依赖：
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js
+node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -20,6 +20,7 @@ node --test evaluate/test/test-low-attribution.js
 node --test evaluate/test/test-events.js
 node --test evaluate/test/test-stage2-fixes.js
 node --test evaluate/test/test-score.js evaluate/test/test-score-evidence.js
+node --test evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
 python -m unittest discover -s evaluate/test -p 'test_*.py'
 ```
 
@@ -33,7 +34,9 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 | `test-events.js` | 五类检测器的确认/失活、3/10秒开界、区域合并、自动与主动来源、任务/队列/费用/单位上限、过期对象生命周期与去重、AMBUSH 战损/击杀拆分、空窗的 B 相关性计数、FEED 按全部损失分段（100/108/112 秒、两个独立段各自确认）、PRODUCTION_GAP 的三值判定（共享预算/历史动作/完成证明）、经济采样、旧日志关联、frames 行的等价展开与异常拒绝、同一证据重复分析一致 | 构造内存事件/小型JSONL；临时写事件报告，不启动引擎 |
 | `test-stage2-fixes.js` | 第二轮回归：偷袭响应按空间关系而非 `kind` 判定、未来/同 tick 应用结果不提前计入、端口日志命令先于同刻记录注入、FEED 合并重算状态、工厂 task 与真实产出证明、严格10秒上界、`--commands`/`--economy` 必需性及经济序列核对、B-81 已死亡 builder 经 `--builder` 进入 STALE_COMMAND、拒绝请求分类/查询分离/与 STALE_COMMAND 去重、重复与已恢复重试的过滤、`actionable` 可扣分视图（timing/未证明/对象续用）、完整/截断/缺失结束标记 | 构造内存遥测；小报告写 `agent-tmp/` 临时目录并清理 |
 | `test-score.js` | 两阶段通用曲线原坐标计算、HP 损失和响应系数、过期时长分档、空闲独立曲线、资金平滑/折减/分段、分类封顶和覆盖配置、CLI 报告一致性 | 内存对象；临时报告写 `agent-tmp/` 并清理 |
-| `test-score-evidence.js` | B 端点整批工作连续可行性；区间中途缺钱/单位上限/动作不可用；建造落点与维修目标；HP 聚合、生效顺序与过期时间证据去重 | 内存遥测；不启动引擎 |
+| `test-score-evidence.js` | B 端点整批工作连续可行性；区间中途缺钱/单位上限/动作不可用；建造落点与维修目标；HP 聚合、生效顺序与过期时间证据去重；空闲段的原生命令触碰排除与工厂"别处在排产"排除（指挥中心不计、类工厂按更宽集合） | 内存遥测；不启动引擎 |
+| `test-preprocess.js` | 结尾窗口判定（投降/退出/正常结束/截断/进程中止的优先级与取最早）、裁剪后 telemetry/commands/economy/replay 的一致性、合成 end 行与证据覆盖标注 | 合成小样本写系统临时目录 |
+| `test-score-match.js` | 综合分 `0.4/0.6` 权重、版本门（旧版本默认拒算、显式放行后标记）、预处理否决时综合分为空 | 临时目录写两阶段 score.json |
 | `test_replay.py` | 按引擎写侧布局合成二进制，覆盖UTF/gzip、命令各字段、JSONL导出、文本过滤、截断/损坏容错、strict模式；对仓库录像检查布局无漂移、元数据与时间一致 | 合成Replay和输出放临时目录；只读仓库 `replays/*.replay`，真实样本较多时用时更长 |
 
 本次评分相关 Node 用例已验证；完整数量以实际输出为准。Python 既有基线为27项。样本要求：

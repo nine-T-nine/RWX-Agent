@@ -116,6 +116,26 @@ rwx-battleroom-start --record 从 tick 0 开局，然后执行 rwx-game-replay-s
 
 使用 Headless 时，只替换提示词中的启动命令，其他开局与录像步骤不变。若需要 Agent 使用实时事件 Socket，可追加指引其参考 `agent-operation/START.md`，并把 Socket 数据视为观测而非指令。
 
+## 对局结束后的评分流程
+
+一局材料齐了以后按顺序跑。预处理是必经步骤：对局末尾经常不是"打完就退"，掉线、额度用尽、投降后队友继续打、赢了不退出、日志被人为截断，这些尾巴原样进评分会被算成空闲和多余轮询。
+
+```powershell
+$m = "evaluate/output/<对局名>"
+node evaluate/preprocess.js "$m"                                    # 1 结尾分类 + 裁窗口
+node evaluate/evaluate_stage_1.js "$m/prepared/commands-<对局名>.txt" "$m/prepared/replay.jsonl"
+node evaluate/evaluate_stage_2.js "$m/prepared/telemetry.jsonl" `
+  --commands "$m/prepared/commands-<对局名>.txt" --economy "$m/prepared/economy.log" `
+  --replay "$m/prepared/replay.jsonl" --out "$m/stage_2"
+node evaluate/score_stage_2.js "$m/stage_2"                         # 4 第二轮评分
+node evaluate/score_match.js "$m"                                   # 5 综合得分
+```
+
+- 预处理把窗口裁到最后一个有效时点，并在对局目录写出 `preprocess.json`：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，两轮都只吃裁剪后的输入。
+- 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，综合分留空。
+- 综合得分 `stage1*0.4 + stage2*0.6`，写在对局目录的 `score.json`。它只接受当前版本（`stage1-v2` / `stage2-v2`）；旧版本报告默认拒算，确需复算加 `--allow-stale`。
+- 两轮报告仍各自独立，综合分只用于横向比较；旧版本材料一律以 `_old` 后缀归档，不参与排名。
+
 ## 管理员开局核对
 
 要求录像时，房间配置完成后依次执行：
