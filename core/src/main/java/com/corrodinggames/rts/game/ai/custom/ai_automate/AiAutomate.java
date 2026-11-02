@@ -705,6 +705,7 @@ public final class AiAutomate {
         Command command = world.commandController.newCommandForTeam(unit.team);
         if (world.networkEngine.networkGameActive) command.sourceTeam = unit.team;
         command.addUnitToCommand(unit);
+        evaluate.utils.EngineEvidence.tag(command, "auto");
         command.setClearExistingOrders();
         issuedCommands.put(command, unit);
         commandRules.put(command, rule);
@@ -774,6 +775,7 @@ public final class AiAutomate {
         Command command = world.commandController.newCommandForTeam(unit.team);
         if (world.networkEngine.networkGameActive) command.sourceTeam = unit.team;
         command.addUnitToCommand(unit);
+        evaluate.utils.EngineEvidence.tag(command, "auto");
         command.setActionTarget(action.getActionId(), null, null);
         issuedCommands.put(command, unit);
         commandRules.put(command, rule);
@@ -784,6 +786,7 @@ public final class AiAutomate {
         Command command = world.commandController.newCommandForTeam(unit.team);
         if (world.networkEngine.networkGameActive) command.sourceTeam = unit.team;
         command.addUnitToCommand(unit);
+        evaluate.utils.EngineEvidence.tag(command, "auto");
         command.unitCommand = AiAutomateSupport.copy(order);
         command.isQueued = queued;
         issuedCommands.put(command, unit);

@@ -231,7 +231,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 
-const {RULES, INDIRECT_RULES, isIndirect, matchAll, clock} = require('./execution-mapping.js');
+const {RULES, INDIRECT_RULES, AUDIT_NOTES, isIndirect, matchAll, clock} = require('./execution-mapping.js');
+const {buildMetrics,scoreMetrics}=require('./stage1-metrics.js');
+const {attributeLow,isAgent}=require('./low-attribution.js');
 const LINE = /^\[(\d+):([0-5]\d)(?::(\d{3}))?\]<([^<>]*)><([^<>]*)>\s*$/;
 const stamp = clock;
 const fmt = n => n==null ? 'N/A' : n.toFixed(3);
@@ -435,19 +437,67 @@ function reportText(port,low,rows,delay,span){
     '仅衡量底层指令进入游戏记录的时间，不等于生产完成、移动到达等状态效果。',
   ].join('\n')+'\n';
 }
-function injectHtml(original,report,rows,delay,span,team,native){
+function attributionLine(metrics){
+  const a=metrics.attribution||{},c=a.counts||{},n=metrics.native||{};
+  if(!a.telemetry){
+    return `底层归属：本局没有实时 telemetry，无法按提交者拆分（仅按补产规则识别出 keep=${c.keep||0} 条）；`
+      +`底层节奏仍按全部 ${n.allCommandCount??n.agentCommandCount??0} 条统计，与有 telemetry 的样本不可直接比较。`;
+  }
+  const parts=['agent','pending','keep','auto','engine','unknown'].filter(k=>c[k]).map(k=>`${k}=${c[k]}`);
+  return `底层归属：${parts.join('，')}。Agent 自己下发 ${n.agentCommandCount}/${n.allCommandCount} 条；`
+    +`其中底层生产 ${n.agentProductionCommandCount} 条（${fmt(metrics.rates.agentProductionPerMinute)}/min），`
+    +`全部底层命令 ${n.productionCommandCount} 条（${fmt(metrics.rates.nativeProductionPerMinute)}/min）。`
+    +'底层间隔四档按全部命令计（含自动化），自动化单独出材料，不改变扣分口径。';
+}
+function stage1MetricsReport(metrics,score){
+  const cycle=metrics.cadence.decisionCycles,wait=metrics.cadence.waitAfterAction,native=metrics.native.intervals;
+  const mapping=metrics.mapping,diag=metrics.diagnostics;
+  const tier=row=>`normal=${row.counts.normal}, mild=${row.counts.mild}, moderate=${row.counts.moderate}, severe=${row.counts.severe}`;
+  return [
+    '', '【Stage1 v1 实时性指标与初评分】',
+    `实时性分数 ${score.score}/100；扣分 ${score.deduction}；状态 ${score.systemHealth.scoreStatus}（映射延迟健康=${score.systemHealth.mappingDelay}）。`,
+    `首个 order-* ${fmt(metrics.opening.firstOrderSeconds)}s；首个采矿建造 ${fmt(metrics.opening.firstMiningBuildSeconds)}s；首个军事生产 ${fmt(metrics.opening.firstMilitaryProductionSeconds)}s。`,
+    `A 查询 ${metrics.counts.A}（${fmt(metrics.rates.queriesPerMinute)}/min）；B ${metrics.counts.B}；直接 order-* ${metrics.counts.directOrders}；配置类 ${metrics.counts.configCommands}（${fmt((metrics.rates.configShareOfB??0)*100)}% B）。`,
+    `A→B：${tier(cycle)}；均值 ${fmt(cycle.stats.mean)}s，P90 ${fmt(cycle.stats.p90)}s。`,
+    `B→A：${tier(wait)}；均值 ${fmt(wait.stats.mean)}s，P90 ${fmt(wait.stats.p90)}s。`,
+    `相邻 order-* >30s：${metrics.cadence.orderGaps.over30Count} 段 / ${fmt(metrics.cadence.orderGaps.over30Seconds)}s / 对局 ${fmt((metrics.cadence.orderGaps.over30ShareOfMatch??0)*100)}%；最长 ${fmt(metrics.cadence.orderGaps.longestSeconds)}s；结尾 ${fmt(metrics.cadence.orderGaps.tailSeconds)}s。`,
+    `底层间隔四档：${tier(native)}；底层生产 ${metrics.native.productionCommandCount}（${fmt(metrics.rates.nativeProductionPerMinute)}/min）。`,
+    attributionLine(metrics),
+    `即时高层→底层延迟：去异常均值 ${fmt(mapping.immediateDelay.cleanMean)}s；离群 ${mapping.immediateDelay.outliers}/${mapping.immediateDelay.count}（${fmt((mapping.immediateDelay.outlierShare??0)*100)}%）；${mapping.immediateDelay.health}。待发语义排除 ${mapping.immediateDelay.excludedDeferred} 条。`,
+    `直接 B 无落地痕迹：原始 ${mapping.rawNoTrace.count}/${mapping.rawNoTrace.total}（${fmt((mapping.rawNoTrace.rate??0)*100)}%）；命令风暴调整后 ${mapping.stormAdjustedNoTrace.count}/${mapping.stormAdjustedNoTrace.total}（${fmt((mapping.stormAdjustedNoTrace.rate??0)*100)}%）。`,
+    `--allow-unaffordable 占 B ${fmt((metrics.rates.allowUnaffordableShareOfB??0)*100)}%；敌方 unit-list ${diag.enemyUnitListCount}；events ${diag.eventsQueryCount}；threat-list ${diag.threatListCount}；规则查询 ${diag.ruleQueryCount}（前120秒 ${diag.ruleQueriesFirst120Seconds}）。`,
+    `批量下单后长静默 ${metrics.cadence.batchSilences.length} 段；命令风暴 ${mapping.commandStorms.length} 组；缺参数 order ${diag.malformedOrders.length} 条。`,
+    'B1/B2/B3/B5、C1/C2/C3 与批量静默只记录材料，不计入实时性分数；批量静默已由 >30s 空窗覆盖。',
+  ].join('\n')+'\n';
+}
+function scoreText(score){
+  const lines=[`RWX Stage1 实时性初评分（${score.version}）`,'='.repeat(42),`总分 ${score.score}/100；扣分 ${score.deduction}；状态 ${score.systemHealth.scoreStatus}`,''];
+  for(const row of score.breakdown)lines.push(`${row.id}\t-${row.points}/${row.cap}\t${row.label}\t${JSON.stringify(row.evidence)}`);
+  lines.push('',score.systemHealth.note,'不计分：'+score.notScored.join('；'));
+  return lines.join('\n')+'\n';
+}
+function metricsHtml(metrics,score){
+  const opening=metrics.opening,gaps=metrics.cadence.orderGaps,mapping=metrics.mapping;
+  const cards=[['实时性初评分',`${score.score} / 100`],['首个行动 / 采矿 / 军事',`${fmt(opening.firstOrderSeconds)} / ${fmt(opening.firstMiningBuildSeconds)} / ${fmt(opening.firstMilitaryProductionSeconds)}s`],
+    ['>30s 行动空窗占比',`${fmt((gaps.over30ShareOfMatch??0)*100)}%`],['映射延迟健康',mapping.immediateDelay.health],
+    ['无落地（原始 / 风暴调整）',`${mapping.rawNoTrace.count}/${mapping.rawNoTrace.total} / ${mapping.stormAdjustedNoTrace.count}/${mapping.stormAdjustedNoTrace.total}`],
+    ['底层命令（Agent / 全部）',`${metrics.native.agentCommandCount} / ${metrics.native.allCommandCount}`]];
+  const rows=score.breakdown.map(row=>`<tr><td>${esc(row.id)}</td><td>${esc(row.label)}</td><td>-${row.points}</td><td>${esc(JSON.stringify(row.evidence))}</td></tr>`).join('');
+  return `<section id="stage1-score"><h2>Stage1 v1 实时性指标与初评分</h2><p class="caption">只评价实时性；情报/战术、无落地、命令风暴和格式错误只记录，不扣实时性分。高层→底层即时延迟是系统健康门，不把环境异常扣给 Agent。</p><div class="cards">${cards.map(([k,v])=>`<div class="card"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div><pre>${esc(stage1MetricsReport(metrics,score))}</pre><div style="overflow:auto"><table style="width:100%;font-size:12px"><thead><tr><th>ID</th><th>扣分项</th><th>扣分</th><th>证据</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+function injectHtml(original,report,rows,delay,span,team,native,metrics,score){
   const ok=rows.filter(x=>x.delay!=null),unmatched=rows.filter(x=>x.status==='unmatched');
   const table=rows.map(r=>`<tr><td>${r.highLine}</td><td>${r.highClock}</td><td><code>${esc(r.command)}</code></td><td>${r.status}</td><td>${fmt(r.delayMin)}–${fmt(r.delayMax)}</td><td>${fmt(r.span)}</td><td>${esc(r.firstClock||'—')} → ${esc(r.lastClock||'—')}<br>Replay 行 ${esc(r.lowLines.join(',')||r.candidateLowLines.join(',')||'—')}<br>${esc(r.note)}</td></tr>`).join('');
-  const rules=Object.entries({...RULES,...Object.fromEntries(Object.entries(INDIRECT_RULES).map(([k,v])=>[k,{low:'间接/本地',match:v}]))}).map(([k,v])=>`<tr><td><code>${esc(k)}</code></td><td>${esc(v.low)}</td><td>${esc(v.match)}</td></tr>`).join('');
+  const rules=Object.entries({...RULES,...Object.fromEntries(Object.entries(INDIRECT_RULES).map(([k,v])=>[k,{low:'间接/本地',match:v}]))}).map(([k,v])=>`<tr><td><code>${esc(k)}</code></td><td>${esc(v.low)}</td><td>${esc(v.match)}</td><td>${esc(AUDIT_NOTES[k]||'间接配置不建立一对一 Replay 映射。')}</td></tr>`).join('');
   const nativeSection=`<section id="native-intervals"><h2>我方相邻底层命令执行间隔</h2><p class="caption">整份 Replay 的 team=${team} 有效命令，包含手动、自动微操和 UI，不依赖高低层映射。每个点为相邻两条记录的间隔；横坐标是前条执行时刻，纵坐标是间隔秒数。同 tick 的 0 秒间隔保留，红点表示长间隔离群值。悬浮可查看两条底层命令、tick 和 JSONL 行号。</p>
   <div class="cards"><div class="card"><small>底层命令 / 相邻间隔</small><strong>${native.summary.commandCount} / ${native.intervals.length}</strong></div><div class="card"><small>原始平均间隔</small><strong>${fmt(native.summary.stats.mean)} 秒</strong></div><div class="card"><small>去离群平均间隔</small><strong>${fmt(native.summary.stats.cleanMean)} 秒</strong></div><div class="card"><small>离群 / 零间隔</small><strong>${native.summary.stats.outliers} / ${native.summary.zeroIntervals}</strong></div></div>
   ${plotNativeIntervals(native)}</section>`;
-  const section=nativeSection+`<section id="execution"><h2>高层 → 底层命令执行延迟</h2><p class="caption">Agent team=${team}。蓝线横坐标是端口下发时刻，橙线横坐标是对应底层首条执行时刻 X；红点代表各自的离群值。可鼠标悬浮检查映射详情。</p>
+  const section=metricsHtml(metrics,score)+nativeSection+`<section id="execution"><h2>高层 → 底层命令执行延迟</h2><p class="caption">Agent team=${team}。蓝线横坐标是端口下发时刻，橙线横坐标是对应底层首条执行时刻 X；红点代表各自的离群值。可鼠标悬浮检查映射详情。</p>
   <div class="cards"><div class="card"><small>直接 B 类</small><strong>${rows.length}</strong></div><div class="card"><small>已找到唯一归属执行</small><strong>${ok.length}</strong></div><div class="card"><small>未匹配 / 歧义 / 字段不足</small><strong>${unmatched.length} / ${rows.filter(r=>r.status==='ambiguous').length} / ${rows.filter(r=>r.status==='unobservable').length}</strong></div><div class="card"><small>延迟上界 / 执行跨度（去离群均值）</small><strong>${fmt(delay.cleanMean)} / ${fmt(span.cleanMean)} 秒</strong></div></div>
   ${plot(ok,delay,span)}</section>
   <section><h2>高层→底层执行报告</h2><pre>${esc(report)}</pre></section>
   <section><h2>逐条命令匹配明细</h2><div style="max-height:460px;overflow:auto"><table style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr><th>行</th><th>时刻</th><th>高层指令</th><th>状态</th><th>延迟范围(s)</th><th>跨度(s)</th><th>X → Y / 证据 / 限制</th></tr></thead><tbody>${table}</tbody></table></div></section>
-  <section><h2>经源码核对的 B 类映射规则</h2><table style="width:100%;font-size:12px"><thead><tr><th>高层指令</th><th>底层类型</th><th>匹配键（另含 team / 时间）</th></tr></thead><tbody>${rules}</tbody></table></section>`;
+  <section><h2>经源码与历史材料核对的 B 类映射规则</h2><p class="caption">2026-11-02 审查 11 份完整对局报告；带 telemetry 的 8 份样本未发现误配。看似在 5 秒窗外出现的同签名记录经核对属于后续重试，不能强配；唯一“已受理但未匹配”是对局结束前仍未落地的待发升级。</p><table style="width:100%;font-size:12px"><thead><tr><th>高层指令</th><th>底层类型</th><th>匹配键（另含 team / 时间）</th><th>审计结论/限制</th></tr></thead><tbody>${rules}</tbody></table></section>`;
   const style='<style>#execution ~ section table td,#execution ~ section table th{border-bottom:1px solid #e2e8ef;padding:7px;text-align:left;vertical-align:top}#execution ~ section table code{overflow-wrap:anywhere}</style>';
   if(!original.includes('</main>'))throw Error('基础 HTML 不包含 </main>');
   return original.replace('</head>',style+'</head>').replace('</main>',section+'</main>');
@@ -461,36 +511,51 @@ async function evaluate(file1,file2,options={}){
   // 基础 A/B 分析已内联在本文件的 evaluateBase 中，保持原 A/B、周期、B→A、四类间隔、直方图和准入条件不变。
   const out=await evaluateBase(file1,options);
   if(out==null)throw Error('第一轮的 5 分钟 / 50 条 A+B 准入检查未通过');
-  const nativeIntervals=nativeIntervalsOf(low),minOutlierSeconds=options.minOutlierSeconds??5;
+  // 先分清每条底层记录是谁下的：Agent 命令 / 待发落地 / keep-set 补产 / auto-set 微操 / 引擎。
+  // telemetry 只在“对局目录/replay/xxx.jsonl”这种布局里；旧扁平样本直接放在 output 根，没有证据可拆。
+  const replayDir=path.dirname(file2);
+  const matchDir=path.basename(replayDir).toLowerCase()==='replay'?path.dirname(replayDir):null;
+  const attribution=await attributeLow({low,team:port.team,matchDir,commands:port.commands});
+  // 没有 telemetry 就拆不出自动化：沿用旧的“全部底层命令”口径，并在报告里标注不可比。
+  const agentLow=attribution.telemetry?low.filter(row=>isAgent(attribution.sourceOf(row))):low;
+  const nativeIntervals=nativeIntervalsOf(agentLow),minOutlierSeconds=options.minOutlierSeconds??5;
   const nativeIntervalStats=stats(nativeIntervals,'seconds',minOutlierSeconds);
   const native={intervals:nativeIntervals,summary:{sourceFile:path.resolve(file2),team:port.team,
-    scope:'entire Replay; controlled team only; noop excluded; includes manual/automation/UI commands',
+    scope:'entire Replay; controlled team only; noop excluded; Agent-submitted commands only (automation split out)',
     definition:'next time_s minus previous time_s; X=previous time_s; one row per command; same-tick zero intervals retained',
-    commandCount:low.length,firstTime:low[0]?.time_s??null,lastTime:low.at(-1)?.time_s??null,
+    commandCount:agentLow.length,allCommandCount:low.length,firstTime:agentLow[0]?.time_s??null,lastTime:agentLow.at(-1)?.time_s??null,
     zeroIntervals:nativeIntervals.filter(row=>row.seconds===0).length,minOutlierSeconds,stats:nativeIntervalStats,
+    attribution:attribution.counts,telemetry:attribution.telemetry,
     sequenceFile:'native_command_intervals.csv'}};
-  const baseReportFile=path.join(out,'report.txt'),baseReport=fs.readFileSync(baseReportFile,'utf8');
-  const combinedReport=baseReport+nativeIntervalReport(native);
-  fs.writeFileSync(baseReportFile,combinedReport,'utf8');
   const baseSummaryFile=path.join(out,'summary.json'),baseSummary=JSON.parse(fs.readFileSync(baseSummaryFile,'utf8'));
+  const metrics=buildMetrics({classified:readLog(file1).commands,port,low,matches:rows,durationSeconds:baseSummary.durationSeconds,gapStats:baseSummary.gapStats,attribution});
+  const score=scoreMetrics(metrics);
+  const baseReportFile=path.join(out,'report.txt'),baseReport=fs.readFileSync(baseReportFile,'utf8');
+  const metricsReport=stage1MetricsReport(metrics,score),combinedReport=baseReport+metricsReport+nativeIntervalReport(native);
+  fs.writeFileSync(baseReportFile,combinedReport,'utf8');
   baseSummary.nativeCommandIntervals=native.summary;
+  baseSummary.stage1Metrics=metrics;
+  baseSummary.stage1Score=score;
   fs.writeFileSync(baseSummaryFile,JSON.stringify(baseSummary,null,2),'utf8');
+  fs.writeFileSync(path.join(out,'stage1_metrics.json'),JSON.stringify(metrics,null,2),'utf8');
+  fs.writeFileSync(path.join(out,'score.json'),JSON.stringify(score,null,2),'utf8');
+  fs.writeFileSync(path.join(out,'score.txt'),scoreText(score),'utf8');
   writeCSV(path.join(out,'native_command_intervals.csv'),nativeIntervals,['index','team','firstTime','lastTime','start','end','seconds','firstTick','lastTick','firstLine','lastLine','firstCommand','lastCommand','secondsOutlier']);
   const report=reportText(port,low,rows,delay,span);
   fs.writeFileSync(path.join(out,'execution_report.txt'),report,'utf8');
-  fs.writeFileSync(path.join(out,'execution_summary.json'),JSON.stringify({file1:path.resolve(file1),file2:path.resolve(file2),team:port.team,highCount:rows.length,lowCount:low.length,excludedCount:port.excluded.length,inputStopped:port.stopped,statusCounts:Object.fromEntries(['matched','partial','unmatched','ambiguous','unobservable'].map(s=>[s,rows.filter(r=>r.status===s).length])),delayBasis:'X minus receipt game time; millisecond logs exact, legacy integer seconds are upper bounds',delay,span},null,2),'utf8');
-  fs.writeFileSync(path.join(out,'mapping_rules.json'),JSON.stringify({...RULES,...Object.fromEntries(Object.entries(INDIRECT_RULES).map(([k,v])=>[k,{low:null,match:v}]))},null,2),'utf8');
+  fs.writeFileSync(path.join(out,'execution_summary.json'),JSON.stringify({file1:path.resolve(file1),file2:path.resolve(file2),team:port.team,highCount:rows.length,lowCount:low.length,excludedCount:port.excluded.length,inputStopped:port.stopped,statusCounts:Object.fromEntries(['matched','partial','unmatched','ambiguous','unobservable'].map(s=>[s,rows.filter(r=>r.status===s).length])),delayBasis:'X minus receipt game time; millisecond logs exact, legacy integer seconds are upper bounds',delay,span,immediateDelay:metrics.mapping.immediateDelay,rawNoTrace:metrics.mapping.rawNoTrace,stormAdjustedNoTrace:metrics.mapping.stormAdjustedNoTrace},null,2),'utf8');
+  fs.writeFileSync(path.join(out,'mapping_rules.json'),JSON.stringify({...Object.fromEntries(Object.entries(RULES).map(([k,v])=>[k,{...v,audit:AUDIT_NOTES[k]}])),...Object.fromEntries(Object.entries(INDIRECT_RULES).map(([k,v])=>[k,{low:null,match:v,audit:'间接配置不建立一对一 Replay 映射。'}]))},null,2),'utf8');
   fs.writeFileSync(path.join(out,'execution_matches.jsonl'),rows.map(r=>JSON.stringify(r)).join('\n')+'\n','utf8');
   writeCSV(path.join(out,'execution_matches.csv'),rows,['highLine','highClock','timePrecision','highTeam','command','rule','status','expectedCount','matchedCount','matchedOperations','operationsByUnit','requestedUnits','coveredUnits','missingUnits','coverageVerifiable','firstTick','lastTick','firstClock','lastClock','delay','delayMin','delayMax','span','delayOutlier','spanOutlier','lowLines','candidateLowLines','competingHighLines','note']);
   const htmlFile=path.join(out,'report.html');
   const originalHtml=fs.readFileSync(htmlFile,'utf8'),baseReportBlock=`<pre>${esc(baseReport)}</pre>`;
   if(!originalHtml.includes(baseReportBlock))throw Error('基础 HTML 缺少文字报告，无法追加底层间隔统计');
   const combinedHtml=originalHtml.replace(baseReportBlock,`<pre>${esc(combinedReport)}</pre>`);
-  fs.writeFileSync(htmlFile,injectHtml(combinedHtml,report,rows,delay,span,port.team,native),'utf8');
+  fs.writeFileSync(htmlFile,injectHtml(combinedHtml,report,rows,delay,span,port.team,native,metrics,score),'utf8');
   console.log(`\n双源评测完成：${htmlFile}`);
   console.log(`team=${port.team}：直接 B=${rows.length}，唯一归属执行=${matched.length}，未匹配=${rows.filter(r=>r.status==='unmatched').length}，歧义=${rows.filter(r=>r.status==='ambiguous').length}；首次延迟上界=${fmt(delay.cleanMean)}s，执行跨度=${fmt(span.cleanMean)}s`);
   console.log(`底层相邻间隔=${nativeIntervals.length}，原始均值=${fmt(nativeIntervalStats.mean)}s，去离群均值=${fmt(nativeIntervalStats.cleanMean)}s，离群=${nativeIntervalStats.outliers}，横坐标=前条底层执行时间`);
-  return {out,rows,delay,span,nativeIntervals,nativeIntervalStats};
+  return {out,rows,delay,span,nativeIntervals,nativeIntervalStats,metrics,score};
 }
 if(require.main===module){
   if(process.argv.length!==4){console.error('用法: node evaluate_stage_1.js <commands.txt> <replay.jsonl>');process.exitCode=1;}

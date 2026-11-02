@@ -34,6 +34,17 @@ const INDIRECT_RULES = Object.freeze({
   'rwx-game-auto-clear':'释放微操控制；可能 clear-orders 或恢复保存的任意 waypoint，不能按单一底层类型衡量',
   'rwx-game-auto-reset':'重置微操规则；可能 clear-orders 或恢复保存的任意 waypoint，不能按单一底层类型衡量',
 });
+const AUDIT_NOTES = Object.freeze(Object.fromEntries(Object.keys(RULES).map(name=>[name,
+  name==='rwx-game-order-action'
+    ? '2026-11-02：核对 11 份报告；动作 ID、目标、数量与取消标志均需一致；相同待发请求证据不足时保留 ambiguous。'
+    : name==='rwx-game-order-build'
+      ? '2026-11-02：核对 11 份报告；按建筑别名、网格/auto-place 与 build_count 匹配；已拒绝请求后的相似 Replay 记录不跨 5 秒强配。'
+      : name==='rwx-game-order-push'
+        ? '2026-11-02：有 rally 时必须是同一选择集的 move + queued attackMove；无 rally 时仅一条 attackMove。'
+        : name==='rwx-game-order-cancel'
+          ? '2026-11-02：取消必须有 stop_current_action；--all 缺少原队列总量，报告会明确不可完全验证。'
+          : '2026-11-02：核对 11 份报告；team、单位/选择器、目标或坐标、queue 与底层类型必须同时一致。',
+])));
 const SETTINGS = new Set(Object.keys(INDIRECT_RULES));
 const flag = (a,k) => a[k] === true;
 const modeClears = a => /^(off|none|clear)$/i.test(a.mode);
@@ -228,4 +239,4 @@ function clock(seconds){
   const ms=Math.round(seconds*1000);
   return `${String(Math.floor(ms/60000)).padStart(2,'0')}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`;
 }
-module.exports={RULES,INDIRECT_RULES,SETTINGS,isIndirect,matchAll,matchLow,buildMatches,snapPoint,requestedIds,signature,clock};
+module.exports={RULES,INDIRECT_RULES,AUDIT_NOTES,SETTINGS,isIndirect,matchAll,matchLow,buildMatches,snapPoint,requestedIds,signature,clock};

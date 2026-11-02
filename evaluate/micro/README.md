@@ -150,3 +150,5 @@ evaluate/micro/
   CASE1-duel/              README、START、commands、METRICS、NOTES、PROGRESS
                            evaluate.py、metrics/、baselines/
 ```
+
+同一配置反复重跑会在 `evaluate/output/micro/` 留下只差时间戳的兄弟目录，根目录 `replays/` 也会跟着堆积。整理用 [`tools/cleanup_micro_output.py`](../tools/README.md)：先不带参数看计划，确认后再加 `--apply`。

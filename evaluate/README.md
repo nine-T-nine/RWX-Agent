@@ -129,14 +129,14 @@ rwx-game-replay-status
 
 ## 两轮评估分别看什么
 
-目前没有确定性的评分公式或总分。两轮评估提供命令节奏、执行对应关系和事件证据，供人工分析 Agent 的实时性；离群值、未匹配或事件数量不直接代表扣分。
+两轮评估分别回答“实时下令是否及时”和“局部事件是否处理”。第一轮自动生成独立的 Stage1 v1 实时性分数；第二轮事件分数仍是可选初评。两张分数的对象和证据不同，不合并成一个总分。
 
 | 评估 | 测量内容 | 主要报告 |
 |---|---|---|
-| 第一轮：整体命令节奏 | 观察到操作的决策周期、操作后再次观察的等待、相邻高层/底层命令间隔、高层请求对应的底层执行及延迟 | `report.html`、`execution_report.txt` |
+| 第一轮：整体命令节奏 | 开局里程碑、A→B/B→A 分档、行动空窗、相邻底层命令间隔、高层请求对应的底层执行及系统延迟健康 | `report.html`、`stage1_metrics.json`、`score.json` |
 | 第二轮：局部事件响应 | 偷袭（含偷家）、绞肉机、抖动过期指令、空闲建造者、空闲工厂、资金空余，以及相关主动命令和经济背景 | `events.txt`、`events.jsonl`、`summary.json` |
 
-第一轮中，A 为查询、B 为操作或配置、C 为其他命令。统计 A→B 决策周期、B→A 等待及 A-A/A-B/B-A/B-B 间隔；设置类命令不计入直接执行延迟。底层间隔图的横坐标是前一条命令的执行时间。
+第一轮中，A 为查询、B 为操作或配置、C 为其他命令。统计 A→B 决策周期、B→A 等待及 A-A/A-B/B-A/B-B 间隔；“行动指令”只指直接 `rwx-game-order-*`，不含 `keep-set`、`auto-set` 等配置。映射健康门只使用唯一即时匹配，设置类与待资金/升级命令不计入系统延迟。完整口径、阈值和不计分材料见 [Stage1 评分规则](STAGE1_SCORING.md)。
 
 第二轮检查以下情况（精确规则见[事件规则](events/README.md)）：
 
@@ -152,8 +152,6 @@ rwx-game-replay-status
 所有时间均为游戏时间。底层命令执行不等于生产或移动完成；自动反击和自动化后续行为不算 Agent 新的主动响应，战损也不直接说明反应迟钝。
 
 事件里带 `agentState`（`SILENT`/`OBSERVING`/`BUSY_ELSEWHERE`），用来区分"模型或链路停摆"和"在忙别的、漏了这个资产"；它只解释判定，不改变判定。
-
-旧的 3–10 秒空窗判定（`BUILDER_GAP`/`PRODUCTION_GAP`）、`FEED`、`STALE_COMMAND`、`COMMAND_FAILURE` 已被上述六类取代，默认不运行；复现旧报告时用 `--config '{"legacyDetectors":true}'`。
 
 ## 保存评估输入
 
@@ -198,13 +196,15 @@ node evaluate/evaluate_stage_1.js "<commands.txt路径>" "<回放命令.jsonl路
 
 | 文件 | 用途 |
 |---|---|
-| `report.html` | 主要阅读入口，包含图表与文字报告 |
-| `report.txt`、`summary.json` | 命令节奏、间隔与离群汇总 |
+| `report.html` | 主要阅读入口，包含图表、映射审计、指标和逐项扣分 |
+| `stage1_metrics.json` | 开局、分档、空窗、底层节奏、映射健康、底层命令归属（Agent/补产/微操）和只记录项的完整指标 |
+| `score.json`、`score.txt` | Stage1 v1 100 分制结果、逐项证据和环境健康状态 |
+| `report.txt`、`summary.json` | 命令节奏、间隔与离群汇总；摘要增量包含 `stage1Metrics` / `stage1Score` |
 | `classified_commands.csv`、`decision_cycles.csv`、`waiting_intervals.csv`、`command_intervals.csv` | 高层分类、决策周期、等待与间隔明细 |
 | `native_command_intervals.csv` | 我方相邻底层命令间隔及原始记录行号 |
 | `execution_report.txt`、`execution_summary.json` | 高低层匹配和执行延迟汇总 |
 | `execution_matches.csv`、`execution_matches.jsonl` | 每条请求的匹配结果与候选证据 |
-| `mapping_rules.json` | 本次使用的匹配规则 |
+| `mapping_rules.json` | 本次使用的匹配规则及逐规则审计说明 |
 
 ## 运行第二轮评估
 
@@ -253,15 +253,15 @@ python evaluate/utils/evaluate_replay.py "<回放文件.replay路径>" --team "<
 
 ## 如何读结果
 
-第一轮中，`matched` 为匹配，`partial` 为部分覆盖，`unmatched` 为未找到对应记录，`ambiguous` 为归属不确定，`unobservable` 为缺少验证字段。未匹配不一定是执行失败，也可能是规则或证据不足。
+第一轮中，`matched` 为匹配，`partial` 为部分覆盖，`unmatched` 为未找到对应记录，`ambiguous` 为归属不确定，`unobservable` 为缺少验证字段。未匹配不等于执行失败：可能是请求被拒、待发未落地、证据不足或命令风暴。报告同时保留原始无落地比例与排除整组命令风暴后的比例，不回写映射结果。
 
 第二轮中，`EXPLAINED` 表示候选有解释，`UNCERTAIN` 表示证据不足，`UNANSWERED` 表示未找到相关主动响应。结合 `strict` 和 `reason` 阅读，不把所有候选当作失误。
 
 核对报告的 `complete/economyComplete`；重放补采还应检查 `playback.json` 中 `unchanged=true`、`checksumWarnings=0`。原始Replay、commands和有效telemetry应与报告一并保留。
 
-### 初步评分与后处理（可选）
+### 第二轮事件评分与后处理（可选）
 
-事件报告本身不含总分。需要一份可追溯的初评时，对 `stage_2/` 再跑一次后处理：
+第一轮分数由 `evaluate_stage_1.js` 自动生成。第二轮事件报告本身不含总分；需要一份可追溯的事件初评时，对 `stage_2/` 再跑一次后处理：
 
 ```sh
 node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
@@ -269,7 +269,7 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 它在同一目录写出 `score.json`（逐条扣分依据）、`score.txt`（人类可读表格）、`timeline.csv`（按开始时间排序的全部事件）和 `economy_seconds.csv`（F 材料：每游戏秒的资金、HUD 收入字段与实测变化）。`--weights <json>` 覆盖默认权重，`--out <目录>` 换输出目录。
 
-口径：加法模型，每个扣分点都能追溯到一条事件，每类有上限，避免单一失败模式主导总分；`EXPLAINED`/`UNCERTAIN` 和 `scoreable:false` 的事件不扣分；资金空余只出材料、不计分。权重与上限的默认值见 `events/score.js`，这是初版，不替代人工复核。
+口径：加法模型，每个扣分点都能追溯到一条事件，每类有上限，避免单一失败模式主导总分；`EXPLAINED`/`UNCERTAIN` 和 `scoreable:false` 的事件不扣分；资金空余只出材料、不计分。权重与上限的默认值见 `events/score.js`，这是初版，不替代人工复核，也不与 Stage1 v1 相加。
 
 `score.txt` 另有一块**未计分时长**：证据没覆盖到（`UNCERTAIN`、`not_scoreable`）的空闲段不扣分，但按类汇总条数和秒数报出来。看总分前先看这一块——一局被中途掐断时，末段最长的空闲往往全落在未计分里。
 
@@ -288,26 +288,4 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 - `repeated` = 30 秒内同一个原因码再次出现，说明 Agent 没有从回执里改过来。这衡量的是"错误恢复"，不是"反应速度"。
 - 目前只报数，**不参与计分**：权重还没标定，等几局样本再决定。
 
-### 会话复盘（`evaluate/session-cast/`）
-
-Agent 的思考链是评测的重要旁证。把 Pi 的会话文件归档并生成基本分析：
-
-```powershell
-node evaluate/tools/session_cast.js C:\Users\<你>\.pi\agent\sessions\<目录>\<会话>.jsonl `
-     --name "<对局名>" --match "<对局名>"
-```
-
-产出 `evaluate/session-cast/<对局名>/{session.jsonl, analysis.md}`：工具调用次数、被拒命令及引擎回执、思考量、单轮间隔、WSL 告警条数。整个目录被 `.gitignore` 忽略——会话是模型自己的推理记录，本地留存、不随仓库分发。
-
-## 清理测试产物
-
-微操每跑一次就写一个 `evaluate/output/micro/<CASE>/<run>/`，同一配置反复重跑会留下大量只差时间戳的兄弟目录；根目录 `replays/` 还会为每个 run 留一份 `<run>.replay`。整理时用：
-
-```powershell
-python evaluate/tools/cleanup_micro_output.py           # 只打印计划，不删
-python evaluate/tools/cleanup_micro_output.py --apply   # 执行
-```
-
-口径：按 `(case, task, track, seed)` 配置分组，每组只保留一个 run（优先有 `result.json` + `eval/report.txt` 的，其次最新的有 `result.json` 的，**没有 `result.json` 的中断局一律不留**）；`replays/<run>.replay` 跟随其 run 存亡；`replays/[local] *.replay` 是真人局，永不动。
-
-详细说明：[事件规则](events/README.md) · [采集与解析工具](utils/README.md) · [测试用途](test/README.md)
+详细说明：[Stage1 评分规则](STAGE1_SCORING.md) · [第二轮事件规则](events/README.md) · [采集与解析工具](utils/README.md) · [辅助工具](tools/README.md) · [测试用途](test/README.md)

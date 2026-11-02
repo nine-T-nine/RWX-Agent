@@ -198,6 +198,8 @@ python -W error::ResourceWarning evaluate/test/test_replay.py      # 连资源�
 - 动态选择器名单不能完整还原时保留覆盖不可验证；竞争有限底层记录的重复请求保留ambiguous，同一底层记录只归属一次。
 - 新旧 `queued` 不能代替 `command_queued`，旧导出缺少必要字段时重新解析Replay。
 
+入口在保留原有节奏和映射产物的同时生成 `stage1_metrics.json`、`score.json`、`score.txt`，并把结果写入 `report.html`。`mapping_rules.json` 还会给出每条映射规则的审计说明；评分阈值、健康门与不计分项见 [Stage1 评分规则](../STAGE1_SCORING.md)。
+
 
 ## 在线命令录制
 
