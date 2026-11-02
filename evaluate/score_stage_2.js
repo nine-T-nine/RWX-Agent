@@ -11,10 +11,9 @@
  * Writes : score.json      machine-readable score with a per-event deduction list
  *          score.txt       the same, as a table for humans
  *          timeline.csv    every event sorted by start time, with its family and deduction
- *          economy_seconds.csv  F material: one row per game second (funds + income field + delta)
+ *          economy_seconds.csv  one row per game second (funds + income field + delta)
  *
- * The score is preliminary and additive; see `events/score.js` for the model. F (资金空余) is
- * material only and never contributes points.
+ * Formula version and all evidence gates are recorded in score.json; F is scored from economy.log.
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -32,23 +31,15 @@ function readJson(file) {
   return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '')) : null;
 }
 
-/** F material. `income` in economy.log is credits per resourceIncomeRatePeriod (40 ticks), not per
+/** `income` in economy.log is credits per resourceIncomeRatePeriod (40 ticks), not per
  * second; `fundsDelta` is the measured change per game second and is the honest lower bound of the
  * real income on a second that also spent credits. */
 function economySeconds(economyFile) {
   if (!fs.existsSync(economyFile)) return null;
-  const rows = [];
-  for (const line of fs.readFileSync(economyFile, 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/)) {
-    for (const value of line.split(',')) {
-      const match = value.match(/^(-?\d+(?:\.\d+)?)\(([+-]?\d+(?:\.\d+)?)\)$/);
-      if (!match) continue;
-      const funds = Number(match[1]), incomeField = Number(match[2]);
-      const previous = rows.at(-1);
-      rows.push({second: rows.length, funds, incomeField,
-        fundsDelta: previous ? Number((funds - previous.funds).toFixed(3)) : null});
-    }
-  }
-  return rows;
+  const {EconomyTimeline}=require('./events/economy');
+  const samples=new EconomyTimeline(economyFile).samples;
+  return samples.map((row,i)=>({second:i,funds:row.funds,incomeField:row.income,
+    fundsDelta:i?Number((row.funds-samples[i-1].funds).toFixed(3)):null}));
 }
 
 function economyCsv(rows) {
@@ -59,13 +50,12 @@ function economyCsv(rows) {
   return lines.join('\n') + '\n';
 }
 
-function timelineCsv(events) {
-  const scored = scoreEvents(events);
+function timelineCsv(events,scored=scoreEvents(events)) {
   const points = new Map();
   for (const family of scored.breakdown) for (const item of family.items) points.set(item.id, item);
   const lines = ['t_start,t_end,family,type,status,scoreable,points,reason,detail'];
   const quote = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
-  for (const event of [...events].sort((a, b) => a.t_start - b.t_start || a.id.localeCompare(b.id))) {
+  for (const event of [...events,...(scored.financialEvents||[])].sort((a, b) => a.t_start - b.t_start || a.id.localeCompare(b.id))) {
     const item = points.get(event.id);
     const detail = [event.unit && `${event.unit.type}#${event.unit.id}`,
       event.unitId != null && `#${event.unitId}`,
@@ -82,7 +72,7 @@ function timelineCsv(events) {
 
 function reportText(score, summary) {
   const out = [];
-  out.push('第二轮初步评分');
+  out.push(`第二轮评分（${score.version}）`);
   out.push('='.repeat(60));
   out.push(`基准分 ${score.baseline}   扣分 ${score.deduction}   总分 ${score.total}`);
   if (summary) {
@@ -104,7 +94,7 @@ function reportText(score, summary) {
   if (unscored.length) {
     // 证据没覆盖到的区间不扣分，但必须报出来：否则“总分 83”会被读成“那些时间没发生”。
     out.push('');
-    out.push('未计分时长（证据未覆盖，不扣分）');
+    out.push('未计分时长（证据不足或排除，不扣分）');
     for (const family of unscored) {
       out.push(`  ${family.family.padEnd(14)} ${String(family.unscored.count).padStart(3)} 条  `
         + `${(family.unscored.durationMs / 1000).toFixed(1)}s`);
@@ -120,8 +110,8 @@ function reportText(score, summary) {
     }
   }
   out.push('');
-  out.push('说明: 分数是初步的加法模型，每个扣分点都能追溯到一条事件；每类有上限，避免单一失败');
-  out.push('模式主导总分。F（资金空余）只出材料，不参与计分。权重见 events/score.js。');
+  out.push('说明: 逐事件累计、分类封顶；F（资金空余）参与计分。缺证据项不扣分，详见逐项 reason。');
+  out.push('公式见 STAGE2_SCORING.md；新旧版本不可混榜，也不与 Stage1 相加。');
   return out.join('\n') + '\n';
 }
 
@@ -144,13 +134,13 @@ function main(argv) {
   const outDir = path.resolve(options.out || dir);
   const events = readEvents(path.join(dir, 'events.jsonl'));
   const summary = readJson(path.join(dir, 'summary.json'));
-  const score = scoreEvents(events, options.weights || {});
+  const economy = economySeconds(path.join(dir, 'economy.log'));
+  const score = scoreEvents(events, {...options.weights,economy});
   score.source = {events: path.join(dir, 'events.jsonl'), summary: path.join(dir, 'summary.json')};
   fs.mkdirSync(outDir, {recursive: true});
   fs.writeFileSync(path.join(outDir, 'score.json'), JSON.stringify(score, null, 2) + '\n');
   fs.writeFileSync(path.join(outDir, 'score.txt'), reportText(score, summary));
-  fs.writeFileSync(path.join(outDir, 'timeline.csv'), timelineCsv(events));
-  const economy = economySeconds(path.join(dir, 'economy.log'));
+  fs.writeFileSync(path.join(outDir, 'timeline.csv'), timelineCsv(events,score));
   if (economy) fs.writeFileSync(path.join(outDir, 'economy_seconds.csv'), economyCsv(economy));
   console.log(reportText(score, summary));
   return {outDir, score};

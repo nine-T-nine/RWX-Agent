@@ -4,7 +4,7 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const {tierSummary,buildMetrics,scoreMetrics}=require('../stage1-metrics.js');
+const {tierSummary,buildMetrics,scoreMetrics,scoredTiming,nativeCadence}=require('../stage1-metrics.js');
 const {evaluate}=require('../evaluate_stage_1.js');
 
 const repo=path.resolve(__dirname,'../..');
@@ -34,10 +34,12 @@ test('command storms are reported separately and removed only from the adjusted 
 });
 
 test('mapping delay is a health gate and does not add an Agent deduction',()=>{
-  const metrics={opening:{firstOrderSeconds:0,firstMiningBuildSeconds:0,firstMilitaryProductionSeconds:0},
+  const metrics={opening:{firstOrderSeconds:0,firstMiningBuildSeconds:0,firstBuilderProductionSeconds:0},
+    rates:{nativeProductionPerMinute:8},counts:{A:10,B:10},
     cadence:{decisionCycles:tierSummary([1],[30,45,75]),waitAfterAction:tierSummary([1],[10,20,40]),
+      decisionTiming:scoredTiming([{seconds:1}]),waitTiming:scoredTiming([{seconds:1}]),
       orderGaps:{over30ShareOfMatch:0,over30Seconds:0,tailSeconds:0},AA:{n:1,outliers:0,outlierShare:0},BB:{n:1,outliers:0,outlierShare:0}},
-    native:{intervals:tierSummary([1],[10,20,40])},mapping:{immediateDelay:{health:'abnormal'}}};
+    native:{intervals:tierSummary([1],[10,20,40]),scoringCadence:nativeCadence([1])},mapping:{immediateDelay:{health:'abnormal'}}};
   const score=scoreMetrics(metrics);
   assert.equal(score.score,100);
   assert.equal(score.systemHealth.scoreStatus,'provisional');
@@ -78,9 +80,43 @@ test('full stage1 evaluation writes metrics, score and updated HTML without repl
   const result=await evaluate(commands,replay,{outputRoot:temp});
   for(const name of ['report.html','report.txt','summary.json','execution_summary.json','stage1_metrics.json','score.json','score.txt','mapping_rules.json'])assert.ok(fs.existsSync(path.join(result.out,name)),name);
   const summary=JSON.parse(fs.readFileSync(path.join(result.out,'summary.json'),'utf8'));
-  assert.equal(summary.stage1Score.version,'stage1-v1');
+  assert.equal(summary.stage1Score.version,'stage1-v2');
   assert.equal(summary.stage1Metrics.counts.directOrders,30);
   const html=fs.readFileSync(path.join(result.out,'report.html'),'utf8');
-  assert.match(html,/Stage1 v1 实时性指标与初评分/);
+  assert.match(html,/Stage1 v2 实时性指标与初评分/);
   assert.match(html,/审计结论\/限制/);
+});
+
+function metricFixture(){
+  return {opening:{firstOrderSeconds:0,firstMiningBuildSeconds:0,firstBuilderProductionSeconds:0},
+    counts:{A:10,B:10},rates:{nativeProductionPerMinute:8},
+    cadence:{decisionTiming:scoredTiming([]),waitTiming:scoredTiming([]),AA:{n:0,outliers:0},BB:{n:0,outliers:0}},
+    native:{scoringCadence:nativeCadence([])},mapping:{immediateDelay:{health:'normal'}}};
+}
+const points=(metrics,id)=>scoreMetrics(metrics).breakdown.find(row=>row.id===id).points;
+test('v2 opening breakpoints, builder milestone and missing milestones',()=>{
+  const m=metricFixture();
+  for(const [seconds,expected]of [[0,0],[5,5],[8,8],[20,12],[60,15],[100,15],[null,15]]){
+    m.opening.firstOrderSeconds=seconds;assert.equal(points(m,'A1-first-order'),expected);
+  }
+  m.opening.firstMiningBuildSeconds=20;assert.equal(points(m,'A1-first-mining'),5);
+  m.opening.firstBuilderProductionSeconds=30;assert.equal(points(m,'A1-first-builder'),5);
+});
+test('clean means and distance-based outliers use strict A-majority eligibility',()=>{
+  const m=metricFixture();
+  m.cadence.decisionTiming=scoredTiming([...Array(10).fill({seconds:15,A_count:2,B_count:1}),{seconds:90,A_count:1,B_count:1}]);
+  assert.equal(points(m,'A2-decision-cycle'),4);assert.equal(points(m,'A2-decision-outliers'),0);
+  m.cadence.decisionTiming.rows.at(-1).A_count=2;assert.equal(points(m,'A2-decision-outliers'),1.5);
+  m.cadence.waitTiming=scoredTiming([...Array(10).fill({seconds:8}),{seconds:28},{seconds:48},{seconds:68}]);
+  assert.equal(points(m,'A2-wait-after-action'),5);assert.equal(points(m,'A2-wait-outliers'),4.7);
+  m.cadence.waitTiming=scoredTiming([{seconds:25}]);assert.equal(points(m,'A2-wait-after-action'),18);
+});
+test('native cadence fills exact boundaries and weights shares over every adjacent interval',()=>{
+  const m=metricFixture();m.native.scoringCadence=nativeCadence([0,3,4,5,12,25,26]);
+  assert.deepEqual(m.native.scoringCadence.counts,[1,1,2,1]);
+  assert.equal(points(m,'A4-native-cadence'),4.3);
+  m.cadence.AA={outlierShare:.05};m.cadence.BB={outlierShare:.75};
+  assert.equal(points(m,'A5-AA'),2);assert.equal(points(m,'A5-BB'),8);
+  m.counts.A=0;assert.equal(points(m,'A5-query-action-ratio'),10);
+  m.counts={A:800,B:100};assert.equal(points(m,'A5-query-action-ratio'),10);
 });

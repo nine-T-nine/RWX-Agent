@@ -1736,7 +1736,7 @@ public abstract class BaseUnit extends SizedObject {
             this.unitTarget1 = null;
         }
         if (this.currentHealth < healthBeforeObservation || this.shield < shieldBeforeObservation) {
-            com.corrodinggames.rts.gameFramework.GameStatistics.f.damaged(this, baseUnit);
+            com.corrodinggames.rts.gameFramework.GameStatistics.f.damaged(this, baseUnit, healthBeforeObservation);
         }
         com.corrodinggames.rts.game.ai.custom.micro.MicroRuntime.damage(this, baseUnit, healthBeforeObservation, shieldBeforeObservation);
         checkDeathOnZeroHp();

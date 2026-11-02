@@ -69,6 +69,51 @@ class EngineEvidenceTest {
     }
     private fun unregister(unit: BaseUnit) { GameObject.fastGameObjectList.remove(unit); BaseUnit.bE.remove(unit) }
 
+    @Test fun `idle proof observes unchanged ticks and retains temporary budget and action failures`() = withEvidence { engine, team, tmp ->
+        val unit = register(team, 980)
+        try {
+            val collector = EngineEvidence::class.java.getDeclaredField("current").apply { isAccessible = true }.get(null)
+            @Suppress("UNCHECKED_CAST")
+            val idles = EngineEvidence::class.java.getDeclaredField("idles").apply { isAccessible = true }.get(collector) as MutableMap<Long, Any>
+            idles.clear()
+            val track = EngineEvidence::class.java.getDeclaredMethod("trackIdle", BaseUnit::class.java, Map::class.java).apply { isAccessible = true }
+            fun state(idle: Boolean, available: Boolean = true, cap: Int = 10) = mapOf(
+                "workIdle" to idle, "capRemaining" to cap, "repairable" to listOf(42L),
+                "actions" to mapOf("tank" to mapOf("kind" to "produce", "cost" to 1000, "available" to available, "affordable" to available)),
+                "queue" to if (idle) emptyList<Any>() else listOf(mapOf("kind" to "produce", "action" to "tank", "count" to 2)))
+            team.credits = 5000.0
+            track.invoke(collector, unit, state(true))
+            engine.currentTick = 1; engine.gameTimeMillis = 1000; team.credits = 10.0
+            track.invoke(collector, unit, state(true, false, 1))
+            engine.currentTick = 2; engine.gameTimeMillis = 2000; team.credits = 5000.0
+            track.invoke(collector, unit, state(true))
+            engine.currentTick = 3; engine.gameTimeMillis = 3000
+            track.invoke(collector, unit, state(false))
+            val pair = rows(tmp).first { it["kind"]!!.jsonPrimitive.content == "idle" && it["unitId"]!!.jsonPrimitive.long == 980L }
+            val proof = pair["feasibility"]!!.jsonObject
+            assertTrue(proof["complete"]!!.jsonPrimitive.boolean)
+            assertEquals(10.0, proof["minFunds"]!!.jsonPrimitive.double)
+            assertEquals(1, proof["minCap"]!!.jsonPrimitive.int)
+            assertTrue(proof["actions"]!!.jsonObject.isEmpty())
+            assertEquals("tank", pair["closeAction"]!!.jsonPrimitive.content)
+            assertEquals(2, pair["closeQueue"]!!.jsonArray[0].jsonObject["count"]!!.jsonPrimitive.int)
+        } finally { unregister(unit) }
+    }
+
+    @Test fun `damage evidence carries actual HP loss and does not count shields or overkill`() = withEvidence { _, team, tmp ->
+        val victim = register(team, 981); val attacker = register(team, 982)
+        try {
+            victim.maxHealth = 100f; victim.currentHealth = 40f
+            GameStatistics.f.damaged(victim, attacker, 100f)
+            GameStatistics.f.damaged(victim, attacker, 40f)
+            victim.currentHealth = -100f
+            GameStatistics.f.damaged(victim, attacker, 40f)
+            val damage = rows(tmp).filter { it["kind"]!!.jsonPrimitive.content == "damage" }
+            assertEquals(listOf(60.0, 0.0, 40.0), damage.map { it["hpLoss"]!!.jsonPrimitive.double })
+            assertEquals(100.0, damage[0]["victim"]!!.jsonObject["maxHp"]!!.jsonPrimitive.double)
+        } finally { unregister(victim); unregister(attacker) }
+    }
+
     @Test fun `initial builder snapshot may read the transactional registry without stopping collection`() = withEvidence { engine, team, tmp ->
         EngineEvidence.close("new_fixture")
         val previous = Files.list(tmp).use { it.toList().toSet() }

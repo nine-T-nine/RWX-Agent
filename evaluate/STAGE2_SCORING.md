@@ -1,6 +1,6 @@
 # Stage2 完整对局事件评估与评分规则
 
-本文件是第二轮完整对局评估的**唯一细则来源**：材料采集、六类事件（A–F）的判定条件、排除规则、参数及可选评分模型都在这里。管理员启动与开局概览见[评测管理员指南](./README.md)，测试用途见[test/README.md](test/README.md)。以下命令均从仓库根目录执行。
+本文件是第二轮完整对局评估的**唯一细则来源**：材料采集、六类事件（A–F）的判定条件、排除规则、参数及评分模型都在这里。管理员启动与开局概览见[评测管理员指南](./README.md)，测试用途见[test/README.md](test/README.md)。以下命令均从仓库根目录执行。
 
 第二轮读取真实引擎证据，输出事件与经济时间序列。第一轮 `evaluate_stage_1.js` 和已有命令映射保持独立。
 
@@ -58,14 +58,14 @@ node evaluate/evaluate_stage_2.js 'evaluate/output/<对局名>/engine/match-001-
 
 ## 采集端材料
 
-第二轮的所有判定都只读这些记录。**没有一种判定需要新采集**，需要的是"采集端把判定要用的字段写清楚"。
+第二轮的所有判定都只读这些记录。**v2 评分新增实际 HP 损失和连续可行性字段。** 旧证据缺这些字段时保留事件，但不能推算相应扣分；需要重新采集。
 
 | 记录 | 关键字段 | 服务于 |
 |---|---|---|
 | `unit` | `id/life/type/side/x/y/alive/complete/visible/canAttack/idle/**workIdle**/building/mobile/builder/factory/task/queue/capRemaining/actions/repairable` | A、D、E |
-| `damage` | `victim`/`attacker` 的**战斗快照**：`id/life/type/side/x/y/alive/idle/building/canAttack/visible` | A |
+| `damage` | `victim`/`attacker` 的**战斗快照**：`id/life/type/side/x/y/alive/idle/building/canAttack/visible/hp/maxHp`，行上另有 `hpLoss` | A |
 | `death` | `unit`（完整快照）、`killer`、`nearby`（我方死亡的邻居 id/side/alive） | A、B |
-| `idle` | `unitId/type/roles/fromMs/toMs/durationMs/closeReason/closeAction/startFunds/endFunds/startCap/startX/startY/actions/lastProduct` | D、E |
+| `idle` | `unitId/type/roles/fromMs/toMs/durationMs/closeReason/closeAction/startFunds/endFunds/startCap/startX/startY/actions/lastProduct/closeQueue/closeTask/feasibility` | D、E |
 | `command` | `id/name/args/units/builders/refs/x/y/targetId`，`refs` 带收包时 `status/checkedMs/atReceipt/deathTimeMs/deathSeq` | A、C |
 | `result` | `accepted/**code**/**creditsBefore**/**creditsAfter**/reply` | C、F |
 | `economy` | `sampleMs/funds/income/**incomePerSecond**` | D、E、F |
@@ -76,14 +76,14 @@ node evaluate/evaluate_stage_2.js 'evaluate/output/<对局名>/engine/match-001-
 三条口径：
 
 - **`workIdle` 与 `idle` 分开。** `idle` 是"没有任务、没有队列、没有攻击目标、最近 1 秒没开火"；`workIdle` 与它相同，但**指令中心**在开火防守时仍算 `workIdle`（指挥中心一边防守一边生产是正常状态）。D/E 用 `workIdle`，A 仍用 `idle`。
-- **`damage` 只写战斗快照。** 一次伤害曾经写两个完整快照（含动作菜单、队列、单位上限），实测 775 B/行、占日志 18.7%；A 只读 11 个字段，瘦身后约 350 B/行。**行数一条不减**，所以判定语义完全不变。
+- **`damage` 只写战斗快照。** 一次伤害曾经写两个完整快照（含动作菜单、队列、单位上限），实测 775 B/行、占日志 18.7%；A 使用精简字段与实际 HP 损失，瘦身后约 350 B/行。**行数一条不减**，所以判定语义完全不变。
 - **`idle` 由采集端维护。** 每个资产最多一个未闭合的 pair；闭合原因是枚举（`BUILD/REPAIR/MOVE/ATTACK_MOVE/GUARD_AT/PATROL/ATTACK/PRODUCE/AUTO_ENGAGE/DEATH/EVIDENCE_END`）。`<3s` 的段在采集端丢弃（`-Drwx.evaluate.idleMinMs` 可调），其余全部保留：**离线层可以再筛，但采集端丢掉就不可逆**。
 
 ## 六类事件
 
 ### A 偷袭（`AMBUSH`）
 
-敌人实际伤害我方 **idle** 单位或建筑；至少一条相同攻击关系的实际记录跨满 5s，连续记录间隔不超过 3s。单位周围半径 X 的圆按相交传递合并。首次相关主动 B 后再收集 3s 命令。
+敌人实际伤害我方 **idle** 单位或建筑；至少一条相同攻击关系的实际记录跨满 5s，连续记录间隔不超过 3s。单位周围半径 X 的圆按相交传递合并。首次相关主动 B 后再收集 3s 命令供旧报告；评分另外保留区间内全部相关主动响应，并以实际生效时刻计算。
 
 | 字段 | 含义 |
 |---|---|
@@ -116,7 +116,7 @@ node evaluate/evaluate_stage_2.js 'evaluate/output/<对局名>/engine/match-001-
 
 | 字段 | 含义 |
 |---|---|
-| `t_start` / `t_end` | 损失时刻 → 后果时刻 |
+| `t_start` / `t_end` | 危险点损失时刻 → 后果后连续 3 秒无新增伤害、硬上限或证据结束 |
 | `delayMs` | `t_order − t_loss`，即"多久之后又把东西送回去" |
 | `operation` | `move` / `build` / `repair` / `rally` |
 | `consequence` | `{timeMs, unitId, type, alive, taskType, arrivalMs, arrivalObserved}`：挨打的那个单位，以及它的到达时刻（未观测到时为 null） |
@@ -145,52 +145,38 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 | `attempts` | 批数（判定用的量） |
 | `count` | 原始被拒/失效条数 |
 | `codes` | 按结构化原因码计数 |
-| `commands` | 每条 `commandId/timeMs/name/code/source` |
+| `commands` | 每条 `commandId/timeMs/name/code/source/kind/staleAgeMs/staleInfo` |
 
 - **原因码来自引擎**：`result.code` 在异常还有类型时赋值（`INSUFFICIENT_CREDITS` 是真实类型，其余按最具体优先的规则表）。回复文本原样保留，但**判定不再依赖文案**；没有 `code` 的旧证据才回退到文案分类。
 - 只有包含"世界不是我以为的那样"（`STALE_OBJECT`/`NOT_CONTROLLABLE`/`PLACEMENT_BLOCKED`/`UNAVAILABLE_ACTION`）的突发才 `scoreable`；纯参数拼写错误只进复核。
-- 单条拒绝不扣分：可能是探测，也可能是同一批的自伤。
+- 未达到突发阈值的单条拒绝仍不出事件。突发内逐指令评分，无首条宽限；只有已证明失效时间的指令可计算过期严重程度。
 
 ### D 空闲建造者（`BUILDER_IDLE`）/ E 空闲工厂（`FACTORY_IDLE`）
 
-一个采集端 `idle` 段 → 一条事件。角色由**动作菜单**推导（有 `build` 动作 = builder，有 `produce` 动作 = factory），不用名字清单；航母、鹦鹉螺、飞行堡垒这类混合单位只出一条，`roles` 里两个都记。
+一个采集端 `idle` 段对应一条事件。动作菜单决定 `roles`；兼有生产/建造能力的资产按工厂只出一条。**计分前必须证明 B 端点的实际工作在整个 `[A,B]` 持续可做。** 不再使用上次产物或最便宜动作代替 B 的工作。
 
-| 字段 | 含义 |
+| 证据 | 用法 |
 |---|---|
-| `tier` | `SHORT`（<10s）/ `LONG`（10–60s）/ `STALL`（≥60s） |
-| `durationMs` | 判定用的段长；命令日志先结束时会被截到日志末端（见下） |
-| `observedDurationMs` | 采集端实际观测到的完整段长，永远 ≥ `durationMs` |
-| `closeReason`、`closeAction` | 段长与结束原因 |
-| `referenceAction` | 参照动作：该资产上次实际产出的型号（采集端 `lastProduct`），没有则最便宜的可用项 |
-| `affordableStart`/`affordableEnd` | 段首/段尾是否买得起参照动作 |
-| `agentState` | 窗口内 Agent 在做什么 |
-| `keepRule` | 该资产是否有生效中的 `keep-set` 补产规则 |
+| `closeQueue` / `closeTask` | B 实际入队的型号和数量，或建造类型/坐标/数量、维修目标 |
+| `feasibility.actions` | 每 tick 都可用且可支付的动作交集；值为区间内最大单价 |
+| `feasibility.minFunds/minCap` | 区间内资金/单位剩余额度最低值；除每 tick 外，也在原生命令改动共享预算前采样 |
+| `feasibility.repairable` | 整段都存活、受损、可由该建造者维修的同一目标交集 |
+| `feasibility.complete/fromMs/toMs` | 每个 tick 覆盖完整且时间端点匹配；缺帧不可通过 |
+| `feasibility.placements` | 建造需要同一类型、坐标、数量在整个区间有效的落点证明；缺少则 `UNCERTAIN` |
 
-判定顺序（任一条命中即定级，后面的不再看）：
+预筛选规则：工厂必须以真实生产关闭区间；B 的整批生产总成本不超过 `minFunds`，数量不超过 `minCap`，所有型号均在连续动作交集中。同一请求拆成多个原生包时使用索引汇总的整批数量；多工厂共享预算无法全程重建时为 `UNCERTAIN`。维修必须保证同一目标全程可维修。建造同时要求动作、整批资金与落点全程合法。明确中途不可做 → `EXPLAINED`；证据不足 → `UNCERTAIN`；两者都不计分。已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
-| 序 | 条件 | 结果 |
-|---|---|---|
-| 1 | 命令日志的末端早于区间开头 | `UNCERTAIN` |
-| 2 | 没有可用参照动作 | `UNCERTAIN` |
-| 3 | 有生效的 `keep-set` 规则 | `EXPLAINED`（引擎自动补产，空闲只能是买不起或动作不可用） |
-| 4 | 段首和段尾都买不起 | `EXPLAINED` |
-| 5 | 其余 | `DETECTED`；`reason` 区分 `agent_silent` / `agent_busy_elsewhere` |
+采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。当前采集器提供工厂/维修的连续证据，**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲保留但不扣分。死亡、证据结束或纯移动关闭的区间没有实际 B 工作，也不能用猜测的动作参评。历史日志只有两端资金时同样保留为 `UNCERTAIN`。
 
-- **命令日志可能比遥测先结束**（Agent 进程退出、额度耗尽）。这时不整条作废，而是把区间截到日志末端 `commandCoverage.end`，按**已覆盖的前缀**判定：`durationMs = commandCoverage.end − fromMs`，`observedDurationMs` 保留真实段长，`durationIsLowerBound = true`。否则"末段被放弃的建造者/工厂"会全部变成 `UNCERTAIN`，正好漏掉这一类要抓的"发呆"。日志末端早于段首才判 `UNCERTAIN`。
-- **`agentState`**：`SILENT` = 窗口内没有任何 Agent 命令（模型或链路停摆）；`OBSERVING` = 只有查询；`BUSY_ELSEWHERE` = 在给别的东西下令。它不改变判定，只解释判定。
-- `scoreable`：`DETECTED` 且 `tier != SHORT` 且是工厂。**建造者默认不可扣分**，因为"能不能放下"无法从证据证明；把 `idleScoreBuilders` 设为 true 才纳入。
-- `durationIsLowerBound`：段在证据结束处截断、或被命令日志截断时为 true。
+命令日志早于 B 结束时仍输出已覆盖前缀的 `durationMs`，完整观测时长写 `observedDurationMs`，并设 `durationIsLowerBound=true`；由于无法把 B 归入已覆盖窗口，此时 `reason=endpoint_outside_command_coverage`，不扣前缀的分。完整覆盖且有 `keep-set` 规则时为 `EXPLAINED`。
 
-### F 资金空余（只出材料，不出事件）
+通过预筛选并 `DETECTED` 的工厂/建造者可计分，`idleScoreBuilders` 默认 true，仍可显式关闭。`tier`（<10s/10–60s/≥60s）只作描述，不再阻止短建造者区间按曲线计分。`agentState` 的 `SILENT/OBSERVING/BUSY_ELSEWHERE` 只说明当时在做什么。
 
-不判定、不计分，只产出一张表：
+### F 资金空余
 
-```sh
-node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
-# → stage_2/economy_seconds.csv: second,funds,incomeField,fundsDelta
-```
+由 `score_stage_2.js` 读取 `economy.log` 分段评分，区间写入 `score.json.financialEvents` 和 `timeline.csv`，原始逐秒数据仍写 `economy_seconds.csv`。
 
-**`incomeField` 不是每秒。** 它是"每 `resourceIncomeRatePeriod`（40 tick）"的额度；实测资金曲线是它的约 1.5625 倍（1x 下时钟每 tick 走 16ms）。遥测的 `economy` 行另有 `incomePerSecond`（采集端按实际时钟步长换算），`result` 行有 `creditsBefore/creditsAfter`，两者合起来可以把"收入"和"花费"分开。CLI 的 `Credits: … (+N/s)` 已改为真实每秒值。
+`incomeField` 是每 40 tick 的收入额；默认按 `1/(40×0.016)=1.5625` 换算每游戏秒。不同采样时钟须覆盖 `funds.incomeFieldPerSecond`，不能直接把 HUD 字段当秒收入。内存 API 可给每秒样本提供 `incomePerSecond`，优先使用它。
 
 ## 参数与验证
 
@@ -199,7 +185,7 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 `legacyDetectors` 默认为 **false**：旧的 3–10s `BUILDER_GAP`/`PRODUCTION_GAP`、`FEED`、`STALE_COMMAND`、`COMMAND_FAILURE` 已被 D/E、B、C 取代。需要复现旧报告时用 `--config '{"legacyDetectors":true}'`。
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js
+node --test evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -219,33 +205,70 @@ python -W error::ResourceWarning evaluate/test/test_replay.py
 
 ## 第二轮评分细则与公式
 
-事件判定报告与评分后处理分离：运行 `evaluate_stage_2.js` 只得到事件和经济材料；需要初评分时，对 `stage_2/` 目录执行：
+当前版本 **`stage2-v2`**，实现依据为 [评分草稿](score_design.md)。事件检测与评分后处理仍分开：
 
-```sh
+```powershell
 node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 ```
 
-默认写入 `score.json`（逐事件扣分、类别汇总与配置）、`score.txt`（可读摘要）、`timeline.csv`（全体事件及扣分）和 `economy_seconds.csv`（F 类经济材料）。可用 `--weights <json>` 覆盖初评分配置，`--out <目录>` 指定输出位置。此分数是**初版、可追溯的加法模型**，只用于辅助复核，不替代人工判断，也不与 Stage1 分数相加。
+输出 `score.json/score.txt/timeline.csv/economy_seconds.csv`；`--weights <json文件>` 覆盖配置，`--out <目录>` 指定输出。时间线复用同一次计分结果，覆盖参数同时作用于 JSON、文本和 CSV。新旧版本不可混榜，第二轮也不与 Stage1 相加。总分 `max(0,100−Σ min(类别上限,Σ事件扣分))`，输出保留 3 位小数。
 
-默认从 100 分开始。对每个评分类别，将其事件扣分相加为 `raw`，按该类上限封顶，类别封顶扣分再求和：
+### A/B 实际 HP 损失与响应
 
-```text
-总扣分 = Σ类别 min(该类 raw 扣分, 该类上限)
-总分   = max(0, 100 − 总扣分)
+`I=Σ_j w_j·ΔHP_j/HPmax_j`，各目标按自己的最大 HP 归一化再加权，I 可大于 1。实际损失在伤害入口前后相减，不含护盾、免伤、过量伤害；治疗后再次损失可以累计。最大 HP 和权重不随当前残血变化。`hpLosses` 保留按身份聚合的原始 HP 损失，`impactComplete` 表明证据完整。
+
+默认 HP 档位：单位 `≤500 / (500,1500] / >1500`，建筑 `≤2000 / >2000`。AMBUSH 权重分别为单位 `1/2/3`、建筑 `2/4`；GRINDER 单位 `3/2/1`，草稿未定义建筑权重，暂不将建筑损失计入 GRINDER。可覆盖 `hp.unitLow/unitMedium/buildingLow`。
+
+`S=clamp((I−I0)/(Ifull−I0),0,1)^gamma`；`R=min(1,max(0,(有效响应时刻−确认时刻)/1000)/T)`；`P=SingleMax·S·R`。有效响应要求相关主动 B 有实际 `applied=true` 的生效证据，拒绝请求、自动命令、查询不算；确认前已有有效响应按延迟 0。事件结束前无有效响应按 T 计算。AMBUSH 使用持续攻击确认时刻；GRINDER 使用重复投入后首次实际受击/死亡的确认时刻，不把投入前的旧损失当作本次新增 HP 损失。
+
+| 类别 | 上限 | T（秒） | SingleMax | I0 | Ifull | gamma |
+|---|---:|---:|---:|---:|---:|---:|
+| AMBUSH | 30 | 30 | 15 | 1 | 12 | 1.5 |
+| GRINDER | 20 | 45 | 15 | 3 | 18 | 1.5 |
+
+GRINDER 从后果开始累计同一次投入的实际伤害，连续 3s 无新增后果即结算，仍受原硬上限约束；一个伤害只归于一个投入候选。AMBUSH 合并区域时对原始伤害记录按 seq 去重。既有空间/攻击失活合并规则保持不变。旧日志无逐次 HP 损失时，不根据死亡个数猜 I，列 `missing_hp_loss_evidence`。
+
+### C 过期指令
+
+类别上限 15；每个突发中逐条指令求 `K=w·f(ageSeconds)`，再累计封顶。保留原突发检测门槛，取消旧首条宽限和固定突发扣分。
+
+| 过期秒数 | ≤5 | (5,10) | [10,20) | [20,40) | [40,60) | ≥60 |
+|---|---:|---:|---:|---:|---:|---:|
+| f | 0 | 0.5 | 1 | 1.5 | 2 | 3 |
+
+类型权重：查询 0、配置 1、操作 2。只对 `staleInfo=true` 的世界状态失效项计分；以已证明的失效时刻（如 `deathTimeMs`）到提交时刻计算 `staleAgeMs`，不能把突发跨度当作指令过期时长。同一命令多种证据只记一次，优先保留有过期时间的收包证据；未知失效时刻列为缺证据，不猜测扣分。
+
+### D/E 空闲区间
+
+先通过全区间 B 工作预筛选；每段 `P=c·f(d)`，各类独立累计封顶。曲线都使用 [Stage1 中定义的原始横轴公式](STAGE1_SCORING.md#曲线与横轴)。
+
+| 类别 | c | 类别上限 | f(d)，d 为游戏秒 |
+|---|---:|---:|---|
+| BUILDER_IDLE | 8 | 20 | `[0,8]` 自然指数 `0→0.3`；`(8,25]` 线性 `0.3→0.75`；`(25,60]` 自然对数 `0.75→1`；>60 为 1 |
+| FACTORY_IDLE | 5 | 15 | ≤10 为 0；`(10,30]` 线性 `0→0.3`；`(30,120]` 自然指数 `0.3→1`；>120 为 1 |
+
+### F 资金空余
+
+上限 20，单区间 `7·f(d)`。对每秒资金做居中 3 秒中值平滑，边缘取可用样本的中位数。阈值 `theta=K×近30秒平均收入率`，默认 **K=30 秒**，不足 30 秒时使用已有样本。资金首次达到 theta 且大于 0 时启动区间；D 按经过的游戏秒累计。
+
+一次花费为连续下降到回升前的总降幅 s（平台不拆段）；证据结束或跌破阈值也结算尚未回升的下降。M 为本区间迄今最大平滑资金。严格满足 `s>max(800,0.25M)` 才计入：`s/M≤0.5` 令 `D←0.5D`；`0.5<s/M≤0.8` 令 `D←0.25D`；`s/M>0.8` 关闭区间。资金跌破 theta 同样关闭。
+
+区间时长 d 取区间内 D 的历史最大值；部分释放不抹去已经累计的最大囤积。`f(d)`：≤15 秒为 0，`(15,120]` 自然指数 `0→1`，>120 为 1。完全释放后如资金仍达阈值，从下一个秒样本重新计时。资金事件保留峰值与花费明细；经济日志缺失时 `excluded.FUNDS_EVIDENCE_MISSING=1`，有日志但格式错误直接报错。
+
+### 覆盖配置与缺证据
+
+```json
+{
+  "weights": {"AMBUSH_SINGLE_MAX": 15, "GRINDER_SINGLE_MAX": 15, "BUILDER_IDLE_SINGLE_MAX": 8, "FACTORY_IDLE_SINGLE_MAX": 5, "FUNDS_SINGLE_MAX": 7},
+  "caps": {"AMBUSH": 30, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 20, "FACTORY_IDLE": 15, "FUNDS": 20},
+  "ambush": {"responseSeconds": 30, "deadZone": 1, "fullImpact": 12, "gamma": 1.5},
+  "grinder": {"responseSeconds": 45, "deadZone": 3, "fullImpact": 18, "gamma": 1.5},
+  "hp": {"unitLow": 500, "unitMedium": 1500, "buildingLow": 2000},
+  "funds": {"K": 30, "incomeFieldPerSecond": 1.5625, "spendFloor": 800, "spendShare": 0.25, "rho1": 0.5, "rho2": 0.25}
+}
 ```
 
-| 类别 | 单事件扣分 | 默认上限 |
-|---|---|---:|
-| `AMBUSH` | 仅 `UNANSWERED` 事件计分：普通单位偷袭 3 分；`kind=BASE` 偷家 3+2=5 分 | 20 |
-| `GRINDER` | 无损失统计但有危险区后果（`consequence`）时扣 3 分；否则 `net = 己方损失 − 敌方损失`，前 3 个净损失不扣，超过部分每个扣 0.5 分 | 25 |
-| `STALE` | 每次突发固定扣 2 分；`count` 中首条免费，余下每条再扣 0.5 分，即 `2 + max(0, count−1) × 0.5` | 20 |
-| `BUILDER_IDLE` | 每次先免 3 秒；之后按 `max(0, min(120s, duration−3s)) × 3 分/分钟` 计，单次最高 6 分 | 15 |
-| `FACTORY_IDLE` | 与建造者相同：`max(0, min(120s, duration−3s)) × 3 分/分钟`；单次最高 6 分 | 20 |
-| F 资金空余 | 只输出资金/收入材料，不参与评分 | — |
-
-默认参数也可在 `events/score.js` 的 `DEFAULTS` 中核对：基准 100、空闲免罚 3000ms、每个空闲事件最多计 120000ms、绞肉机免罚净损失 3、每个过期突发首条免费。旧事件名 `FEED`、`STALE_COMMAND`、`COMMAND_FAILURE`、`BUILDER_GAP`、`PRODUCTION_GAP` 会映射到相应类别，便于兼容历史报告。
-
-`EXPLAINED`、`UNCERTAIN` 和 `scoreable:false` 的事件通常不扣分；`DETECTED`/`UNANSWERED` 仍需按所属类别规则判断。未评分事件仍列出；空闲事件的未计分时长也汇总在 `score.txt`，防止证据未覆盖被误读成“没有空闲”。实现细节：`scoreable()` 会用于 GRINDER、STALE 和空闲事件；AMBUSH 分支直接检查 `status === 'UNANSWERED'`，不另外检查 `scoreable:false`。如事件同时带 `UNANSWERED` 与 `scoreable:false`，当前实现仍会按偷袭规则扣分，这是实现的精确行为。
+`EXPLAINED/UNCERTAIN/scoreable:false` 对所有评分族统一排除。逐项 `reason`、`items`、`unscored` 保留没有扣分的依据；缺证据不能解释成没有问题。旧事件名仍映射到相应族，但不再沿用旧的死亡计数/按分钟扣分替代新公式。
 
 ## 面向 Agent 的事件流（与第二轮判定无关）
 

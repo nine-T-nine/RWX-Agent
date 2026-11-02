@@ -551,14 +551,13 @@ function idleCase(coverageEnd,fromMs=5000,toMs=60000) {
   session.now=toMs;session.finish();
   return events.find(e=>e.type==='FACTORY_IDLE');
 }
-test('an idle interval that outlives the command log is judged on its covered prefix',()=>{
+test('a covered prefix retains diagnostics but cannot score work whose endpoint is outside coverage',()=>{
   // The Agent process exits before the engine does, so the command log stops at 20 s while the
-  // factory stays idle to 60 s. Discarding the whole episode would hide exactly the failure this
-  // family exists to catch, so the event is truncated to the covered part and flagged.
+  // factory stays idle to 60 s. Keep the covered duration as evidence, but it has no covered B work.
   const e=idleCase(20_000);
-  assert.ok(e);assert.equal(e.status,'DETECTED');assert.equal(e.t_end,20_000);
+  assert.ok(e);assert.equal(e.status,'UNCERTAIN');assert.equal(e.t_end,20_000);
   assert.equal(e.durationMs,15_000);assert.equal(e.observedDurationMs,55_000);
-  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,true);
+  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,false);
   // A log that ends before the idle even starts proves nothing.
   assert.equal(idleCase(1_000).status,'UNCERTAIN');
 });

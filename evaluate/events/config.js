@@ -10,7 +10,7 @@ const DEFAULTS = Object.freeze({X:160, T_AMBUSH:5000, T_INACTIVE:3000,
   // batch are one attempt, because a parallel burst can reject itself.
   T_STALE_BURST_WINDOW:10000, T_STALE_BATCH:250, T_STALE_BURST_MIN:3,
   // D/E 空闲: the idle-pair evidence keeps everything above the collector floor; these are the
-  // tier boundaries used for reporting and for the scoreable gate.
+  // tier boundaries used only for reporting; the score applies independent duration curves.
   T_IDLE_SHORT:10000, T_IDLE_LONG:60000,
   // B 危险区误判: how long a loss keeps a place "recently dangerous"; how long after the ordered
   // unit first reaches the place a hit still counts; and the hard cap from the order, which bounds
@@ -19,9 +19,8 @@ const DEFAULTS = Object.freeze({X:160, T_AMBUSH:5000, T_INACTIVE:3000,
   // Detector set. The legacy 3-10s gap detectors are superseded by D/E; keep them only to reproduce
   // an old report. The CLI turns them off by default.
   legacyDetectors:true,
-  // A builder's idle is only scoreable when a placement proof exists at the idle start; that is
-  // rare, so D is normally review-only and E carries the score.
-  idleScoreBuilders:false});
+  // D/E both require proof that the exact endpoint work was feasible throughout the interval.
+  idleScoreBuilders:true});
 
 const BOOLEAN_KEYS = new Set(['legacyDetectors', 'idleScoreBuilders']);
 

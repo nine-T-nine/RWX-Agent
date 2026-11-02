@@ -2,8 +2,9 @@
 
 const {signature}=require('./execution-mapping.js');
 const {isAgent}=require('./low-attribution.js');
+const {curve,piecewise}=require('./scoring-curves');
 
-const VERSION='stage1-v1';
+const VERSION='stage1-v2';
 const SEVERITY_NAMES=['normal','mild','moderate','severe'];
 const SEVERITY_WEIGHTS=[0,1,2,4];
 const THRESHOLDS=Object.freeze({
@@ -104,6 +105,22 @@ function isMilitaryProduction(command){
   // production do not count as the first committed military-production order.
   return /^u_/i.test(action)&&!/^u_(?:builder|combatengineer|scout|lightgunship)$/i.test(action);
 }
+function isBuilderProduction(command){
+  return ['rwx-game-order-action','rwx-game-keep-set'].includes(command.name)
+    &&/^u_(?:builder|builderShip|combatEngineer|mechEngineer)$/i.test(String(command.args.action||''));
+}
+function scoredTiming(rows){
+  const stats=robustStats(rows.map(row=>row.seconds),5);
+  return {...stats,rows:rows.map(row=>({...row,outlier:stats.threshold!=null&&row.seconds>stats.threshold,
+    excessSeconds:Math.max(0,row.seconds-(stats.cleanMean??0))}))};
+}
+function nativeCadence(values){
+  const counts=[0,0,0,0];
+  for(const x of values)if(x>3)counts[x<5?0:x<12?1:x<=25?2:3]++;
+  const weights=[1,3,8,20],count=values.length;
+  return {count,counts,weights,shares:counts.map(n=>count?n/count:0),
+    coefficient:count?counts.reduce((sum,n,i)=>sum+n*weights[i],0)/(20*count):0};
+}
 
 function commandStorms(high,matches){
   const byLine=new Map(matches.map(row=>[row.highLine,row])),groups=new Map();
@@ -197,18 +214,21 @@ function buildMetrics({classified,port,low,matches,durationSeconds,gapStats={},a
       agentProductionPerMinute:round(durationSeconds?productionNativeAgent*60/durationSeconds:null),
       configShareOfB:round(share(configCount,counts.B)),allowUnaffordableShareOfB:round(share(allowCount,counts.B))},
     opening:{firstOrderSeconds:orders[0]?.time??null,firstMiningBuildSeconds:orders.find(isMiningBuild)?.time??null,
+      firstBuilderProductionSeconds:commands.find(isBuilderProduction)?.time??null,
       firstMilitaryProductionSeconds:commands.find(isMilitaryProduction)?.time??null},
     cadence:{decisionCycles:tierSummary(cycles,THRESHOLDS.decisionCycleSeconds,row=>row.seconds),
+      decisionTiming:scoredTiming(cycles),waitTiming:scoredTiming(waits),
       waitAfterAction:tierSummary(waits,THRESHOLDS.waitAfterActionSeconds,row=>row.seconds),orderGaps,
       AA:{...gapStats['A-A'],outlierShare:round(share(gapStats['A-A']?.outliers,gapStats['A-A']?.n))},
       BB:{...gapStats['B-B'],outlierShare:round(share(gapStats['B-B']?.outliers,gapStats['B-B']?.n))},batchSilences:batchSilences(classified)},
     native:{intervals:tierSummary(low.slice(1).map((row,index)=>row.time_s-low[index].time_s),THRESHOLDS.nativeIntervalSeconds),
+      scoringCadence:nativeCadence(low.slice(1).map((row,index)=>row.time_s-low[index].time_s)),
       agentIntervals:tierSummary(agentLow.slice(1).map((row,index)=>row.time_s-agentLow[index].time_s),THRESHOLDS.nativeIntervalSeconds),
       productionCommandCount:productionNative,agentProductionCommandCount:productionNativeAgent,
       agentCommandCount:agentLow.length,allCommandCount:low.length,
       automationCommandCount:low.length-agentLow.length},
     attribution:{telemetry:Boolean(attribution?.telemetry),agentSources:['agent','pending'],counts:attribution?.counts??{},
-      note:'底层记录按提交者分档：agent/pending 是 Agent 自己的命令；keep 是补产规则；engine 是 auto-set 微操或引擎；unknown 是没有 telemetry 可核对。只有 agent/pending 进入底层节奏与底层生产率。'},
+      note:'agent/pending 为 Agent，keep 为补产，auto 为微操，engine 为引擎/UI，unknown 无证据。评分节奏与生产率使用全部底层命令，提交者分档用于审计。'},
     mapping:{statusCounts:Object.fromEntries(['matched','partial','unmatched','ambiguous','unobservable'].map(status=>[status,matches.filter(row=>row.status===status).length])),
       immediateDelay:{definition:'unique matched direct orders excluding --allow-unaffordable/--after-upgrade; legacy seconds use delayMin',...immediateStats,
         severity:tierSummary(immediate.map(row=>row.delayMin),THRESHOLDS.mappingDelaySeconds),health:mappingHealth,
@@ -223,29 +243,34 @@ function buildMetrics({classified,port,low,matches,durationSeconds,gapStats={},a
   };
 }
 
-const stepDeduction=(value,steps,missing)=>value==null?missing:(steps.find(step=>value<=step.max)?.points??steps.at(-1).points);
-const burdenDeduction=(summary,cap)=>summary.count?round(Math.min(cap,cap*summary.weightedBurden/4),1):0;
 function scoreMetrics(metrics){
   const opening=metrics.opening,breakdown=[];
   const add=(id,label,points,evidence,cap)=>breakdown.push({id,label,points:round(points,1),cap,evidence});
-  add('A1-first-order','首个行动指令',stepDeduction(opening.firstOrderSeconds,[{max:15,points:0},{max:30,points:1},{max:60,points:3},{max:Infinity,points:5}],5),{seconds:opening.firstOrderSeconds},5);
-  add('A1-first-mining','首个采矿建造',stepDeduction(opening.firstMiningBuildSeconds,[{max:30,points:0},{max:60,points:1},{max:120,points:3},{max:Infinity,points:5}],5),{seconds:opening.firstMiningBuildSeconds},5);
-  add('A1-first-military','首个军事生产',stepDeduction(opening.firstMilitaryProductionSeconds,[{max:120,points:0},{max:180,points:1},{max:300,points:3},{max:Infinity,points:5}],5),{seconds:opening.firstMilitaryProductionSeconds},5);
-  add('A2-decision-cycle','A→B 决策周期分档负担',burdenDeduction(metrics.cadence.decisionCycles,12),metrics.cadence.decisionCycles,12);
-  add('A2-wait-after-action','B→A 等待分档负担',burdenDeduction(metrics.cadence.waitAfterAction,8),metrics.cadence.waitAfterAction,8);
-  const longShare=metrics.cadence.orderGaps.over30ShareOfMatch??0;
-  add('A3-order-gap-share','行动指令 >30s 空窗占比',longShare<=.1?0:round(Math.min(15,15*(longShare-.1)/.65),1),{share:longShare,seconds:metrics.cadence.orderGaps.over30Seconds},15);
-  add('A3-tail','结尾无行动指令',stepDeduction(metrics.cadence.orderGaps.tailSeconds,[{max:30,points:0},{max:60,points:1},{max:120,points:3},{max:Infinity,points:5}],5),{seconds:metrics.cadence.orderGaps.tailSeconds},5);
-  add('A4-native-cadence','相邻底层命令间隔分档负担',burdenDeduction(metrics.native.intervals,15),metrics.native.intervals,15);
+  add('A1-first-order','首个行动指令',piecewise(opening.firstOrderSeconds,[[0,5,0,5],[5,8,5,8],[8,20,8,12],[20,60,12,15]],15),{seconds:opening.firstOrderSeconds},15);
+  add('A1-first-mining','首个采矿建造',piecewise(opening.firstMiningBuildSeconds,[[0,20,0,5]],5),{seconds:opening.firstMiningBuildSeconds},5);
+  add('A1-first-builder','首个建造者生产',piecewise(opening.firstBuilderProductionSeconds,[[0,30,0,5]],5),{seconds:opening.firstBuilderProductionSeconds},5);
+  const decision=metrics.cadence.decisionTiming,wait=metrics.cadence.waitTiming;
+  add('A2-decision-cycle','A→B 周期去离群均值',piecewise(decision.cleanMean,[[5,15,0,4],[15,30,4,8]]),decision,8);
+  add('A2-wait-after-action','B→A 等待去离群均值',piecewise(wait.cleanMean,[[3,8,0,5],[8,25,5,18,'exp']]),wait,18);
+  const outlierPenalty=(timing,bins,eligible=()=>true)=>timing.rows.filter(row=>row.outlier&&eligible(row))
+    .reduce((sum,row)=>sum+(bins.find(([upper])=>row.excessSeconds<upper)||bins.at(-1))[1],0);
+  add('A2-wait-outliers','B→A 等待离群值',Math.min(10,outlierPenalty(wait,[[20,.8],[40,1.2],[60,1.5],[Infinity,2]])),wait,10);
+  add('A2-decision-outliers','A→B 决策离群值',Math.min(8,outlierPenalty(decision,[[30,.5],[60,.8],[Infinity,1.5]],row=>row.A_count/(row.A_count+row.B_count)>.5)),decision,8);
+  add('A4-native-cadence','相邻底层命令间隔',15*metrics.native.scoringCadence.coefficient,metrics.native.scoringCadence,15);
   for(const [id,label,item] of [['A5-AA','A→A 离群占比',metrics.cadence.AA],['A5-BB','B→B 离群占比',metrics.cadence.BB]]){
-    const rate=item.outlierShare??0,points=rate<=.05?0:rate<=.15?1:2;
-    add(id,label,points,{outlierShare:rate,outliers:item.outliers,count:item.n},2);
+    const rate=item.outlierShare??0,points=rate<.05?0:curve(rate,.05,.75,id==='A5-AA'?2:1,8,'exp');
+    add(id,label,points,{outlierShare:rate,outliers:item.outliers,count:item.n},8);
   }
+  const production=metrics.rates.nativeProductionPerMinute??0;
+  add('A4-production-rate','底层生产指令 / 分钟',curve(production,0,8,6,0,'quadratic',-2),{perMinute:production},6);
+  const {A,B}=metrics.counts,ratio=B?A/B:A?Infinity:0;
+  add('A5-query-action-ratio','A / B',!A?10:ratio<.3?curve(ratio,0,.3,10,0,'quadratic',3)
+    :ratio>3?curve(ratio,3,8,0,10,'quadratic',3):0,{A,B,ratio:Number.isFinite(ratio)?ratio:null},10);
   const deduction=round(breakdown.reduce((sum,row)=>sum+row.points,0),1);
   return {version:VERSION,score:round(Math.max(0,100-deduction),1),startingScore:100,deduction,breakdown,
     systemHealth:{mappingDelay:metrics.mapping.immediateDelay.health,scoreStatus:metrics.mapping.immediateDelay.health==='normal'?'valid':'provisional',
       note:'高层→底层即时延迟是环境健康检查；异常时总分标为 provisional，但不把系统延迟扣到 Agent。'},
-    notScored:['B1/B2/B3/B5 情报与查询策略','C1 无落地痕迹','C2 命令风暴','C3 参数/格式错误','A6 批量下单后长静默（已由 A3 空窗覆盖）']};
+    notScored:['B1/B2/B3/B5 情报与查询策略','C1 无落地痕迹','C2 命令风暴','C3 参数/格式错误','行动空窗、结尾静默、首个军事生产（仅保留材料）']};
 }
 
-module.exports={VERSION,THRESHOLDS,robustStats,tierSummary,timingRows,orderGapMetrics,buildMetrics,scoreMetrics};
+module.exports={VERSION,THRESHOLDS,robustStats,tierSummary,timingRows,orderGapMetrics,buildMetrics,scoreMetrics,scoredTiming,nativeCadence};

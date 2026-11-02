@@ -21,15 +21,20 @@ import static com.corrodinggames.rts.game.ai.custom.micro.MicroData.map;
  */
 public final class Case4Retreat implements MicroCase {
     public static final int SELF_TEAM=0,ENEMY_TEAM=1;
-    /** The turret field is a blob around a seed centre, not a ring. */
-    static final int CENTRE_CORNER_MIN=50,CENTRE_CORNER_MAX=60;
-    static final int CENTRE_BORDER_MIN=30,CENTRE_BORDER_MAX=50;
-    static final int REGION_RADIUS_MIN=14,REGION_RADIUS_MAX=24;
-    /** Long-range guns lean to the upper-left of the blob, i.e. away from the player's corner. */
+    /** Turrets only spawn inside the top-left 3/5 x 3/5 rectangle of the map. */
+    static final double REGION_FRACTION=3.0/5.0;
+    /** Tiles kept free between the field and the map border / the 3/5 rectangle edge. */
+    static final int FIELD_MARGIN=3;
+    /** Field radius around the seed centre: 8..18 tiles, sized from the room the map leaves. */
+    static final int RADIUS_MIN=8,RADIUS_MAX=18;
+    /** Long-range guns lean to the upper-left of the field, i.e. away from the player's corner. */
     static final double LONG_RANGE_BIAS_DEGREES=225,LONG_RANGE_BIAS_SPREAD=35;
-    /** Share of long-range guns that is allowed to ignore the bias and land anywhere in the blob. */
+    /** Share of long-range guns that is allowed to ignore the bias and land anywhere in the field. */
     static final double LONG_RANGE_RANDOM_SHARE=0.2;
     static final double SPACING_LONG=10,SPACING_SHORT=3,SPACING_CROSS=3;
+    /** Worst-case spacing relaxation when the field is too tight: 10% per retry round. */
+    public static final double SPACING_FLOOR=0.4;
+    static final int RELAX_STEPS=(int)Math.round((1.0-SPACING_FLOOR)/0.1);
     static final double JITTER_TILES=0.35;
     static final double BASE_CLEARANCE=14;
     static final String TANK="experimentalHoverTank",BAY="repairbay";
@@ -104,10 +109,9 @@ public final class Case4Retreat implements MicroCase {
         Task task=task(c.task);Spec spec=spec(task);
         int width=Case4Map.width(c.seed),height=Case4Map.height(c.seed);
         Random random=new Random(c.seed*0x9E3779B97F4A7C15L+task.type()*131L+task.level());
-        int[] centre=pickCentre(width,height,random);
+        int[] centre=pickCentre(width,height,minimumRadius(spec,task),random);
         int radius=regionRadius(centre,width,height);
-        double[] noise=noiseTable(random);
-        List<Spot> spots=placeTurrets(spec,task,centre,radius,noise,width,height,random);
+        List<Spot> spots=placeTurrets(spec,task,centre,radius,width,height,random);
         int cornerX=width-8-(int)Math.floorMod(c.seed,5),cornerY=height-8-(int)Math.floorMod(c.seed,5);
         List<Map<String,Object>> units=new ArrayList<>();
         List<Map<String,Object>> turrets=new ArrayList<>();
@@ -147,74 +151,82 @@ public final class Case4Retreat implements MicroCase {
                 "mapWidth",width,"mapHeight",height,"tileSize",Case4Map.TILE,
                 "region",map("centreTileX",centre[0],"centreTileY",centre[1],
                         "centreDistanceFromCorner",round(Math.hypot(centre[0],centre[1])),
-                        "radiusTiles",radius,
+                        "radiusTiles",radius,"radiusMinTiles",RADIUS_MIN,"radiusMaxTiles",RADIUS_MAX,
+                        "boxMinX",0,"boxMinY",0,"boxMaxX",regionMaxX(width),"boxMaxY",regionMaxY(height),
+                        "boxWidthTiles",regionMaxX(width)+1,"boxHeightTiles",regionMaxY(height)+1,
+                        "boxMapFraction",REGION_FRACTION,
                         "longRangeBiasDegrees",(int)LONG_RANGE_BIAS_DEGREES,
                         "longRangeRandomShare",LONG_RANGE_RANDOM_SHARE,
                         "spacingLong",SPACING_LONG,"spacingShort",SPACING_SHORT,"spacingCross",SPACING_CROSS),
                 "baseCornerTile",map("x",cornerX,"y",cornerY),
+                "achievedCentreDistanceTiles",map("min",round(centreDistance(spots,true)),"max",round(centreDistance(spots,false))),
                 "achievedTurretSpacingTiles",map("long",round(minSpacing(spots,true)),"short",round(minSpacing(spots,false)),
                         "overall",round(minSpacing(spots,null))),
                 "fogMode",spec.fogMode(),"turrets",turrets,"turretsByType",turretCounts(task),
                 "repairBays",bays,"tanks",tanks,"units",units);
     }
 
+    /** Last tile index inside the top-left 3/5 rectangle on each axis. */
+    static int regionMaxX(int width){return (int)Math.floor(width*REGION_FRACTION)-1;}
+    static int regionMaxY(int height){return (int)Math.floor(height*REGION_FRACTION)-1;}
+
+    /** Room between the seed centre and the nearest edge of the allowed box, in tiles. */
+    static int fieldRoom(int[] centre,int width,int height){
+        return Math.min(Math.min(centre[0]-FIELD_MARGIN,regionMaxX(width)-centre[0]),
+                Math.min(centre[1]-FIELD_MARGIN,regionMaxY(height)-centre[1]));
+    }
+
     /**
-     * Seed centre of the turret field: 50..60 tiles from the top-left corner and at least 30 tiles
-     * from every border. On a 75..79 map that band is a thin arc, so the candidates are enumerated
-     * and one is drawn at random instead of sampling blindly.
+     * Seed centre of the turret field: a random point of the top-left 3/5 rectangle that keeps at
+     * least {@link #RADIUS_MIN} tiles to every edge of the box and stays clear of the player's
+     * corner. Centres with room for the requested radius are preferred, so a heavy task does not
+     * start from a centre that immediately squeezes its long-range guns together.
      */
-    static int[] pickCentre(int width,int height,Random random){
-        List<int[]> candidates=new ArrayList<>();
-        for(int y=0;y<height;y++)for(int x=0;x<width;x++){
-            double corner=Math.hypot(x,y);
-            if(corner<CENTRE_CORNER_MIN||corner>CENTRE_CORNER_MAX)continue;
-            int border=Math.min(Math.min(x,y),Math.min(width-1-x,height-1-y));
-            if(border<CENTRE_BORDER_MIN||border>CENTRE_BORDER_MAX)continue;
-            if(Math.hypot(x-(width-8),y-(height-8))<BASE_CLEARANCE+8)continue;
-            candidates.add(new int[]{x,y});
+    static int[] pickCentre(int width,int height,int minRadius,Random random){
+        List<int[]> roomy=new ArrayList<>(),general=new ArrayList<>();
+        for(int y=FIELD_MARGIN+RADIUS_MIN;y<=regionMaxY(height)-FIELD_MARGIN-RADIUS_MIN;y++){
+            for(int x=FIELD_MARGIN+RADIUS_MIN;x<=regionMaxX(width)-FIELD_MARGIN-RADIUS_MIN;x++){
+                if(Math.hypot(x-(width-8),y-(height-8))<BASE_CLEARANCE+8)continue;
+                int[] tile={x,y};
+                general.add(tile);
+                if(fieldRoom(tile,width,height)>=minRadius)roomy.add(tile);
+            }
         }
+        List<int[]> candidates=roomy.isEmpty()?general:roomy;
         if(candidates.isEmpty())throw new IllegalStateException("no valid turret field centre on "+width+"x"+height);
         return candidates.get(random.nextInt(candidates.size()));
     }
 
-    /** Largest blob radius that still keeps the whole field inside the map. */
-    static int regionRadius(int[] centre,int width,int height){
-        int border=Math.min(Math.min(centre[0],centre[1]),Math.min(width-1-centre[0],height-1-centre[1]));
-        return Math.max(REGION_RADIUS_MIN,Math.min(REGION_RADIUS_MAX,border-4));
-    }
-
-    /** Periodic fractal value noise on the unit circle, same shape as the CASE3 island coastline. */
-    static double[] noiseTable(Random random){
-        double[] control=new double[24];
-        for(int i=0;i<control.length;i++)control[i]=random.nextDouble()*2-1;
-        return control;
-    }
-    static double noise(double[] control,double t){
-        double sum=0,amplitude=1,frequency=1,normaliser=0;
-        for(int octave=0;octave<3;octave++){
-            sum+=amplitude*sample(control,(t*frequency)%1.0);
-            normaliser+=amplitude;amplitude*=0.5;frequency*=2;
-        }
-        return sum/normaliser;
-    }
-    private static double sample(double[] control,double t){
-        int size=control.length;
-        double position=t*size;
-        int index=(int)Math.floor(position);
-        double fraction=position-index;
-        double smooth=fraction*fraction*(3-2*fraction);
-        double left=control[((index%size)+size)%size];
-        double right=control[(((index+1)%size)+size)%size];
-        return left+(right-left)*smooth;
+    /**
+     * Radius the field needs before the long-range spacing can even be drawn: n guns with a 10-tile
+     * gap fit on a circle of radius 10/(2 sin(pi/n)); 35% slack leaves the upper-left bias room to
+     * move. Clamped to 8..18 so it never contradicts the field bounds.
+     */
+    static int minimumRadius(Spec spec,Task task){
+        int longs=0;
+        for(Turret turret:spec.turrets())if(turret.isLongRange())longs+=turret.perLevel()*task.level();
+        if(longs<=2)return RADIUS_MIN;
+        double ring=SPACING_LONG/(2*Math.sin(Math.PI/longs))*1.35;
+        return Math.min(RADIUS_MAX,Math.max(RADIUS_MIN,(int)Math.ceil(ring)));
     }
 
     /**
-     * Turret placement: the field is the noisy blob around the centre. Long-range guns are drawn with
-     * a strong upper-left bias (a fifth of them may land anywhere), short-range guns fill the rest of
-     * the blob uniformly, and every candidate is rejected while it breaks its own spacing rule, the
-     * cross rule or the map/base margins. A rejected draw is simply repeated.
+     * Field radius: the room the seed centre leaves inside the 3/5 rectangle and the map border,
+     * clamped to 8..18 tiles. Every turret is drawn within this radius, so the whole field stays
+     * inside the rectangle without being clipped.
      */
-    static List<Spot> placeTurrets(Spec spec,Task task,int[] centre,int radius,double[] noise,
+    static int regionRadius(int[] centre,int width,int height){
+        return Math.max(RADIUS_MIN,Math.min(RADIUS_MAX,fieldRoom(centre,width,height)));
+    }
+
+    /**
+     * Turret placement: every turret is drawn inside the seed centre's radius, so the whole field
+     * stays inside the top-left 3/5 rectangle. Long-range guns are drawn with a strong upper-left
+     * bias (a fifth of them may land anywhere), short-range guns fill the rest of the disc
+     * uniformly, and every candidate is rejected while it breaks its own spacing rule, the cross
+     * rule, the field radius or the map/base margins. A rejected draw is simply repeated.
+     */
+    static List<Spot> placeTurrets(Spec spec,Task task,int[] centre,int radius,
                                    int width,int height,Random random){
         List<String> longs=new ArrayList<>(),shorts=new ArrayList<>();
         for(Turret turret:spec.turrets()){
@@ -224,15 +236,15 @@ public final class Case4Retreat implements MicroCase {
         Collections.shuffle(longs,random);
         Collections.shuffle(shorts,random);
         List<Spot> all=new ArrayList<>();
-        for(String type:longs)all.add(placeOne(all,type,centre,radius,noise,width,height,random,true));
-        for(String type:shorts)all.add(placeOne(all,type,centre,radius,noise,width,height,random,false));
+        for(String type:longs)all.add(placeOne(all,type,centre,radius,width,height,random,true));
+        for(String type:shorts)all.add(placeOne(all,type,centre,radius,width,height,random,false));
         return all;
     }
 
-    private static Spot placeOne(List<Spot> placed,String type,int[] centre,int radius,double[] noise,
+    private static Spot placeOne(List<Spot> placed,String type,int[] centre,int radius,
                                  int width,int height,Random random,boolean longRange){
         double spacing=longRange?SPACING_LONG:SPACING_SHORT;
-        for(int relax=0;relax<=6;relax++){
+        for(int relax=0;relax<=RELAX_STEPS;relax++){
             double need=spacing*(1.0-0.1*relax);
             for(int attempt=0;attempt<900;attempt++){
                 double angle;
@@ -241,11 +253,10 @@ public final class Case4Retreat implements MicroCase {
                 }else{
                     angle=random.nextDouble()*Math.PI*2;
                 }
-                double reach=radius*(1+0.35*noise(noise,angle/(Math.PI*2)));
-                double distance=reach*Math.sqrt(random.nextDouble())*0.95;
+                double distance=radius*Math.sqrt(random.nextDouble());
                 int tileX=(int)Math.round(centre[0]+Math.cos(angle)*distance);
                 int tileY=(int)Math.round(centre[1]+Math.sin(angle)*distance);
-                if(!fits(placed,tileX,tileY,width,height,need,longRange))continue;
+                if(!fits(placed,tileX,tileY,width,height,need,longRange,centre,radius))continue;
                 return spot(type,tileX,tileY,centre,random);
             }
         }
@@ -261,8 +272,11 @@ public final class Case4Retreat implements MicroCase {
         return new Spot(type,tileX,tileY,offsetX,offsetY,cornerDistance,cornerAngle,centreDistance);
     }
 
-    private static boolean fits(List<Spot> placed,int tileX,int tileY,int width,int height,double need,boolean longRange){
-        if(tileX<3||tileY<3||tileX>width-4||tileY>height-4)return false;
+    private static boolean fits(List<Spot> placed,int tileX,int tileY,int width,int height,double need,
+                                boolean longRange,int[] centre,int radius){
+        if(tileX<FIELD_MARGIN||tileY<FIELD_MARGIN||tileX>width-4||tileY>height-4)return false;
+        if(tileX>regionMaxX(width)||tileY>regionMaxY(height))return false;
+        if(Math.hypot(tileX-centre[0],tileY-centre[1])>radius)return false;
         int cornerX=width-8,cornerY=height-8;
         if(Math.hypot(tileX-cornerX,tileY-cornerY)<BASE_CLEARANCE)return false;
         for(Spot other:placed){
@@ -285,6 +299,12 @@ public final class Case4Retreat implements MicroCase {
             best=Math.min(best,Math.hypot(a.tileX()-b.tileX(),a.tileY()-b.tileY()));
         }
         return best==Double.MAX_VALUE?0:best;
+    }
+    /** Smallest or largest turret distance from the seed centre, in tiles. */
+    static double centreDistance(List<Spot> spots,boolean min){
+        double best=min?Double.MAX_VALUE:0;
+        for(Spot spot:spots)best=min?Math.min(best,spot.centreDistance()):Math.max(best,spot.centreDistance());
+        return spots.isEmpty()?0:best;
     }
     private static double round(double value){return Math.round(value*10)/10.0;}
 

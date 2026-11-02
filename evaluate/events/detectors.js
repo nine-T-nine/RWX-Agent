@@ -2,6 +2,27 @@
 const {identity,distance,contains,intersects,location,composition,directB,operation,argsObject,staleRefState,staleCommandRefs,commandTargets}=require('./model');
 const {collectFailures}=require('./failures');
 const {agentState,positionalQuery}=require('./commands');
+const {endpointFeasibility}=require('./feasibility');
+
+function hpEvidence(rows){
+  const losses=new Map();let complete=true;
+  for(const row of rows){
+    const unit=row.victim;
+    if(unit?.side!=='self')continue;
+    if(!Number.isFinite(row.hpLoss)||row.hpLoss<0||!Number.isFinite(unit.maxHp)||unit.maxHp<=0){complete=false;continue;}
+    const key=identity(unit),loss=losses.get(key)||{id:unit.id,life:unit.life??0,type:unit.type,building:unit.building===true,maxHp:unit.maxHp,hpLoss:0};
+    loss.hpLoss+=row.hpLoss;losses.set(key,loss);
+  }
+  return {hpLosses:[...losses.values()],impactComplete:complete&&rows.length>0};
+}
+function effectiveResponse(session,event,end){
+  const times=(event.scoreResponses||event.commands||[]).flatMap(entry=>{
+    const command=session.commands.find(c=>c.id===entry.id)||entry;
+    return (command.applications||[]).filter(a=>a.applied===true&&a.timeMs>=Math.max(event.t_start,entry.timeMs)
+      &&(a.timeMs<end||a.timeMs===end&&(end<session.now||a.seq!=null&&a.seq<=session.matcher.nowSeq))).map(a=>a.timeMs);
+  });
+  return times.length?Math.min(...times):null;
+}
 
 /**
  * Diagnostic split of the global B set for one object. The verdict still uses B_count (any active
@@ -40,13 +61,14 @@ class AmbushDetector extends Detector {
     const key=identity(a)+'>'+identity(v);
     let region=this.regions.find(r=>r.pairs.has(key));
     if(!region){
-      region={event:this.event('AMBUSH',row.timeMs),pairs:new Map(),history:new Map(),losses:new Map()};
+      region={event:this.event('AMBUSH',row.timeMs),pairs:new Map(),history:new Map(),losses:new Map(),damage:new Map()};
       this.regions.push(region);
       this.diagnose('candidate_created');
     }
     const old=region.pairs.get(key);
     region.pairs.set(key,{attacker:a,victim:v,start:old&&old.start!=null&&row.timeMs-old.last<=this.c.T_INACTIVE?old.start:row.timeMs,last:row.timeMs,nonIdleSince:null});
     region.history.set(identity(a),a);region.history.set(identity(v),v);
+    region.damage.set(row.seq,row);
     // Stable region identity survives a later split; it is never counted again as two events.
     let changed=true;
     while(changed){changed=false;for(const other of [...this.regions]){
@@ -55,9 +77,11 @@ class AmbushDetector extends Detector {
       for(const[k,p]of drop.pairs)keep.pairs.set(k,p);
       for(const[k,u]of drop.history)keep.history.set(k,u);
       for(const[k,u]of drop.losses)keep.losses.set(k,u);
+      for(const[k,d]of drop.damage)keep.damage.set(k,d);
       keep.event.t_start=Math.min(keep.event.t_start,drop.event.t_start);
       keep.event.t_confirm=keep.event.t_confirm==null?drop.event.t_confirm:drop.event.t_confirm==null?keep.event.t_confirm:Math.min(keep.event.t_confirm,drop.event.t_confirm);
       for(const command of drop.event.commands)this.s.matcher.response(keep.event,command,command.kind);
+      keep.event.scoreResponses=[...(keep.event.scoreResponses||[]),...(drop.event.scoreResponses||[])];
       this.regions.splice(this.regions.indexOf(drop),1);region=keep;changed=true;break;
     }}
   }
@@ -77,6 +101,7 @@ class AmbushDetector extends Detector {
   command(command) {
     for(const r of this.regions){
       const pairs=[...r.pairs.values()],kind=this.s.matcher.relation(command,this.circles(r),new Set(pairs.map(p=>p.victim.id)),new Set(pairs.map(p=>p.attacker.id)));
+      if(kind)(r.event.scoreResponses??=[]).push({id:command.id,timeMs:command.timeMs,kind});
       this.s.matcher.response(r.event,command,kind);
     }
   }
@@ -93,6 +118,7 @@ class AmbushDetector extends Detector {
     const kind=us.length&&us.every(u=>u.building&&!u.canAttack)?'BASE':'UNITS';
     const agent=agentState(this.s.commands,r.event.t_start,now);
     Object.assign(r.event,{kind,agentState:agent.state,agentStateEvidence:agent.evidence,
+      ...hpEvidence([...r.damage.values()]),effectiveResponseMs:effectiveResponse(this.s,r.event,now),
       location:location(this.circles(r).length?this.circles(r):[...r.history.values()]),
       self:composition(us),enemy:composition(enemies),units:[...r.history.keys()],losses:composition(lost),
       lossesSelf:composition(lost.filter(u=>u.side==='self')),lossesEnemy:composition(lost.filter(u=>u.side==='enemy')),
@@ -397,25 +423,6 @@ class CommandFailureDetector extends Detector {
 const STALE_INFO=new Set(['STALE_OBJECT','NOT_CONTROLLABLE','PLACEMENT_BLOCKED','UNAVAILABLE_ACTION']);
 
 /**
- * Reference action for an idle asset: the type it last produced/built when the collector recorded
- * one, otherwise the cheapest available action. "Cheapest available" is the conservative choice —
- * if even that is unaffordable, the idle is explained without any placement argument.
- */
-function pickReference(actions,kind,lastProduct){
-  const rows=Object.entries(actions||{}).filter(([,row])=>row&&row.kind===kind&&Number.isFinite(row.cost));
-  if(!rows.length)return null;
-  if(lastProduct){
-    const match=rows.find(([,row])=>row.type===lastProduct);
-    if(match)return {action:match[0],type:match[1].type,cost:match[1].cost,
-      available:match[1].available!==false,source:'last_product'};
-  }
-  const available=rows.filter(([,row])=>row.available!==false).sort((a,b)=>a[1].cost-b[1].cost);
-  const pick=available[0]||rows.sort((a,b)=>a[1].cost-b[1].cost)[0];
-  return {action:pick[0],type:pick[1].type,cost:pick[1].cost,available:pick[1].available!==false,
-    source:available.length?'cheapest_available':'cheapest_known'};
-}
-
-/**
  * D 空闲建造者 / E 空闲工厂.
  *
  * <p>One idle pair from the collector becomes one event. The collector already dropped periods
@@ -428,7 +435,16 @@ function pickReference(actions,kind,lastProduct){
  * blocked by money or by the rule having been paused.</p>
  */
 class IdleAssetDetector extends Detector {
-  constructor(s){super(s);this.keep=new Map();}
+  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();}
+  native(row){
+    if(row.phase!=='after')return;
+    for(const result of row.results||[])if(result.queueAdded?.length){
+      const linked=this.s.commands.find(c=>c.id===row.commandId);
+      this.endpoints.set(`${result.unitId}:${result.life??0}`,{timeMs:row.timeMs,source:row.source,
+        commandId:row.commandId,commandTimeMs:linked?.timeMs??null,batchCount:result.batchCount,
+        shared:(row.results?.length??0)>1||(linked?.units?.length??0)>1});
+    }
+  }
   command(command){
     const name=String(command.name||'');
     if(name==='rwx-game-keep-set'){
@@ -445,12 +461,18 @@ class IdleAssetDetector extends Detector {
     const factory=roles.includes('factory'),builder=roles.includes('builder');
     if(!factory&&!builder){this.diagnose('no_role');return;}
     const type=factory?'FACTORY_IDLE':'BUILDER_IDLE';
-    const ref=pickReference(row.actions,factory?'produce':'build',row.lastProduct);
+    const endpoint=this.endpoints.get(`${row.unitId}:${row.life??0}`);
+    const native=endpoint?.timeMs===row.toMs?endpoint:null;
+    // Native packets for one requested batch can be split. The command index already knows its
+    // complete count; do not judge only the first packet that happened to close the idle pair.
+    if(factory&&native?.batchCount&&row.closeQueue?.length===1)
+      row={...row,closeQueue:row.closeQueue.map(q=>({...q,count:native.batchCount}))};
+    const feasibility=native?.shared?{throughout:null,reason:'shared_endpoint_budget_unavailable'}:endpointFeasibility(row,factory);
+    const ref=factory&&row.closeAction?{action:row.closeAction,...row.actions?.[row.closeAction],source:'endpoint'}
+      :row.closeTask?{...row.closeTask,source:'endpoint'}:null;
     const durationMs=Number(row.durationMs??(Number(row.toMs)-Number(row.fromMs)));
     // The command log can end before the telemetry does (the Agent process exited, quota ran out).
-    // Discarding the whole interval as UNCERTAIN throws away exactly the failure this family exists
-    // to catch: builders and factories abandoned in the last minutes. Judge the covered prefix and
-    // say so with `durationIsLowerBound`; a log that ends before the idle even starts stays UNCERTAIN.
+    // Retain covered duration for diagnostics. The score still requires B inside command coverage.
     const coverageEnd=this.s.commandCoverage?.end??-Infinity;
     const coveredTo=Math.min(Number(row.toMs),coverageEnd);
     const coverage=coveredTo>=Number(row.fromMs)&&this.s.covers(row.fromMs,coveredTo);
@@ -463,17 +485,20 @@ class IdleAssetDetector extends Detector {
     const tier=judgedMs>=this.c.T_IDLE_LONG?'STALL':judgedMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
     let status,reason;
     if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
-    else if(!ref){status='UNCERTAIN';reason='no_reference_action';}
+    else if(judgedEnd<Number(row.toMs)){status='UNCERTAIN';reason='endpoint_outside_command_coverage';}
     else if(keepActive){status='EXPLAINED';reason='automation_configured';}
-    else if(!affordableStart&&!affordableEnd){status='EXPLAINED';reason='not_affordable_during_idle';}
+    else if(native&&(['keep','pending','auto','engine'].includes(native.source)||native.commandTimeMs<row.fromMs&&native.commandTimeMs!=null)){
+      status='EXPLAINED';reason='automation_or_prearranged_order';}
+    else if(feasibility.throughout==null){status='UNCERTAIN';reason=feasibility.reason;}
+    else if(feasibility.throughout===false){status='EXPLAINED';reason=feasibility.reason;}
     else {status='DETECTED';reason=agent.state==='SILENT'?'agent_silent':'agent_busy_elsewhere';}
-    const scoreable=status==='DETECTED'&&tier!=='SHORT'&&(factory||this.c.idleScoreBuilders);
+    const scoreable=status==='DETECTED'&&feasibility.throughout===true&&(factory||this.c.idleScoreBuilders);
     const event=this.event(type,row.fromMs,{t_confirm:judgedEnd,
       unitId:Number(row.unitId),life:Number(row.life??0),unit:{id:Number(row.unitId),type:row.type},
       roles,durationMs:judgedMs,observedDurationMs:durationMs,closeReason:row.closeReason??null,
       closeAction:row.closeAction??null,tier,
       startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
-      referenceAction:ref,affordableStart,affordableEnd,
+      referenceAction:ref,affordableStart,affordableEnd,feasibility,endpointMs:row.toMs,
       agentState:agent.state,agentStateEvidence:agent.evidence,
       keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
       status,reason,strict:false,scoreable,visibility:'HIGH',
@@ -502,14 +527,18 @@ class StaleBurstDetector extends Detector {
   command(command){
     if(!directB(command))return;
     for(const ref of staleCommandRefs(command))
-      this.rows.push({timeMs:command.timeMs,commandId:command.id,name:command.name,
-        code:'STALE_OBJECT',source:'receipt_ref',objectId:ref.id});
+      this.rows.push({timeMs:command.timeMs,commandId:command.id,name:command.name,kind:'operation',
+        code:'STALE_OBJECT',source:'receipt_ref',objectId:ref.id,
+        staleAgeMs:Number.isFinite(ref.deathTimeMs)?Math.max(0,command.timeMs-ref.deathTimeMs):null});
   }
   finish(now){
     for(const row of collectFailures(this.s.commands,{retryWindowMs:this.c.T_RETRY_WINDOW}))
       this.rows.push({timeMs:row.timeMs,commandId:row.commandId,name:row.name,
         code:row.code||row.category,source:'rejected',category:row.category,kind:row.kind});
-    const unique=[...new Map(this.rows.map(row=>[row.commandId,row])).values()]
+    const byCommand=new Map();
+    for(const row of this.rows){const prior=byCommand.get(row.commandId);
+      if(!prior||!Number.isFinite(prior.staleAgeMs)&&Number.isFinite(row.staleAgeMs))byCommand.set(row.commandId,row);}
+    const unique=[...byCommand.values()]
       .sort((a,b)=>a.timeMs-b.timeMs||String(a.commandId).localeCompare(String(b.commandId)));
     const bursts=[];let current=null;
     for(const row of unique){
@@ -531,7 +560,7 @@ class StaleBurstDetector extends Detector {
       const event=this.event('STALE_BURST',burst.start,{t_confirm:burst.end,
         count:burst.rows.length,attempts:batches.length,windowMs:burst.end-burst.start,codes,
         commands:burst.rows.map(row=>({commandId:row.commandId,timeMs:row.timeMs,name:row.name,
-          code:row.code,source:row.source})),
+          code:row.code,source:row.source,kind:row.kind,staleAgeMs:row.staleAgeMs??null,staleInfo:STALE_INFO.has(row.code)})),
         status:!coverage?'UNCERTAIN':'DETECTED',
         reason:!coverage?'CLI_command_coverage_unavailable'
           :staleInfo?'stale_or_conflicting_commands':'invalid_commands_only',
@@ -619,6 +648,12 @@ class GrinderDetector extends Detector {
     return {aware:false,by:null};
   }
   command(command){
+    for(const candidate of this.pending){
+      if(!candidate.consequence)continue;
+      const kind=this.s.matcher.relation(command,[candidate.point],candidate.units,new Set());
+      if(kind){(candidate.response.scoreResponses??=[]).push({id:command.id,timeMs:command.timeMs,kind});
+        this.s.matcher.response(candidate.response,command,kind);}
+    }
     if(command.source!=='agent')return;
     const operation=SEND_ORDERS[String(command.name||'')];
     if(!operation)return;
@@ -638,15 +673,16 @@ class GrinderDetector extends Detector {
     this.pending.push({tLoss:point.timeMs,point,orderMs:command.timeMs,commandId:command.id,operation,
       units:new Set(units),unitsResolved:units.length>0,arrivals,
       awareness:this.awareness(point.timeMs,command.timeMs,point),
-      deadline:command.timeMs+this.c.T_GRINDER_HARD_CAP,consequence:null});
+      deadline:command.timeMs+this.c.T_GRINDER_HARD_CAP,consequence:null,damage:[],
+      response:{t_start:command.timeMs,commands:[],t_first_B:null}});
     this.diagnose('candidate_send_into_danger');
   }
   /** A sent unit took damage or died at the danger point inside the follow-up window. */
-  consequence(now,unit,x,y){
+  consequence(now,unit,x,y,row=null){
     if(unit?.side!=='self')return;
     const task=unit.taskType??unit.task?.type??null;
     for(const candidate of this.pending){
-      if(candidate.consequence||now<candidate.orderMs||now>candidate.deadline)continue;
+      if(now<candidate.orderMs||now>candidate.deadline)continue;
       if(distance({x,y},candidate.point)>this.c.X)continue;
       if(candidate.operation!=='rally'){
         if(!candidate.unitsResolved)continue;
@@ -660,11 +696,15 @@ class GrinderDetector extends Detector {
       const arrival=candidate.arrivals.get(Number(unit.id));
       if(arrival!=null&&now-arrival>this.c.T_GRINDER_AFTER)continue;
       if(arrival==null&&now-candidate.orderMs>this.c.T_GRINDER_HARD_CAP)continue;
-      candidate.consequence={timeMs:now,unitId:unit.id,type:unit.type,alive:unit.alive!==false,
+      candidate.consequence??={timeMs:now,unitId:unit.id,type:unit.type,alive:unit.alive!==false,
         taskType:task,arrivalMs:arrival??null,arrivalObserved:arrival!=null};
+      candidate.lastHit=now;
+      if(row)candidate.damage.push(row);
+      // One HP loss belongs to one pending send, even after several orders name the same unit.
+      break;
     }
   }
-  damage(row){this.consequence(row.timeMs,row.victim,row.victim?.x,row.victim?.y);}
+  damage(row){this.consequence(row.timeMs,row.victim,row.victim?.x,row.victim?.y,row);}
   death(row){
     if(row.unit?.side!=='self')return;
     this.deaths.push({timeMs:row.timeMs,x:row.unit.x,y:row.unit.y,unitId:row.unit.id,type:row.unit.type});
@@ -675,16 +715,18 @@ class GrinderDetector extends Detector {
   finish(now){this.close(now,true);for(const interval of this.stream)if(interval.to==null)interval.to=now;}
   close(now,force=false){
     for(const candidate of [...this.pending]){
-      if(!force&&now<candidate.deadline)continue;
+      if(!force&&now<candidate.deadline&&(!candidate.consequence||now-candidate.lastHit<this.c.T_INACTIVE))continue;
       this.pending.splice(this.pending.indexOf(candidate),1);
       if(!candidate.consequence){this.diagnose('no_consequence');continue;}
-      const coverage=this.s.covers(candidate.tLoss,candidate.consequence.timeMs);
-      const agent=agentState(this.s.commands,candidate.tLoss,candidate.consequence.timeMs);
+      const end=Math.min(now,candidate.deadline),coverage=this.s.covers(candidate.tLoss,end);
+      const agent=agentState(this.s.commands,candidate.tLoss,end);
       const event=this.event('GRINDER',candidate.tLoss,{t_confirm:candidate.consequence.timeMs,
         location:{x:candidate.point.x,y:candidate.point.y,r:this.c.X},
         commandId:candidate.commandId,operation:candidate.operation,
         delayMs:candidate.orderMs-candidate.tLoss,reactionMs:candidate.orderMs-candidate.tLoss,
         consequence:candidate.consequence,awareness:candidate.awareness,
+        ...hpEvidence(candidate.damage),effectiveResponseMs:effectiveResponse(this.s,candidate.response,end),
+        commands:candidate.response.commands,
         unitsResolved:candidate.unitsResolved,
         agentState:agent.state,agentStateEvidence:agent.evidence,
         status:!coverage?'UNCERTAIN':candidate.awareness.aware?'EXPLAINED':'DETECTED',
@@ -692,7 +734,7 @@ class GrinderDetector extends Detector {
           :candidate.awareness.aware?'agent_was_informed':'danger_not_observed',
         strict:false,scoreable:coverage&&!candidate.awareness.aware,visibility:'HIGH'});
       this.diagnose(event.reason);
-      this.emit(event,candidate.consequence.timeMs);
+      this.emit(event,end);
     }
   }
 }

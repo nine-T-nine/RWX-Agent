@@ -4,7 +4,7 @@
 
 ## 0. 启动与连接
 
-所有命令在仓库根目录执行，使用 Windows PowerShell。正式评测的 `task`、`seed`、`track` 和预算由评测方指定；不要自行更换。下面以 `task=1_2_2,seed=1,track=pause` 示范启动格式；练习时未指定参数可使用这一组。省略 `seed` 时会随机生成，种子会写进 `meta.json`，想复盘就记下它。
+所有命令在仓库根目录执行，使用 Windows PowerShell。正式评测的 `task`、`seed`、`track` 和预算由评测方指定；不要自行更换。下面以 `task=1_2_2,seed=1,track=pause` 示范启动格式；练习时未指定参数可使用这一组。省略 `seed` 时会随机生成；想复盘就记下实际使用的 seed。
 
 ```powershell
 New-Item -ItemType Directory -Force agent-operation/tmp/micro-a | Out-Null
@@ -91,7 +91,7 @@ Remove-Item -LiteralPath agent-operation/tmp/micro-a/observe.txt
 |---|---|---|
 | 第一段 `1` | CASE1 的任务系列编号 | 固定为 `1` |
 | 第二段 `mapType` | 地图类型 | `1` 随机地图；`2` 环湖地图 |
-| 第三段 `level` | 双方数量关系 | `1` 我方多一台；`2` 数量相同；`3` 敌方多一台 |
+| 第三段 `level` | 双方数量关系 | `1` 我方多一台；`2` 数量相同；`3` 敌方多一台；`4` 敌方多两台 |
 
 例如 `1_2_2` 表示 CASE1、环湖地图、双方数量相同。同一 `(task, seed)` 的地图和出生布景相同；实际单位数量用 `units` 查询。
 
@@ -112,7 +112,7 @@ Remove-Item -LiteralPath agent-operation/tmp/micro-a/observe.txt
 | `timeout` | 到达墙钟或游戏时间上限，尚未分出胜负 |
 | `error` | 对局异常，例如一直没有接入命令而触发启动超时 |
 
-**任务成功条件是 `win`。当前没有加权总分，也没有隐藏加分或扣分公式。** 系统另外记录单位损失、作战效率、命令使用、错误请求和决策延迟等辅助指标，用于行为分析；它们不改变胜负。超时不算胜利，也不被规定为优于失败。不同赛道分别评价；局间比较以相同 `task`、`seed` 和赛道为条件。
+**任务成功条件是 `win`。当前没有加权总分，也没有隐藏加分或扣分公式。** 评测方另做行为分析，但不改变胜负。超时不算胜利，也不被规定为优于失败。不同赛道分别评价；局间比较以相同 `task`、`seed` 和赛道为条件。
 
 ## 2. 赛道、时间与预算
 

@@ -1,172 +1,143 @@
 'use strict';
-/**
- * Preliminary round-2 score.
- *
- * The evaluator is evidence first: every point of deduction names the event that caused it, and
- * each category is capped so one failure mode cannot dominate the total. This is intentionally not
- * a "final" score — the weights are a starting point, and `excluded` records everything that was
- * NOT scored so a reader can see how much evidence the formula ignores.
- *
- * Event families (round 2):
- *   A 偷袭        AMBUSH (kind UNITS | BASE)
- *   B 绞肉机      GRINDER
- *   C 抖动过期    STALE_BURST (a burst of rejected commands)
- *   D 空闲建造者  BUILDER_IDLE
- *   E 空闲工厂    FACTORY_IDLE
- *   F 资金空余    material only (economy_seconds.csv), never scored here
- *
- * The older event names (FEED, STALE_COMMAND, PRODUCTION_GAP, BUILDER_GAP) are mapped onto the same
- * families so this scorer also runs on reports produced before the round-2 rewrite.
- */
-
-const DEFAULTS = Object.freeze({
-  baseline: 100,
-  /** Short idling is normal; only the part above this is penalised. */
-  freeIdleMs: 3000,
-  /** One episode cannot cost more than this many seconds, however long it lasted. */
-  maxIdleMsPerEpisode: 120000,
-  /** A grinder needs more than this many net losses before it costs anything. */
-  grinderFreeLosses: 3,
-  /** The first rejections in a burst are noise (the same turn retried itself). */
-  staleFreePerBurst: 1,
-  /** A "positional" query is one whose reply carries enemy positions; these do not count. */
-  weights: Object.freeze({
-    AMBUSH_UNANSWERED: 3,
-    AMBUSH_BASE_EXTRA: 2,
-    GRINDER_PER_NET_LOSS: 0.5,
-    GRINDER_UNOBSERVED: 3,
-    STALE_BURST: 2,
-    STALE_PER_ITEM: 0.5,
-    BUILDER_IDLE_PER_MINUTE: 3,
-    FACTORY_IDLE_PER_MINUTE: 3,
-  }),
-  caps: Object.freeze({AMBUSH: 20, GRINDER: 25, STALE: 20, BUILDER_IDLE: 15, FACTORY_IDLE: 20}),
-});
-
-const FAMILY = Object.freeze({
-  AMBUSH: 'AMBUSH',
-  FEED: 'GRINDER', GRINDER: 'GRINDER',
-  STALE_COMMAND: 'STALE', STALE_BURST: 'STALE', COMMAND_FAILURE: 'STALE',
-  BUILDER_GAP: 'BUILDER_IDLE', BUILDER_IDLE: 'BUILDER_IDLE',
-  PRODUCTION_GAP: 'FACTORY_IDLE', FACTORY_IDLE: 'FACTORY_IDLE',
-});
-
-const sumCounts = counts => Object.values(counts || {}).reduce((a, b) => a + (Number(b) || 0), 0);
-const ms = value => (Number.isFinite(value) ? value : 0);
-
-/** Only a confirmed, agent-attributable event may cost points. */
-function scoreable(event) {
-  if (event.scoreable === false) return false;
-  if (event.status === 'EXPLAINED' || event.status === 'UNCERTAIN') return false;
-  return true;
+const {clamp,piecewise}=require('../scoring-curves');
+const VERSION='stage2-v2';
+const DEFAULTS=Object.freeze({baseline:100,
+  weights:Object.freeze({AMBUSH_SINGLE_MAX:15,GRINDER_SINGLE_MAX:15,BUILDER_IDLE_SINGLE_MAX:8,FACTORY_IDLE_SINGLE_MAX:5,FUNDS_SINGLE_MAX:7}),
+  caps:Object.freeze({AMBUSH:30,GRINDER:20,STALE:15,BUILDER_IDLE:20,FACTORY_IDLE:15,FUNDS:20}),
+  ambush:Object.freeze({responseSeconds:30,deadZone:1,fullImpact:12,gamma:1.5}),
+  grinder:Object.freeze({responseSeconds:45,deadZone:3,fullImpact:18,gamma:1.5}),
+  hp:Object.freeze({unitLow:500,unitMedium:1500,buildingLow:2000}),
+  funds:Object.freeze({K:30,incomeFieldPerSecond:1/0.64,spendFloor:800,spendShare:.25,rho1:.5,rho2:.25})});
+const FAMILY=Object.freeze({AMBUSH:'AMBUSH',GRINDER:'GRINDER',FEED:'GRINDER',
+  STALE_BURST:'STALE',STALE_COMMAND:'STALE',COMMAND_FAILURE:'STALE',
+  BUILDER_IDLE:'BUILDER_IDLE',BUILDER_GAP:'BUILDER_IDLE',FACTORY_IDLE:'FACTORY_IDLE',PRODUCTION_GAP:'FACTORY_IDLE',FUNDS:'FUNDS'});
+const round=x=>Number(x.toFixed(3));
+function configuration(options={}){
+  const config={baseline:options.baseline??DEFAULTS.baseline};
+  for(const key of ['weights','caps','ambush','grinder','hp','funds'])config[key]={...DEFAULTS[key],...options[key]};
+  for(const group of [config.weights,config.caps,config.hp,config.funds])
+    for(const [key,value]of Object.entries(group))if(!Number.isFinite(value)||value<0)throw Error('Invalid scoring parameter: '+key);
+  if(!Number.isFinite(config.baseline)||config.baseline<0)throw Error('Invalid baseline');
+  for(const key of ['ambush','grinder']){
+    const c=config[key];
+    if(!Object.values(c).every(Number.isFinite)||c.responseSeconds<=0||c.deadZone<0||c.fullImpact<=c.deadZone||c.gamma<=0)throw Error('Invalid '+key+' parameters');
+  }
+  if(config.funds.K<=0||config.funds.incomeFieldPerSecond<=0||config.funds.rho1>1||config.funds.rho2>1)throw Error('Invalid funds parameters');
+  return config;
 }
-
-/**
- * Why one event did or did not cost anything. `points` is always non-negative; `reason` is the
- * machine-readable justification, so `score.json` can be audited without re-reading the event.
- */
-function deduction(event, config) {
-  const family = FAMILY[event.type];
-  if (!family) return null;
-  if (family === 'AMBUSH') {
-    if (event.status !== 'UNANSWERED') return {points: 0, reason: 'responded_or_uncertain'};
-    const base = event.kind === 'BASE' ? config.weights.AMBUSH_BASE_EXTRA : 0;
-    return {points: config.weights.AMBUSH_UNANSWERED + base,
-      reason: event.kind === 'BASE' ? 'unanswered_base_attack' : 'unanswered_ambush'};
+function scoreable(event){return event.scoreable!==false&&!['EXPLAINED','UNCERTAIN'].includes(event.status);}
+function impactWeight(unit,family,hp=DEFAULTS.hp){
+  if(!Number.isFinite(unit.maxHp)||unit.maxHp<=0)return null;
+  if(unit.building)return family==='AMBUSH'?(unit.maxHp<=hp.buildingLow?2:4):0;
+  const tier=unit.maxHp<=hp.unitLow?0:unit.maxHp<=hp.unitMedium?1:2;
+  return (family==='AMBUSH'?[1,2,3]:[3,2,1])[tier];
+}
+function weightedImpact(event,family,config){
+  if(event.impactComplete!==true||!Array.isArray(event.hpLosses))return null;
+  let impact=0;
+  for(const loss of event.hpLosses){
+    const weight=impactWeight(loss,family,config.hp);
+    if(weight==null||!Number.isFinite(loss.hpLoss)||loss.hpLoss<0)return null;
+    impact+=weight*loss.hpLoss/loss.maxHp;
   }
-  if (family === 'GRINDER') {
-    if (!scoreable(event)) return {points: 0, reason: 'not_scoreable'};
-    // A danger-zone event has no loss counts: it is one send into a place the Agent had not
-    // re-observed. Older FEED reports still use the net-loss form.
-    if (!event.lossesSelf && !event.losses && event.consequence)
-      return {points: config.weights.GRINDER_UNOBSERVED, reason: 'sent_into_unobserved_danger'};
-    // Prefer the split fields; fall back to the legacy union so old reports still work.
-    const self = event.lossesSelf ? sumCounts(event.lossesSelf) : sumCounts(event.losses);
-    const enemy = event.lossesEnemy ? sumCounts(event.lossesEnemy) : 0;
-    const net = self - enemy;
-    if (net <= config.grinderFreeLosses) return {points: 0, reason: 'acceptable_exchange'};
-    return {points: (net - config.grinderFreeLosses) * config.weights.GRINDER_PER_NET_LOSS,
-      reason: 'net_losses_in_one_region'};
+  return impact;
+}
+function idleSeverity(family,seconds){
+  return family==='BUILDER_IDLE'?piecewise(seconds,[[0,8,0,.3,'exp'],[8,25,.3,.75],[25,60,.75,1,'log']])
+    :piecewise(seconds,[[10,30,0,.3],[30,120,.3,1,'exp']]);
+}
+function deduction(event,config=DEFAULTS){
+  const family=FAMILY[event.type];if(!family)return null;
+  if(!scoreable(event))return {points:0,reason:'not_scoreable'};
+  if(family==='AMBUSH'||family==='GRINDER'){
+    const impact=weightedImpact(event,family,config);
+    if(impact==null)return {points:0,reason:'missing_hp_loss_evidence'};
+    const c=config[family==='AMBUSH'?'ambush':'grinder'];
+    const severity=clamp((impact-c.deadZone)/(c.fullImpact-c.deadZone))**c.gamma;
+    const responseMs=event.effectiveResponseMs;
+    if(responseMs!=null&&(!Number.isFinite(responseMs)||!Number.isFinite(event.t_confirm)))return {points:0,reason:'missing_response_evidence'};
+    const delaySeconds=responseMs==null?c.responseSeconds:Math.max(0,(responseMs-event.t_confirm)/1000);
+    const response=clamp(delaySeconds/c.responseSeconds);
+    return {points:config.weights[family+'_SINGLE_MAX']*severity*response,reason:'weighted_hp_loss_and_response',impact,severity,response,delaySeconds};
   }
-  if (family === 'STALE') {
-    if (!scoreable(event)) return {points: 0, reason: 'not_scoreable'};
-    const count = Number.isFinite(event.count) ? event.count : 1;
-    const penalised = Math.max(0, count - config.staleFreePerBurst);
-    if (!penalised) return {points: 0, reason: 'within_burst_grace'};
-    return {points: config.weights.STALE_BURST + penalised * config.weights.STALE_PER_ITEM,
-      reason: 'rejected_command_burst'};
+  if(family==='STALE'){
+    const rows=event.commands||[];let points=0,missing=0;const items=[];
+    for(const row of rows){
+      if(row.staleInfo!==true)continue;
+      if(!Number.isFinite(row.staleAgeMs)||row.staleAgeMs<0){missing++;continue;}
+      const seconds=row.staleAgeMs/1000,w=row.kind==='query'?0:row.kind==='configuration'?1:2;
+      const factor=seconds<=5?0:seconds<10?.5:seconds<20?1:seconds<40?1.5:seconds<60?2:3;
+      points+=w*factor;items.push({commandId:row.commandId,seconds,weight:w,factor});
+    }
+    return {points,reason:missing?'partial_stale_age_evidence':rows.length?'stale_command_severity':'missing_stale_age_evidence',items,missing};
   }
-  if (family === 'BUILDER_IDLE' || family === 'FACTORY_IDLE') {
-    if (!scoreable(event)) return {points: 0, reason: 'not_scoreable'};
-    const duration = ms(event.durationMs ?? event.gapMs ?? (event.t_end - event.t_start));
-    const penalised = Math.min(config.maxIdleMsPerEpisode,
-      Math.max(0, duration - config.freeIdleMs));
-    if (!penalised) return {points: 0, reason: 'below_free_window'};
-    const perMinute = family === 'BUILDER_IDLE'
-      ? config.weights.BUILDER_IDLE_PER_MINUTE : config.weights.FACTORY_IDLE_PER_MINUTE;
-    return {points: (penalised / 60000) * perMinute, reason: 'idle_with_work_available'};
+  if(family==='BUILDER_IDLE'||family==='FACTORY_IDLE'){
+    if(event.feasibility?.throughout!==true)return {points:0,reason:'missing_continuous_feasibility'};
+    const durationMs=event.durationMs??event.gapMs??event.t_end-event.t_start;
+    if(!Number.isFinite(durationMs)||durationMs<0)return {points:0,reason:'missing_duration_evidence'};
+    const severity=idleSeverity(family,durationMs/1000);
+    return {points:config.weights[family+'_SINGLE_MAX']*severity,reason:'idle_with_endpoint_work_available',severity,durationMs};
+  }
+  if(family==='FUNDS'){
+    const severity=piecewise(event.durationSeconds,[[15,120,0,1,'exp']]);
+    return {points:config.weights.FUNDS_SINGLE_MAX*severity,reason:'funds_hoarding',severity,durationSeconds:event.durationSeconds};
   }
   return null;
 }
-
-/**
- * Scores one report. `events` is the parsed `events.jsonl`; `summary` is optional and only used to
- * carry diagnostics through. The result is additive and order-independent.
- */
-function scoreEvents(events, {weights, caps, baseline, freeIdleMs, maxIdleMsPerEpisode,
-  grinderFreeLosses, staleFreePerBurst} = {}) {
-  const config = {
-    baseline: baseline ?? DEFAULTS.baseline,
-    freeIdleMs: freeIdleMs ?? DEFAULTS.freeIdleMs,
-    maxIdleMsPerEpisode: maxIdleMsPerEpisode ?? DEFAULTS.maxIdleMsPerEpisode,
-    grinderFreeLosses: grinderFreeLosses ?? DEFAULTS.grinderFreeLosses,
-    staleFreePerBurst: staleFreePerBurst ?? DEFAULTS.staleFreePerBurst,
-    weights: {...DEFAULTS.weights, ...(weights || {})},
-    caps: {...DEFAULTS.caps, ...(caps || {})},
-  };
-  const families = {};
-  const excluded = {};
-  for (const event of events || []) {
-    const family = FAMILY[event.type];
-    if (!family) { excluded[event.type] = (excluded[event.type] || 0) + 1; continue; }
-    const row = families[family] ||= {raw: 0, capped: 0, cap: config.caps[family] ?? Infinity,
-      items: [], counts: {}, unscored: null};
-    const result = deduction(event, config);
-    if (!result) continue;
-    row.counts[result.reason] = (row.counts[result.reason] || 0) + 1;
-    if (!result.points) {
-      // Unscored time has to stay visible: an idle episode that the evidence could not close
-      // (EVIDENCE_END) costs nothing, and reporting only the total would read as if those minutes
-      // never happened. `durationMs` is the detector's own length, not a re-derivation.
-      if (result.reason === 'not_scoreable') {
-        row.unscored ||= {count: 0, durationMs: 0};
-        row.unscored.count += 1;
-        row.unscored.durationMs += ms(event.durationMs ?? event.gapMs
-          ?? (event.t_end - event.t_start));
+/** Median is centred; endpoints use the available two samples. Durations use elapsed seconds. */
+function fundsEvents(samples,config=DEFAULTS.funds){
+  if(!samples?.length)return [];
+  for(let i=0;i<samples.length;i++)if(samples[i].second!==i||!Number.isFinite(samples[i].funds)
+    ||!Number.isFinite(samples[i].incomePerSecond??samples[i].incomeField))throw Error('Invalid per-second economy evidence');
+  const median=values=>{values.sort((a,b)=>a-b);const n=values.length;return (values[(n-1)>>1]+values[n>>1])/2;};
+  const smooth=samples.map((row,i)=>median(samples.slice(Math.max(0,i-1),i+2).map(r=>r.funds)));
+  const result=[];let open=null,incomeSum=0;
+  const close=second=>{if(open){result.push({id:'FUNDS-'+(result.length+1),type:'FUNDS',status:'DETECTED',scoreable:true,
+    t_start:open.start*1000,t_end:second*1000,durationSeconds:open.maxD,peakFunds:open.maxFunds,spends:open.spends});open=null;}};
+  const income=row=>row.incomePerSecond??row.incomeField*config.incomeFieldPerSecond;
+  for(let i=0;i<samples.length;i++){
+    incomeSum+=income(samples[i]);if(i>=30)incomeSum-=income(samples[i-30]);
+    const theta=config.K*Math.max(0,incomeSum/Math.min(30,i+1)),funds=smooth[i];
+    if(!open&&funds>=theta&&funds>0)open={start:i,D:0,maxD:0,maxFunds:funds,fallStart:null,spends:[]};
+    if(!open)continue;
+    if(i>open.start){open.D++;open.maxD=Math.max(open.maxD,open.D);}
+    open.maxFunds=Math.max(open.maxFunds,funds);
+    if(i>0&&funds<smooth[i-1]&&open.fallStart==null)open.fallStart=smooth[i-1];
+    if(open.fallStart!=null&&(funds>smooth[i-1]||i===samples.length-1||funds<theta)){
+      const trough=funds>smooth[i-1]?smooth[i-1]:funds,s=open.fallStart-trough,M=open.maxFunds;
+      open.fallStart=null;
+      if(s>Math.max(config.spendFloor,config.spendShare*M)){
+        const share=s/M;open.spends.push({second:i,amount:s,share});
+        if(share>.8){close(i);continue;}
+        open.D*=share<=.5?config.rho1:config.rho2;
       }
-      continue;
     }
-    row.raw += result.points;
-    row.items.push({id: event.id, type: event.type, t_start: event.t_start, t_end: event.t_end,
-      points: Number(result.points.toFixed(3)), reason: result.reason});
+    if(funds<theta)close(i);
   }
-  const breakdown = Object.entries(families).map(([family, row]) => {
-    row.capped = Number(Math.min(row.cap, row.raw).toFixed(3));
-    row.raw = Number(row.raw.toFixed(3));
-    return {family, ...row};
-  }).sort((a, b) => b.capped - a.capped);
-  const deductionTotal = Number(breakdown.reduce((a, b) => a + b.capped, 0).toFixed(3));
-  return {
-    schema: 1,
-    baseline: config.baseline,
-    total: Number(Math.max(0, config.baseline - deductionTotal).toFixed(3)),
-    deduction: deductionTotal,
-    config,
-    breakdown,
-    excluded,
-    interpretation: 'Preliminary and additive; each point names one event, and caps keep one '
-      + 'failure mode from dominating. F (资金空余) is material only and is never scored here.',
-  };
+  close(samples.length-1);return result;
 }
-
-module.exports = {DEFAULTS, FAMILY, deduction, scoreEvents, scoreable};
+function scoreEvents(events,options={}){
+  const config=configuration(options),economy=options.economy;
+  const financial=economy?fundsEvents(economy,config.funds):[];
+  const families={},excluded={};
+  for(const event of [...(events||[]),...financial]){
+    const family=FAMILY[event.type];if(!family){excluded[event.type]=(excluded[event.type]||0)+1;continue;}
+    const row=families[family]??={raw:0,capped:0,cap:config.caps[family],items:[],counts:{},unscored:null};
+    const result=deduction(event,config);if(!result)continue;
+    row.counts[result.reason]=(row.counts[result.reason]||0)+1;
+    if(!result.points&&(/missing|not_scoreable/.test(result.reason))){
+      row.unscored??={count:0,durationMs:0};row.unscored.count++;
+      const duration=event.durationMs??event.gapMs??event.t_end-event.t_start;
+      row.unscored.durationMs+=Number.isFinite(duration)?Math.max(0,duration):0;
+    }
+    row.raw+=result.points;
+    row.items.push({id:event.id,type:event.type,t_start:event.t_start,t_end:event.t_end,...result,points:round(result.points)});
+  }
+  if(!economy)excluded.FUNDS_EVIDENCE_MISSING=1;
+  const breakdown=Object.entries(families).map(([family,row])=>({family,...row,capped:round(Math.min(row.cap,row.raw)),raw:round(row.raw)})).sort((a,b)=>b.capped-a.capped);
+  const deductionTotal=round(breakdown.reduce((sum,row)=>sum+row.capped,0));
+  return {schema:2,version:VERSION,baseline:config.baseline,total:round(Math.max(0,config.baseline-deductionTotal)),deduction:deductionTotal,
+    config,breakdown,excluded,financialEvents:financial,
+    interpretation:'逐事件累计、分类封顶；缺少 HP、过期时间或连续可行性证据的事件不扣分。与 Stage1 分开呈现。'};
+}
+module.exports={VERSION,DEFAULTS,FAMILY,configuration,scoreable,impactWeight,weightedImpact,idleSeverity,deduction,fundsEvents,scoreEvents};

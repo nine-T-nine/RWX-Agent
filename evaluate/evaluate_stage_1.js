@@ -454,20 +454,20 @@ function stage1MetricsReport(metrics,score){
   const mapping=metrics.mapping,diag=metrics.diagnostics;
   const tier=row=>`normal=${row.counts.normal}, mild=${row.counts.mild}, moderate=${row.counts.moderate}, severe=${row.counts.severe}`;
   return [
-    '', '【Stage1 v1 实时性指标与初评分】',
+    '', '【Stage1 v2 实时性指标与初评分】',
     `实时性分数 ${score.score}/100；扣分 ${score.deduction}；状态 ${score.systemHealth.scoreStatus}（映射延迟健康=${score.systemHealth.mappingDelay}）。`,
-    `首个 order-* ${fmt(metrics.opening.firstOrderSeconds)}s；首个采矿建造 ${fmt(metrics.opening.firstMiningBuildSeconds)}s；首个军事生产 ${fmt(metrics.opening.firstMilitaryProductionSeconds)}s。`,
+    `首个 order-* ${fmt(metrics.opening.firstOrderSeconds)}s；首个采矿建造 ${fmt(metrics.opening.firstMiningBuildSeconds)}s；首个建造者生产 ${fmt(metrics.opening.firstBuilderProductionSeconds)}s。`,
     `A 查询 ${metrics.counts.A}（${fmt(metrics.rates.queriesPerMinute)}/min）；B ${metrics.counts.B}；直接 order-* ${metrics.counts.directOrders}；配置类 ${metrics.counts.configCommands}（${fmt((metrics.rates.configShareOfB??0)*100)}% B）。`,
-    `A→B：${tier(cycle)}；均值 ${fmt(cycle.stats.mean)}s，P90 ${fmt(cycle.stats.p90)}s。`,
-    `B→A：${tier(wait)}；均值 ${fmt(wait.stats.mean)}s，P90 ${fmt(wait.stats.p90)}s。`,
+    `A→B 计分去离群均值 ${fmt(metrics.cadence.decisionTiming.cleanMean)}s；历史分档仅材料：${tier(cycle)}。`,
+    `B→A 计分去离群均值 ${fmt(metrics.cadence.waitTiming.cleanMean)}s；历史分档仅材料：${tier(wait)}。`,
     `相邻 order-* >30s：${metrics.cadence.orderGaps.over30Count} 段 / ${fmt(metrics.cadence.orderGaps.over30Seconds)}s / 对局 ${fmt((metrics.cadence.orderGaps.over30ShareOfMatch??0)*100)}%；最长 ${fmt(metrics.cadence.orderGaps.longestSeconds)}s；结尾 ${fmt(metrics.cadence.orderGaps.tailSeconds)}s。`,
-    `底层间隔四档：${tier(native)}；底层生产 ${metrics.native.productionCommandCount}（${fmt(metrics.rates.nativeProductionPerMinute)}/min）。`,
+    `底层计分 K=${fmt(metrics.native.scoringCadence.coefficient)}；历史分档仅材料：${tier(native)}；底层生产 ${metrics.native.productionCommandCount}（${fmt(metrics.rates.nativeProductionPerMinute)}/min）。`,
     attributionLine(metrics),
     `即时高层→底层延迟：去异常均值 ${fmt(mapping.immediateDelay.cleanMean)}s；离群 ${mapping.immediateDelay.outliers}/${mapping.immediateDelay.count}（${fmt((mapping.immediateDelay.outlierShare??0)*100)}%）；${mapping.immediateDelay.health}。待发语义排除 ${mapping.immediateDelay.excludedDeferred} 条。`,
     `直接 B 无落地痕迹：原始 ${mapping.rawNoTrace.count}/${mapping.rawNoTrace.total}（${fmt((mapping.rawNoTrace.rate??0)*100)}%）；命令风暴调整后 ${mapping.stormAdjustedNoTrace.count}/${mapping.stormAdjustedNoTrace.total}（${fmt((mapping.stormAdjustedNoTrace.rate??0)*100)}%）。`,
     `--allow-unaffordable 占 B ${fmt((metrics.rates.allowUnaffordableShareOfB??0)*100)}%；敌方 unit-list ${diag.enemyUnitListCount}；events ${diag.eventsQueryCount}；threat-list ${diag.threatListCount}；规则查询 ${diag.ruleQueryCount}（前120秒 ${diag.ruleQueriesFirst120Seconds}）。`,
     `批量下单后长静默 ${metrics.cadence.batchSilences.length} 段；命令风暴 ${mapping.commandStorms.length} 组；缺参数 order ${diag.malformedOrders.length} 条。`,
-    'B1/B2/B3/B5、C1/C2/C3 与批量静默只记录材料，不计入实时性分数；批量静默已由 >30s 空窗覆盖。',
+    'B1/B2/B3/B5、C1/C2/C3 与批量静默只记录材料，不计入实时性分数；行动空窗与结尾静默也只保留材料。',
   ].join('\n')+'\n';
 }
 function scoreText(score){
@@ -478,12 +478,12 @@ function scoreText(score){
 }
 function metricsHtml(metrics,score){
   const opening=metrics.opening,gaps=metrics.cadence.orderGaps,mapping=metrics.mapping;
-  const cards=[['实时性初评分',`${score.score} / 100`],['首个行动 / 采矿 / 军事',`${fmt(opening.firstOrderSeconds)} / ${fmt(opening.firstMiningBuildSeconds)} / ${fmt(opening.firstMilitaryProductionSeconds)}s`],
+  const cards=[['实时性初评分',`${score.score} / 100`],['首个行动 / 采矿 / 建造者',`${fmt(opening.firstOrderSeconds)} / ${fmt(opening.firstMiningBuildSeconds)} / ${fmt(opening.firstBuilderProductionSeconds)}s`],
     ['>30s 行动空窗占比',`${fmt((gaps.over30ShareOfMatch??0)*100)}%`],['映射延迟健康',mapping.immediateDelay.health],
     ['无落地（原始 / 风暴调整）',`${mapping.rawNoTrace.count}/${mapping.rawNoTrace.total} / ${mapping.stormAdjustedNoTrace.count}/${mapping.stormAdjustedNoTrace.total}`],
     ['底层命令（Agent / 全部）',`${metrics.native.agentCommandCount} / ${metrics.native.allCommandCount}`]];
   const rows=score.breakdown.map(row=>`<tr><td>${esc(row.id)}</td><td>${esc(row.label)}</td><td>-${row.points}</td><td>${esc(JSON.stringify(row.evidence))}</td></tr>`).join('');
-  return `<section id="stage1-score"><h2>Stage1 v1 实时性指标与初评分</h2><p class="caption">只评价实时性；情报/战术、无落地、命令风暴和格式错误只记录，不扣实时性分。高层→底层即时延迟是系统健康门，不把环境异常扣给 Agent。</p><div class="cards">${cards.map(([k,v])=>`<div class="card"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div><pre>${esc(stage1MetricsReport(metrics,score))}</pre><div style="overflow:auto"><table style="width:100%;font-size:12px"><thead><tr><th>ID</th><th>扣分项</th><th>扣分</th><th>证据</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  return `<section id="stage1-score"><h2>Stage1 v2 实时性指标与初评分</h2><p class="caption">只评价实时性；情报/战术、无落地、命令风暴和格式错误只记录，不扣实时性分。高层→底层即时延迟是系统健康门，不把环境异常扣给 Agent。</p><div class="cards">${cards.map(([k,v])=>`<div class="card"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div><pre>${esc(stage1MetricsReport(metrics,score))}</pre><div style="overflow:auto"><table style="width:100%;font-size:12px"><thead><tr><th>ID</th><th>扣分项</th><th>扣分</th><th>证据</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 function injectHtml(original,report,rows,delay,span,team,native,metrics,score){
   const ok=rows.filter(x=>x.delay!=null),unmatched=rows.filter(x=>x.status==='unmatched');

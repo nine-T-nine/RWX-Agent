@@ -1,106 +1,354 @@
-# CASE3-Transport 离线指标
+# CASE3-Transport 评价材料与指标定义
 
-## 1. 评测原则
+本文件回答两件事：**一局打完能拿到哪些材料**，以及**每个指标是怎么从这些材料算出来的**。
+怎么启动、场景怎么布、完整评测流程，见 [README.md](README.md)。
 
-引擎记录事实，外部 `evaluate.py` 加载 `metrics/*.py` 插件计算指标。不设置加权总分。核心问题是 Agent 是否理解生产—装载—运输—卸载的任务工期与并行关系，而不是模型是否报告了一个 ETA。
+引擎只记录事实，外部 `evaluate.py` 加载 `metrics/*.py` 插件离线计算，不设加权总分。
+核心问题是 Agent 是否理解**生产—装载—运输—卸载**的任务工期与并行关系，而不是它是否报告了一个 ETA。
 
-Agent 不提供 forecast/ETA 命令时，评测只能从 AB 指令序列、实际生产/运输生命周期和观察时机估计其隐式调度行为。不得声称获得模型内部预计完成时间。
+`schema = rwx-micro-transport-metrics/1`；每个 metric 含 `tier`/`sources`/`value`，`value.status` 为 `OK/N/A/ERROR`。
 
-## 2. 证据文件
+---
 
-| 文件 | 内容 |
+## 1. 这个 CASE 能拿到什么
+
+**能**
+
+- 任务结果：`success/defeat/timeout/error`、目标首次达成时刻、运输机存活与终态、剩余资金。
+- 生产：逐订单的受理/开工/完成、排队等待、工厂占用与并行度、按类型的完成里程碑。
+- 投递：逐单位的"生产完成 → 首次装载 → 卸载 → 进入目标岛"时间线，逐类型送达率与缺口补齐时刻。
+- 运力：逐运输机的真实席位占用、峰值装载、航次、空载移动、货舱变化。
+- 风险：运输机受击次数、HP 损失、受击位置与最近防空塔距离。
+- 阶段：生产/装载/航行/卸载/交付各阶段跨度与重叠时间。
+- 时序（T2）：A→B、B→下一个 A、决策周期。
+- 合规：违规次数与类型。
+
+**不能**
+
+- **没有独立复算**：本 CASE 不跑 re-sim；证据是 live 引擎记录 + replay 核对底层命令。
+- 不能获得"模型内部预计完成时间"：Agent 不提供 forecast/ETA，评测只能从 AB 序列与真实生命周期推断其隐式调度。
+- 攻击来源不可确认：运输机受伤事件里**没有攻击者 id**，`anti_air_exposure` 只能按位置做最近塔推断，不能声称"被哪座塔打"。
+- 不比较跨 `task+level+seed` 的绝对时间。
+- 运输机几何射程不等于"正在被攻击"：只有真实 damage 事件才算暴露。
+
+---
+
+## 2. 产物目录
+
+```
+<run>/
+  meta.json              布景完成时写（岛格集合、目标组成、工厂/提取器/运输机/防空塔、预算）
+  gateway.jsonl          薄网关：请求行 + 生命周期行
+  result.json            authoritative success/defeat/timeout/error
+  match.replay           自动录像（地图为程序生成时另有 map.tmx）
+  delivery.jsonl         投递链路延迟（env/command/deliver/warning）
+  violations.jsonl       执行前被拒的越权请求
+  replay/                离线解析：match.summary.txt / match.txt / match.jsonl
+  engine/
+    production.jsonl     订单受理、原生命令、开工、完成里程碑  ★
+    transport.jsonl      装载、货舱变化、移动、卸载、运输机受伤 ★
+    goal.jsonl           逐类型目标岛计数变化与首次达成      ★
+  eval/
+    metrics.json         9 个指标 + diagnostics + evidence
+    report.txt           与 metrics.json 同内容的纯文本
+    report.html          同上，包一层 <pre>
+```
+
+**没有** `engine/snapshots.jsonl`、`engine/events.jsonl`、`engine/playback.json`：本 CASE 不做 re-sim。
+运输机受伤与货舱变化合并在 `transport.jsonl`（`kind=damage` / `kind=cargo`），**不再**单独产出 `engine/damage.jsonl`。
+
+---
+
+## 3. 材料清单
+
+### 3.1 meta.json
+
+通用字段同 [../README.md](../README.md) 的证据契约。本 CASE 特有：
+
+| 字段 | 含义 |
 |---|---|
-| `meta.json` | task/seed、地图哈希、岛屿格集合与面积、目标配置、初始工厂/运输单位/提取器、运输容量、防空炮塔布景、预算。含隐藏字段时只能由评测器读取 |
-| `gateway.jsonl` | A/B/C 请求、requestId、命令、接收/回复 wallMs、gameMs/tick、结果/错误 |
-| `match.replay` | 引擎实际录制的原生命令 |
-| `engine/production.jsonl` | 订单受理、原生命令、开工、按类型累计的完成里程碑、被拒请求 |
-| `engine/transport.jsonl` | 装载、cargo 成员变化、运输移动、卸载动作、运输单位受伤与 HP 变化 |
-| `engine/goal.jsonl` | 逐类型目标岛计数变化、目标首次达成 |
-| `violations.jsonl` | 执行前拒绝的越权请求 |
-| `result.json` | authoritative outcome、endReason、完成时间、运输单位终态 |
+| `type` / `level` | 由 task 解出（1..4 / 1..3） |
+| `mapSize` / `tileSize` | 130 格 / 20 世界单位 |
+| `targetIslandTiles[]` / `baseIslandTiles[]` | 岛格集合（`index = y*130 + x`）——**布景真值**，目标判定用它 |
+| `targetIslandArea` / `baseIslandArea` | 格数（目标 550..675，基地 700..800） |
+| `targetIslandBounds` | 见 §11 已知问题：当前是**基地岛**的包围盒 |
+| `requirements[{type,required}]` | 目标组成；`required = 每级数量 × level` |
+| `initialCredits` | 2000 / 4000 / 4000 / 20000（type 1..4） |
+| `transportType` / `transportCapacity` | `dropship`/4（type 1..3）、`experimentalDropship`/12（type 4） |
+| `factories[]` | `{id,alias,team,type,x,y,tileX,tileY,upgradeLevel}`；T2 工厂用原版类型 + `upgradeLevel:2` 表示 |
+| `extractors[]` | `extractorT3_overclocked` × 5 或 10（矿区，只提供收入，不参与指标） |
+| `transports[]` | `{id,alias,team,type,x,y,tileX,tileY}` |
+| `antiAirTurrets[]` | `{id,alias,team,type,x,y,tileX,tileY,coastDepth,facing}`；**仅评测方可读** |
+| `units[]` | 以上全部单位的并集（通用字段） |
 
-> 运输机受伤与货舱变化合并在 `engine/transport.jsonl`（`kind=damage` / `kind=cargo`），不再单独产出 `engine/damage.jsonl`；离线指标只依赖实际写出的文件。
+`transportSlotsNeeded` 若出现在 meta，是每种单位的真实席位权重（见 §10）。
 
-所有 `wallMs` 使用 run 初始化时同一个 `System.nanoTime` 原点；`gameMs/tick` 使用引擎时间。Replay 只有 tick 时，应在实际 ReplayWriter 插入点补充 native index 与同源 wallMs，离线匹配必须保留 ambiguous/unmatched。
+### 3.2 gateway.jsonl
 
-## 2.1 插件
+请求行字段同 CASE1。本 CASE 只跑 realtime，`turn` 不出现。状态 `submitted`/`invalid_request`/`rejected`/`error`。
+briefing 阶段有 `begin`（本 CASE 是 `startsRunning()`，进入即 1× 运行，无 begin/pause/step）。
 
-`evaluate.py` 只做读取与调度，指标由 `metrics/*.py` 计算，每个插件声明 `ID / TIER / SOURCES` 并提供 `compute(run)`：
+### 3.3 result.json
 
-| 插件 | tier | 证据 |
+`outcome`、`endReason`、`task`、`tier`、`gameMs`、`tick`、`wallMs`、`remainingGameMs`、`remainingWallMs`、
+`credits`、`incomePerSecond`、`transportAliveCount`、`transportCount`、`targetReached`、`goalReached`、
+`goalReachedGameMs`、`goalReachedWallMs`、`deliveredCounts`、`producedCounts`、`units`、`self`、`enemy`、`kills`、`turns`。
+
+- `deliveredCounts` / `producedCounts` 是按类型的**计数**（不是列表）。
+- `goalReachedGameMs` 由引擎判定首次满足，与 Agent 何时观察无关。
+
+### 3.4 engine/production.jsonl
+
+| `kind` | 行 | 字段 |
 |---|---|---|
-| `outcome` | T1 | result + meta + goal |
-| `production_lifecycle` | T1 | engine/production + gateway |
-| `delivery` | T1 | engine/transport + engine/goal + result |
-| `transport_utilization` | T1 | engine/transport + meta |
-| `transport_damage` | T1 | engine/transport + meta |
-| `anti_air_exposure` | T2 | engine/transport + meta（炮塔坐标仅离线使用） |
-| `ab_timing` | T2 | gateway |
-| `mission_phases` | T2 | production + transport + goal |
-| `violations` | T1 | violations + gateway |
+| `order` + `event=accepted` | 订单受理 | `requestId,factoryId,unitType,count,actionId,tick,gameMs,wallMs` |
+| `order` + `event=started` | 开始生产 | `requestId,factoryId?,tick,gameMs,wallMs` |
+| `order` + `event=completed` | 完成里程碑 | `unitType,count,tick,gameMs,wallMs` |
+| `native` | 原生命令录制关联 | `requestId,nativeIndex,actor,actionId,...` |
 
-输出写到 `<run>/eval/metrics.json`、`report.txt`、`report.html`。生产完成里程碑按单位类型累计（引擎不猜“哪个工厂产了哪台单位”），插件在 `note` 字段里明说这一点。
+**完成里程碑按单位类型累计（当前存活数），不是"哪个工厂产了哪台"。** 引擎有意不猜订单↔单位的对应关系；
+`production_lifecycle.orders[]` 因此没有"完成时刻"字段，要看 `completions[]`。
 
-## 3. T1：任务结果与阶段耗时
+### 3.5 engine/transport.jsonl
 
-### 3.1 `outcome`
+| `kind` | 字段 | 含义 |
+|---|---|---|
+| `load` | `requestId,event="issued",transportId,unitIds[],usedSlots,capacity,tick,gameMs,wallMs` | 装载指令下发（**不是**"已进入货舱"） |
+| `cargo` | `transportId,cargo[],delta,tick,gameMs,wallMs` | 货舱成员变化的真实快照；`delta` 为变化量 |
+| `move` | `requestId,event="issued",transportId,x,y,tick,gameMs,wallMs` | 移动指令下发 |
+| `unload` | `requestId,event="issued",transportId,...` | 卸载动作下发 |
+| `damage` | `transportId,delta,hp,...`（可能带 `x,y`） | 运输机受击；**没有攻击者 id** |
 
-输出 `success/defeat/timeout/error`、endReason、task/seed、目标组成、实际送达组成、目标首次达成 tick/gameMs/wallMs、总耗时、运输单位存活数、最终 HP、剩余资金。
+- 判定"单位真的上船了"只能靠 `cargo` 序列，不能靠 `load` 回执。
+- `unload` 是运输机的 unload **action**（`setActionId`），开启后停在非液体地形每 30 帧卸一个。
 
-- `success`：目标岛上存活且未装载的我方陆军首次达到所有类型目标数量。
-- `defeat`：全部本局运输单位阵亡。
-- `timeout`：游戏或墙钟预算先到。
-- `error`：引擎/场景异常。
+### 3.6 engine/goal.jsonl
 
-### 3.2 `mission_phases`
+| `kind` | 字段 |
+|---|---|
+| `delivered` | `unitType,count,required,tick,gameMs,wallMs`（计数变化时写） |
+| `reached` | `tick,gameMs,wallMs`（首次满足全部类型） |
 
-按可观测事件拆分：生产等待、生产执行、装载、起飞/离开基地岛、航行、抵达目标岛、卸载、目标确认。报告各阶段总耗时、均值/中位数/p90、关键路径和阶段重叠时间。若阶段无法可靠识别，标记 N/A，不用固定工作量推算。
+**计数口径**：目标岛草地格集合内、**存活、未装载、team 0** 的陆军单位。在货舱里、在基地岛、在岩浆上、已阵亡的都不算。
 
-### 3.3 `production_lifecycle`
+### 3.7 violations.jsonl
 
-逐订单输出 requestId、factoryId、unitType、count、接收/受理、入队、开始、完成、生成 unitId、实际扣费、终态和阶段耗时。汇总工厂利用率、队列空窗、并行生产比例、订单等待时间、生产完成到首次装载的等待时间。
+`violationId`、`requestId`、`violationType`、`reason`、`command`、`tick`、`gameMs`、`wallMs`、`rejected`。
+违规不进 replay、不改状态。
 
-### 3.4 `delivery`
+### 3.8 delivery.jsonl
 
-逐目标单位记录 `unitId/type`、生产完成、首次装载、运输单位、卸载、首次进入目标岛、离开目标岛、阵亡和最终是否计入目标。汇总各类型送达率、首次送达时刻、最后一个缺口补齐时刻、未送达原因。
+同 CASE1 §3.5：`env` / `command` / `deliver` / `warning`。当前没有指标消费。
 
-## 4. T1：运力与风险
+---
 
-### 4.1 `transport_utilization`
+## 4. 时间与时基
 
-逐运输单位统计真实容量、占用席位时间、空闲席位时间、每次航次装载量/容量、平均装载率、航次数、空载航次、等待货物时间、等待卸载时间和往返时间。席位按引擎实际权重计算，不得把单位数量直接当作席位数，除非源码证明每个目标单位权重均为 1。
+| 量 | 定义 | 坑 |
+|---|---|---|
+| `tick` | 引擎模拟步 | 1 tick = **16** game-ms |
+| `gameMs` | 引擎时钟 | `tick × 16` |
+| `wallMs` | 墙钟 | 全 run 同一个 `System.nanoTime` 原点（**包含加载**） |
+| `beginWallMs` | 任务起点 | 本 CASE 进入即运行 |
+| 目标完成 | 引擎首次满足的 tick | 不是 Agent 观察到成功的时刻 |
 
-### 4.2 `transport_damage`
+- 游戏上限按 type 为 900/1200/1500/1800 s；墙钟 = 游戏 + 120 s；`startTimeoutSeconds` = 600 s。
+- Replay 只有 tick、没有原生墙钟；native 事件在实际 `ReplayWriter` 插入处附加同源 `wallMs`，解析时必须核对 tick 与签名。
 
-逐运输单位输出初始/最终 HP、受击次数、累计 HP 损失、伤害时间序列、攻击来源（可确认时）、受击时位置、cargo 数量、是否阵亡。若来源不可确认写 `unknown`。
+---
 
-### 4.3 `anti_air_exposure`
+## 5. metrics.json
 
-type 1～3 按真实防空塔攻击事件统计：运输单位进入/离开有效威胁范围、被攻击时长、攻击次数、损失 HP、塔 ID/坐标/类型（引擎可见时）。不要仅按几何射程推断“正在受攻击”。type 4 没有草稿指定的防空塔，若实际无此类敌人则为 N/A。
+| 字段 | 含义 |
+|---|---|
+| `schema` | `rwx-micro-transport-metrics/1` |
+| `run` | `case`、`task`、`seed`、`track`、`mode` |
+| `metrics` | 9 个插件，每项 `{tier, sources, value}` |
+| `diagnostics` | `severe/engine_error`、`severe/native_authority_mismatch` 等 |
+| `evidence` | `source`（固定字符串）、`gatewayRequests`、`productionEvents`、`transportEvents`、`goalEvents`、`violations` |
 
-## 5. T2：Agent 时间行为
+`report.txt` 与 `report.html` 都是 `metrics.json` 的包装（HTML 是 `<pre>` 里的同一份 JSON），
+**不是**渲染过的图表；要做图表自己读 `metrics.json`。
 
-对成功受理的 A/B 请求按 `wallRecvMs` 排序：
+---
 
-- `A→B`：B 接收前最后一条已回复 A 到 B 接收的间隔。
-- `B→next A`：B 回复到下一条 A 接收的间隔。
-- `B→B`、`A→A`：相邻同类请求接收间隔。
-- `decisionCycles`：每条 B 关联之前最后一条 A 和之后首条 A；缺失不补造。
-- `wake_alignment`：将 B→next A 与该 B 对应生产/运输事件完成时刻比较，报告提前观察、完成后唤醒延迟、完成前轮询次数。
-- `phase_timing`：按生产、装载、航行、卸载、受击/规避等阶段分组报告观察间隔与命令间隔。
+## 6. 指标清单
 
-每类间隔至少输出 `n/mean/median/p50/p90/max/samples/outliers`。分位数采用线性插值；离群值按 `Q3 + 1.5×IQR`。同时报告请求处理耗时、错误率、拒绝率和违规数。
+| ID | tier | 一句话 | 来源 |
+|---|---|---|---|
+| `outcome` | T1 | 结局、目标达成时刻、运输机存活、逐类型送达率 | result + meta + goal |
+| `production_lifecycle` | T1 | 逐订单受理/开工、排队等待、工厂占用、并行度 | production + gateway + meta |
+| `delivery` | T1 | 逐单位装载/卸载时间线、逐类型送达率与里程碑 | transport + goal + result + meta |
+| `transport_utilization` | T1 | 真实席位占用、装载率、空载移动、航次 | transport + meta + gateway |
+| `transport_damage` | T1 | 运输机受击、HP 损失、受击间隔 | transport + meta + result |
+| `anti_air_exposure` | T2 | 受击点与最近防空塔的距离（位置推断） | transport + meta |
+| `mission_phases` | T2 | 生产/装载/航行/卸载/交付阶段跨度与重叠 | production + transport + goal |
+| `ab_timing` | T2 | A→B、B→下一个 A、决策周期 | gateway |
+| `violations` | T1 | 违规次数与类型、被拒请求数 | violations + gateway + meta |
 
-A→B 包含模型推理、Agent Runtime 和工具调度，不等于纯模型思考时间。B→next A 也不必然表示 Agent 在等待该命令完成。
+T1/T2 的划分在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网关时序），不是"能不能和人类比"。
 
-## 6. 基线对比
+---
 
-每个 type 独立运行 Greedy baseline。只比较同 task+level+seed 的 Agent 与对应基线：完成率、总耗时、关键路径、生产/运输重叠、平均装载率、空载航次、运输单位 HP 损失、目标送达率和 AB 时间分布。不合并成总分。
+## 7. 指标定义
 
-## 7. 诊断与边界
+### 7.1 outcome
 
-- 违规请求不进入 Replay；若发现未经授权的原生命令进入 Replay，诊断必须标记 `severe/native_authority_mismatch`。
-- Replay/Gateway/EngineEvidence 匹配歧义时保留 `ambiguous/unmatched`，不得按最近时间强行归因。
-- 不通过每 tick 全量扫描所有单位来构建证据。优先挂接生产、装载、移动、卸载、伤害、死亡、地形区域进入/离开等引擎事件；无法事件化的少量对象状态监控必须说明开销和采样精度。
-- `incomePerSecond`、生产时间、运输速度和席位容量都必须按当前加载单位定义/实际引擎数据记录，不能套用 CASE2-LTE 的数值。
-- 目标完成时间来自引擎首次满足条件的 tick，不是 Agent 观察到成功的时刻。
+`outcome`、`endReason`、`task`、`seed`、`gameMs`、`wallMs`、`goalReachedGameMs`、`goalReachedWallMs`、
+`transportAliveCount`、`transportCount`、`credits`、`requirements`、`delivered`、`produced`、`firstReachedTick`、`goalEvents`。
+
+- `deliveryRate[type] = delivered[type] / required[type]`（`required` 为 0 时为 `null`）。
+- `success`：目标岛上的存活、未装载我方陆军首次逐类型达到目标数量。
+- `defeat`：全部本局运输机阵亡。
+- `timeout`：游戏或墙钟预算先到。`error`：引擎/场景异常。
+
+### 7.2 production_lifecycle
+
+`orders[]`：`requestId`、`factoryId`、`unitType`、`count`、`acceptedGameMs`、`acceptedWallMs`、
+`startedGameMs`、`queueWaitGameMs`（= 开工 − 受理）。
+
+`completions[]`：`unitType`、`count`、`gameMs`、`wallMs`（按类型累计的完成里程碑）。
+
+`totals`：`orders`、`started`、`completed`、`factories`。
+`perFactory`：每个工厂接了多少单。
+`queueWait`：`n/mean/median/p50/p90/max/outliers/samples`。
+`parallelism`：`ordersPerFactory`、`ordersPerMinute`（用 `result.gameMs` 作分母）。
+
+**坑**：`orders[]` 里没有"完成时刻"——引擎不猜订单↔单位对应；要算单笔工期只能看 `completions` 的累计曲线。
+
+### 7.3 delivery
+
+`types[]`：`unitType`、`required`、`produced`、`delivered`、`firstDeliveryGameMs`、`lastDeliveryGameMs`、
+`milestones[(gameMs,count)]`。
+
+`units[]`：`unitId`、`transportId`、`loadedGameMs`、`unloadedGameMs`（来自真实 `cargo` 变化，不是指令回执）。
+
+`totals`：`unitsLoaded`、`unitsUnloaded`、`unitsNeverLoaded`。
+
+**坑**：`unitsNeverLoaded` 包含"从未上船"和"生产后一直没被记录到货舱"两种情况；
+`unloadedGameMs` 是"离开货舱"的时刻，不等于"踏上目标岛"。
+
+### 7.4 transport_utilization
+
+`transports[]`：`transportId`、`type`、`capacity`、`loadCommands`、`moveCommands`、`unloadCommands`、
+`peakUnits`、`peakSlots`、`fillRate`（= 峰值席位 / 容量）、`cargoEvents`。
+
+`totals`：`loadCommands`、`moveCommands`、`unloadCommands`、`emptyMoves`。
+`cargoDelta`：货舱变化量的分布。
+
+**空载移动判定**：一条 `move` 下发时，若该运输机当时的货舱为空，就记一次 `emptyMoves`。
+席位按引擎真实权重算（`transportSlotsNeeded`），**不假设每单位占 1 席**。
+
+### 7.5 transport_damage
+
+`transports[]`：`transportId`、`type`、`maxHp`、受击次数、累计 HP 损失、HP 时间序列、是否阵亡。
+`totals`：`hits`、`hpLost`、`alive`、`count`。
+`hitSpacing`：相邻两次受击的间隔分布。
+
+**攻击来源不可确认时写 `unknown`，不按最近塔猜测。** 位置在 `damage` 行里带有 `x,y` 时才可做几何推断（见 7.6）。
+
+### 7.6 anti_air_exposure
+
+- 只统计**真实 damage 事件**，不按几何射程推断"正在受攻击"。
+- 每条受击行给 `transportId`、`gameMs`、`delta`、`nearestTurret`、`nearestDistance`。
+- `inferredRange` = 250.0，来自 `assets/units/turrets/turret_antiair.ini`（写死在 `TURRET_RANGE`）。
+- 没有防空塔的任务（type 4）→ `N/A`，理由 `task has no anti-air turrets`。
+- 有塔但**没有一次受击** → `hits=0`、`hpLost=0`，note 明确写"没有受击，不能从几何声称暴露"。
+
+**这是 T2**：它用 `meta.antiAirTurrets` 的私有坐标，只做离线归因，不向 Agent 反馈。
+
+### 7.7 mission_phases
+
+`phases`：`production`、`loading`、`transit`、`unload`、`delivery`，各自 `{startGameMs,endGameMs,durationMs}`。
+
+- 一个阶段的起止取该阶段相关事件时间戳的最小/最大值（没有事件时该阶段缺省）。
+- `productionToFirstLoad`：最后一个完成里程碑 → 首次装载的间隔。
+- `firstMoveGameMs`、`productionOverlapMs`（生产仍在进行、运输机已在跑的重叠时长）、`reachedGameMs`、`orders`。
+- 阶段重叠**如实报告**，不做归并。
+
+**坑**：阶段无法可靠识别时该阶段缺省，不用固定工作量推算。
+
+### 7.8 ab_timing（T2）
+
+仅对 `status=submitted` 的 A/B 排序：
+
+- **A→B**：B 之前最后一条已回复 A 到 B 接收。
+- **B→下一个 A**：B 回复到下一条 A 接收。
+- **B→B / A→A**：相邻同类。
+- **decisionCycles**：每个 B 关联之前最后 A 与之后首 A；缺一不补造。
+
+每类 `n/mean/median/p50/p90/max/outliers/samples`；分位数线性插值；首末空白记 `null`。
+
+**A→B 包含模型推理、Runtime、工具调度**，不等于纯模型思考时间；`B→下一个 A` 也不必然表示在等这条指令完成。
+
+### 7.9 violations
+
+`count`、`rows`、`rejectedRequests`、`byType`。
+
+- 违规请求不进入 replay，也不改变游戏状态。
+- 发现未经授权的原生命令进入 replay → `severe/native_authority_mismatch`。
+
+---
+
+## 8. 归因规则
+
+- 订单 ↔ 原生命令：优先用 `nativeIndex`（`ReplayWriter` 插入顺序）+ `tick` + `actor` + 动作签名；
+  索引签名不一致、重复占用索引、候选不唯一分别判 `unmatched`/`ambiguous`。**没有强行最近匹配。**
+- 单位 ↔ 运输机：只认 `cargo` 序列的成员变化，不认 `load` 回执。
+- 目标达成：只认引擎 `goal.reached` / `result.goalReached*`，不认 Agent 观察时刻。
+- 伤害归因：`damage` 行没有攻击者 id，写 `unknown`。
+
+---
+
+## 9. 可比性与基线
+
+- 只比较**同 `task+level+seed`** 的 Agent 与对应 type 的 Greedy 基线：完成率、总耗时、关键路径、
+  生产/运输重叠、平均装载率、空载航次、运输机 HP 损失、送达率、AB 时间分布。
+- 不合并总分；不同 `type` 的绝对时间不可比（目标数量与工厂量级都不同）。
+- 没有人类基线（本 CASE 未建立 replay-only 路径）。
+
+---
+
+## 10. 阈值与可配置项
+
+| 项 | 值 | 来源 |
+|---|---:|---|
+| 地图 | 130 × 130 格，20 单位/格 | `Case3Map` |
+| 目标岛面积 | 550..675 格 | 布景二分半径 |
+| 基地岛面积 | 700..800 格 | 同上 |
+| 防空塔射程 | 250 世界单位（12.5 格） | `turret_antiair.ini`，写死在 `anti_air_exposure.TURRET_RANGE` |
+| 装载席位 | `dropship` 4、`experimentalDropship` 12 | `transportCapacity` |
+| 席位权重 | mechFlame/mechLightning 2、experimentalTank 5、其余 1 | `BaseUnit.getTransportSlotsNeeded()` |
+| 卸载节流 | 每 30 帧卸一个 | `Dropship` unload action |
+| 离群判定 | `> Q3 + 1.5×IQR` | `_shared.stats` |
+| 游戏上限 | 900/1200/1500/1800 s | `Case3Transport.spec` |
+| 墙钟预算 | 游戏 + 120 s | 同上 |
+
+游戏时间上限按 type 执行；`startTimeoutSeconds=600` 是"没有 Agent 接入"的上限，不是任务时间。
+
+---
+
+## 11. 已知问题与局限（不声称什么）
+
+- **`meta.targetIslandBounds` 当前记录的是基地岛的包围盒**（布景代码用同一组 `min/max` 布置工厂与提取器）。
+  判断目标岛范围请用 `targetIslandTiles` 自行求包围盒，不要用这个字段。
+- 没有独立复算（`evidence.independentResimulation` 在本 CASE 不存在这一项，`evidence.source` 只是字符串说明）。
+- 运输机受伤**没有攻击者 id**，`anti_air_exposure` 只能做最近塔的位置推断。
+- `production_lifecycle` 无单笔完成时刻；引擎不猜订单↔单位对应。
+- `unloadedGameMs` 是离开货舱，不等于进入目标岛；单位可能在岩浆上被卸下后死亡。
+- `delivery.unitsNeverLoaded` 不做原因区分。
+- `report.html` 不是渲染报告，只是 JSON 的 `<pre>`。
+- `delivery.jsonl` 未进任何指标。
+
+---
+
+## 12. 新增一个指标
+
+1. `metrics/` 下放 `.py`，导出 `ID`、`TIER`、`SOURCES`、`compute(run)`（以 `_` 开头的文件会被跳过）。
+2. `run`（`Case3Run`）提供：`meta`、`result`、`gateway`、`requests()`、`submitted()`、`production`、`transport`、
+   `goal`、`violations`、`requirements`、`capacity`、`transport_meta`、`turrets`，
+   以及 `orders()/started()/completed()/loads()/moves()/unloads()/damages()/cargo_rows()/cargo_timeline()/
+   unit_history()/reached()/delivered_series()/delivered()/produced()`。
+3. `_shared.py` 提供 `stats`、`quantile`、`slots`。
+4. 插件异常由 `evaluate.py` 包成 `ERROR`，不影响其他指标。
+5. 冒烟：`python -B evaluate/micro/CASE3-Transport/test/smoke.py`（或按该文件的入口跑）。

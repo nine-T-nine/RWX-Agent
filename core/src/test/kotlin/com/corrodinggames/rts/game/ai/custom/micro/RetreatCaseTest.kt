@@ -86,7 +86,7 @@ class RetreatCaseTest {
             }
         }
     }
-    @Test fun `turrets stay inside the field and keep their spacing`() {
+    @Test fun `turrets stay inside the top-left region and keep their spacing`() {
         for (task in listOf("4_1_1", "4_2_1", "4_3_1", "4_3_3")) {
             val meta = layout(task)
             val turrets = rows(meta, "turrets")
@@ -94,26 +94,39 @@ class RetreatCaseTest {
             val centreX = (region["centreTileX"] as Number).toDouble()
             val centreY = (region["centreTileY"] as Number).toDouble()
             val radius = (region["radiusTiles"] as Number).toDouble()
+            val boxMaxX = (region["boxMaxX"] as Number).toInt()
+            val boxMaxY = (region["boxMaxY"] as Number).toInt()
             val width = (meta["mapWidth"] as Number).toInt()
             val height = (meta["mapHeight"] as Number).toInt()
             assertEquals(Case4Retreat.turretCounts(Case4Retreat.task(task)).values.sum(), turrets.size, task)
+            assertTrue(radius in 8.0..18.0, "$task field radius $radius outside 8..18")
+            assertTrue(boxMaxX < width && boxMaxY < height, "$task 3/5 box is not inside the map")
             for (turret in turrets) {
                 val tileX = turret["tileX"] as Int; val tileY = turret["tileY"] as Int
                 assertTrue(tileX > 0 && tileY > 0 && tileX < width && tileY < height, "$task inside the map")
-                // The blob is the base radius plus at most 35% of coastline noise.
+                assertTrue(tileX <= boxMaxX && tileY <= boxMaxY, "$task turret outside the top-left 3/5 box")
+                // Every turret is drawn inside the seed centre's radius, so the field is contained.
                 val distance = Math.hypot(tileX - centreX, tileY - centreY)
-                assertTrue(distance <= radius * 1.4, "$task turret at $distance outside the field of $radius")
+                assertTrue(distance <= radius, "$task turret at $distance outside the field of $radius")
             }
+            val achievedCentre = meta["achievedCentreDistanceTiles"] as Map<*, *>
+            assertTrue((achievedCentre["max"] as Number).toDouble() <= radius, "$task centre distance")
             val achieved = meta["achievedTurretSpacingTiles"] as Map<*, *>
+            // A tight field may relax the nominal gap by 10% per retry round, never below the floor.
+            val floor = Case4Retreat.SPACING_FLOOR
             if (turrets.count { it["role"] == "long" } >= 2)
-                assertTrue((achieved["long"] as Number).toDouble() >= 10.0, "$task long spacing ${achieved["long"]}")
+                assertTrue((achieved["long"] as Number).toDouble() >= 10.0 * floor, "$task long spacing ${achieved["long"]}")
             if (turrets.count { it["role"] == "short" } >= 2)
-                assertTrue((achieved["short"] as Number).toDouble() >= 3.0, "$task short spacing ${achieved["short"]}")
+                assertTrue((achieved["short"] as Number).toDouble() >= 3.0 * floor, "$task short spacing ${achieved["short"]}")
             for (a in turrets) for (b in turrets) if (a !== b) {
                 val gap = Math.hypot(((a["tileX"] as Int) - (b["tileX"] as Int)).toDouble(),
                     ((a["tileY"] as Int) - (b["tileY"] as Int)).toDouble())
                 val same = a["role"] == b["role"]
-                val minimum = if (same && a["role"] == "long") 10.0 else 3.0
+                val minimum = when {
+                    same && a["role"] == "long" -> 10.0 * floor
+                    same -> 3.0 * floor
+                    else -> 3.0
+                }
                 assertTrue(gap >= minimum, "$task turret gap $gap")
             }
         }

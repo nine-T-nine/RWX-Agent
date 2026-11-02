@@ -329,7 +329,8 @@ public final class EngineEvidence extends UnitEventListener {
                 "x",unit.posX,"y",unit.posY,"alive",!unit.isDead&&!unit.isDestroyed,"complete",unit.buildProgress>=1,
                 "visible",unit.d(team),"canAttack",weapon,"idle",idle,"workIdle",workIdle,"building",unit.bI(),
                 "mobile",!unit.bI(),"builder",builder(unit),"factory",factory,"task",task,"queue",queue,
-                "capRemaining",Math.max(0,team.getUnitCap()-team.getNonBuildingUnitCountIncludingQueued()));
+                "capRemaining",Math.max(0,team.getUnitCap()-team.getNonBuildingUnitCountIncludingQueued()),
+                "hp",unit.currentHealth,"maxHp",unit.maxHealth);
         result.put("waypointCount",u==null?0:u.getWaypointCount());
         if(options){
             result.put("actions",actions);
@@ -355,7 +356,10 @@ public final class EngineEvidence extends UnitEventListener {
         boolean moved=last==null||Math.abs(last[0]-px)>1e-3||Math.abs(last[1]-py)>1e-3;
         Long sampled=positionSamples.get(unit.objectId);
         boolean due=sampled==null||now-sampled>=POSITION_SAMPLE_MS;
-        if(!force&&signature.equals(signatures.get(unit.objectId))&&!(due&&moved))return;
+        if(!force&&signature.equals(signatures.get(unit.objectId))&&!(due&&moved)){
+            if(idles.containsKey(unit.objectId))trackIdle(unit,snapshot(unit,true));
+            return;
+        }
         signatures.put(unit.objectId,signature);
         positionSamples.put(unit.objectId,now);
         positions.put(unit.objectId,new double[]{px,py});
@@ -373,10 +377,14 @@ public final class EngineEvidence extends UnitEventListener {
     private static final class Idle {
         final long unitId,startMs; final double funds,startX,startY; final int cap;
         final String type; final Object actions; final List<String> roles;
+        double minFunds; int minCap; long lastTick=-1; boolean complete=true;
+        final Map<String,Double> continuousActions=new LinkedHashMap<>();
+        Set<Long> continuousRepairable;
         Idle(long unitId,long startMs,double funds,int cap,Object actions,double x,double y,
              String type,List<String> roles){
             this.unitId=unitId;this.startMs=startMs;this.funds=funds;this.cap=cap;this.actions=actions;
             this.startX=x;this.startY=y;this.type=type;this.roles=roles;
+            this.minFunds=funds;this.minCap=cap;
         }
     }
     private final Map<Long,Idle> idles=new HashMap<>();
@@ -390,15 +398,40 @@ public final class EngineEvidence extends UnitEventListener {
         if(now){
             if(open==null){
                 Object actions=state.get("actions");
-                idles.put(id,new Idle(id,engine.gameTimeMillis,team.credits,
+                List<String> roles=rolesOf(actions);
+                if(roles.isEmpty())return;
+                open=new Idle(id,engine.gameTimeMillis,team.credits,
                         ((Number)state.getOrDefault("capRemaining",0)).intValue(),actions,
-                        unit.posX,unit.posY,type(unit),rolesOf(actions)));
+                        unit.posX,unit.posY,type(unit),roles);
+                idles.put(id,open);
             }
+            checkIdle(open,state);
             return;
         }
         if(open==null)return;
         idles.remove(id);
         writeIdle(open,alive?closeReason(state):"DEATH",state);
+    }
+    /** Intersect feasible actions on every simulation tick, including unchanged unit states. */
+    private void checkIdle(Idle open,Map<String,Object> state){
+        long tick=engine.currentTick;
+        if(open.lastTick>=0&&tick>open.lastTick+1)open.complete=false;
+        boolean first=open.lastTick<0;open.lastTick=tick;
+        open.minFunds=Math.min(open.minFunds,team.credits);
+        open.minCap=Math.min(open.minCap,((Number)state.getOrDefault("capRemaining",0)).intValue());
+        Map<String,Double> feasible=new LinkedHashMap<>();
+        if(state.get("actions") instanceof Map<?,?> actions)for(Map.Entry<?,?> entry:actions.entrySet()){
+            if(entry.getValue() instanceof Map<?,?> action&&Boolean.TRUE.equals(action.get("available"))
+                    &&Boolean.TRUE.equals(action.get("affordable"))&&action.get("cost") instanceof Number cost)
+                feasible.put(String.valueOf(entry.getKey()),cost.doubleValue());
+        }
+        if(first)open.continuousActions.putAll(feasible);
+        else open.continuousActions.entrySet().removeIf(entry->!feasible.containsKey(entry.getKey()));
+        for(Map.Entry<String,Double> entry:open.continuousActions.entrySet())
+            entry.setValue(Math.max(entry.getValue(),feasible.get(entry.getKey())));
+        Set<Long> repairable=new HashSet<>();
+        if(state.get("repairable") instanceof List<?> ids)for(Object value:ids)repairable.add(((Number)value).longValue());
+        if(first)open.continuousRepairable=repairable;else open.continuousRepairable.retainAll(repairable);
     }
     /** Roles are read from the action menu, not from a name list, so hybrids (carrier, nautilus) are exact. */
     private static List<String> rolesOf(Object actions){
@@ -429,6 +462,10 @@ public final class EngineEvidence extends UnitEventListener {
         write("idle",data("unitId",open.unitId,"life",0,"type",open.type,"roles",open.roles,
                 "fromMs",open.startMs,"toMs",end,"durationMs",duration,"closeReason",reason,
                 "closeAction",first instanceof Map<?,?> row?row.get("action"):null,
+                "closeQueue",state.get("queue"),"closeTask",state.get("task"),
+                "feasibility",data("complete",open.complete&&open.lastTick>=engine.currentTick-1,"minFunds",open.minFunds,"minCap",open.minCap,
+                        "actions",open.continuousActions,"repairable",open.continuousRepairable,
+                        "fromMs",open.startMs,"toMs",end),
                 "startFunds",open.funds,"endFunds",team.credits,"startCap",open.cap,
                 "startX",open.startX,"startY",open.startY,"actions",open.actions,
                 "lastProduct",lastProduct.get(open.unitId)));
@@ -513,11 +550,18 @@ public final class EngineEvidence extends UnitEventListener {
                 "side",full.get("side"),"x",full.get("x"),"y",full.get("y"),"alive",full.get("alive"),
                 "idle",full.get("idle"),"building",full.get("building"),
                 "canAttack",full.get("canAttack"),"visible",full.get("visible"),
+                "hp",unit.currentHealth,"maxHp",unit.maxHealth,
                 // Only the task kind: the danger-zone judgement must know whether a unit was
                 // assaulting or guarding when it was hit, not what its full waypoint was.
                 "taskType",task instanceof Map<?,?> map?map.get("type"):null);
     }
     @Override public void damaged(BaseUnit victim,BaseUnit attacker){
+        recordDamage(victim,attacker,null);
+    }
+    @Override public void damaged(BaseUnit victim,BaseUnit attacker,float healthBefore){
+        recordDamage(victim,attacker,Math.max(0,Math.max(0,healthBefore)-Math.max(0,victim.currentHealth)));
+    }
+    private void recordDamage(BaseUnit victim,BaseUnit attacker,Float hpLoss){
         if(closed||!eligible(victim)||!eligible(attacker))return;
         try{
             // Keep sampling both sides briefly after a hit; the old Long.MAX_VALUE never expired and made
@@ -525,7 +569,7 @@ public final class EngineEvidence extends UnitEventListener {
             long until=engine.gameTimeMillis+POSITION_SAMPLE_MS;
             watched.put(victim.objectId,until);watched.put(attacker.objectId,until);
             // The damage row already embeds both snapshots, so no extra unit rows are forced here.
-            write("damage",data("victim",combatSnapshot(victim),"attacker",combatSnapshot(attacker)));
+            write("damage",data("victim",combatSnapshot(victim),"attacker",combatSnapshot(attacker),"hpLoss",hpLoss));
         }catch(IOException|RuntimeException e){fail(e);}
     }
     @Override public void removed(BaseUnit unit,BaseUnit killer){
@@ -655,6 +699,11 @@ public final class EngineEvidence extends UnitEventListener {
         if(s.engine.replayEngine.j()&&!command.isReplayCommand)return null;
         try{
             Map<Long,Map<String,Object>> before=new LinkedHashMap<>();
+            // Observe all open assets before shared credits/cap are changed by a native order.
+            for(Idle open:s.idles.values()){
+                BaseUnit asset=s.monitored.get(open.unitId);
+                if(asset!=null)s.checkIdle(open,s.snapshot(asset,true));
+            }
             for(Long id:ids){BaseUnit unit=GameObject.a(id,true);if(eligible(unit))before.put(id,s.snapshot(unit,false));}
             Application a=new Application("N-"+(++nativeNumber),ORIGINS.get(command),List.copyOf(ids),before);
             s.writeNative(command,a,"before",List.of());return a;
