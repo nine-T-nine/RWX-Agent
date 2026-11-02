@@ -132,8 +132,14 @@ function trimTelemetry(input, output, cutMs, end) {
       if (kind === 'end') return;
       const timeMs = Number(/"timeMs":(\d+)/.exec(line)?.[1]);
       if (kind !== 'meta' && !(timeMs <= cutMs)) return;
-      lastTick = Number(/"tick":(\d+)/.exec(line)?.[1] ?? lastTick);
-      lastSeq = Number(/"seq":(\d+)/.exec(line)?.[1] ?? lastSeq);
+      for (const key of ['seq', 'toSeq']) {
+        const value = new RegExp(`"${key}":(\\d+)`).exec(line);
+        if (value) lastSeq = Math.max(lastSeq ?? -1, Number(value[1]));
+      }
+      for (const key of ['tick', 'toTick']) {
+        const value = new RegExp(`"${key}":(\\d+)`).exec(line);
+        if (value) lastTick = Math.max(lastTick ?? -1, Number(value[1]));
+      }
       fs.writeSync(fsync, line + '\n');
       kept++;
     });
