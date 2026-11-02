@@ -31,6 +31,8 @@ public final class Case4Retreat implements MicroCase {
     static final double LONG_RANGE_BIAS_DEGREES=225,LONG_RANGE_BIAS_SPREAD=35;
     /** Share of long-range guns that is allowed to ignore the bias and land anywhere in the field. */
     static final double LONG_RANGE_RANDOM_SHARE=0.2;
+    /** Compare complete groups before accepting a layout; never relax one isolated gun first. */
+    static final int LONG_RANGE_LAYOUT_TRIALS=32,LONG_RANGE_DRAW_ATTEMPTS=160;
     static final double SPACING_LONG=10,SPACING_SHORT=3,SPACING_CROSS=3;
     /** Worst-case spacing relaxation when the field is too tight: 10% per retry round. */
     public static final double SPACING_FLOOR=0.4;
@@ -147,7 +149,7 @@ public final class Case4Retreat implements MicroCase {
                     "x",Case4Map.world(tileX),"y",Case4Map.world(tileY),"tileX",tileX,"tileY",tileY);
             tanks.add(unit);units.add(unit);id++;
         }
-        return map("task",c.task,"type",task.type(),"level",task.level(),
+        return map("layoutVersion",2,"task",c.task,"type",task.type(),"level",task.level(),
                 "mapWidth",width,"mapHeight",height,"tileSize",Case4Map.TILE,
                 "region",map("centreTileX",centre[0],"centreTileY",centre[1],
                         "centreDistanceFromCorner",round(Math.hypot(centre[0],centre[1])),
@@ -157,6 +159,7 @@ public final class Case4Retreat implements MicroCase {
                         "boxMapFraction",REGION_FRACTION,
                         "longRangeBiasDegrees",(int)LONG_RANGE_BIAS_DEGREES,
                         "longRangeRandomShare",LONG_RANGE_RANDOM_SHARE,
+                        "longRangePlacement","joint_candidates","longRangeLayoutTrials",LONG_RANGE_LAYOUT_TRIALS,
                         "spacingLong",SPACING_LONG,"spacingShort",SPACING_SHORT,"spacingCross",SPACING_CROSS),
                 "baseCornerTile",map("x",cornerX,"y",cornerY),
                 "achievedCentreDistanceTiles",map("min",round(centreDistance(spots,true)),"max",round(centreDistance(spots,false))),
@@ -222,9 +225,9 @@ public final class Case4Retreat implements MicroCase {
     /**
      * Turret placement: every turret is drawn inside the seed centre's radius, so the whole field
      * stays inside the top-left 3/5 rectangle. Long-range guns are drawn with a strong upper-left
-     * bias (a fifth of them may land anywhere), short-range guns fill the rest of the disc
-     * uniformly, and every candidate is rejected while it breaks its own spacing rule, the cross
-     * rule, the field radius or the map/base margins. A rejected draw is simply repeated.
+     * bias (a fifth of candidate directions are uniform); complete long-range groups are compared
+     * before committing. Short-range guns fill the rest of the disc uniformly. Every candidate
+     * must satisfy its own spacing rule, the cross rule, radius and map/base margins.
      */
     static List<Spot> placeTurrets(Spec spec,Task task,int[] centre,int radius,
                                    int width,int height,Random random){
@@ -235,10 +238,44 @@ public final class Case4Retreat implements MicroCase {
         }
         Collections.shuffle(longs,random);
         Collections.shuffle(shorts,random);
-        List<Spot> all=new ArrayList<>();
-        for(String type:longs)all.add(placeOne(all,type,centre,radius,width,height,random,true));
+        List<Spot> all=placeLongRangeGroup(longs,centre,radius,width,height,random);
         for(String type:shorts)all.add(placeOne(all,type,centre,radius,width,height,random,false));
         return all;
+    }
+
+    /**
+     * An early lucky draw must not force every later gun to the opposite side. Try complete groups
+     * at one common spacing, keep the group whose centroid points furthest along the bias, and
+     * relax spacing only when no complete group can be found at the current level.
+     */
+    private static List<Spot> placeLongRangeGroup(List<String> types,int[] centre,int radius,
+                                                int width,int height,Random random){
+        if(types.isEmpty())return new ArrayList<>();
+        double angle=Math.toRadians(LONG_RANGE_BIAS_DEGREES),axisX=Math.cos(angle),axisY=Math.sin(angle);
+        for(int relax=0;relax<=RELAX_STEPS;relax++){
+            double need=SPACING_LONG*(1.0-0.1*relax),bestScore=-Double.MAX_VALUE;
+            List<Spot> best=null;
+            for(int trial=0;trial<LONG_RANGE_LAYOUT_TRIALS;trial++){
+                List<Spot> candidate=new ArrayList<>();
+                for(String type:types){
+                    Spot spot=drawOne(candidate,type,centre,radius,width,height,random,true,need,LONG_RANGE_DRAW_ATTEMPTS);
+                    if(spot==null)break;
+                    candidate.add(spot);
+                }
+                if(candidate.size()!=types.size())continue;
+                double along=0,across=0;
+                for(Spot spot:candidate){
+                    double dx=spot.tileX()-centre[0],dy=spot.tileY()-centre[1];
+                    along+=dx*axisX+dy*axisY;
+                    across+=-dx*axisY+dy*axisX;
+                }
+                // Penalise sideways drift so a group far to the left also keeps an upward bias.
+                double score=along-0.25*Math.abs(across);
+                if(score>bestScore){bestScore=score;best=candidate;}
+            }
+            if(best!=null)return best;
+        }
+        throw new IllegalStateException("no free layout for "+types.size()+" long-range turrets");
     }
 
     private static Spot placeOne(List<Spot> placed,String type,int[] centre,int radius,
@@ -246,21 +283,28 @@ public final class Case4Retreat implements MicroCase {
         double spacing=longRange?SPACING_LONG:SPACING_SHORT;
         for(int relax=0;relax<=RELAX_STEPS;relax++){
             double need=spacing*(1.0-0.1*relax);
-            for(int attempt=0;attempt<900;attempt++){
-                double angle;
-                if(longRange&&random.nextDouble()>=LONG_RANGE_RANDOM_SHARE){
-                    angle=Math.toRadians(LONG_RANGE_BIAS_DEGREES+random.nextGaussian()*LONG_RANGE_BIAS_SPREAD);
-                }else{
-                    angle=random.nextDouble()*Math.PI*2;
-                }
-                double distance=radius*Math.sqrt(random.nextDouble());
-                int tileX=(int)Math.round(centre[0]+Math.cos(angle)*distance);
-                int tileY=(int)Math.round(centre[1]+Math.sin(angle)*distance);
-                if(!fits(placed,tileX,tileY,width,height,need,longRange,centre,radius))continue;
-                return spot(type,tileX,tileY,centre,random);
-            }
+            Spot spot=drawOne(placed,type,centre,radius,width,height,random,longRange,need,900);
+            if(spot!=null)return spot;
         }
         throw new IllegalStateException("no free tile for turret "+type);
+    }
+
+    private static Spot drawOne(List<Spot> placed,String type,int[] centre,int radius,
+                                int width,int height,Random random,boolean longRange,double need,int attempts){
+        for(int attempt=0;attempt<attempts;attempt++){
+            double angle;
+            if(longRange&&random.nextDouble()>=LONG_RANGE_RANDOM_SHARE){
+                angle=Math.toRadians(LONG_RANGE_BIAS_DEGREES+random.nextGaussian()*LONG_RANGE_BIAS_SPREAD);
+            }else{
+                angle=random.nextDouble()*Math.PI*2;
+            }
+            double distance=radius*Math.sqrt(random.nextDouble());
+            int tileX=(int)Math.round(centre[0]+Math.cos(angle)*distance);
+            int tileY=(int)Math.round(centre[1]+Math.sin(angle)*distance);
+            if(!fits(placed,tileX,tileY,width,height,need,longRange,centre,radius))continue;
+            return spot(type,tileX,tileY,centre,random);
+        }
+        return null;
     }
 
     private static Spot spot(String type,int tileX,int tileY,int[] centre,Random random){

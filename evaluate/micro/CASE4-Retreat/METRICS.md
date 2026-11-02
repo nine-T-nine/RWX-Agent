@@ -315,8 +315,9 @@ T1/T2 在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网关时序
 | 地图边长 | `[75,80)` 格，20 单位/格 | `Case4Map` |
 | 炮塔区 | 左上角与地图左上角重合、边长 3/5 的矩形 | `region.box*`，实际不可越界 |
 | 炮塔半径 | 8..18 格（由中心到 3/5 矩形边缘的余量决定） | `region.radiusTiles/radiusMinTiles/radiusMaxTiles` |
-| 炮塔间距 | 远程之间 10 格、近程之间 3 格、跨类 3 格；连续失败按 10% 放宽到 40% | `Case4Retreat`，实际值记 `achievedTurretSpacingTiles` |
-| 远程偏置 | 225° ± 35°，80% 命中；20% 完全随机 | `region.longRangeBiasDegrees` / `longRangeRandomShare` |
+| 炮塔间距 | 远程整组先尝试 10 格；整组候选全部失败才按 10% 放宽到 40%；近程之间 3 格、跨类 3 格 | `Case4Retreat`，实际值记 `achievedTurretSpacingTiles` |
+| 远程偏置 | 候选方向 80% 按 225° ± 35° 抽样、20% 均匀抽样；完整组按偏置方向重心投影择优 | `region.longRangeBiasDegrees` / `longRangeRandomShare` |
+| 布局版本 | 2；每个间距档最多比较 32 组完整远程布局 | `layoutVersion` / `region.longRangePlacement` / `longRangeLayoutTrials` |
 | 抖动 | ±0.35 格 | `meta.turrets[].jitterX/Y` |
 | 正式维修会话 | **> 5000 game-ms 且实际回血** | 引擎写入侧过滤 |
 | 维修湾治疗半径 | 230 世界单位（11.5 格） | `RepairBay.y()` |
