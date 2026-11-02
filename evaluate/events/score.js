@@ -25,7 +25,18 @@ function configuration(options={}){
   if(config.funds.K<=0||config.funds.incomeFieldPerSecond<=0||config.funds.rho1>1||config.funds.rho2>1)throw Error('Invalid funds parameters');
   return config;
 }
-function scoreable(event){return event.scoreable!==false&&!['EXPLAINED','UNCERTAIN'].includes(event.status);}
+/**
+ * Families whose `UNCERTAIN` still scores. An idle pair is an engine-side fact; the only accepted
+ * excuses are a proven inability (`EXPLAINED`) or the Agent having touched the asset (`EXCLUDED`).
+ * The other families keep `UNCERTAIN` unscored: there it means the event itself is not confirmed.
+ */
+const SCORED_UNCERTAIN=new Set(['BUILDER_IDLE','FACTORY_IDLE']);
+function scoreable(event){
+  if(event.scoreable===false)return false;
+  if(event.status==='EXPLAINED'||event.status==='EXCLUDED')return false;
+  if(event.status==='UNCERTAIN')return SCORED_UNCERTAIN.has(FAMILY[event.type]);
+  return true;
+}
 function impactWeight(unit,family,hp=DEFAULTS.hp){
   if(!Number.isFinite(unit.maxHp)||unit.maxHp<=0)return null;
   if(unit.building)return family==='AMBUSH'?(unit.maxHp<=hp.buildingLow?2:4):0;
@@ -72,7 +83,8 @@ function deduction(event,config=DEFAULTS){
     return {points,reason:missing?'partial_stale_age_evidence':rows.length?'stale_command_severity':'missing_stale_age_evidence',items,missing};
   }
   if(family==='BUILDER_IDLE'||family==='FACTORY_IDLE'){
-    if(event.feasibility?.throughout!==true)return {points:0,reason:'missing_continuous_feasibility'};
+    // No feasibility gate here: an unproven pair still counts, and `scoreable` has already removed
+    // the pairs that were disproved or excluded.
     const durationMs=event.durationMs??event.gapMs??event.t_end-event.t_start;
     if(!Number.isFinite(durationMs)||durationMs<0)return {points:0,reason:'missing_duration_evidence'};
     const severity=idleSeverity(family,durationMs/1000);

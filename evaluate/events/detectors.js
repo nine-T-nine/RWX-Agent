@@ -423,6 +423,16 @@ class CommandFailureDetector extends Detector {
 const STALE_INFO=new Set(['STALE_OBJECT','NOT_CONTROLLABLE','PLACEMENT_BLOCKED','UNAVAILABLE_ACTION']);
 
 /**
+ * Low-level origins that count as "the Agent touched this asset". `keep` (keep-set replenish) and
+ * `auto` (AiAutomate) are still the Agent's own configuration acting on its behalf, so they count.
+ * `engine` is not: automatic repair and every other engine-generated order happen without the Agent
+ * asking. `replay_unknown` is written while a Replay is played back, so it has no live submitter at
+ * all. This set is deliberately separate from `AGENT_SOURCES` in evaluate/low-attribution.js, which
+ * answers a different question (round-1 attribution) and must not change.
+ */
+const TOUCH_SOURCES=new Set(['agent','pending','keep','auto']);
+
+/**
  * D 空闲建造者 / E 空闲工厂.
  *
  * <p>One idle pair from the collector becomes one event. The collector already dropped periods
@@ -433,10 +443,24 @@ const STALE_INFO=new Set(['STALE_OBJECT','NOT_CONTROLLABLE','PLACEMENT_BLOCKED',
  * <p>An automation rule (keep-set) is a full explanation: the engine refills the queue itself when
  * the action is available and affordable, so an idle factory with an active rule can only be
  * blocked by money or by the rule having been paused.</p>
+ *
+ * <p>An idle pair is also dropped outright when a low-level order naming this asset executed inside
+ * the window: the Agent was clearly working on it, whatever the high-level request said. Only the
+ * resolved unit ids of the native row are used, so selectors such as {@code --units all-army} need
+ * no interpretation here.</p>
  */
 class IdleAssetDetector extends Detector {
-  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();}
+  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();this.touched=new Map();}
   native(row){
+    if(row.phase==='before'){
+      if(!TOUCH_SOURCES.has(row.source))return;
+      for(const id of row.units||[]){
+        const unit=Number(id),at={timeMs:row.timeMs,operation:row.operation,source:row.source,commandId:row.commandId};
+        const list=this.touched.get(unit);
+        if(list)list.push(at);else this.touched.set(unit,[at]);
+      }
+      return;
+    }
     if(row.phase!=='after')return;
     for(const result of row.results||[])if(result.queueAdded?.length){
       const linked=this.s.commands.find(c=>c.id===row.commandId);
@@ -478,13 +502,18 @@ class IdleAssetDetector extends Detector {
     const coverage=coveredTo>=Number(row.fromMs)&&this.s.covers(row.fromMs,coveredTo);
     const judgedEnd=coverage?coveredTo:Number(row.toMs);
     const judgedMs=coverage?coveredTo-Number(row.fromMs):durationMs;
+    // Half-open window: the order that closed the pair has its own native row at toMs and must not
+    // exclude the pair it ends. A touch is positive evidence on its own, so it outranks coverage.
+    const touched=(this.touched.get(Number(row.unitId))||[])
+      .filter(at=>at.timeMs>=Number(row.fromMs)&&at.timeMs<judgedEnd);
     const keepActive=this.keep.has(Number(row.unitId));
     const agent=agentState(this.s.commands,row.fromMs,judgedEnd);
     const affordableStart=ref?Number(row.startFunds)>=ref.cost&&Number(row.startCap)>=1:null;
     const affordableEnd=ref?Number(row.endFunds)>=ref.cost&&Number(row.startCap)>=1:null;
     const tier=judgedMs>=this.c.T_IDLE_LONG?'STALL':judgedMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
     let status,reason;
-    if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
+    if(touched.length){status='EXCLUDED';reason='native_order_during_gap';}
+    else if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
     else if(judgedEnd<Number(row.toMs)){status='UNCERTAIN';reason='endpoint_outside_command_coverage';}
     else if(keepActive){status='EXPLAINED';reason='automation_configured';}
     else if(native&&(['keep','pending','auto','engine'].includes(native.source)||native.commandTimeMs<row.fromMs&&native.commandTimeMs!=null)){
@@ -492,13 +521,15 @@ class IdleAssetDetector extends Detector {
     else if(feasibility.throughout==null){status='UNCERTAIN';reason=feasibility.reason;}
     else if(feasibility.throughout===false){status='EXPLAINED';reason=feasibility.reason;}
     else {status='DETECTED';reason=agent.state==='SILENT'?'agent_silent':'agent_busy_elsewhere';}
-    const scoreable=status==='DETECTED'&&feasibility.throughout===true&&(factory||this.c.idleScoreBuilders);
+    // Idling is an engine-side fact, so a pair that could not be disproved still scores: only
+    // EXPLAINED (proven unable) and EXCLUDED (the Agent touched the asset) are free.
+    const scoreable=(status==='DETECTED'||status==='UNCERTAIN')&&(factory||this.c.idleScoreBuilders);
     const event=this.event(type,row.fromMs,{t_confirm:judgedEnd,
       unitId:Number(row.unitId),life:Number(row.life??0),unit:{id:Number(row.unitId),type:row.type},
       roles,durationMs:judgedMs,observedDurationMs:durationMs,closeReason:row.closeReason??null,
       closeAction:row.closeAction??null,tier,
       startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
-      referenceAction:ref,affordableStart,affordableEnd,feasibility,endpointMs:row.toMs,
+      referenceAction:ref,affordableStart,affordableEnd,feasibility,endpointMs:row.toMs,nativeTouched:touched,
       agentState:agent.state,agentStateEvidence:agent.evidence,
       keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
       status,reason,strict:false,scoreable,visibility:'HIGH',

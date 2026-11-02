@@ -3,6 +3,7 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const {Session,evaluateEvents,indexCommands,legacyCommands,records}=require('../evaluate_stage_2');
 const {configure}=require('../events/config');
+const {deduction}=require('../events/score');
 const {EconomyRecorder,stamp}=require('../events/model');
 const unit=(id,extra={})=>({id,life:0,type:'tank',side:'self',x:0,y:0,alive:true,complete:true,
   visible:true,idle:true,canAttack:true,building:false,mobile:true,builder:false,factory:false,task:null,queue:[],...extra});
@@ -551,13 +552,14 @@ function idleCase(coverageEnd,fromMs=5000,toMs=60000) {
   session.now=toMs;session.finish();
   return events.find(e=>e.type==='FACTORY_IDLE');
 }
-test('a covered prefix retains diagnostics but cannot score work whose endpoint is outside coverage',()=>{
+test('a covered prefix keeps its diagnostics and scores the covered duration',()=>{
   // The Agent process exits before the engine does, so the command log stops at 20 s while the
-  // factory stays idle to 60 s. Keep the covered duration as evidence, but it has no covered B work.
+  // factory stays idle to 60 s. Only the covered prefix is scored; the rest is reported as observed.
   const e=idleCase(20_000);
   assert.ok(e);assert.equal(e.status,'UNCERTAIN');assert.equal(e.t_end,20_000);
   assert.equal(e.durationMs,15_000);assert.equal(e.observedDurationMs,55_000);
-  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,false);
-  // A log that ends before the idle even starts proves nothing.
+  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,true);
+  assert.ok(deduction(e).points>0);
+  // A log that ends before the idle even starts still produces the pair, with no covered prefix.
   assert.equal(idleCase(1_000).status,'UNCERTAIN');
 });

@@ -37,21 +37,28 @@ test('split native packets use the whole requested batch and shared budgets rema
   assert.equal(run(false).reason,'endpoint_batch_not_affordable_throughout');
   assert.equal(run(true).reason,'shared_endpoint_budget_unavailable');
 });
-test('missing endpoint and uncovered endpoint cannot pass, even when both funds endpoints are rich',()=>{
+test('a missing endpoint is unscored only when it was disproved, not when it is merely unknown',()=>{
   const row=factory();row.closeReason='EVIDENCE_END';row.closeQueue=[];
-  assert.equal(idle(row).scoreable,false);
+  const e=idle(row);
+  assert.equal(e.status,'UNCERTAIN');assert.equal(e.reason,'endpoint_production_unavailable');
+  assert.equal(e.scoreable,true);assert.ok(deduction(e).points>0);
   assert.equal(idle(factory(),{commandCoverage:{start:0,end:30000}}).reason,'endpoint_outside_command_coverage');
 });
-test('builder placement must match the exact endpoint location throughout the same interval',()=>{
+test('builder placement no longer gates the score, only a proven refusal does',()=>{
   const row={...factory(),roles:['builder'],closeReason:'BUILD',closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},
     actions:{buildTurret:{kind:'build',type:'turret',cost:1000}},
     feasibility:{complete:true,fromMs:0,toMs:60000,minFunds:5000,minCap:0,actions:{buildTurret:1000}}};
-  assert.equal(idle(row).reason,'continuous_placement_unavailable');
+  const unresolved=idle(row);
+  assert.equal(unresolved.reason,'continuous_placement_unavailable');
+  assert.equal(unresolved.status,'UNCERTAIN');assert.equal(unresolved.scoreable,true);
   row.feasibility.placements=[{type:'turret',x:10,y:20,count:1,fromMs:0,toMs:60000,valid:true}];
-  assert.equal(idle(row).scoreable,true);
-  row.feasibility.placements[0].x=11;assert.equal(idle(row).scoreable,false);
-  row.feasibility.placements[0].x=10;row.feasibility.placements[0].valid=false;
-  assert.equal(idle(row).status,'EXPLAINED');
+  const proven=idle(row);
+  assert.equal(proven.status,'DETECTED');
+  // Unknown and proven must cost the same; only a refuted site excuses the pair.
+  assert.equal(deduction(proven).points,deduction(unresolved).points);
+  row.feasibility.placements[0].valid=false;
+  const refuted=idle(row);
+  assert.equal(refuted.status,'EXPLAINED');assert.equal(deduction(refuted).points,0);
 });
 test('builder repairs require the same living damaged target for the entire interval',()=>{
   const row={...factory(),roles:['builder'],closeReason:'REPAIR',closeTask:{type:'repair',targetId:22}};
@@ -85,4 +92,37 @@ test('stale burst preserves receipt-time expiry age when a rejection duplicates 
   s.finish();const burst=events.find(e=>e.type==='STALE_BURST');
   assert.equal(burst.commands.length,3);assert.deepEqual(burst.commands.map(c=>c.staleAgeMs),[19000,20000,21000]);
   assert.equal(deduction(burst).points,8);
+});
+/** Consume native rows first, then the idle pair that they may exclude. */
+function idleWith(row,natives,meta={},config={}){
+  const events=[],s=new Session({schema:1,team:0,timeMs:0,X:160,...meta},[],config,e=>events.push(e));
+  for(const [index,row2] of natives.entries())
+    s.consume({kind:'native',phase:'before',timeMs:row2.timeMs,seq:index+1,source:row2.source,
+      units:row2.units??[Number(row.unitId)],operation:row2.operation??'Move',commandId:row2.commandId??null});
+  s.consume(row);return events[0];
+}
+test('a native order naming the asset drops the idle pair regardless of the high-level request',()=>{
+  const touched=idleWith(factory(),[{timeMs:30000,source:'agent'}]);
+  assert.equal(touched.status,'EXCLUDED');assert.equal(touched.reason,'native_order_during_gap');
+  assert.equal(touched.scoreable,false);assert.equal(touched.nativeTouched.length,1);
+  assert.equal(deduction(touched).points,0);assert.equal(deduction(touched).reason,'not_scoreable');
+  // keep-set and AiAutomate act for the Agent, so they count.
+  for(const source of ['pending','keep','auto'])
+    assert.equal(idleWith(factory(),[{timeMs:30000,source}]).status,'EXCLUDED',source);
+  // Automatic repair and orders written during playback belong to nobody.
+  for(const source of ['engine','replay_unknown'])
+    assert.equal(idleWith(factory(),[{timeMs:30000,source}]).status,'DETECTED',source);
+});
+test('the touch window is half-open and bound to the idle asset',()=>{
+  // The order that closed the pair has its own native row exactly at toMs.
+  assert.equal(idleWith(factory(),[{timeMs:60000,source:'agent'}]).status,'DETECTED');
+  // Nobody else's order explains this asset's gap.
+  assert.equal(idleWith(factory(),[{timeMs:30000,source:'agent',units:[8]}]).status,'DETECTED');
+  // A touch is evidence on its own, so it outranks the coverage and placement checks.
+  const builder={...factory(),roles:['builder'],closeReason:'BUILD',
+    closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},actions:{buildTurret:{kind:'build',type:'turret',cost:1000}},
+    feasibility:{complete:true,fromMs:0,toMs:60000,minFunds:5000,minCap:0,actions:{buildTurret:1000}}};
+  assert.equal(idleWith(builder,[]).status,'UNCERTAIN');
+  assert.equal(idleWith(builder,[{timeMs:30000,source:'agent'}]).status,'EXCLUDED');
+  assert.equal(idleWith(builder,[{timeMs:30000,source:'engine'}]).status,'UNCERTAIN');
 });

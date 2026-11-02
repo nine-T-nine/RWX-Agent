@@ -62,7 +62,7 @@ test('stale commands charge each known age once with strict age bands and type w
   assert.equal(deduction(event('STALE_BURST',{commands:[{staleInfo:true,staleAgeMs:60000,kind:'configuration'}]})).points,3);
   assert.equal(deduction(event('STALE_BURST',{commands:[{staleInfo:true}]})).missing,1);
 });
-test('idle curves have separate caps and require continuous endpoint-work proof',()=>{
+test('idle curves have separate caps and score unproven endpoint work',()=>{
   const idle=(type,seconds,extra={})=>event(type,{durationMs:seconds*1000,feasibility:{throughout:true},...extra});
   assert.equal(deduction(idle('BUILDER_IDLE',8)).points,2.4);
   assert.equal(deduction(idle('BUILDER_IDLE',25)).points,6);
@@ -71,7 +71,12 @@ test('idle curves have separate caps and require continuous endpoint-work proof'
   assert.equal(deduction(idle('FACTORY_IDLE',30)).points,1.5);
   assert.equal(deduction(idle('FACTORY_IDLE',120)).points,5);
   assert.equal(deduction(idle('FACTORY_IDLE',900)).points,5);
-  assert.equal(deduction(idle('FACTORY_IDLE',900,{feasibility:null})).points,0);
+  // Unknown feasibility costs exactly what proven feasibility costs: an idle pair is an engine-side
+  // fact, so only a refuted or excluded pair is free.
+  assert.equal(deduction(idle('FACTORY_IDLE',900,{feasibility:null})).points,5);
+  assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'UNCERTAIN'})).points,5);
+  assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'EXPLAINED'})).points,0);
+  assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'EXCLUDED'})).points,0);
   assert.equal(scoreEvents(Array.from({length:8},(_,i)=>idle('FACTORY_IDLE',900,{id:String(i)}))).deduction,15);
 });
 test('funds intervals use elapsed time, median smoothing and the 15/120 second curve',()=>{

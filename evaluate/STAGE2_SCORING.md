@@ -166,6 +166,8 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 
 预筛选规则：工厂必须以真实生产关闭区间；B 的整批生产总成本不超过 `minFunds`，数量不超过 `minCap`，所有型号均在连续动作交集中。同一请求拆成多个原生包时使用索引汇总的整批数量；多工厂共享预算无法全程重建时为 `UNCERTAIN`。维修必须保证同一目标全程可维修。建造同时要求动作、整批资金与落点全程合法。明确中途不可做 → `EXPLAINED`；证据不足 → `UNCERTAIN`；两者都不计分。已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
+**先于预筛选的排除规则**：只要 `[A,B)` 内出现过任何**原生命令**涉及该资产的 id，这一段直接 `EXCLUDED`（`reason=native_order_during_gap`），不进预筛选也不扣分。判据只读原生命令行的 `units`（已解析的单位 id），不读高层请求，因此 `--units all-army` 之类的选择器不需要额外解释。计入的来源是 `agent`/`pending`/`keep`/`auto`：keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，算它碰过；`engine`（自动维修及一切引擎自发命令）与 `replay_unknown`（回放期间写出的命令）不算。被拒请求不会产生原生命令行，天然不计入。窗口是半开的 `[fromMs,toMs)`：关闭该区间的命令自己的原生命令行落在 `toMs`，不会把它结束的这段区间排除掉。排除事件仍保留 `durationMs` 与 `nativeTouched`，供审计。
+
 采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。当前采集器提供工厂/维修的连续证据，**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲保留但不扣分。死亡、证据结束或纯移动关闭的区间没有实际 B 工作，也不能用猜测的动作参评。历史日志只有两端资金时同样保留为 `UNCERTAIN`。
 
 命令日志早于 B 结束时仍输出已覆盖前缀的 `durationMs`，完整观测时长写 `observedDurationMs`，并设 `durationIsLowerBound=true`；由于无法把 B 归入已覆盖窗口，此时 `reason=endpoint_outside_command_coverage`，不扣前缀的分。完整覆盖且有 `keep-set` 规则时为 `EXPLAINED`。

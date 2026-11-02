@@ -131,8 +131,9 @@ class Session {
     if(event.reactionMs!=null)(this.latencies[event.type]??=[]).push(event.reactionMs);
     if(event.type==='BUILDER_GAP'&&event.strict)this.builderIntervals.push({start:event.t_start,end:event.t_end,unitId:event.unit.id});
     // 建造者闲置（D）也计入并发统计：两个以上建造者同时闲着是系统性停摆，不是单点失误。
-    // 只取 DETECTED，UNCERTAIN 的区间长度不可信，会把并发时长算高。
-    if(event.type==='BUILDER_IDLE'&&event.status==='DETECTED'&&event.unitId!=null)
+    // DETECTED 与 UNCERTAIN 都参与评分，所以都计入；时长只是下界的区间跳过，否则会低估并发。
+    if(event.type==='BUILDER_IDLE'&&(event.status==='DETECTED'||event.status==='UNCERTAIN')
+        &&event.unitId!=null&&!event.durationIsLowerBound)
       this.builderIntervals.push({start:event.t_start,end:event.t_end,unitId:event.unitId});
     this.output(event);
   }
