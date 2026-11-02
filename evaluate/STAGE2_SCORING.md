@@ -1,10 +1,10 @@
-# 第二轮事件响应评估
+# Stage2 完整对局事件评估与评分规则
 
-本文件是第二轮判定的**唯一来源**：六类事件（A–F）的材料、判定条件、排除规则和参数都在这里。两轮目标、产物与完整运行顺序见[总 README](../README.md)，测试用途见[test/README.md](../test/README.md)。以下命令均从仓库根目录执行。
+本文件是第二轮完整对局评估的**唯一细则来源**：材料采集、六类事件（A–F）的判定条件、排除规则、参数及可选评分模型都在这里。管理员启动与开局概览见[评测管理员指南](./README.md)，测试用途见[test/README.md](test/README.md)。以下命令均从仓库根目录执行。
 
 第二轮读取真实引擎证据，输出事件与经济时间序列。第一轮 `evaluate_stage_1.js` 和已有命令映射保持独立。
 
-**仅有 `replay.py` 的命令 JSONL 无法完成第二轮。** 它没有完整的伤害、死亡、空闲段、工厂队列或历史资金；必须用同版本引擎实际重放一次，或用 `--evaluate` 采集的实时证据。报告不提供评分，不把战损直接解释为 Agent 迟钝。
+**仅有 `replay.py` 的命令 JSONL 无法完成第二轮。** 它没有完整的伤害、死亡、空闲段、工厂队列或历史资金；必须用同版本引擎实际重放一次，或用 `--evaluate` 采集的实时证据。`evaluate_stage_2.js` 只生成事件报告、不提供总分；可另运行 `score_stage_2.js` 生成下面定义的初步事件分数。战损不会被直接解释为 Agent 迟钝。
 
 ## 使用
 
@@ -196,7 +196,7 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 参数在 `events/config.js` 集中：`X`=运行时中位数（通常160）、偷袭5s、失活3s、响应尾窗3s、突发窗口10s、批次250ms、突发阈值3批、空闲档位10s/60s、危险区记忆40s、到达后窗口10s、硬上限120s、经济1s。Node 的 `--config` 接收 JSON 覆盖。
 
-`legacyDetectors` 默认为 **false**：旧的 3–10s `BUILDER_GAP`/`PRODUCTION_GAP`、`FEED`、`STALE_COMMAND`、`COMMAND_FAILURE` 已被 D/E、B（待实现）、C 取代。需要复现旧报告时用 `--config '{"legacyDetectors":true}'`。
+`legacyDetectors` 默认为 **false**：旧的 3–10s `BUILDER_GAP`/`PRODUCTION_GAP`、`FEED`、`STALE_COMMAND`、`COMMAND_FAILURE` 已被 D/E、B、C 取代。需要复现旧报告时用 `--config '{"legacyDetectors":true}'`。
 
 ```powershell
 node --test evaluate/test/test-evaluate.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js
@@ -216,6 +216,36 @@ python -W error::ResourceWarning evaluate/test/test_replay.py
 事件 JSONL 分两遍流式读取：先索引较少的 CLI/原生命令，后执行检测。采集器复用实体更新与伤害/死亡通知，并按"状态跃变才写"采样：我方建造者与所有建筑每 tick 比对状态，受击单位随后 1 秒内每 tick 观察，位置变化最多每秒记一次；危险区用引擎空间索引，只记成员身份且仅成员变化时写一行。没有每秒 CLI 查询，也没有评测器发出的游戏操作。
 
 `summary.json` 的 `diagnostics` 记录每种输入记录数、各检测器的候选数与淘汰原因，用来区分"严格过滤后确实没有事件"和"证据没有被采集或没有被读到"。
+
+## 第二轮评分细则与公式
+
+事件判定报告与评分后处理分离：运行 `evaluate_stage_2.js` 只得到事件和经济材料；需要初评分时，对 `stage_2/` 目录执行：
+
+```sh
+node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
+```
+
+默认写入 `score.json`（逐事件扣分、类别汇总与配置）、`score.txt`（可读摘要）、`timeline.csv`（全体事件及扣分）和 `economy_seconds.csv`（F 类经济材料）。可用 `--weights <json>` 覆盖初评分配置，`--out <目录>` 指定输出位置。此分数是**初版、可追溯的加法模型**，只用于辅助复核，不替代人工判断，也不与 Stage1 分数相加。
+
+默认从 100 分开始。对每个评分类别，将其事件扣分相加为 `raw`，按该类上限封顶，类别封顶扣分再求和：
+
+```text
+总扣分 = Σ类别 min(该类 raw 扣分, 该类上限)
+总分   = max(0, 100 − 总扣分)
+```
+
+| 类别 | 单事件扣分 | 默认上限 |
+|---|---|---:|
+| `AMBUSH` | 仅 `UNANSWERED` 事件计分：普通单位偷袭 3 分；`kind=BASE` 偷家 3+2=5 分 | 20 |
+| `GRINDER` | 无损失统计但有危险区后果（`consequence`）时扣 3 分；否则 `net = 己方损失 − 敌方损失`，前 3 个净损失不扣，超过部分每个扣 0.5 分 | 25 |
+| `STALE` | 每次突发固定扣 2 分；`count` 中首条免费，余下每条再扣 0.5 分，即 `2 + max(0, count−1) × 0.5` | 20 |
+| `BUILDER_IDLE` | 每次先免 3 秒；之后按 `max(0, min(120s, duration−3s)) × 3 分/分钟` 计，单次最高 6 分 | 15 |
+| `FACTORY_IDLE` | 与建造者相同：`max(0, min(120s, duration−3s)) × 3 分/分钟`；单次最高 6 分 | 20 |
+| F 资金空余 | 只输出资金/收入材料，不参与评分 | — |
+
+默认参数也可在 `events/score.js` 的 `DEFAULTS` 中核对：基准 100、空闲免罚 3000ms、每个空闲事件最多计 120000ms、绞肉机免罚净损失 3、每个过期突发首条免费。旧事件名 `FEED`、`STALE_COMMAND`、`COMMAND_FAILURE`、`BUILDER_GAP`、`PRODUCTION_GAP` 会映射到相应类别，便于兼容历史报告。
+
+`EXPLAINED`、`UNCERTAIN` 和 `scoreable:false` 的事件通常不扣分；`DETECTED`/`UNANSWERED` 仍需按所属类别规则判断。未评分事件仍列出；空闲事件的未计分时长也汇总在 `score.txt`，防止证据未覆盖被误读成“没有空闲”。实现细节：`scoreable()` 会用于 GRINDER、STALE 和空闲事件；AMBUSH 分支直接检查 `status === 'UNANSWERED'`，不另外检查 `scoreable:false`。如事件同时带 `UNANSWERED` 与 `scoreable:false`，当前实现仍会按偷袭规则扣分，这是实现的精确行为。
 
 ## 面向 Agent 的事件流（与第二轮判定无关）
 
