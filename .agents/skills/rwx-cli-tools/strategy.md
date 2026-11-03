@@ -43,10 +43,10 @@ These are counter *options*, not guaranteed outcomes. **Numbers, range, terrain,
 
 ## 4. Economy at a Glance
 
-- **≤50 income/s:** Limited economy. Prefer inexpensive effective units, resource deposits, and essential defenses.
-- **50–100 income/s:** Typical early-game income. Units costing roughly 2,000 or less are reasonable options.
-- **100–200 income/s:** Can support stronger attacks and some mid/high-tier units.
-- **≥200 income/s:** Can sustain mixed forces and expansion; expensive experimental units or nuclear weapons may become viable in long games.
+- **≤50 income/game-second:** Limited economy. Prefer inexpensive effective units, resource deposits, and essential defenses.
+- **50–100 income/game-second:** Typical early-game income. Units costing roughly 2,000 or less are reasonable options.
+- **100–200 income/game-second:** Can support stronger attacks and some mid/high-tier units.
+- **≥200 income/game-second:** Can sustain mixed forces and expansion; expensive experimental units or nuclear weapons may become viable in long games.
 - **Income multiplier x1 / x1.5 / x2+:** Roughly means very tight / somewhat tight / more comfortable. These are guidelines, not hard thresholds.
 - **Factory orders deduct credits immediately.** Do not leave large sums unused without a clear reason such as saving for an upgrade, expensive unit, or emergency response.
 

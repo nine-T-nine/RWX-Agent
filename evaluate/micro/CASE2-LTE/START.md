@@ -122,7 +122,7 @@ rwx-micro-2-build --resource R1
 
 - 墙钟预算从第一条 CLI 请求开始计算，包含 help、观察、ping 和错误请求。
 - 游戏时间及任务完成耗时从 `begin` 开始计算。
-- 1 tick = 16 game-ms，1× 约为每墙钟秒 60 tick。
+- 1 tick = 16 game-ms，1× 约为每墙钟秒 62.5 tick（即 16 ms/tick）。
 - 观察和工具调用期间游戏不会暂停。
 
 **允许使用的命令仅有：**

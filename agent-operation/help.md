@@ -560,6 +560,8 @@ Headless mode has no GUI and cannot be observed through screenshots, but game si
 
 - **Command arguments**: quote values containing spaces with single or double quotes, e.g. `--name "Lake (2p)"`; the server accepts plain-text command lines.
 - **Coordinates**: world coordinates by default, and in a real match 1 tile = 20 world units. Only range parameters explicitly documented as tiles use tiles (e.g. `map-place --radius`, `map-show --half-width/--half-height`); other range parameters such as `unit-list --radius` use world coordinates.
+- **Time units**: after the match starts, every `tick`, `time`, `gameTimeMillis`, event timestamp, `durationSeconds` and every "second" in docs and command output means **game time** (the simulation clock: frozen while paused, faster or slower when speed changes), not real-world time. At 1x real-time and unpaused the two coincide, but game time is the authority.
+- **Income units**: `incomePerSecond` is credits per **game second**. The engine settles income once per 40 ticks, and 40 ticks = 0.64 game seconds; do not treat the raw per-40-tick figure as a per-second rate, and do not re-derive it from the GUI's native number.
 - All commands use **lowercase letters and are case-sensitive**.
 
 ### 8.3 Command receipt semantics and the command queue

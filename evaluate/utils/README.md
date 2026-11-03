@@ -2,6 +2,8 @@
 
 两轮目标、原始产物与完整运行顺序见[总 README](../README.md)，本文件集中说明工具接口、Replay格式及端口录制。所有命令从仓库根目录执行。
 
+> **时间与单位约定**：`telemetry.jsonl` 的 `timeMs`/`sampleMs`、Replay 的 tick 与 `game_time_ms`、`economy.log` 的采样顺序都是**游戏时间**（1x 实时不暂停时等于真实时间）。Replay 只记 tick，毫秒由 `tick × 16 ms` 重建（62.5 tick/游戏秒），不存墙钟。`economy.log` 的 `income` 是引擎原生“每 40 tick”额度（40 tick = 0.64 游戏秒），×1.5625 才是每游戏秒；telemetry 的 `incomePerSecond` 已是每游戏秒。只有明确写 `wall`/`wallMs` 的字段是真实时间。
+
 | 工具 | 职责 |
 |---|---|
 | `replay.py`、`__init__.py` | 离线解析Replay，输出summary/TXT/JSONL，提供Python API |

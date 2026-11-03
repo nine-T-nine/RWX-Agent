@@ -41,7 +41,7 @@ availableActions只含空闲完工T1/T2的下一标准升级ID；不表示资金
 
 工作 tick 是进度速率的倒数，不含命令排队、寻路、转向、进入施工距离及建造者 30 tick 预热；浮点累计、离散 tick 会产生取整差，实际完成时刻以引擎证据为准。T2/T3 的 INI `price=2100/6100` 是累计价值，不能当成可直接建造的价格。
 
-`incomePerSecond` 与现有游戏 CLI 一致：`team.b(Resource.D)-team.getResourceDrainRate(Resource.D)`。默认资源生成周期是 40 tick，因此标称 8/12/20 分别每 40 tick 发放，1× 名义每墙钟秒 60 tick，资金积累约为 12/18/30 credits/墙钟秒；按 `gameMs` 则是 12.5/18.75/31.25 credits/游戏秒。不要把字段名理解为实际每 1000 game-ms 入账量。
+`incomePerSecond` 与现有游戏 CLI 一致：`team.b(Resource.D)-team.getResourceDrainRate(Resource.D)`。默认资源生成周期是 40 tick，因此标称 8/12/20 是**每 40 tick** 的额度；引擎实测 16 ms/tick（62.5 tick/游戏秒，1x 下同一数值也是每墙钟秒），折算为 12.5/18.75/31.25 credits/游戏秒。不要把字段名理解为实际每 1000 game-ms 入账量。
 
 ## 4. 经济操作
 

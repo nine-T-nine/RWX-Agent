@@ -21,7 +21,7 @@
 ## 2. 通用约定
 
 - **坐标**：世界坐标，1 格 = 20 世界单位；`x` 向右、`y` 向下。所有 A/B 命令都用世界坐标。
-- **时间**：`t=` 是游戏时钟秒，保留 3 位小数；每 tick 增加 0.016，60 tick 对应 `t=0.960`。1× 名义速度为每秒 60 tick。pause 的 `turn=0` 为尚未推进，`begin` 后为第 1 回合；`turnTicks` 是回合步数，`turnSeconds=turnTicks/60` 是名义回合长度。
+- **时间**：`t=` 是游戏时钟秒，保留 3 位小数；每 tick 增加 0.016，60 tick 对应 `t=0.960`。引擎实测 16 ms/tick，即 1× 约每秒 62.5 tick（1x 下游戏秒与墙钟秒同值）。pause 的 `turn=0` 为尚未推进，`begin` 后为第 1 回合；`turnTicks` 是回合步数，`turnSeconds=turnTicks/60` 是按 60 tick/秒 换算的名义回合长度。
 - **墙钟起算**：从第一条 CLI 输入起算（`state`/`ping`/`help`/拼错命令都算），不是从 `begin` 起算；briefing 和暂停思考都计入 1200 秒预算。`briefingSeconds` 只在 realtime 生效；`startTimeoutSeconds` 两条赛道都生效（一直不发命令 → `outcome=error, endReason=no-agent`）。
 - **状态词**：文本回执以 `ok|partial|error` 开头。未知命令、赛道不允许、参数错误和禁止下令都会返回错误；选择中部分已死单位被跳过为 `partial`。`ok: submitted` 仅表示受理，不保证已经执行、路径可达、订单入队或攻击命中。
 - **单位选择**：`--units` 接受别名（`M1`、`E2`）、引擎 id（`1000`）、逗号分隔混合列表，或 `all`。B 类只能控制我方单位，选择中混入敌方会报错；敌方别名可用于只读查询或攻击的 `--target`。`all` 在 A 类里表示“双方全部”，在 B 类里只表示“我方全部存活单位”。
