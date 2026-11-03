@@ -4,7 +4,7 @@
 >
 > **Income is reported in two units here; both are given.**
 > - **GUI-native (per 40 ticks)**: the number the game interface and replays show, and the basis of human play experience; the engine really does settle income once per 40 ticks.
-> - **Per game second**: the unit used by command output (`incomePerSecond` from `rwx-game-state`) and by evaluation; the conversion is ×1.5625 (62.5 ticks per game second ÷ 40).
+> - **Per game second**: the unit used by command output (`incomePerSecond` from `rwx-game-state`) and by evaluation; the conversion is ×1.5625 (1 tick = 16 ms, i.e. 62.5 ticks per game second ÷ 40).
 >
 > Example: "1 Command Center + 2 T1 extractors at x2" is `18×2 + 8×2×2 = 68` in the interface, i.e. **68 per 40 ticks ≈ 106.25 per game second**, which matches `incomePerSecond`.
 
