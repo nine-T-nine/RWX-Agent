@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b100d">
+  <meta name="theme-color" content="#0d0913">
   <title>评测结果｜RWX-Agent</title>
   <meta name="description" content="RWX-Agent 已完成的全部对局评分：当前标准 total-v1、三个阶段版本、模型与工具归属，以及 DSH 三种工具接口的对比分析。">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
@@ -49,7 +49,7 @@
 
       <div class="tool-cards" id="tool-cards"></div>
 
-      <p class="callout"><b>一句话结论：</b>工具接口没有改变胜负——三局全败；tool3 领先的 10.7 分几乎全部来自第二阶段的资源与工厂利用率，而第一阶段它其实不如没有 MCP 的 tool1。</p>
+      <p class="callout"><b>一句话结论：</b>工具接口没有改变胜负——三局全败；tool3 领先的 11.6 分几乎全部来自第二阶段的资源与工厂利用率，而第一阶段它其实不如没有 MCP 的 tool1。</p>
 
       <div class="table-wrap">
         <table class="data-table" id="tool-metrics">
@@ -65,18 +65,18 @@
         </article>
         <article class="finding">
           <h3>2. 没有 MCP 的 tool1，第一阶段反而最高（70.5）</h3>
-          <p>它的首个行动指令扣分最多（13.5），但其余项最多只扣 4.7 分——原生工具一次 pwsh 可以批量下发多条命令，动作连续。真正拖累它的是第二阶段 57.8：资金闲置扣 7 分、工厂空闲 4.5 分、被偷袭损失 10.7 分。</p>
+          <p>它的首个行动指令扣分最多（13.5），但其余项最多只扣 4.7 分——原生工具一次 pwsh 可以批量下发多条命令，动作连续。真正拖累它的是第二阶段 55.7：资金闲置扣 7 分、工厂空闲 4.5 分、被偷袭损失 12.84 分。</p>
         </article>
         <article class="finding">
-          <h3>3. tool2 是三局最低（60.1），MCP 并没有自动变快</h3>
-          <p>它的决策周期 20.0 秒为三者最慢，行动指令只有 58 条，偷袭损失扣分 14.07 为三者最高。工具总耗时 286 秒，是 tool1（125 秒）的 2.3 倍：把“观察 + 下令”打包成一次调用后，每一步都要等桥接返回，1x 实时里反而压缩了可用决策次数。</p>        </article>
+          <h3>3. tool2 是三局最低（58.4），MCP 并没有自动变快</h3>
+          <p>它的决策周期 20.0 秒为三者最慢，行动指令只有 58 条，偷袭损失扣分 16.89 为三者最高。工具总耗时 286 秒，是 tool1（125 秒）的 2.3 倍：把“观察 + 下令”打包成一次调用后，每一步都要等桥接返回，1x 实时里反而压缩了可用决策次数。</p>        </article>
         <article class="finding">
-          <h3>4. tool3 的领先来自第二阶段（73.2）</h3>
-          <p>资金闲置 0 分、工厂空闲 0 分、偷袭损失 6.77 分，是它把资金持续转成建筑与部队的直接结果；代价是第一阶段只有 67.2——底层生产指令 7.46 条/分触发满额扣分（6/6），行动被拆成 884 次查询对 176 次行动。</p>
+          <h3>4. tool3 的领先来自第二阶段（71.9）</h3>
+          <p>资金闲置 0 分、工厂空闲 0 分、偷袭损失 8.12 分，是它把资金持续转成建筑与部队的直接结果；代价是第一阶段只有 67.2——底层生产指令 7.46 条/分触发满额扣分（6/6），行动被拆成 884 次查询对 176 次行动。</p>
         </article>
         <article class="finding">
-          <h3>5. 不能把 +10.7 归因给“MCP 更好”</h3>
-          <p>tool3 与 tool2 的差别不只是接口：提示词增加了路径与暂停说明，并补上“游戏秒 / 收入单位”的口径，桥接摘要也加了 <code>/s 游戏秒</code> 后缀；同一工具的两局基线（tool1 62.9、更早一局 61.9）本身就相差 1.0 分。每臂 1 局的样本量下，这个差值无法与提示词变化、局间方差分离。</p>
+          <h3>5. 不能把 +11.6 归因给“MCP 更好”</h3>
+          <p>tool3 与 tool2 的差别不只是接口：提示词增加了路径与暂停说明，并补上“游戏秒 / 收入单位”的口径，桥接摘要也加了 <code>/s 游戏秒</code> 后缀；同一工具的两局基线现在几乎重合（tool1 61.59、更早一局 61.66，相差 0.07），说明评分对同一种打法相当稳定；但每臂只有 1 局，11.6 分的差距仍然无法与提示词变化、单位口径分离。</p>
         </article>
       </div>
     </section>
@@ -94,8 +94,22 @@
       </div>
     </section>
 
+    <section id="deductions" class="section shell">
+      <div class="section-heading"><span class="section-index">03 / DEDUCTION BREAKDOWN</span><span class="section-kicker">两个阶段 · 每一分扣在哪里</span></div>
+      <div class="results-heading">
+        <h2>逐项扣分</h2>
+        <p>两个阶段都是 100 分起扣：第一阶段 12 项、第二阶段按 6 类事件封顶。表内数字是实际扣分与该项上限；达到上限标“封顶”，原始累计超过上限时附“原始”。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="deduction-table">
+          <caption>三局对比组（同模型、同地图）；2026-11-03 起偷袭上限 35、单次上限 18。</caption>
+        </table>
+      </div>
+      <div class="deduction-more" id="deduction-more"></div>
+    </section>
+
     <section id="legacy" class="section shell">
-      <div class="section-heading"><span class="section-index">03 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
+      <div class="section-heading"><span class="section-index">04 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
       <div class="results-heading">
         <h2>归档对局</h2>
         <p>这些对局的材料在 2026-11-02 至 03 的整备中归档为 <code>_old</code>：当时没有保留完整的伤害 / HP 证据，无法按当前口径复算第二阶段的偷袭与损失扣分。分数只能代表当时的材料，模型与工具归属按目录名记录，未逐局核验。</p>
@@ -108,7 +122,7 @@
     </section>
 
     <section id="gaps" class="section shell">
-      <div class="section-heading"><span class="section-index">04 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
+      <div class="section-heading"><span class="section-index">05 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
       <div class="results-heading">
         <h2>没有进入排名的材料</h2>
         <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。</p>
@@ -117,7 +131,7 @@
     </section>
 
     <section id="method" class="section shell">
-      <div class="section-heading"><span class="section-index">05 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
+      <div class="section-heading"><span class="section-index">06 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
       <div class="results-heading">
         <h2>分数是怎么来的</h2>
         <p>数据直接取自评分产物与 DSH 会话存档，页面不做二次换算。</p>

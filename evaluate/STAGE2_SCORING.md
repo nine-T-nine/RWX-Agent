@@ -227,7 +227,7 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 | 类别 | 上限 | T（秒） | SingleMax | I0 | Ifull | gamma |
 |---|---:|---:|---:|---:|---:|---:|
-| AMBUSH | 30 | 30 | 15 | 1 | 12 | 1.5 |
+| AMBUSH | 35 | 30 | 18 | 1 | 12 | 1.5 |
 | GRINDER | 20 | 45 | 15 | 3 | 18 | 1.5 |
 
 GRINDER 从后果开始累计同一次投入的实际伤害，连续 3s 无新增后果即结算，仍受原硬上限约束；一个伤害只归于一个投入候选。AMBUSH 合并区域时对原始伤害记录按 seq 去重。既有空间/攻击失活合并规则保持不变。旧日志无逐次 HP 损失时，不根据死亡个数猜 I，列 `missing_hp_loss_evidence`。

@@ -84,8 +84,7 @@ function renderToolMetrics(data) {
     <tbody>${rows.map(([label, cell]) => `<tr><th scope="row">${esc(label)}</th>${trio.map((m) => `<td>${cell(m)}</td>`).join("")}</tr>`).join("")}</tbody>`;
 }
 
-function renderCurrent(data) {
-  const table = document.querySelector("#current-table");
+function renderCurrent(data) {  const table = document.querySelector("#current-table");
   if (!table) return;
   const rows = data.current
     .slice()
@@ -102,8 +101,53 @@ function renderCurrent(data) {
   table.innerHTML = `<thead><tr><th scope="col">综合分</th><th scope="col">工具</th><th scope="col">模型</th><th scope="col">对局</th><th scope="col">结局</th><th scope="col">第一 / 第二阶段</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
-function renderLegacy(data) {
-  const table = document.querySelector("#legacy-table");
+const FAMILY_LABEL = { AMBUSH: "偷袭", GRINDER: "绞肉机", STALE: "指令过期", BUILDER_IDLE: "建造者闲置", FACTORY_IDLE: "工厂闲置", FUNDS: "资金闲置" };
+
+function deductionCell(points, cap, raw) {
+  const hit = points >= cap - 1e-9 ? ' <span class="cap-hit">封顶</span>' : "";
+  const rawNote = typeof raw === "number" && raw > points + 1e-9 ? `原始 ${fmt(raw, 1)}` : "";
+  return `${fmt(points, 2)}${hit}<span class="cell-sub">/ ${cap}${rawNote ? " · " + rawNote : ""}</span>`;
+}
+
+function renderDeductions(data) {
+  const table = document.querySelector("#deduction-table");
+  const more = document.querySelector("#deduction-more");
+  if (!table) return;
+  const trio = data.current.filter((m) => m.group === "trio");
+  const stage1 = [];
+  const seen1 = new Set();
+  for (const m of trio) for (const item of m.metrics.stage1Items) if (!seen1.has(item.id)) { seen1.add(item.id); stage1.push(item); }
+  const stage2 = [];
+  const seen2 = new Set();
+  for (const m of trio) for (const family of m.breakdown.stage2.families) if (!seen2.has(family.family)) { seen2.add(family.family); stage2.push(family); }
+  const weight = (family) => Math.max(...trio.map((m) => (m.breakdown.stage2.families.find((x) => x.family === family.family) || { capped: 0 }).capped));
+  stage2.sort((a, b) => weight(b) - weight(a) || b.cap - a.cap);
+  const head = `<thead><tr><th scope="col">扣分项</th>${trio.map((m) => `<th scope="col">${esc(m.title.split("·")[0].trim())}</th>`).join("")}</tr></thead>`;
+  const rows1 = stage1.map((item) => `<tr><th scope="row">${esc(item.label)}</th>${trio.map((m) => {
+    const row = m.metrics.stage1Items.find((x) => x.id === item.id) || { points: 0, cap: item.cap };
+    return `<td>${deductionCell(row.points, row.cap)}</td>`;
+  }).join("")}</tr>`).join("");
+  const rows2 = stage2.map((family) => `<tr><th scope="row">${esc(FAMILY_LABEL[family.family] || family.family)}</th>${trio.map((m) => {
+    const row = m.breakdown.stage2.families.find((x) => x.family === family.family) || { capped: 0, cap: family.cap, raw: 0 };
+    return `<td>${deductionCell(row.capped, row.cap, row.raw)}</td>`;
+  }).join("")}</tr>`).join("");
+  table.innerHTML = `${head}<tbody>${rows1}
+    <tr class="sum-row"><th scope="row">第一阶段扣分合计</th>${trio.map((m) => `<td>${fmt(m.breakdown.stage1.deduction, 2)}</td>`).join("")}</tr>
+    ${rows2}
+    <tr class="sum-row"><th scope="row">第二阶段扣分合计</th>${trio.map((m) => `<td>${fmt(m.breakdown.stage2.deduction, 2)}</td>`).join("")}</tr>
+    <tr class="sum-row total-row"><th scope="row">最终得分</th>${trio.map((m) => `<td><b>${fmtTotal(m.scores.total)}</b></td>`).join("")}</tr></tbody>`;
+  if (more) {
+    more.innerHTML = data.current.filter((m) => m.group !== "trio").map((m) => `<details class="deduction-block">
+      <summary><b>${esc(m.title)}</b><span>${esc(m.date)} · ${esc(m.tool)}</span><i>${fmtTotal(m.scores.total)}</i></summary>
+      <div class="deduction-grid">
+        <div><h4>第一阶段 ${fmt(m.breakdown.stage1.score)} 分（扣 ${fmt(m.breakdown.stage1.deduction)}）</h4><ul>${m.metrics.stage1Items.map((i) => `<li><span>${esc(i.label)}</span><b>${fmt(i.points, 2)} / ${i.cap}</b></li>`).join("")}</ul></div>
+        <div><h4>第二阶段 ${fmt(m.breakdown.stage2.score)} 分（扣 ${fmt(m.breakdown.stage2.deduction)}）</h4><ul>${m.breakdown.stage2.families.map((f) => `<li><span>${esc(FAMILY_LABEL[f.family] || f.family)}</span><b>${fmt(f.capped, 2)} / ${f.cap}</b></li>`).join("")}</ul></div>
+      </div>
+    </details>`).join("");
+  }
+}
+
+function renderLegacy(data) {  const table = document.querySelector("#legacy-table");
   if (!table) return;
   table.innerHTML = `<thead><tr><th scope="col">对局日期</th><th scope="col">模型</th><th scope="col">工具</th><th scope="col">第一阶段</th><th scope="col">第二阶段</th><th scope="col">备注</th></tr></thead>
     <tbody>${data.legacy
@@ -157,11 +201,14 @@ fetch(new URL("./resource/results.json", import.meta.url))
     renderToolCards(data);
     renderToolMetrics(data);
     renderCurrent(data);
+    renderDeductions(data);
     renderLegacy(data);
     renderGaps(data);
     renderMethod(data);
     if (standardLine) {
-      standardLine.textContent = `${data.standard.total} = ${data.standard.stage1} × ${data.standard.weights.stage1} + ${data.standard.stage2} × ${data.standard.weights.stage2}；更新于 ${data.generatedAt.slice(0, 10)}。`;
+      const params = data.standard.parameters?.ambush;
+      const ambush = params ? `；第二阶段偷袭上限 ${params.cap}、单次上限 ${params.singleMax}` : "";
+      standardLine.textContent = `${data.standard.total} = ${data.standard.stage1} × ${data.standard.weights.stage1} + ${data.standard.stage2} × ${data.standard.weights.stage2}${ambush}；更新于 ${data.generatedAt.slice(0, 10)}。`;
     }
     document.documentElement.classList.add("results-ready");
   })

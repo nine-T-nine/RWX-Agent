@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-03T10:30:00+08:00",
+  "generatedAt": "2026-11-03T11:35:00+08:00",
   "standard": {
     "total": "total-v1",
     "stage1": "stage1-v2",
@@ -9,13 +9,22 @@
       "stage1": 0.4,
       "stage2": 0.6
     },
-    "summary": "总分 = 第一阶段 × 0.4 + 第二阶段 × 0.6，两项均为 0–100，越高越好；两阶段仍分开呈现，综合分只用于横向比较。"
+    "summary": "总分 = 第一阶段 × 0.4 + 第二阶段 × 0.6，两项均为 0–100，越高越好；两阶段仍分开呈现，综合分只用于横向比较。",
+    "updatedAt": "2026-11-03",
+    "parameters": {
+      "ambush": {
+        "cap": 35,
+        "singleMax": 18,
+        "gamma": 1.5
+      },
+      "note": "2026-11-03 起 AMBUSH 上限 35、单次上限 18；此前发布的 AMBUSH 数字（30/15）作废。"
+    }
   },
   "overview": {
     "currentMatches": 5,
     "best": {
       "id": "tool3",
-      "total": 70.82
+      "total": 70.008
     },
     "legacyMatches": 11,
     "insufficient": 1
@@ -44,9 +53,9 @@
         "atSeconds": 794.9
       },
       "scores": {
-        "total": 62.878,
+        "total": 61.594,
         "stage1": 70.5,
-        "stage2": 57.797
+        "stage2": 55.656
       },
       "metrics": {
         "nativeCommands": 169,
@@ -61,61 +70,73 @@
         "stage1Items": [
           {
             "id": "A1-first-order",
+            "label": "首个行动指令",
             "points": 13.5,
             "cap": 15
           },
           {
             "id": "A1-first-mining",
+            "label": "首个采矿建造",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A1-first-builder",
+            "label": "首个建造者生产",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
             "points": 4.7,
             "cap": 8
           },
           {
             "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
             "points": 0,
             "cap": 18
           },
           {
             "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
             "points": 0,
             "cap": 10
           },
           {
             "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
             "points": 1.3,
             "cap": 15
           },
           {
             "id": "A5-AA",
+            "label": "A→A 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A5-BB",
+            "label": "B→B 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
             "points": 0,
             "cap": 6
           },
           {
             "id": "A5-query-action-ratio",
+            "label": "A / B",
             "points": 0,
             "cap": 10
           }
@@ -135,7 +156,55 @@
       "notes": [
         "提示词已要求使用 mcp__rwx__*，但当时桥接未注册，实际退化为原生 shell 工具，因此作为“无 MCP”基线。",
         "底层命令归属缺失 63/169（37%），会压低第一阶段的生产速率项（本局该项 0/6）。"
-      ]
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 70.5,
+          "deduction": 29.5,
+          "start": 100
+        },
+        "stage2": {
+          "score": 55.656,
+          "deduction": 44.344,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 154.076,
+              "capped": 20,
+              "cap": 20,
+              "items": 27
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 12.844,
+              "capped": 12.844,
+              "cap": 35,
+              "items": 8
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 3
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 4.5,
+              "capped": 4.5,
+              "cap": 15,
+              "items": 30
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 1
+            }
+          ]
+        }
+      }
     },
     {
       "id": "tool2",
@@ -160,9 +229,9 @@
         "atSeconds": 735.6
       },
       "scores": {
-        "total": 60.117,
+        "total": 58.428,
         "stage1": 66.4,
-        "stage2": 55.928
+        "stage2": 53.113
       },
       "metrics": {
         "nativeCommands": 125,
@@ -177,61 +246,73 @@
         "stage1Items": [
           {
             "id": "A1-first-order",
+            "label": "首个行动指令",
             "points": 13.2,
             "cap": 15
           },
           {
             "id": "A1-first-mining",
+            "label": "首个采矿建造",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A1-first-builder",
+            "label": "首个建造者生产",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
             "points": 5.3,
             "cap": 8
           },
           {
             "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
             "points": 0,
             "cap": 18
           },
           {
             "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
             "points": 0.8,
             "cap": 10
           },
           {
             "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
             "points": 1.6,
             "cap": 15
           },
           {
             "id": "A5-AA",
+            "label": "A→A 离群占比",
             "points": 2.3,
             "cap": 8
           },
           {
             "id": "A5-BB",
+            "label": "B→B 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
             "points": 0.4,
             "cap": 6
           },
           {
             "id": "A5-query-action-ratio",
+            "label": "A / B",
             "points": 0,
             "cap": 10
           }
@@ -251,7 +332,55 @@
       "notes": [
         "目录名误写成 tool1，但录像名为 dsh4.1_tool2_vsHard，且 MCP 调用日志一致，已按 tool2 归档。",
         "同为 MCP + 同一模型，综合分反而低于无 MCP 的 tool1，说明接口形态本身不构成分数优势。"
-      ]
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 66.4,
+          "deduction": 33.6,
+          "start": 100
+        },
+        "stage2": {
+          "score": 53.113,
+          "deduction": 46.887,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 90.345,
+              "capped": 20,
+              "cap": 20,
+              "items": 14
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 16.887,
+              "capped": 16.887,
+              "cap": 35,
+              "items": 4
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 4
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3,
+              "capped": 3,
+              "cap": 15,
+              "items": 18
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 1
+            }
+          ]
+        }
+      }
     },
     {
       "id": "tool3",
@@ -276,9 +405,9 @@
         "atSeconds": 1197.6
       },
       "scores": {
-        "total": 70.82,
+        "total": 70.008,
         "stage1": 67.2,
-        "stage2": 73.233
+        "stage2": 71.88
       },
       "metrics": {
         "nativeCommands": 353,
@@ -293,61 +422,73 @@
         "stage1Items": [
           {
             "id": "A1-first-order",
+            "label": "首个行动指令",
             "points": 12.8,
             "cap": 15
           },
           {
             "id": "A1-first-mining",
+            "label": "首个采矿建造",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A1-first-builder",
+            "label": "首个建造者生产",
             "points": 2.9,
             "cap": 5
           },
           {
             "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
             "points": 3.1,
             "cap": 8
           },
           {
             "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
             "points": 0,
             "cap": 18
           },
           {
             "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
             "points": 0,
             "cap": 10
           },
           {
             "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
             "points": 2.1,
             "cap": 8
           },
           {
             "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
             "points": 0.9,
             "cap": 15
           },
           {
             "id": "A5-AA",
+            "label": "A→A 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A5-BB",
+            "label": "B→B 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
             "points": 6,
             "cap": 6
           },
           {
             "id": "A5-query-action-ratio",
+            "label": "A / B",
             "points": 0,
             "cap": 10
           }
@@ -368,7 +509,55 @@
         "三局中综合分最高，但仍是败局；相对 tool2 的差异主要来自提示词与收入单位标注，而非新增的游戏操作能力。",
         "底层命令归属缺失 204/353（58%），是全组最高，说明“更多命令”并不等于“更多可归因的有效操作”。",
         "单局样本；对手、地图、经济倍率固定，没有重复对局，无法据此判定工具版本带来稳定提升。"
-      ]
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 67.2,
+          "deduction": 32.8,
+          "start": 100
+        },
+        "stage2": {
+          "score": 71.88,
+          "deduction": 28.12,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 246.514,
+              "capped": 20,
+              "cap": 20,
+              "items": 76
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 8.12,
+              "capped": 8.12,
+              "cap": 35,
+              "items": 11
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "items": 31
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 12
+            },
+            {
+              "family": "FUNDS",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 2
+            }
+          ]
+        }
+      }
     },
     {
       "id": "native-2358",
@@ -393,9 +582,9 @@
         "atSeconds": 1077.2
       },
       "scores": {
-        "total": 61.904,
+        "total": 61.662,
         "stage1": 56.5,
-        "stage2": 65.507
+        "stage2": 65.104
       },
       "metrics": {
         "nativeCommands": 458,
@@ -410,61 +599,73 @@
         "stage1Items": [
           {
             "id": "A1-first-order",
+            "label": "首个行动指令",
             "points": 15,
             "cap": 15
           },
           {
             "id": "A1-first-mining",
+            "label": "首个采矿建造",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A1-first-builder",
+            "label": "首个建造者生产",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
             "points": 4.5,
             "cap": 8
           },
           {
             "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
             "points": 1.6,
             "cap": 18
           },
           {
             "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
             "points": 2.4,
             "cap": 10
           },
           {
             "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
             "points": 1.6,
             "cap": 8
           },
           {
             "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
             "points": 0.5,
             "cap": 15
           },
           {
             "id": "A5-AA",
+            "label": "A→A 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A5-BB",
+            "label": "B→B 离群占比",
             "points": 1.9,
             "cap": 8
           },
           {
             "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
             "points": 6,
             "cap": 6
           },
           {
             "id": "A5-query-action-ratio",
+            "label": "A / B",
             "points": 0,
             "cap": 10
           }
@@ -483,7 +684,62 @@
       },
       "notes": [
         "与 tool1 同为无 MCP 基线，用于观察同工具、同模型下的局间波动：62.9 与 61.9（相差 1.0）。"
-      ]
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 56.5,
+          "deduction": 43.5,
+          "start": 100
+        },
+        "stage2": {
+          "score": 65.104,
+          "deduction": 34.896,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 169.693,
+              "capped": 20,
+              "cap": 20,
+              "items": 29
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 6
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3.478,
+              "capped": 3.478,
+              "cap": 15,
+              "items": 18
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 2.418,
+              "capped": 2.418,
+              "cap": 35,
+              "items": 4
+            },
+            {
+              "family": "STALE",
+              "raw": 2,
+              "capped": 2,
+              "cap": 15,
+              "items": 1
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 8
+            }
+          ]
+        }
+      }
     },
     {
       "id": "mcp-early",
@@ -508,9 +764,9 @@
         "atSeconds": 1222.3
       },
       "scores": {
-        "total": 67.171,
+        "total": 67.117,
         "stage1": 63.6,
-        "stage2": 69.551
+        "stage2": 69.461
       },
       "metrics": {
         "nativeCommands": 312,
@@ -525,61 +781,73 @@
         "stage1Items": [
           {
             "id": "A1-first-order",
+            "label": "首个行动指令",
             "points": 12.7,
             "cap": 15
           },
           {
             "id": "A1-first-mining",
+            "label": "首个采矿建造",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A1-first-builder",
+            "label": "首个建造者生产",
             "points": 5,
             "cap": 5
           },
           {
             "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
             "points": 4.2,
             "cap": 8
           },
           {
             "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
             "points": 0,
             "cap": 18
           },
           {
             "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
             "points": 0,
             "cap": 10
           },
           {
             "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
             "points": 4.5,
             "cap": 8
           },
           {
             "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
             "points": 1,
             "cap": 15
           },
           {
             "id": "A5-AA",
+            "label": "A→A 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A5-BB",
+            "label": "B→B 离群占比",
             "points": 0,
             "cap": 8
           },
           {
             "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
             "points": 4,
             "cap": 6
           },
           {
             "id": "A5-query-action-ratio",
+            "label": "A / B",
             "points": 0,
             "cap": 10
           }
@@ -599,7 +867,48 @@
       "notes": [
         "桥接首次真正可用的一局（此前 01:13 的会话因未注册 MCP 直接停止），提示词仍是 v1 版本。",
         "与 tool3 同为 MCP 长局，综合分 67.2，说明 MCP 局本身可以在 67 分区间，并非 tool3 独有。"
-      ]
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 63.6,
+          "deduction": 36.4,
+          "start": 100
+        },
+        "stage2": {
+          "score": 69.461,
+          "deduction": 30.539,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 66.641,
+              "capped": 20,
+              "cap": 20,
+              "items": 21
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 4
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3,
+              "capped": 3,
+              "cap": 15,
+              "items": 19
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.539,
+              "capped": 0.539,
+              "cap": 35,
+              "items": 4
+            }
+          ]
+        }
+      }
     }
   ],
   "legacy": [

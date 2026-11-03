@@ -38,13 +38,13 @@ test('HP impact uses each maximum HP and fixed category weights, excluding shiel
 });
 test('ambush dead zone, convex severity, effective response and category cap',()=>{
   assert.equal(deduction(ambush({hpLosses:[loss(300,300)]})).points,0);
-  assert.equal(deduction(ambush()).points,15);
-  assert.equal(deduction(ambush({effectiveResponseMs:20000})).points,7.5);
+  assert.equal(deduction(ambush()).points,18);
+  assert.equal(deduction(ambush({effectiveResponseMs:20000})).points,9);
   assert.equal(deduction(ambush({effectiveResponseMs:1000})).points,0);
   assert.equal(deduction(ambush({scoreable:false})).points,0);
   assert.equal(deduction(ambush({status:'UNCERTAIN'})).points,0);
   const score=scoreEvents([ambush({id:'a'}),ambush({id:'b'}),ambush({id:'c'})]);
-  assert.equal(score.breakdown[0].raw,45);assert.equal(score.deduction,30);assert.equal(score.total,70);
+  assert.equal(score.breakdown[0].raw,54);assert.equal(score.deduction,35);assert.equal(score.total,65);
 });
 test('grinder reverses unit weights and uses its own dead zone and response time',()=>{
   const row=extra=>event('GRINDER',{impactComplete:true,hpLosses:[loss(300,1800)],...extra});
@@ -105,7 +105,7 @@ test('full releases and falling below threshold split funds intervals',()=>{
 test('caps, config and unknown or missing evidence remain auditable',()=>{
   const score=scoreEvents([ambush(),event('UNKNOWN')],{weights:{AMBUSH_SINGLE_MAX:7},caps:{AMBUSH:5}});
   assert.equal(score.breakdown[0].raw,7);assert.equal(score.deduction,5);
-  assert.equal(DEFAULTS.weights.AMBUSH_SINGLE_MAX,15);
+  assert.equal(DEFAULTS.weights.AMBUSH_SINGLE_MAX,18);assert.equal(DEFAULTS.caps.AMBUSH,35);
   assert.equal(score.excluded.UNKNOWN,1);assert.equal(score.excluded.FUNDS_EVIDENCE_MISSING,1);
   assert.throws(()=>scoreEvents([],{ambush:{fullImpact:1}}));
 });

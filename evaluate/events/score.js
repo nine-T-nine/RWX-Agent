@@ -2,8 +2,8 @@
 const {clamp,piecewise}=require('../scoring-curves');
 const VERSION='stage2-v2';
 const DEFAULTS=Object.freeze({baseline:100,
-  weights:Object.freeze({AMBUSH_SINGLE_MAX:15,GRINDER_SINGLE_MAX:15,BUILDER_IDLE_SINGLE_MAX:8,FACTORY_IDLE_SINGLE_MAX:5,FUNDS_SINGLE_MAX:7}),
-  caps:Object.freeze({AMBUSH:30,GRINDER:20,STALE:15,BUILDER_IDLE:20,FACTORY_IDLE:15,FUNDS:20}),
+  weights:Object.freeze({AMBUSH_SINGLE_MAX:18,GRINDER_SINGLE_MAX:15,BUILDER_IDLE_SINGLE_MAX:8,FACTORY_IDLE_SINGLE_MAX:5,FUNDS_SINGLE_MAX:7}),
+  caps:Object.freeze({AMBUSH:35,GRINDER:20,STALE:15,BUILDER_IDLE:20,FACTORY_IDLE:15,FUNDS:20}),
   ambush:Object.freeze({responseSeconds:30,deadZone:1,fullImpact:12,gamma:1.5}),
   grinder:Object.freeze({responseSeconds:45,deadZone:3,fullImpact:18,gamma:1.5}),
   hp:Object.freeze({unitLow:500,unitMedium:1500,buildingLow:2000}),
