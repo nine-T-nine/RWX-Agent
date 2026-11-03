@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-03T11:35:00+08:00",
+  "generatedAt": "2026-11-03T12:05:00+08:00",
   "standard": {
     "total": "total-v1",
     "stage1": "stage1-v2",
@@ -15,16 +15,16 @@
       "ambush": {
         "cap": 35,
         "singleMax": 18,
-        "gamma": 1.5
+        "gamma": 3
       },
-      "note": "2026-11-03 起 AMBUSH 上限 35、单次上限 18；此前发布的 AMBUSH 数字（30/15）作废。"
+      "note": "2026-11-03 起 AMBUSH 上限 35、单次上限 18、γ=3；此前发布的 AMBUSH 数字（30/15/1.5）作废。"
     }
   },
   "overview": {
     "currentMatches": 5,
     "best": {
       "id": "tool3",
-      "total": 70.008
+      "total": 74.264
     },
     "legacyMatches": 11,
     "insufficient": 1
@@ -53,9 +53,9 @@
         "atSeconds": 794.9
       },
       "scores": {
-        "total": 61.594,
+        "total": 67.671,
         "stage1": 70.5,
-        "stage2": 55.656
+        "stage2": 65.785
       },
       "metrics": {
         "nativeCommands": 169,
@@ -164,8 +164,8 @@
           "start": 100
         },
         "stage2": {
-          "score": 55.656,
-          "deduction": 44.344,
+          "score": 65.785,
+          "deduction": 34.215,
           "families": [
             {
               "family": "BUILDER_IDLE",
@@ -173,13 +173,6 @@
               "capped": 20,
               "cap": 20,
               "items": 27
-            },
-            {
-              "family": "AMBUSH",
-              "raw": 12.844,
-              "capped": 12.844,
-              "cap": 35,
-              "items": 8
             },
             {
               "family": "FUNDS",
@@ -194,6 +187,13 @@
               "capped": 4.5,
               "cap": 15,
               "items": 30
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 2.715,
+              "capped": 2.715,
+              "cap": 35,
+              "items": 8
             },
             {
               "family": "GRINDER",
@@ -229,9 +229,9 @@
         "atSeconds": 735.6
       },
       "scores": {
-        "total": 58.428,
+        "total": 61.608,
         "stage1": 66.4,
-        "stage2": 53.113
+        "stage2": 58.414
       },
       "metrics": {
         "nativeCommands": 125,
@@ -340,8 +340,8 @@
           "start": 100
         },
         "stage2": {
-          "score": 53.113,
-          "deduction": 46.887,
+          "score": 58.414,
+          "deduction": 41.586,
           "families": [
             {
               "family": "BUILDER_IDLE",
@@ -352,8 +352,8 @@
             },
             {
               "family": "AMBUSH",
-              "raw": 16.887,
-              "capped": 16.887,
+              "raw": 11.586,
+              "capped": 11.586,
               "cap": 35,
               "items": 4
             },
@@ -405,9 +405,9 @@
         "atSeconds": 1197.6
       },
       "scores": {
-        "total": 70.008,
+        "total": 74.264,
         "stage1": 67.2,
-        "stage2": 71.88
+        "stage2": 78.973
       },
       "metrics": {
         "nativeCommands": 353,
@@ -517,8 +517,8 @@
           "start": 100
         },
         "stage2": {
-          "score": 71.88,
-          "deduction": 28.12,
+          "score": 78.973,
+          "deduction": 21.027,
           "families": [
             {
               "family": "BUILDER_IDLE",
@@ -529,8 +529,8 @@
             },
             {
               "family": "AMBUSH",
-              "raw": 8.12,
-              "capped": 8.12,
+              "raw": 1.027,
+              "capped": 1.027,
               "cap": 35,
               "items": 11
             },
@@ -582,9 +582,9 @@
         "atSeconds": 1077.2
       },
       "scores": {
-        "total": 61.662,
+        "total": 62.984,
         "stage1": 56.5,
-        "stage2": 65.104
+        "stage2": 67.307
       },
       "metrics": {
         "nativeCommands": 458,
@@ -692,8 +692,8 @@
           "start": 100
         },
         "stage2": {
-          "score": 65.104,
-          "deduction": 34.896,
+          "score": 67.307,
+          "deduction": 32.693,
           "families": [
             {
               "family": "BUILDER_IDLE",
@@ -717,18 +717,18 @@
               "items": 18
             },
             {
-              "family": "AMBUSH",
-              "raw": 2.418,
-              "capped": 2.418,
-              "cap": 35,
-              "items": 4
-            },
-            {
               "family": "STALE",
               "raw": 2,
               "capped": 2,
               "cap": 15,
               "items": 1
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.215,
+              "capped": 0.215,
+              "cap": 35,
+              "items": 4
             },
             {
               "family": "GRINDER",
@@ -764,9 +764,9 @@
         "atSeconds": 1222.3
       },
       "scores": {
-        "total": 67.117,
+        "total": 67.432,
         "stage1": 63.6,
-        "stage2": 69.461
+        "stage2": 69.986
       },
       "metrics": {
         "nativeCommands": 312,
@@ -875,8 +875,8 @@
           "start": 100
         },
         "stage2": {
-          "score": 69.461,
-          "deduction": 30.539,
+          "score": 69.986,
+          "deduction": 30.014,
           "families": [
             {
               "family": "BUILDER_IDLE",
@@ -901,8 +901,8 @@
             },
             {
               "family": "AMBUSH",
-              "raw": 0.539,
-              "capped": 0.539,
+              "raw": 0.014,
+              "capped": 0.014,
               "cap": 35,
               "items": 4
             }

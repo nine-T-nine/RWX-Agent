@@ -227,7 +227,7 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 | 类别 | 上限 | T（秒） | SingleMax | I0 | Ifull | gamma |
 |---|---:|---:|---:|---:|---:|---:|
-| AMBUSH | 35 | 30 | 18 | 1 | 12 | 1.5 |
+| AMBUSH | 35 | 30 | 18 | 1 | 12 | 3 |
 | GRINDER | 20 | 45 | 15 | 3 | 18 | 1.5 |
 
 GRINDER 从后果开始累计同一次投入的实际伤害，连续 3s 无新增后果即结算，仍受原硬上限约束；一个伤害只归于一个投入候选。AMBUSH 合并区域时对原始伤害记录按 seq 去重。既有空间/攻击失活合并规则保持不变。旧日志无逐次 HP 损失时，不根据死亡个数猜 I，列 `missing_hp_loss_evidence`。
@@ -265,7 +265,7 @@ GRINDER 从后果开始累计同一次投入的实际伤害，连续 3s 无新�
 {
   "weights": {"AMBUSH_SINGLE_MAX": 15, "GRINDER_SINGLE_MAX": 15, "BUILDER_IDLE_SINGLE_MAX": 8, "FACTORY_IDLE_SINGLE_MAX": 5, "FUNDS_SINGLE_MAX": 7},
   "caps": {"AMBUSH": 30, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 20, "FACTORY_IDLE": 15, "FUNDS": 20},
-  "ambush": {"responseSeconds": 30, "deadZone": 1, "fullImpact": 12, "gamma": 1.5},
+  "ambush": {"responseSeconds": 30, "deadZone": 1, "fullImpact": 12, "gamma": 3},
   "grinder": {"responseSeconds": 45, "deadZone": 3, "fullImpact": 18, "gamma": 1.5},
   "hp": {"unitLow": 500, "unitMedium": 1500, "buildingLow": 2000},
   "funds": {"K": 30, "incomeFieldPerSecond": 1.5625, "spendFloor": 800, "spendShare": 0.25, "rho1": 0.5, "rho2": 0.25}
