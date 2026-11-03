@@ -2,10 +2,11 @@
 
 > Evaluate the economy using **income multiplier, current income, available credits, number/level of resource deposits, factory throughput, current threats, and the next major expense**. Neither income nor balance alone is enough.
 >
-> **Every income figure is per second.** The engine settles once per 40 ticks (0.64 s at 1x); the docs and command
-> output are already converted to per second, and the room multiplier is applied on top of the converted value.
-> So "1 Command Center + 2 T1 extractors at x2" must come out as `28.1×2 + 12.5×2×2 = 106.25/s` — the same number
-> `rwx-game-state` reports. If your arithmetic does not land there, you misread a figure; do not plan past it.
+> **Income is reported in two units here; both are given.**
+> - **GUI-native (per 40 ticks)**: the number the game interface and replays show, and the basis of human play experience; the engine really does settle income once per 40 ticks.
+> - **Per game second**: the unit used by command output (`incomePerSecond` from `rwx-game-state`) and by evaluation; the conversion is ×1.5625 (62.5 ticks per game second ÷ 40).
+>
+> Example: "1 Command Center + 2 T1 extractors at x2" is `18×2 + 8×2×2 = 68` in the interface, i.e. **68 per 40 ticks ≈ 106.25 per game second**, which matches `incomePerSecond`.
 
 ## 1. Income Multiplier
 
@@ -17,12 +18,12 @@
 
 ## 2. Spending Capacity by Income
 
-| Income per second | Rough tier | Suitable production options |
-|---|---|---|
-| ≤50/s | Poor | T1 Tanks, a few Heavy/Plasma Tanks, basic Mechs, Anti-Air Mechs, Artillery Mechs, Interceptors and Gunships, Battleships |
-| 50–100/s | Typical opening | Units costing around 2,000 credits or less are generally viable |
-| 100–200/s | Comfortable | Many mid/high-tier units and stronger sustained attacks |
-| ≥200/s | Wealthy | Massed advanced forces and expensive defenses; possibly nuclear weapons when justified |
+| GUI-native (per 40 ticks) | Per game second | Rough tier | Suitable production options |
+|---|---|---|---|
+| ≤50 | ≤78 | Poor | T1 Tanks, a few Heavy/Plasma Tanks, basic Mechs, Anti-Air Mechs, Artillery Mechs, Interceptors and Gunships, Battleships |
+| 50–100 | 78–156 | Typical opening | Units costing around 2,000 credits or less are generally viable |
+| 100–200 | 156–312 | Comfortable | Many mid/high-tier units and stronger sustained attacks |
+| ≥200 | ≥312 | Wealthy | Massed advanced forces and expensive defenses; possibly nuclear weapons when justified |
 
 These are not strict purchase permissions or bans. Enemy threats, available cash, build time, and the existing army can override them.
 
