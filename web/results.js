@@ -24,7 +24,8 @@ function renderKpis(data) {
   const items = [
     [String(data.overview.currentMatches), "当前标准对局", "total-v1"],
     [fmtTotal(Math.max(...scores)), "最高综合分", best ? best.title.split("·")[0].trim() : ""],
-    [fmtTotal(scores.reduce((a, b) => a + b, 0) / scores.length), "当前标准均分", "5 局"],
+    [fmtTotal(scores.reduce((a, b) => a + b, 0) / scores.length), "当前标准均分",
+      `${data.overview.currentMatches} 局`],
     [String(data.overview.legacyMatches), "历史归档对局", "仅作参考"],
   ];
   host.innerHTML = items

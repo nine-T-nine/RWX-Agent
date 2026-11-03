@@ -72,7 +72,7 @@
 | `mapSize` / `tileSize` | 130 格 / 20 世界单位 |
 | `fogMode` | `1` = 一次性迷雾（开局未探索、视野揭示、不再长回） |
 | `targetIslandTiles[]` / `baseIslandTiles[]` | 岛格集合（`index = y*130 + x`）——**布景真值**，目标判定用它 |
-| `targetIslandArea` / `baseIslandArea` | 格数（目标 550..675，基地 700..800） |
+| `targetIslandArea` / `baseIslandArea` | 格数（目标 1375..1688，基地 700..800） |
 | `targetIslandBounds` | 见 §11 已知问题：当前是**基地岛**的包围盒 |
 | `requirements[{type,required}]` | 目标组成；`required = 每级数量 × level` |
 | `initialCredits` | 2000 / 4000 / 4000 / 20000（type 1..4） |
@@ -323,7 +323,7 @@ T1/T2 的划分在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网
 | 项 | 值 | 来源 |
 |---|---:|---|
 | 地图 | 130 × 130 格，20 单位/格 | `Case3Map` |
-| 目标岛面积 | 550..675 格 | 布景二分半径 |
+| 目标岛面积 | 1375..1688 格 | 布景二分长半轴（椭圆 2:1，长轴沿 y=-x） |
 | 基地岛面积 | 700..800 格 | 同上 |
 | 防空塔射程 | 250 世界单位（12.5 格） | `turret_antiair.ini`，写死在 `anti_air_exposure.TURRET_RANGE` |
 | 装载席位 | `dropship` 4、`experimentalDropship` 12 | `transportCapacity` |

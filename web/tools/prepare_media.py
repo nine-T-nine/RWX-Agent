@@ -18,6 +18,9 @@ RECORDINGS = [
     {'id': 'claude-pause', 'source': 'claudevsveryHard-利用暂停.mp4', 'title': 'Claude 利用暂停对战 Very Hard AI',
      'category': 'AGENT VS BUILT-IN AI', 'tag': '暂停战术',
      'description': 'Claude 对战 Very Hard AI，利用暂停观察战局并安排下一步行动。'},
+    {'id': 'two-agents-one-team', 'source': '两个AI一个阵营-Pi+ClaudeOpus5.5+dsh4.1vsHard.mp4',
+     'title': '两个智能体，同一个阵营', 'category': 'AGENT VS BUILT-IN AI', 'tag': '同阵营协作',
+     'description': 'Pi 与 Claude Opus 5.5 编入同一阵营（dsh4.1 工具链），联合作战对抗 Hard AI。'},
 ]
 
 

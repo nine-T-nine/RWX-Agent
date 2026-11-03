@@ -122,7 +122,7 @@ object Case4ScenePreview {
         g.color = MUTED
         g.font = Font("Segoe UI", Font.PLAIN, 11)
         g.drawString("red long-range · blue short-range · green repair bay · purple tank", pad, pad + 40)
-        g.drawString("dashed circle = field radius · orange box = top-left 3/5 · arrow = 225° long-range bias" +
+        g.drawString("dashed ellipse = 2:1 field on y=-x · orange box = top-left 3/5 · arrow = 225° long-range bias" +
             (if (ranges) " · thin circle = attack range" else ""), pad, pad + 56)
         for ((i, cell) in cells.withIndex()) {
             val col = i % columns
@@ -179,11 +179,22 @@ object Case4ScenePreview {
         val cx = px(num(region, "centreTileX") + 0.5)
         val cy = py(num(region, "centreTileY") + 0.5)
         val radius = num(region, "radiusTiles") * scale
+        val ratio = (region["ellipseRatio"] as? Number)?.toDouble() ?: 0.5
+        val axis = (region["ellipseAxisDegrees"] as? Number)?.toDouble() ?: -45.0
+        // The field is a 2:1 ellipse: the transform puts its long axis on the y=-x diagonal.
+        val field = java.awt.geom.AffineTransform.getRotateInstance(Math.toRadians(axis), cx, cy)
+            .createTransformedShape(java.awt.geom.Ellipse2D.Double(cx - radius, cy - radius * ratio, radius * 2, radius * 2 * ratio))
         g.color = Color(0xd6, 0xe6, 0xd8, 0x55)
-        g.fillOval((cx - radius).toInt(), (cy - radius).toInt(), (radius * 2).toInt(), (radius * 2).toInt())
+        g.fill(field)
         g.color = Color(0x86, 0xa1, 0x8b)
         g.stroke = BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, floatArrayOf(5f, 4f), 0f)
-        g.drawOval((cx - radius).toInt(), (cy - radius).toInt(), (radius * 2).toInt(), (radius * 2).toInt())
+        g.draw(field)
+        // Long-axis guide, so the 2:1 orientation is unambiguous at a glance.
+        val radians = Math.toRadians(axis)
+        g.color = Color(0x56, 0x50, 0xaa, 0x66)
+        g.stroke = BasicStroke(1.5f)
+        g.drawLine((cx - cos(radians) * radius).toInt(), (cy - sin(radians) * radius).toInt(),
+            (cx + cos(radians) * radius).toInt(), (cy + sin(radians) * radius).toInt())
 
         // Attack ranges, only when asked: overlapping coverage is what makes a field unfair.
         if (ranges) {
@@ -285,10 +296,11 @@ object Case4ScenePreview {
     private fun caption(cell: Cell): String {
         val meta = cell.meta
         val region = meta["region"] as Map<*, *>
-        val counts = (meta["turretsByType"] as Map<*, *>).entries.joinToString(",") { "${it.key}×${it.value}" }
+        val turrets = meta["turrets"] as List<*>
+        val longs = turrets.count { (it as Map<*, *>)["role"] == "long" }
         return "${cell.label} · ${num(meta, "mapWidth").toInt()}×${num(meta, "mapHeight").toInt()} · fog " +
-            "${num(meta, "fogMode").toInt()} · ${(meta["turrets"] as List<*>).size} turrets ($counts) · " +
-            "r ${num(region, "radiusTiles").toInt()} · tanks ${(meta["tanks"] as List<*>).size} · " +
+            "${num(meta, "fogMode").toInt()} · ${turrets.size} turrets (${longs} long) · " +
+            "a ${num(region, "radiusTiles").toInt()} · tanks ${(meta["tanks"] as List<*>).size} · " +
             "bays ${(meta["repairBays"] as List<*>).size}"
     }
 

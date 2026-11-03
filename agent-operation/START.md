@@ -35,6 +35,16 @@ bash ./gradlew :desktop:run --args='--headless --no-steam'
 
 启动后，游戏进程会持续占用当前终端。后台运行需使用系统进程管理工具。Headless 模式不创建游戏窗口、图形上下文或额外终端。
 
+**用指定 `.tmx` 直接打开沙盒大厅：**
+
+```powershell
+.\gradlew.bat :desktop:run '--args=--window --no-steam --sandbox-map=evaluate/output/micro/CASE4-Retreat/<某局>/map.tmx'
+```
+
+`--sandbox-map=<path>` 启动后直接进入**沙盒模式的战役大厅**，并已选中该地图（沙盒：可放任意单位、控制所有阵营、无迷雾）。
+路径可为仓库相对路径或绝对路径，必须是 `.tmx`；也可写成 `--sandbox-map <path>`。只有在大厅里点“开始游戏”才真正载入地图；
+地图旁边没有 `_map.png` 时大厅预览为空。该参数只用于 GUI，不能和 `--headless`、`--auto-replay`、`--join-server`、micro case 同时使用。
+
 ### 服务就绪标志
 
 启动成功后，会自动提供以下本地服务：

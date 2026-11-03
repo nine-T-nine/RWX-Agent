@@ -184,6 +184,8 @@ fun installApp(
     lateinit var p2pPreparation: P2PJoinPreparationController
 
     var lastExternalGameFrame: GameFrame? = null
+    /** `--sandbox-map=` is deferred until the main menu is on screen: a battle room needs a started session. */
+    val startupSandboxMapPath = options.sandboxMapPath
     val startupTargetScreen = if (options.initialScreen == AppScreen.Loading) {
         AppScreen.MainMenu
     } else {
@@ -455,6 +457,8 @@ fun installApp(
         refreshMainMenu = ::refreshMainMenu,
         autoStartSinglePlayerFromUi = options.autoStartSinglePlayerFromUi,
         autoStartBattleRoom = options.autoStartBattleRoom,
+        startupSandboxMapPath = startupSandboxMapPath,
+        navigateTo = { screen -> navigator.navigateTo(screen) },
     )
     navigator = ScreenNavigator(
         initialScreen = AppScreen.Loading,

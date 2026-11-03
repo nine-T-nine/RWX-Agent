@@ -78,7 +78,7 @@
 | 字段 | 含义 |
 |---|---|
 | `type` / `level` | 由 task 解出（1..3 / 1..3） |
-| `mapWidth` / `mapHeight` / `tileSize` | 75..79 格边长 / 20 世界单位 |
+| `mapWidth` / `mapHeight` / `tileSize` | 65..69 格边长 / 20 世界单位 |
 | `region` | 炮塔区描述：`centreTileX/centreTileY/centreDistanceFromCorner/radiusTiles/radiusMinTiles/radiusMaxTiles`、左上 3/5 矩形 `boxMinX/boxMinY/boxMaxX/boxMaxY/boxWidthTiles/boxHeightTiles/boxMapFraction`、`longRangeBiasDegrees/longRangeRandomShare/spacingLong/spacingShort/spacingCross` |
 | `baseCornerTile` | 我方角（右下）的折角点 |
 | `achievedCentreDistanceTiles` | 实际最小/最大"塔到种子中心"距离 `{min,max}`（格），都不超过 `region.radiusTiles` |
@@ -332,12 +332,12 @@ T1/T2 在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网关时序
 
 | 项 | 值 | 来源 |
 |---|---:|---|
-| 地图边长 | `[75,80)` 格，20 单位/格 | `Case4Map` |
+| 地图边长 | `[65,70)` 格，20 单位/格 | `Case4Map` |
 | 炮塔区 | 左上角与地图左上角重合、边长 3/5 的矩形 | `region.box*`，实际不可越界 |
-| 炮塔半径 | 8..18 格（由中心到 3/5 矩形边缘的余量决定） | `region.radiusTiles/radiusMinTiles/radiusMaxTiles` |
+| 场地椭圆 | 长半轴 8..18 格（由中心到 3/5 矩形边缘的余量决定），短半轴 = 一半，长轴在 `y=-x` | `region.radiusTiles` / `ellipseRatio` / `ellipseAxisDegrees` |
 | 炮塔间距 | 远程整组先尝试 10 格；整组候选全部失败才按 10% 放宽到 40%；近程之间 3 格、跨类 3 格 | `Case4Retreat`，实际值记 `achievedTurretSpacingTiles` |
 | 远程偏置 | 候选方向 80% 按 225° ± 35° 抽样、20% 均匀抽样；完整组按偏置方向重心投影择优 | `region.longRangeBiasDegrees` / `longRangeRandomShare` |
-| 布局版本 | 2；每个间距档最多比较 32 组完整远程布局 | `layoutVersion` / `region.longRangePlacement` / `longRangeLayoutTrials` |
+| 布局版本 | 3（2:1 椭圆场地、地图 `[65,70)`）；每个间距档最多比较 32 组完整远程布局 | `layoutVersion` / `region.longRangePlacement` / `longRangeLayoutTrials` |
 | 抖动 | ±0.35 格 | `meta.turrets[].jitterX/Y` |
 | 正式维修会话 | **> 5000 game-ms 且实际回血** | 引擎写入侧过滤 |
 | 坦克状态采样 | 250 game-ms，仅 running 阶段 | `Case4Session.sampleTanks` |

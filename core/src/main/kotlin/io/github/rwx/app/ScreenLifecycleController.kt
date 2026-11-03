@@ -23,16 +23,29 @@ internal class ScreenLifecycleController(
     private val refreshMainMenu: () -> Unit,
     autoStartSinglePlayerFromUi: Boolean,
     autoStartBattleRoom: Boolean,
+    startupSandboxMapPath: String? = null,
+    private val navigateTo: (AppScreen) -> Unit = {},
 ) {
     private var pendingAutoStartSinglePlayerFromUi = autoStartSinglePlayerFromUi
     private var pendingAutoSelectSinglePlayerMap = false
     private var pendingAutoStartBattleRoom = autoStartBattleRoom
+
+    /** `--sandbox-map=<path>`, consumed on the first main menu: the room needs a started session. */
+    private var pendingStartupSandboxMap = startupSandboxMapPath
 
     fun onScreenChanged(screen: AppScreen) {
         if (screen != AppScreen.ResourceBrowser) resourceBrowserController.leaveScreen()
         screenPresenter.apply(screen, externalFrame())
         if (screen == AppScreen.MainMenu) {
             refreshMainMenu()
+            val sandboxMap = pendingStartupSandboxMap
+            if (sandboxMap != null) {
+                pendingStartupSandboxMap = null
+                if (battleRoomController.prepareSandboxGame(sandboxMap)) {
+                    navigateTo(AppScreen.BattleRoom)
+                    return
+                }
+            }
             if (pendingAutoStartSinglePlayerFromUi) {
                 pendingAutoStartSinglePlayerFromUi = false
                 pendingAutoSelectSinglePlayerMap = true

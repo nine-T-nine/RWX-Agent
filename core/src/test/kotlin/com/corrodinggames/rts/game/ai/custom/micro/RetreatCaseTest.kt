@@ -60,8 +60,8 @@ class RetreatCaseTest {
         try {
             val path = Case4Retreat().prepareMap(config, dir)
             val tiles = ground(path)
-            // seed 3 -> width 75+3, height 75+0; both sides stay inside [75,80).
-            assertEquals(78 * 75, tiles.size)
+            // seed 3 -> width 65+3, height 65+0; both sides stay inside [65,70).
+            assertEquals(68 * 65, tiles.size)
             assertTrue(tiles.all { it == 20 }, "every tile is plain grass")
         } finally {
             java.nio.file.Files.list(dir).use { files -> files.forEach { java.nio.file.Files.deleteIfExists(it) } }
@@ -77,8 +77,8 @@ class RetreatCaseTest {
                 val xml = java.nio.file.Files.readString(path)
                 val width = Regex("width=\"(\\d+)\"").find(xml)!!.groupValues[1].toInt()
                 val height = Regex("height=\"(\\d+)\"").find(xml)!!.groupValues[1].toInt()
-                assertTrue(width in 75..79, "seed $seed width $width")
-                assertTrue(height in 75..79, "seed $seed height $height")
+                assertTrue(width in 65..69, "seed $seed width $width")
+                assertTrue(height in 65..69, "seed $seed height $height")
                 assertEquals(width * height, ground(path).size)
             } finally {
                 java.nio.file.Files.list(dir).use { files -> files.forEach { java.nio.file.Files.deleteIfExists(it) } }
@@ -105,9 +105,15 @@ class RetreatCaseTest {
                 val tileX = turret["tileX"] as Int; val tileY = turret["tileY"] as Int
                 assertTrue(tileX > 0 && tileY > 0 && tileX < width && tileY < height, "$task inside the map")
                 assertTrue(tileX <= boxMaxX && tileY <= boxMaxY, "$task turret outside the top-left 3/5 box")
-                // Every turret is drawn inside the seed centre's radius, so the field is contained.
-                val distance = Math.hypot(tileX - centreX, tileY - centreY)
-                assertTrue(distance <= radius, "$task turret at $distance outside the field of $radius")
+                // Every turret is drawn inside the seed centre's 2:1 ellipse (long axis on y=-x),
+                // so checking the ellipse equation is stricter than a plain radius check.
+                val dx = tileX - centreX
+                val dy = tileY - centreY
+                val u = (dx - dy) / Math.sqrt(2.0)
+                val v = (dx + dy) / Math.sqrt(2.0)
+                val short = radius * 0.5
+                assertTrue(u * u / (radius * radius) + v * v / (short * short) <= 1.0 + 1e-9,
+                    "$task turret ($tileX,$tileY) outside the field ellipse of $radius")
             }
             val achievedCentre = meta["achievedCentreDistanceTiles"] as Map<*, *>
             assertTrue((achievedCentre["max"] as Number).toDouble() <= radius, "$task centre distance")

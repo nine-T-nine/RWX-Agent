@@ -6,6 +6,8 @@
 不要套用本页的完整对局提示词。被测 Agent 只测一个 CASE 时看该 CASE 的 `START.md` 与命令手册；
 要一次测完四个 CASE 时看 [`micro/EVALUATION.md`](micro/EVALUATION.md)。
 
+维护者自用的启动开关（沙盒大厅直达、指定界面、自动开局等）见 [`extra.md`](extra.md)，不面向被测 Agent。
+
 > 第一轮、第二轮评估所需材料、采集与分析逻辑、判定规则和评分公式分别集中在 [`STAGE1_SCORING.md`](STAGE1_SCORING.md) 与 [`STAGE2_SCORING.md`](STAGE2_SCORING.md)。本 README 不重复这些底层细节。
 
 ## 选择完整对局场景
@@ -125,7 +127,7 @@ rwx-battleroom-start --record 从 tick 0 开局，然后执行 rwx-game-replay-s
 
 ```text
 evaluate/output/
-  _archive/                        旧材料（*_old）与没跑完的零散局，原样保留、不参与评分
+  _archive/                        旧材料（`*_old`），原样保留、不参与评分
   <对局名>/
     meta.json                     对局身份：系统版本、模型、工具、思考强度、地图、时长、胜负、会话、token
     commands-<对局名>.txt          原始命令日志（CLI 录制）

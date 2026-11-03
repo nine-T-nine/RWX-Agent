@@ -21,7 +21,7 @@
     }
   },
   "overview": {
-    "currentMatches": 5,
+    "currentMatches": 4,
     "best": {
       "id": "tool3",
       "total": 74.264
@@ -740,175 +740,6 @@
           ]
         }
       }
-    },
-    {
-      "id": "mcp-early",
-      "title": "MCP 首次可用",
-      "tool": "mcp__rwx__*（早期桥接）",
-      "toolDetail": "92 次 rwx_step / 2 次 rwx_query / 1 次 rwx_status，8 次 pwsh",
-      "mcp": true,
-      "group": "extra",
-      "date": "2026-11-03 01:34",
-      "map": "Ice Island (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
-      },
-      "session": "session-7c90b228-121c-43c1-8cd4-a063fa3373de",
-      "result": {
-        "outcome": "defeat",
-        "label": "被击败",
-        "detail": "约 20:28 被击败",
-        "atSeconds": 1222.3
-      },
-      "scores": {
-        "total": 67.432,
-        "stage1": 63.6,
-        "stage2": 69.986
-      },
-      "metrics": {
-        "nativeCommands": 312,
-        "queries": 468,
-        "actions": 125,
-        "otherCommands": 7,
-        "decisionCycleSeconds": 15.574,
-        "productionPerMinute": 7.7557,
-        "firstOrderSeconds": 29.088,
-        "attributionMissing": 159,
-        "durationSeconds": 1222.32,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 12.7,
-            "cap": 15
-          },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 4.2,
-            "cap": 8
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 0,
-            "cap": 10
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 4.5,
-            "cap": 8
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 1,
-            "cap": 15
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 0,
-            "cap": 8
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 4,
-            "cap": 6
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10
-          }
-        ]
-      },
-      "runtime": {
-        "steps": 107,
-        "toolSeconds": 236,
-        "llmSeconds": 1207,
-        "outputTokens": 54955
-      },
-      "evidence": {
-        "damageRows": 5269,
-        "hpLossRows": 5269,
-        "complete": true
-      },
-      "notes": [
-        "桥接首次真正可用的一局（此前 01:13 的会话因未注册 MCP 直接停止），提示词仍是 v1 版本。",
-        "与 tool3 同为 MCP 长局，综合分 67.2，说明 MCP 局本身可以在 67 分区间，并非 tool3 独有。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 63.6,
-          "deduction": 36.4,
-          "start": 100
-        },
-        "stage2": {
-          "score": 69.986,
-          "deduction": 30.014,
-          "families": [
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 66.641,
-              "capped": 20,
-              "cap": 20,
-              "items": 21
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 4
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 3,
-              "capped": 3,
-              "cap": 15,
-              "items": 19
-            },
-            {
-              "family": "AMBUSH",
-              "raw": 0.014,
-              "capped": 0.014,
-              "cap": 35,
-              "items": 4
-            }
-          ]
-        }
-      }
     }
   ],
   "legacy": [
@@ -1055,6 +886,13 @@
       "date": "2026-11-01",
       "detail": "仅保留原始回放，没有评分产物。",
       "impact": "不计分。"
+    },
+    {
+      "id": "mcp-early",
+      "title": "MCP 首次可用（01:34 局，材料已删除）",
+      "date": "2026-11-03 01:34",
+      "detail": "该局只有实时遥测与回放解析产物：没有原始命令日志，回放是未完成录制（缺 end/meta 块）。按用户要求连同 evaluate/output 下的材料一并删除。",
+      "impact": "不计分；原综合分 67.432 作废，标准对局从 5 局减为 4 局。"
     }
   ],
   "method": {

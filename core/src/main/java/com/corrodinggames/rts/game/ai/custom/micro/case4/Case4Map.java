@@ -12,20 +12,20 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Rectangular continuous grassland, written as a stock TMX with the Long Grass tileset.
  *
- * <p>Both sides are drawn from {@code [75,80)} so a run gets a slightly non-square battlefield; the
+ * <p>Both sides are drawn from {@code [65,70)} so a run gets a slightly non-square battlefield; the
  * exact size is fixed by the seed. The draft defines no terrain detail and asks for one continuous
  * walkable land mass, so the map carries no water, lava, cliffs or resource pools: every tile is
  * plain ground and the only obstacles are the buildings themselves.</p>
  */
 final class Case4Map {
-    static final int MIN_SIZE=75,MAX_SIZE=80;
+    static final int MIN_SIZE=65,MAX_SIZE=70;
     static final int TILE=20;
     private static final int GRASS_GID=20;
     private Case4Map(){}
 
-    /** Width in tiles, always inside {@code [75,80)}. */
+    /** Width in tiles, always inside {@code [65,70)}. */
     static int width(long seed){return MIN_SIZE+(int)Math.floorMod(seed,MAX_SIZE-MIN_SIZE);}
-    /** Height in tiles, always inside {@code [75,80)}. */
+    /** Height in tiles, always inside {@code [65,70)}. */
     static int height(long seed){return MIN_SIZE+(int)Math.floorMod(seed/(MAX_SIZE-MIN_SIZE),MAX_SIZE-MIN_SIZE);}
 
     static float world(int tile){return tile*TILE+TILE/2f;}

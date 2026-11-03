@@ -24,6 +24,12 @@ public final class Case3Transport implements MicroCase {
     public static final int SELF_TEAM=0,ENEMY_TEAM=1;
     /** One-time fog: start unexplored, reveal by vision, never regrow (engine fogMode 1). */
     public static final int FOG_MODE=1;
+    /** AA guns only sit on the stretch of coast within this half angle of the bearing to the base. */
+    static final double AA_ARC_HALF_DEGREES=80;
+    /** Coastal band for AA guns, as BFS depth from the coastline in tiles. */
+    static final int AA_COAST_MIN_DEPTH=3,AA_COAST_MAX_DEPTH=6;
+    /** Preferred minimum centre distance between two AA guns, in tiles. */
+    static final double AA_MIN_SPACING=10;
     /** Target composition entry: internal unit id and how many per level multiplier. */
     public record Need(String type,int perLevel){ }
     /** Everything a task fixes before the seed-dependent layout. */
@@ -153,14 +159,20 @@ public final class Case3Transport implements MicroCase {
             transports.add(unit);units.add(unit);id++;
         }
         if(transports.size()<spec.transports())throw new IllegalStateException("base island has no free edge tiles for transports");
-        // Target island: four T1 anti-air turrets on a ring offset inwards from the coastline.
+        // Target island: four T1 anti-air turrets on the stretch of coast that faces the base
+        // island, spread as far apart as that coast allows. The transports arrive from that side,
+        // so the guns cannot be dodged by flying around the far side, while the gaps between them
+        // stay as wide as the coastline permits.
         List<Map<String,Object>> turrets=new ArrayList<>();
         if(t.type()<=3){
             double centreX=0,centreY=0;
             for(int key:targetIsland){centreX+=Case3Map.x(key);centreY+=Case3Map.y(key);}
             centreX/=targetIsland.size();centreY/=targetIsland.size();
+            double baseX=0,baseY=0;
+            for(int key:baseIsland){baseX+=Case3Map.x(key);baseY+=Case3Map.y(key);}
+            baseX/=baseIsland.size();baseY/=baseIsland.size();
             Random random=new Random(c.seed^0xBB67AE8584CAA73BL);
-            List<int[]> ring=coastRing(targetIsland,4,random);
+            List<int[]> ring=coastRing(targetIsland,baseX,baseY,4);
             for(int i=0;i<ring.size();i++){
                 int[] spot=ring.get(i);
                 // Sub-tile jitter breaks the regular grid without leaving the tile, so the turret
@@ -185,45 +197,90 @@ public final class Case3Transport implements MicroCase {
     }
 
     /**
-     * Turret slots on a ring offset inwards from the coastline: the band holds every island tile
-     * whose BFS distance to the coast is 3..6 tiles, each angular sector gets exactly one slot drawn
-     * at random inside it, and a slot must keep the minimum centre spacing from the ones already
-     * taken. The ring therefore follows the noise-perturbed coast instead of the old bounding box.
+     * AA slots on the coast that faces the base island: every island tile whose BFS distance to the
+     * coast is {@link #AA_COAST_MIN_DEPTH}..{@link #AA_COAST_MAX_DEPTH} and whose bearing from the
+     * island centre is within {@link #AA_ARC_HALF_DEGREES} of the bearing to the base centre.
+     *
+     * <p>Slots start at equal angles across that arc, then a local pass moves every gun to the
+     * candidate with the largest distance to its neighbours, so the four guns end up as far apart as
+     * the coastline allows instead of clustering where the noise happens to push the band inward.</p>
      */
-    static List<int[]> coastRing(Set<Integer> island,int count,Random random){
+    static List<int[]> coastRing(Set<Integer> island,double towardX,double towardY,int count){
         Map<Integer,Integer> depth=Case3Map.coastDepth(island);
         double centreX=0,centreY=0;
         for(int key:island){centreX+=Case3Map.x(key);centreY+=Case3Map.y(key);}
         centreX/=island.size();centreY/=island.size();
-        List<int[]> band=new ArrayList<>();
+        double bearing=Math.toDegrees(Math.atan2(towardY-centreY,towardX-centreX));
+        List<double[]> candidates=new ArrayList<>();
         for(int key:island){
             int d=depth.getOrDefault(key,0);
-            if(d>=3&&d<=6)band.add(new int[]{Case3Map.x(key),Case3Map.y(key),d});
+            if(d<AA_COAST_MIN_DEPTH||d>AA_COAST_MAX_DEPTH)continue;
+            double x=Case3Map.x(key),y=Case3Map.y(key);
+            double angle=Math.toDegrees(Math.atan2(y-centreY,x-centreX));
+            if(Math.abs(angleGap(angle,bearing))>AA_ARC_HALF_DEGREES)continue;
+            candidates.add(new double[]{x,y,angle,d});
         }
-        if(band.isEmpty())throw new IllegalStateException("target island has no coastal band");
-        double sector=360.0/count;
+        if(candidates.size()<count)
+            throw new IllegalStateException("target island has no coast facing the base island");
         List<int[]> picked=new ArrayList<>();
+        double step=2*AA_ARC_HALF_DEGREES/count;
         for(int slot=0;slot<count;slot++){
-            double from=slot*sector,to=from+sector;
-            List<int[]> candidates=new ArrayList<>();
-            for(int[] tile:band){
-                double angle=Math.toDegrees(Math.atan2(tile[1]-centreY,tile[0]-centreX));
-                if(angle<0)angle+=360;
-                if(angle>=from&&angle<to)candidates.add(tile);
+            double want=bearing-AA_ARC_HALF_DEGREES+step*(slot+0.5);
+            double[] best=null;
+            double bestCost=Double.MAX_VALUE;
+            for(double[] candidate:candidates){
+                if(isPicked(picked,candidate))continue;
+                // An off-centre slot is cheaper than two guns that overlap: the spacing term only
+                // bites while the pair is closer than AA_MIN_SPACING.
+                double cost=Math.abs(angleGap(candidate[2],want))
+                        +Math.max(0,AA_MIN_SPACING-minGap(picked,candidate,-1))*4;
+                if(cost<bestCost){bestCost=cost;best=candidate;}
             }
-            Collections.shuffle(candidates,random);
-            int[] chosen=null;
-            for(double need=8;need>=3&&chosen==null;need-=1){
-                for(int[] tile:candidates){
-                    boolean free=true;
-                    for(int[] other:picked)if(Math.hypot(other[0]-tile[0],other[1]-tile[1])<need){free=false;break;}
-                    if(free){chosen=tile;break;}
-                }
-            }
-            if(chosen==null)throw new IllegalStateException("no room for a turret in sector "+slot);
-            picked.add(chosen);
+            if(best==null)throw new IllegalStateException("no room for an AA gun in slot "+slot);
+            picked.add(toSpot(best));
         }
+        spread(picked,candidates);
         return picked;
+    }
+
+    /** Local max-min pass: each gun moves to the candidate farthest from the other three. */
+    private static void spread(List<int[]> picked,List<double[]> candidates){
+        for(int pass=0;pass<3;pass++){
+            boolean moved=false;
+            for(int i=0;i<picked.size();i++){
+                double bestGap=minGap(picked,picked.get(i),i);
+                int[] best=picked.get(i);
+                for(double[] candidate:candidates){
+                    double gap=minGap(picked,candidate,i);
+                    if(gap>bestGap+1e-9){bestGap=gap;best=toSpot(candidate);}
+                }
+                if(best!=picked.get(i)){picked.set(i,best);moved=true;}
+            }
+            if(!moved)break;
+        }
+    }
+
+    private static double angleGap(double a,double b){
+        double diff=(a-b)%360.0;
+        if(diff>180)diff-=360;else if(diff<-180)diff+=360;
+        return diff;
+    }
+    private static int[] toSpot(double[] candidate){return new int[]{(int)candidate[0],(int)candidate[1],(int)candidate[3]};}
+    private static boolean isPicked(List<int[]> picked,double[] candidate){
+        for(int[] spot:picked)if(spot[0]==(int)candidate[0]&&spot[1]==(int)candidate[1])return true;
+        return false;
+    }
+    /** Smallest centre distance from a candidate to the picked guns, ignoring index {@code skip}. */
+    private static double minGap(List<int[]> picked,double[] candidate,int skip){
+        double best=Double.MAX_VALUE;
+        for(int i=0;i<picked.size();i++){
+            if(i==skip)continue;
+            best=Math.min(best,Math.hypot(picked.get(i)[0]-candidate[0],picked.get(i)[1]-candidate[1]));
+        }
+        return best==Double.MAX_VALUE?Double.MAX_VALUE/4:best;
+    }
+    private static double minGap(List<int[]> picked,int[] candidate,int skip){
+        return minGap(picked,new double[]{candidate[0],candidate[1],0,0},skip);
     }
 
     /** A building body is drawn upright only at rotationSpeed -90; mobile units face +x at 0. */

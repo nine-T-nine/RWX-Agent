@@ -15,6 +15,7 @@ import io.github.rwx.ui.model.BattleRoomChatLine
 import io.github.rwx.ui.model.LevelSelectMode
 import io.github.rwx.ui.model.LevelSelectViewModelFactory
 import io.github.rwx.ui.model.MapEntry
+import java.io.File
 
 internal class BattleRoomController(
     private val gameSession: GameSession,
@@ -131,6 +132,49 @@ internal class BattleRoomController(
             returnScreen = AppScreen.MainMenu,
         )
         return true
+    }
+
+    /**
+     * Sandbox room on one explicit map file (`--sandbox-map=<path>`). The room needs a concrete map before it
+     * opens, so the entry is built straight from the file instead of a map list.
+     *
+     * <p>The engine only treats `X:\…` (drive + backslash), `/…` or `\…` as an absolute path, otherwise it reads
+     * `assets/<path>`; the room title comes from `MapMetadata.getMapNameFromPath`, which splits on `/`. Keeping the
+     * drive separator native and the rest forward slashes satisfies both.
+     */
+    fun prepareSandboxGame(mapPath: String): Boolean {
+        val requested = runCatching { engineMapPath(File(mapPath.trim()).absoluteFile.normalize()) }.getOrNull()
+            ?: return false
+        if (!File(requested).isFile) {
+            showUnavailableDialog("Sandbox map not found: $requested")
+            return false
+        }
+        val map = runCatching {
+            levelSelectViewModelFactory.create(LevelSelectMode.CustomMaps).mapEntry(requested)
+        }.onFailure { error ->
+            logger.warn(error) { "Unable to open sandbox map: $requested" }
+        }.getOrNull()
+        if (map == null) {
+            showUnavailableDialog("Unable to open sandbox map: $requested")
+            return false
+        }
+        selectedMode = LevelSelectMode.Skirmish
+        prepareForMap(
+            map = map,
+            sandbox = true,
+            returnScreen = AppScreen.MainMenu,
+        )
+        logger.info { "Sandbox room prepared for map: $requested" }
+        return true
+    }
+
+    private fun engineMapPath(file: File): String {
+        val path = file.absolutePath.replace('\\', '/')
+        return if (path.length > 2 && path[1] == ':' && path[2] == '/') {
+            path.substring(0, 2) + "\\" + path.substring(3)
+        } else {
+            path
+        }
     }
 
     fun closeRoom(): AppScreen {

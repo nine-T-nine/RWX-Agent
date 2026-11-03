@@ -12,20 +12,27 @@ import java.util.zip.GZIPOutputStream;
 /**
  * 130x130 magma map with two irregular grass islands (target top-left, base bottom-right).
  *
- * <p>Both islands are discs whose radius is perturbed by one-dimensional Perlin-style value noise
- * sampled along the angle, so the coastline is wavy but the shape stays star-shaped: no necks, no
- * isolated tiles and no holes. The noise is fixed per seed and the disc radius is binary-searched
- * until the tile count lands inside the area budget the draft asks for (550..675 for the target,
- * 700..800 for the base). Ground tiles come from the stock Lava/Long Grass tilesets, exactly like
- * the skirmish maps.</p>
+ * <p>Both islands are ellipses whose outline is perturbed by one-dimensional Perlin-style value
+ * noise sampled along the angle, so the coastline is wavy but the shape stays star-shaped: no necks,
+ * no isolated tiles and no holes. The long axis lies on the {@code y=-x} diagonal (perpendicular to
+ * the line joining the two island centres) and the short axis on {@code y=x}, with a 2:1 axis ratio.
+ * The noise is
+ * fixed per seed and the long semi-axis is binary-searched until the tile count lands inside the
+ * area budget (1375..1688 for the target, 700..800 for the base). Ground tiles come from the stock
+ * Lava/Long Grass tilesets, exactly like the skirmish maps.</p>
  */
 final class Case3Map {
     static final int SIZE=130;
     static final int TILE=20;
-    static final int TARGET_MIN_AREA=550,TARGET_MAX_AREA=675;
+    static final int TARGET_MIN_AREA=1375,TARGET_MAX_AREA=1688;
     static final int BASE_MIN_AREA=700,BASE_MAX_AREA=800;
-    static final int TARGET_CX=22,TARGET_CY=22;
+    static final int TARGET_CX=30,TARGET_CY=30;
     static final int BASE_CX=106,BASE_CY=106;
+    /** Short semi-axis as a fraction of the long one: a 2:1 ellipse whose long axis is y=-x. */
+    static final double ELLIPSE_RATIO=0.5;
+    /** Bounding half-extent along x or y per unit long semi-axis, for a 45-degree rotated ellipse. */
+    static final double ELLIPSE_EXTENT=Math.sqrt((1+ELLIPSE_RATIO*ELLIPSE_RATIO)/2);
+    private static final double INV_SQRT2=1/Math.sqrt(2);
     /** Coastline wobble as a fraction of the disc radius. */
     private static final double EDGE_AMPLITUDE=0.22;
     private static final int NOISE_POINTS=24;
@@ -38,14 +45,19 @@ final class Case3Map {
     static Set<Integer> targetIsland(long seed){return island(seed^0x51ED270BL,TARGET_MIN_AREA,TARGET_MAX_AREA,TARGET_CX,TARGET_CY);}
     static Set<Integer> baseIsland(long seed){return island(seed^0x2C9277B5L,BASE_MIN_AREA,BASE_MAX_AREA,BASE_CX,BASE_CY);}
 
-    /** Disc of the requested area with a Perlin-perturbed coastline. */
+    /**
+     * Ellipse of the requested area with a Perlin-perturbed coastline. The long axis lies on the
+     * {@code y=-x} diagonal (perpendicular to the line between the two island centres) and the short
+     * axis on {@code y=x}; the short semi-axis is {@link #ELLIPSE_RATIO} of the long one.
+     */
     static Set<Integer> island(long seed,int minArea,int maxArea,int cx,int cy){
         Random random=new Random(seed);
         double[] control=new double[NOISE_POINTS];
         for(int i=0;i<control.length;i++)control[i]=random.nextDouble()*2-1;
         double target=(minArea+maxArea)/2.0;
-        // The tile count grows monotonically with the disc radius, so a plain bisection is enough.
-        double low=3,high=Math.min(cx,cy)-MARGIN-2;
+        // The tile count grows monotonically with the semi-major axis, so a plain bisection is
+        // enough. The cap is the largest axis whose rotated bounding box still fits the margin.
+        double low=3,high=(Math.min(cx,cy)-MARGIN-1)/ELLIPSE_EXTENT;
         Set<Integer> tiles=rasterize(control,cx,cy,high);
         if(tiles.size()<minArea)throw new IllegalStateException("island radius is capped by the map margin");
         for(int step=0;step<40;step++){
@@ -58,19 +70,28 @@ final class Case3Map {
         return Collections.unmodifiableSet(tiles);
     }
 
-    private static Set<Integer> rasterize(double[] control,int cx,int cy,double radius){
+    /**
+     * Samples one ellipse into tiles. {@code axis} is the long semi-axis: the boundary is
+     * {@code (u/axis')² + (v/(axis'*ratio))² = 1} in the rotated frame, with {@code u} along
+     * {@code u} along {@code y=-x}, {@code v} along {@code y=x} and the same Perlin wobble applied to both axes so
+     * the shape stays star-shaped about the centre.
+     */
+    private static Set<Integer> rasterize(double[] control,int cx,int cy,double axis){
         Set<Integer> tiles=new LinkedHashSet<>();
-        int reach=(int)Math.ceil(radius*(1+EDGE_AMPLITUDE))+1;
+        int reach=(int)Math.ceil(axis*ELLIPSE_EXTENT*(1+EDGE_AMPLITUDE))+1;
         for(int y=cy-reach;y<=cy+reach;y++){
             if(y<MARGIN||y>=SIZE-MARGIN)continue;
             for(int x=cx-reach;x<=cx+reach;x++){
                 if(x<MARGIN||x>=SIZE-MARGIN)continue;
                 double dx=x-cx,dy=y-cy;
-                double distance=Math.hypot(dx,dy);
-                if(distance>reach)continue;
                 double angle=Math.atan2(dy,dx)/(Math.PI*2);
                 if(angle<0)angle+=1;
-                if(distance<=radius*(1+EDGE_AMPLITUDE*noise(control,angle)))tiles.add(y*SIZE+x);
+                double wobble=1+EDGE_AMPLITUDE*noise(control,angle);
+                double longAxis=axis*wobble,shortAxis=longAxis*ELLIPSE_RATIO;
+                // Rotate by -45 degrees: u runs along y=-x (long axis, lower-left to upper-right),
+                // v along y=x (short axis, the line between the two island centres).
+                double u=(dx-dy)*INV_SQRT2,v=(dx+dy)*INV_SQRT2;
+                if(u*u/(longAxis*longAxis)+v*v/(shortAxis*shortAxis)<=1)tiles.add(y*SIZE+x);
             }
         }
         return tiles;

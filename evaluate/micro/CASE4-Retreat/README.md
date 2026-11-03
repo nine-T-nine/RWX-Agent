@@ -39,26 +39,27 @@ Agent 只会收到"清空左上角区域、善用维修湾"这个目标，**不�
 
 ### 1.1 地图
 
-矩形 `a × b` 格，`a`、`b` 各自取 `[75,80)` 的整数，由 seed 决定（同 seed 固定）。全草地，**无水域/岩浆/悬崖/资源点**。
+矩形 `a × b` 格，`a`、`b` 各自取 `[65,70)` 的整数，由 seed 决定（同 seed 固定）。全草地，**无水域/岩浆/悬崖/资源点**。
 20 世界单位/格。`Case4Map` 写出 stock TMX，同目录另有 `map.tmx` 供复盘。
 
 ### 1.2 炮塔区（左上 3/5）
 
 炮塔只落在**地图左上角 3/5 区域**：矩形左上顶点与地图左上角重合，宽、高各取地图的 `3/5`
-（75..79 格的地图对应 45..47 格），且整片炮塔离地图边界至少 3 格。
+（65..69 格的地图对应 39..41 格），且整片炮塔离地图边界至少 3 格。
 
 1. 在该矩形内随机取**种子中心点**（离我方出生角 ≥22 格），并要求中心到矩形边缘至少 8 格；
-2. 半径取"中心到矩形边缘/地图边界的最小余量（含 3 格边距）"，夹到 **8..18 格**；远程塔较多的任务会把下限抬到
+2. 场地的**长半轴**取"中心到矩形边缘/地图边界的最小余量（含 3 格边距）"，夹到 **8..18 格**；远程塔较多的任务会把下限抬到
    能摆下 10 格间距的值（例如 6 座远程塔取 ≥14 格）；
-3. 落点 = 中心 + 半径 × √u × 方向——所以**每座塔到中心点都不超过半径（≤18 格）**，整片区域
-   也不会越出 3/5 矩形。
+3. 场地是 **2:1 椭圆**：长轴沿 `y=-x`（与出生角方向垂直）、短轴沿 `y=x`（指向右下出生角），短半轴 = 长半轴的一半；
+   落点先在单位圆盘取样（`√u × 方向`），再按 `(长半轴, 短半轴)` 缩放并旋转 45°——所以每座塔都在椭圆内，
+   椭圆的包围盒只有 `0.79 × 长半轴`，整片区域不会越出 3/5 矩形。
 
 方向规则：
 
 - **远程塔**（`c_turret_t3_gun`、`c_turret_t2_artillery`、`c_turret_t1_artillery`）：候选方向按 80% 使用 `225° ± 35°` 的高斯分布、20% 完全随机抽样。
   在相同间距下尝试 32 组完整远程布局，按整组重心沿 225° 的投影择优，并对侧向漂移轻微扣权，
   让远程火力整体偏向**远离我方出生角**的一侧。80% 是候选方向的抽样概率，不是最终落在左上象限的比例承诺。
-- **近程塔**：方向完全随机，在圆盘内填空隙。
+- **近程塔**：方向完全随机，在椭圆内填空隙。
 
 间距：远程之间 ≥ 10 格、近程之间 ≥ 3 格、跨类 ≥ 3 格，违反就重抽。远程塔先整组尝试当前间距，
 只有所有整组候选均未放下时才统一按 10% 放宽，最低到 40%；近程塔继续逐座抽样放置。
@@ -66,12 +67,13 @@ Agent 只会收到"清空左上角区域、善用维修湾"这个目标，**不�
 `meta.achievedCentreDistanceTiles` 记录实际最小/最大中心距，`meta.region.box*` 记录 3/5 矩形范围。
 
 seed 影响：中心点、方向抽样、抖动与右下角折角点。同布局版本、同 `(task, seed)` 完全复现。
-本次整组布局版本写入 `meta.layoutVersion=2`，`region.longRangePlacement=joint_candidates`、`longRangeLayoutTrials=32`。
+本次整组布局版本写入 `meta.layoutVersion=3`（2 是圆形场地时期的版本；3 起场地为 2:1 椭圆、地图 `[65,70)`），
+`region.longRangePlacement=joint_candidates`、`longRangeLayoutTrials=32`。
 与旧布局使用相同 seed 时，地图、种子中心和我方出生布局保持一致，远程/近程炮塔落点会改变；旧新布局不作为相同场景混比。
 
 离线对比覆盖全部 9 个 task、seed 0..127（1152 组）：新旧均无放置失败或格点范围/半径越界；
 远程塔平均偏移由 `(-1.39,-1.42)` 改为 `(-4.09,-4.00)` 格，远程最小间距由 8.06 格提升至 10 格，
-保持完整 10 格远程间距的布局占比由 95.7% 提升至 100%。这是布局采样结果，尚未补真实对局验证。
+保持完整 10 格远程间距的布局占比由 95.7% 提升至 100%。这是**圆形场地时期**的布局采样结果，椭圆改动后未重采。
 
 ![固定 seed 5 的三级布局对比](layout-comparison.svg)
 
@@ -136,13 +138,13 @@ seed 影响：中心点、方向抽样、抖动与右下角折角点。同布局
 
 | 想改 | 位置 |
 |---|---|
-| 地图边长 | `Case4Map.MIN_SIZE` / `MAX_SIZE`（默认 `[75,80)`，seed 决定具体值）；想固定尺寸就直接改 `width(seed)`/`height(seed)`。`TILE=20` 是格与世界单位的换算 |
+| 地图边长 | `Case4Map.MIN_SIZE` / `MAX_SIZE`（默认 `[65,70)`，seed 决定具体值）；想固定尺寸就直接改 `width(seed)`/`height(seed)`。`TILE=20` 是格与世界单位的换算 |
 | 炮塔区矩形 | `Case4Retreat.REGION_FRACTION`（3/5）、`FIELD_MARGIN`（离边界 3 格） |
-| 场地半径 | `RADIUS_MIN` / `RADIUS_MAX`（8..18）、`regionRadius`、`minimumRadius`（按远程塔 10 格间距反推下限） |
+| 场地椭圆 | 长半轴 `RADIUS_MIN` / `RADIUS_MAX`（8..18）与 `regionRadius`、`minimumRadius`；比例 `ELLIPSE_RATIO`（0.5）、朝向 `ELLIPSE_AXIS_DEGREES`（-45°，即长轴在 `y=-x`） |
 | 种子中心 | `pickCentre`（离矩形边与出生角的约束）、`BASE_CLEARANCE` |
 | 远程偏置 | `LONG_RANGE_BIAS_DEGREES` / `LONG_RANGE_BIAS_SPREAD`、`LONG_RANGE_RANDOM_SHARE`、`LONG_RANGE_LAYOUT_TRIALS`、`placeLongRangeGroup` |
 | 间距与放宽 | `SPACING_LONG` / `SPACING_SHORT` / `SPACING_CROSS`、`SPACING_FLOOR` / `RELAX_STEPS`、`fits` |
-| 落点抽样 | `placeOne`、`drawOne`（半径按 `√u` 均匀采样、`JITTER_TILES` 抖动） |
+| 落点抽样 | `placeOne`、`drawOne`（方向抽样后按椭圆边界 `× √u` 取距、`JITTER_TILES` 抖动） |
 | 数量/类型/迷雾/时限 | `spec(task)`；维修湾与坦克出生在 `layout()` 的 `bays` / `tanks` 段 |
 
 离线预览（不启动游戏、不读资源，输出 PNG + `layout.json` + `map.tmx`）：
@@ -153,7 +155,7 @@ seed 影响：中心点、方向抽样、抖动与右下角折角点。同布局
 ```
 
 产物在 `agent-tmp/case4-preview/<task>-s<seed>/`：`scene.png` 是该 seed 的俯视图（红=远程塔、蓝=近程塔、绿=维修湾、紫=坦克；
-虚线圆=场地半径、橙框=左上 3/5、箭头=225° 远程偏置），`layout.json` 与 `meta.json` 里那份落点数据同源。
+虚线椭圆=场地（2:1，长轴在 y=-x）、橙框=左上 3/5、箭头=225° 远程偏置），`layout.json` 与 `meta.json` 里那份落点数据同源。
 多个 seed 会额外生成 `compare-<task>.png` 拼图；`-Pscale` 是像素/格（默认 9），`-Pranges=1` 叠加每座塔的射程圈（看覆盖是否重叠）。
 
 预览直接调用 `Case4Retreat.layout(config, null)`——该方法不读 `GameEngine`，所以与真机布景逐格一致。

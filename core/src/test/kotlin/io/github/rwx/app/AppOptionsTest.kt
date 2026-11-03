@@ -65,6 +65,28 @@ class AppOptionsTest {
     }
 
     @Test
+    fun `sandbox map takes one tmx path in both forms`() {
+        assertNull(AppOptions.parseArgs(arrayOf("--no-steam")).sandboxMapPath)
+
+        val separated = AppOptions.parseArgs(arrayOf("--sandbox-map", "maps/built-in/skirmish/x.tmx"))
+        assertEquals("maps/built-in/skirmish/x.tmx", separated.sandboxMapPath)
+
+        val joined = AppOptions.parseArgs(arrayOf("--sandbox-map=C:\\maps\\custom.tmx"))
+        assertEquals("C:\\maps\\custom.tmx", joined.sandboxMapPath)
+
+        // The lobby is a GUI flow, and one startup action owns the screen at a time.
+        assertFailsWith<IllegalArgumentException> { AppOptions.parseArgs(arrayOf("--sandbox-map=map.save")) }
+        assertFailsWith<IllegalArgumentException> { AppOptions.parseArgs(arrayOf("--sandbox-map=")) }
+        assertFailsWith<IllegalArgumentException> { AppOptions.parseArgs(arrayOf("--sandbox-map")) }
+        assertFailsWith<IllegalArgumentException> {
+            AppOptions.parseArgs(arrayOf("--headless", "--sandbox-map=x.tmx"), isDesktop = true)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            AppOptions.parseArgs(arrayOf("--sandbox-map=x.tmx", "--auto-replay=r.replay"))
+        }
+    }
+
+    @Test
     fun `speed profile and alert delivery are validated at launch and installed process wide`() {
         val previousProfile = RwxSpeedProfile.active()
         val previousSwitch = System.getProperty(

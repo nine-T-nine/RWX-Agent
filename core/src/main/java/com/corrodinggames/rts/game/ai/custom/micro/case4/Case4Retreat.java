@@ -34,6 +34,10 @@ public final class Case4Retreat implements MicroCase {
     /** Compare complete groups before accepting a layout; never relax one isolated gun first. */
     static final int LONG_RANGE_LAYOUT_TRIALS=32,LONG_RANGE_DRAW_ATTEMPTS=160;
     static final double SPACING_LONG=10,SPACING_SHORT=3,SPACING_CROSS=3;
+    /** Field shape: 2:1 ellipse, long axis on y=-x; the short axis points at the player's corner. */
+    static final double ELLIPSE_RATIO=0.5;
+    static final double ELLIPSE_AXIS_DEGREES=-45;
+    private static final double INV_SQRT2=1/Math.sqrt(2);
     /** Worst-case spacing relaxation when the field is too tight: 10% per retry round. */
     public static final double SPACING_FLOOR=0.4;
     static final int RELAX_STEPS=(int)Math.round((1.0-SPACING_FLOOR)/0.1);
@@ -149,11 +153,12 @@ public final class Case4Retreat implements MicroCase {
                     "x",Case4Map.world(tileX),"y",Case4Map.world(tileY),"tileX",tileX,"tileY",tileY);
             tanks.add(unit);units.add(unit);id++;
         }
-        return map("layoutVersion",2,"task",c.task,"type",task.type(),"level",task.level(),
+        return map("layoutVersion",3,"task",c.task,"type",task.type(),"level",task.level(),
                 "mapWidth",width,"mapHeight",height,"tileSize",Case4Map.TILE,
                 "region",map("centreTileX",centre[0],"centreTileY",centre[1],
                         "centreDistanceFromCorner",round(Math.hypot(centre[0],centre[1])),
                         "radiusTiles",radius,"radiusMinTiles",RADIUS_MIN,"radiusMaxTiles",RADIUS_MAX,
+                        "ellipseRatio",ELLIPSE_RATIO,"ellipseAxisDegrees",(int)ELLIPSE_AXIS_DEGREES,
                         "boxMinX",0,"boxMinY",0,"boxMaxX",regionMaxX(width),"boxMaxY",regionMaxY(height),
                         "boxWidthTiles",regionMaxX(width)+1,"boxHeightTiles",regionMaxY(height)+1,
                         "boxMapFraction",REGION_FRACTION,
@@ -214,20 +219,22 @@ public final class Case4Retreat implements MicroCase {
     }
 
     /**
-     * Field radius: the room the seed centre leaves inside the 3/5 rectangle and the map border,
-     * clamped to 8..18 tiles. Every turret is drawn within this radius, so the whole field stays
-     * inside the rectangle without being clipped.
+     * Field long semi-axis: the room the seed centre leaves inside the 3/5 rectangle and the map
+     * border, clamped to 8..18 tiles. The field is a 2:1 ellipse whose long axis lies on {@code y=-x},
+     * so its bounding box is only {@code 0.79 * radius} per side and always stays inside the
+     * rectangle without being clipped.
      */
     static int regionRadius(int[] centre,int width,int height){
         return Math.max(RADIUS_MIN,Math.min(RADIUS_MAX,fieldRoom(centre,width,height)));
     }
 
     /**
-     * Turret placement: every turret is drawn inside the seed centre's radius, so the whole field
-     * stays inside the top-left 3/5 rectangle. Long-range guns are drawn with a strong upper-left
-     * bias (a fifth of candidate directions are uniform); complete long-range groups are compared
-     * before committing. Short-range guns fill the rest of the disc uniformly. Every candidate
-     * must satisfy its own spacing rule, the cross rule, radius and map/base margins.
+     * Turret placement: every turret is drawn inside the seed centre's ellipse (long semi-axis
+     * {@code radius}, short half that, long axis on {@code y=-x}), so the whole field stays inside the
+     * top-left 3/5 rectangle. Long-range guns are drawn with a strong upper-left bias (a fifth of
+     * candidate directions are uniform); complete long-range groups are compared before committing.
+     * Short-range guns fill the rest of the ellipse. Every candidate must satisfy its own spacing
+     * rule, the cross rule, the ellipse and the map/base margins.
      */
     static List<Spot> placeTurrets(Spec spec,Task task,int[] centre,int radius,
                                    int width,int height,Random random){
@@ -298,7 +305,7 @@ public final class Case4Retreat implements MicroCase {
             }else{
                 angle=random.nextDouble()*Math.PI*2;
             }
-            double distance=radius*Math.sqrt(random.nextDouble());
+            double distance=outline(angle,radius)*Math.sqrt(random.nextDouble());
             int tileX=(int)Math.round(centre[0]+Math.cos(angle)*distance);
             int tileY=(int)Math.round(centre[1]+Math.sin(angle)*distance);
             if(!fits(placed,tileX,tileY,width,height,need,longRange,centre,radius))continue;
@@ -307,6 +314,19 @@ public final class Case4Retreat implements MicroCase {
         return null;
     }
 
+    /** Distance from the field centre to its outline along a world angle, in tiles. */
+    private static double outline(double angle,double radius){
+        double local=angle-Math.toRadians(ELLIPSE_AXIS_DEGREES);
+        double c=Math.cos(local),s=Math.sin(local);
+        double a=radius,b=radius*ELLIPSE_RATIO;
+        return 1.0/Math.sqrt(c*c/(a*a)+s*s/(b*b));
+    }
+    /** True when a tile offset from the field centre lies inside the field ellipse. */
+    static boolean insideField(double dx,double dy,double radius){
+        double u=(dx-dy)*INV_SQRT2,v=(dx+dy)*INV_SQRT2;
+        double a=radius,b=radius*ELLIPSE_RATIO;
+        return u*u/(a*a)+v*v/(b*b)<=1.0+1e-9;
+    }
     private static Spot spot(String type,int tileX,int tileY,int[] centre,Random random){
         double offsetX=(random.nextDouble()-0.5)*2*JITTER_TILES;
         double offsetY=(random.nextDouble()-0.5)*2*JITTER_TILES;
@@ -320,7 +340,7 @@ public final class Case4Retreat implements MicroCase {
                                 boolean longRange,int[] centre,int radius){
         if(tileX<FIELD_MARGIN||tileY<FIELD_MARGIN||tileX>width-4||tileY>height-4)return false;
         if(tileX>regionMaxX(width)||tileY>regionMaxY(height))return false;
-        if(Math.hypot(tileX-centre[0],tileY-centre[1])>radius)return false;
+        if(!insideField(tileX-centre[0],tileY-centre[1],radius))return false;
         int cornerX=width-8,cornerY=height-8;
         if(Math.hypot(tileX-cornerX,tileY-cornerY)<BASE_CLEARANCE)return false;
         for(Spot other:placed){

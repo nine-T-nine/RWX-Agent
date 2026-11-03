@@ -40,5 +40,19 @@
     "durationLabel": "1:52",
     "bytes": 31196332,
     "sha256": "8176dbf035ffe97b12d5678fecbe983e31f703fe0b25880779a53c936c111a9f"
+  },
+  {
+    "id": "two-agents-one-team",
+    "source": "两个AI一个阵营-Pi+ClaudeOpus5.5+dsh4.1vsHard.mp4",
+    "title": "两个智能体，同一个阵营",
+    "category": "AGENT VS BUILT-IN AI",
+    "tag": "同阵营协作",
+    "description": "Pi 与 Claude Opus 5.5 编入同一阵营（dsh4.1 工具链），联合作战对抗 Hard AI。",
+    "video": "resource/matches/two-agents-one-team.mp4",
+    "poster": "resource/posters/two-agents-one-team.webp",
+    "duration": 94.016667,
+    "durationLabel": "1:34",
+    "bytes": 26519526,
+    "sha256": "61ff92dac475633a6441e9d02faea53c1c587ff2e7b986117e7bf2e6f2f4f8e9"
   }
 ]

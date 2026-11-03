@@ -7,17 +7,23 @@ internal class StartupController(
     private val warmupController: WarmupController,
 ) {
     fun start(targetScreen: AppScreen) {
-        val startupWarmupMapPath = when (targetScreen) {
-            AppScreen.InGame -> battleRoomController.selectedOrDefaultMap()?.mapAssetPath
-            AppScreen.BattleRoom -> {
-                battleRoomController.selectedOrDefaultMap()?.let { map ->
-                    battleRoomController.prepareForMap(map)
+        val startupWarmupMapPath =
+            when (targetScreen) {
+                AppScreen.InGame -> {
+                    battleRoomController.selectedOrDefaultMap()?.mapAssetPath
                 }
-                null
-            }
 
-            else -> null
-        }
+                AppScreen.BattleRoom -> {
+                    battleRoomController.selectedOrDefaultMap()?.let { map ->
+                        battleRoomController.prepareForMap(map)
+                    }
+                    null
+                }
+
+                else -> {
+                    null
+                }
+            }
         warmupController.request(
             mapPath = startupWarmupMapPath,
             targetScreen = targetScreen,
