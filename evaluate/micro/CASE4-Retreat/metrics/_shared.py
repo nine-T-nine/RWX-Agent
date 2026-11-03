@@ -55,6 +55,9 @@ class Case4Run:
         self.unit_damage = read_jsonl(self.directory / "engine/unit_damage.jsonl")
         self.turret_destroyed = read_jsonl(self.directory / "engine/turret_destroyed.jsonl")
         self.repairs = read_jsonl(self.directory / "engine/repair_sessions.jsonl")
+        # Tank readiness/loiter timeline sampled by the engine while the task runs (250 game-ms).
+        # It is evidence for the deduction score only; no metric plugin consumes it.
+        self.tank_state = read_jsonl(self.directory / "engine/tank_state.jsonl")
         self.violations = read_jsonl(self.directory / "violations.jsonl")
         self.turrets = {row["id"]: row for row in self.meta.get("turrets") or []}
         self.tanks = {row["id"]: row for row in self.meta.get("tanks") or []}

@@ -3,7 +3,8 @@
 本文件回答两件事：**一局打完能拿到哪些材料**，以及**每个指标是怎么从这些材料算出来的**。
 怎么启动、场景怎么布、完整评测流程，见 [README.md](README.md)。
 
-引擎只记录事实，外部 `evaluate.py` 加载 `metrics/*.py` 插件离线计算，不设加权总分。
+引擎只记录事实，外部 `evaluate.py` 加载 `metrics/*.py` 插件离线计算，再调用 `score.py` 产出**独立的** `score`
+扣分文档；指标本身不设加权总分（评分口径见 §13）。
 核心问题是 Agent 是否理解**生产—装载—运输—卸载**的任务工期与并行关系，而不是它是否报告了一个 ETA。
 
 `schema = rwx-micro-transport-metrics/1`；每个 metric 含 `tier`/`sources`/`value`，`value.status` 为 `OK/N/A/ERROR`。
@@ -69,6 +70,7 @@
 |---|---|
 | `type` / `level` | 由 task 解出（1..4 / 1..3） |
 | `mapSize` / `tileSize` | 130 格 / 20 世界单位 |
+| `fogMode` | `1` = 一次性迷雾（开局未探索、视野揭示、不再长回） |
 | `targetIslandTiles[]` / `baseIslandTiles[]` | 岛格集合（`index = y*130 + x`）——**布景真值**，目标判定用它 |
 | `targetIslandArea` / `baseIslandArea` | 格数（目标 550..675，基地 700..800） |
 | `targetIslandBounds` | 见 §11 已知问题：当前是**基地岛**的包围盒 |
@@ -101,13 +103,18 @@ briefing 阶段有 `begin`（本 CASE 是 `startsRunning()`，进入即 1× 运�
 
 | `kind` | 行 | 字段 |
 |---|---|---|
-| `order` + `event=accepted` | 订单受理 | `requestId,factoryId,unitType,count,actionId,tick,gameMs,wallMs` |
-| `order` + `event=started` | 开始生产 | `requestId,factoryId?,tick,gameMs,wallMs` |
+| `order` + `event=accepted` | 订单受理 | `requestId,factoryId,unitType,count,actionId,cost,credits,tick,gameMs,wallMs` |
+| `order` + `event=started` | 开始生产 | `requestId,factoryId?,unitType,credits,tick,gameMs,wallMs` |
+| `order` + `event=finished` | **逐单完成** | `requestId,factoryId`（工厂队列的活动项换人时写，确认该单真的产出了单位） |
 | `order` + `event=completed` | 完成里程碑 | `unitType,count,tick,gameMs,wallMs` |
 | `native` | 原生命令录制关联 | `requestId,nativeIndex,actor,actionId,...` |
 
-**完成里程碑按单位类型累计（当前存活数），不是"哪个工厂产了哪台"。** 引擎有意不猜订单↔单位的对应关系；
-`production_lifecycle.orders[]` 因此没有"完成时刻"字段，要看 `completions[]`。
+`cost` 是该单位的真实价格，`credits` 是**写该行时**的阵营余额（`accepted` 为扣款前）。
+`finished` 是逐订单的完成事实（按工厂队列活动项的身份变化检测），评分用它确定"工厂何时空出来"。
+`--count N` 一次下 N 条原生命令，因此同一 `requestId` 会有 N 条 `started` 与 N 条 `finished`（每个单位一条）。
+
+**完成里程碑（`completed`）按单位类型累计（当前存活数），不是"哪个工厂产了哪台"。** 需要逐单完成时看
+`finished`，不要从 `completed` 反推工厂归属。
 
 ### 3.5 engine/transport.jsonl
 
@@ -117,6 +124,7 @@ briefing 阶段有 `begin`（本 CASE 是 `startsRunning()`，进入即 1× 运�
 | `cargo` | `transportId,cargo[],delta,tick,gameMs,wallMs` | 货舱成员变化的真实快照；`delta` 为变化量 |
 | `move` | `requestId,event="issued",transportId,x,y,tick,gameMs,wallMs` | 移动指令下发 |
 | `unload` | `requestId,event="issued",transportId,...` | 卸载动作下发 |
+| `flight` | `transportId,event="takeoff"\|"landed",posZ,x,y,tick,gameMs,wallMs` | **真实起降跳变**（`posZ` 跨越 4.0 的空中/落地状态切换）；评分用它划分地面空闲窗口 |
 | `damage` | `transportId,delta,hp,...`（可能带 `x,y`） | 运输机受击；**没有攻击者 id** |
 
 - 判定"单位真的上船了"只能靠 `cargo` 序列，不能靠 `load` 回执。
@@ -164,6 +172,7 @@ briefing 阶段有 `begin`（本 CASE 是 `startsRunning()`，进入即 1× 运�
 | `schema` | `rwx-micro-transport-metrics/1` |
 | `run` | `case`、`task`、`seed`、`track`、`mode` |
 | `metrics` | 9 个插件，每项 `{tier, sources, value}` |
+| `score` | 独立扣分文档（`case3-score-v1`）：`baseline`、`deduction`、`total`、5 项封顶扣分与明细，见 §13 |
 | `diagnostics` | `severe/engine_error`、`severe/native_authority_mismatch` 等 |
 | `evidence` | `source`（固定字符串）、`gatewayRequests`、`productionEvents`、`transportEvents`、`goalEvents`、`violations` |
 
@@ -334,8 +343,13 @@ T1/T2 的划分在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网
   判断目标岛范围请用 `targetIslandTiles` 自行求包围盒，不要用这个字段。
 - 没有独立复算（`evidence.independentResimulation` 在本 CASE 不存在这一项，`evidence.source` 只是字符串说明）。
 - 运输机受伤**没有攻击者 id**，`anti_air_exposure` 只能做最近塔的位置推断。
-- `production_lifecycle` 无单笔完成时刻；引擎不猜订单↔单位对应。
+- `production_lifecycle` 的 `completions[]` 仍是按类型累计；逐单完成看 `production.jsonl` 的 `finished` 行。
 - `unloadedGameMs` 是离开货舱，不等于进入目标岛；单位可能在岩浆上被卸下后死亡。
+- **运输机在目标岛上空被击落时，货舱单位会有一过性 `delivered` 计数**：机身移除的那一 tick，货舱单位短暂满足
+  “存活、未在货舱、位于目标岛”，下一 tick 随之消失（2026-11-03 迷雾实跑观察到 3 heavyTank + 1 plasmaTank 的一过性行）。
+  目标判定与 `goal.jsonl` 读的是同一份内存状态，所以极端情况下可能在那一 tick 误判 `success`；目前未修。
+- 生产上限按“已生产数”计：单位在交付前或交付后损失后，`rwx-micro-3-produce` 会以 `exceeds_goal_gap` 拒绝补产，
+  迷雾下损失一次就可能再也无法达标。
 - `delivery.unitsNeverLoaded` 不做原因区分。
 - `report.html` 不是渲染报告，只是 JSON 的 `<pre>`。
 - `delivery.jsonl` 未进任何指标。
@@ -352,3 +366,53 @@ T1/T2 的划分在本 CASE 表示"是否只依赖引擎事实"（T1 不依赖网
 3. `_shared.py` 提供 `stats`、`quantile`、`slots`。
 4. 插件异常由 `evaluate.py` 包成 `ERROR`，不影响其他指标。
 5. 冒烟：`python -B evaluate/micro/CASE3-Transport/test/smoke.py`（或按该文件的入口跑）。
+
+---
+
+## 13. 评分（score）
+
+`evaluate.py` 在写指标的同时调用 `score.py`，产出**独立**的 `score` 文档（`version = case3-score-v1`）：
+基线 100，五项扣分各自先裁到 `[0,cap]`、保留 1 位小数再求和，`total = max(0, 100 − Σ)`。
+指标与评分分开：指标只陈述事实，评分只消费同一份证据。
+
+| 项 | 上限 | 口径 |
+|---|---:|---|
+| `action_delay` 行动延迟 | 40 | 每条**实际生效**的生产订单，从受理时刻 `B` 往回找"资金足够 `cost` **且工厂已空闲**"的最早时刻；窗口按 `[0,3](3,10](10,25](25,45](45,?)` 分档，`K = Σ(档占比 × 权重)`（`0/3/6/10/18`），`S = K×50` |
+| `irrelevant` 无关行为 | 30 | 违规请求 ×7.5；`invalid_request`/`error` 请求 ×4.5；非返航的空舱移动、空舱卸载 ×1.8 |
+| `transport_loss` 运输机损失 | 30 | `K1×10 + K2×20`，`K1 = 1 − Σ存活HP/Σ最大HP`，`K2 = 被摧毁数/总数` |
+| `transport_idle` 运输机空闲 | 40 | 每个地面窗口 `15×f(秒)`：起飞前（上一次降落/货舱变化 → 起飞）与降落后（降落 → 下一次移动/货舱变化）；`f:<3s=0，(3,25)自然指数{0,0.8}，(25,40)线性{0.8,1}，>40s=1` |
+| `duration` 整体时长 | 30 | `T` 取 `baselines.json` 里该 `task` 的实测基线，没有则用按 type 的默认值；`[0.4T,2T]` 内二次函数（`a=-3`，过 `(0.4T,0)` 与 `(2T,30)`），`<0.4T` 扣 0，`>2T` 扣 30 |
+
+### 13.1 口径细节
+
+- **K 不除以最大权重**：草稿写的是"按权重求和"，某一档占比上去后很快顶到上限；上限是唯一的收敛机制。
+  想改成归一化只需把 `common/scoring.py` 的 `NORMALIZE_DELAY_COEFFICIENT` 置 `True`（两 CASE 共用）。
+- **行动延迟的两个约束**：资金曲线用 `initialCredits + 收入速率 × 时间 − 已开始订单的 cost`（CASE3 提取器
+  固定，收入速率取 `result.incomePerSecond` 的标称值，换算 `×1000/640` 每游戏秒）；工厂空闲时刻取同厂
+  `finished` 行的 `gameMs`。草稿只写了"资金不足"，但 CASE3 的资金长期充裕，只用资金会让窗口退化成"距开局
+  多久"，所以把"工厂真的空出来"一并作为约束，明细里 `refillGameMs` 与 `factoryFreeGameMs` 分开记录。
+- **运输机损失**：草稿给的是"剩余HP/最大HP"，作为扣分系数时满血会白扣 10 分，因此 `K1` 取损失比例
+  `1 − 剩余/最大`；明细同时保留 `remainingHp`/`maxHp`。
+- **空舱移动**：只有目的地落在基地岛包围盒（`baseIslandTiles` 求包围盒，外扩 1 格）之外的才算无关；
+  卸完返航不扣分。`irrelevant` 里的失败只统计 **B 类（可执行）请求**，失败的只读观察不算行为；
+  同一条失败每次重试都各记一次（草稿按次数统计）。
+- **整体时长**：二次函数按**原始秒数**求解 `b/c`（与 `evaluate/scoring-curves.js`、完整对局评分同一约定）。
+  `a=-3` 在几百秒的量级上非常陡，等价于在 `0.4T~0.42T` 附近快速从 0 跳到 30；这是形状本身的结果。
+  `score.py` 的 `DURATION_QUADRATIC_SPACE` 可切到 `normalized`（把 `[0.4T,2T]` 映射到 `[0,1]` 再套同一个 `a`）
+  或 `minutes`（按分钟取横坐标），默认 `raw`；明细里的 `rangeSeconds`/`quadraticA`/`quadraticSpace` 记录实际参数。
+- **基线随布景变化**：`baselines.json` 的 `T` 是 2026-11-03 之前"全图已揭示"布景的实测值。CASE3 改为一次性迷雾后
+  需按新布景重测；未重测前，`duration` 与旧局不可直接比较。
+- **缺证据**：没有 `cost`/`credits`、没有 `flight` 行、没有终态单位 HP 时，该项记 `status = "N/A"`、扣 0，
+  理由写进 `score.diagnostics`；不按经验补数。旧（补证据之前）的 run 因此 `action_delay` 与
+  `transport_idle` 会是 `N/A`。
+
+### 13.2 读分注意
+
+- `score.items[].raw` 是封顶前的原始分，`points` 是裁到上限后的实际扣分。
+- 自然指数在对数横坐标上极凸：`f(mean)` 在远低于上限时几乎为 0，`P(delta)` 同理；这是曲线形状，不是漏算。
+- 同一份证据重复离线计算得到相同分数（纯函数）；`case3-score-v1` 不与其它版本混榜。
+
+**人类对局**：本 CASE 拒绝 `mode=human`（`MicroConfig` 走默认 `requiresAgentRealtime()`），启动即报错。
+`action_delay`/`irrelevant`/`transport_loss`/`transport_idle`/`duration` **五项都没有人类数据**：
+前两项依赖 `gateway.jsonl` 的 B 请求，后三项依赖 live 引擎证据，而人类模式不会产生这一局。
+不存在人类基线，也不要用"人类大概会怎样"补数。

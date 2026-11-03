@@ -28,8 +28,8 @@ const OUTPUT = path.join(ROOT, 'evaluate', 'output');
 function walk(dir, name, out = []) {
   if (!fs.existsSync(dir)) return out;
   for (const entry of fs.readdirSync(dir, {withFileTypes: true})) {
-    // `_old` 是"材料不全/旧版本"的归档约定：它们不参与复算，也不该被刷新。
-    if (entry.name.endsWith('_old')) continue;
+    // `_old` 是"材料不全/旧版本"的归档约定，`_archive/` 是它们的存放处：两者都不参与复算。
+    if (entry.name.endsWith('_old') || entry.name === '_archive') continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(file, name, out);
     else if (entry.name === name) out.push(file);
@@ -48,8 +48,15 @@ function parseArgs(argv) {
 }
 
 function resolver(roots) {
-  return file => {
+  return (file, summaryFile) => {
     if (fs.existsSync(file)) return file;
+    // `tools/match_materials.js` renames the raw log to `<对局>/commands-<对局>.txt`, so a report
+    // written before consolidation still points at the old name. Same directory, canonical name wins.
+    const matchDir = summaryFile ? path.dirname(summaryFile) : null;
+    if (matchDir) {
+      const canonical = path.join(matchDir, `commands-${path.basename(matchDir)}.txt`);
+      if (fs.existsSync(canonical)) return canonical;
+    }
     const base = path.basename(file);
     const found = roots.flatMap(root => walk(root, base));
     if (found.length !== 1) throw new Error(`${file}: 找到 ${found.length} 份，无法唯一确定输入`);
@@ -70,8 +77,8 @@ async function main() {
     let file1, file2;
     try {
       const summary = JSON.parse(fs.readFileSync(summaryFile, 'utf8'));
-      file1 = resolve(summary.file1);
-      file2 = resolve(summary.file2);
+      file1 = resolve(summary.file1, summaryFile);
+      file2 = resolve(summary.file2, summaryFile);
     } catch (error) {
       skipped.push({sample: name, reason: error.message});
       console.error(`SKIP ${name}: ${error.message}`);

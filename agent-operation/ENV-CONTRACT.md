@@ -222,7 +222,7 @@ L1 与 L1-lite 的差别只在 token：lite 省掉「什么都没发生」时的
 
 - 微操 run：`meta.json` 的 `tier`（含 `level`/`alertLevel`/`suggestions`/`agentMaySwitchAlerts`）、`alertDelivery`、`speedProfile`、`diagnostic`、`leaderboardEligible`
 - 引擎证据：`telemetry.jsonl` 的 `meta` 行同名字段（`tier`、`tierAlertLevel`、`tierSuggestions`、`tierAgentMaySwitchAlerts`）
-- 引擎证据的自识别字段：`meta` 行的 `startedAt`（带时区的 ISO 时间）与 `label`（未设置时为 `null`）；目录名 `match-<序号>-<yyyyMMdd-HHmmss>-team<队伍>[-<label>]` 用本机墙钟，`-Drwx.evaluate.label=…` 可给某局起名。序号是 JVM 内计数器，跨进程不唯一，**识别一局要看时间戳或 `startedAt`，不要只看序号**
+- 引擎证据的自识别字段：`meta` 行的 `startedAt`（带时区的 ISO 时间）、`label`（目录标签）、`replay`（正在录制的回放名，未录像时为 `null`）与 `gameVersion`；目录名 `match-<序号>-<yyyyMMdd-HHmmss>-team<队伍>[-<label>]` 用本机墙钟。`label` 默认取当时正在录制的回放名（去掉 `[local]`、`[v1.15]` 与时间括号后清洗成路径安全字符），所以从目录名就能看出是哪一局；`-Drwx.evaluate.label=…` 可覆盖，没录像又没标签时退回纯序号名。序号是 JVM 内计数器，跨进程不唯一，**识别一局要看 `label`、时间戳或 `startedAt`，不要只看序号**
 - 启动日志：`RWX_CLI_TOOL_READY … alertDelivery=l1 speedProfile=realtime leaderboardEligible=true tier=2 suggestions=false agentSwitch=false`
 - 延迟证据：`delivery.jsonl` 的 `env` 行
 

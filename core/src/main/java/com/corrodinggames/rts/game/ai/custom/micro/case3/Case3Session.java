@@ -27,6 +27,11 @@ public final class Case3Session extends AbstractCaseSession {
     private final Map<String,Integer> delivered=new LinkedHashMap<>();
     private final Map<Long,Float> transportHp=new LinkedHashMap<>();
     private final Map<Long,Set<Long>> cargo=new LinkedHashMap<>();
+    /** Last observed airborne state per transport; transitions become `flight` evidence rows. */
+    private final Map<Long,Boolean> airborne=new LinkedHashMap<>();
+    /** Active factory queue item per factory; an identity change means the previous order finished. */
+    private final Map<Long,Object> activeItems=new LinkedHashMap<>();
+    private final Map<Long,Deque<Long>> pendingOrders=new LinkedHashMap<>();
     private final BufferedWriter productionLog,transportLog,goalLog;
     private int lastDelivered=-1;
     private long goalReachedGameMs=-1;
@@ -116,7 +121,11 @@ public final class Case3Session extends AbstractCaseSession {
             nativeCommand.addUnitToCommand(factory);nativeCommand.setActionId(action.getActionId());
             permitted.put(nativeCommand,i);
         }
-        emit(productionLog,map("kind","order","requestId",i.request,"event","accepted","factoryId",factory.objectId,"unitType",type.v(),"count",count,"actionId",action.getActionIdString()));
+        // `cost` is the real action price and `credits` the balance before it is paid; the scorer
+        // uses them to tell how much earlier this order could have been placed.
+        emit(productionLog,map("kind","order","requestId",i.request,"event","accepted","factoryId",factory.objectId,"unitType",type.v(),
+                "count",count,"actionId",action.getActionIdString(),"cost",action.getCostAmount(),
+                "credits",factory.team==null?null:factory.team.credits));
         return "ok: submitted requestId="+i.request;
     }
     private String load(List<String> args) {
@@ -189,7 +198,26 @@ public final class Case3Session extends AbstractCaseSession {
     }
     public void applied(com.corrodinggames.rts.gameFramework.Command command) {
         Instruction i=permitted.get(command);if(i==null)return;i.applied=true;
-        if(i.kind.equals("produce"))emit(productionLog,map("kind","order","requestId",i.request,"event","started","factoryId",i.actor,"unitType",i.unitType));
+        if(i.kind.equals("produce")){
+            pendingOrders.computeIfAbsent(i.actor,key->new ArrayDeque<>()).addLast(i.request);
+            emit(productionLog,map("kind","order","requestId",i.request,"event","started","factoryId",i.actor,"unitType",i.unitType,
+                    "credits",i.unit==null||i.unit.team==null?null:i.unit.team.credits));
+        }
+    }
+    /** Per-order completion: the factory's active queue item changes when the previous unit is out. */
+    private void factoryCompletions() {
+        for(var entry:factories.entrySet()) {
+            OrderableUnit factory=entry.getValue();
+            if(factory==null||!(factory instanceof FactoryQueueInterface queue)||!MicroRuntime.alive(factory))continue;
+            Object item=queue.dw(),previous=activeItems.get(entry.getKey());
+            if(item==previous)continue;
+            if(previous!=null) {
+                Deque<Long> pending=pendingOrders.get(entry.getKey());
+                if(pending!=null&&!pending.isEmpty())
+                    emit(productionLog,map("kind","order","requestId",pending.removeFirst(),"event","finished","factoryId",entry.getKey()));
+            }
+            if(item!=null)activeItems.put(entry.getKey(),item);else activeItems.remove(entry.getKey());
+        }
     }
     public void afterTick() {
         if(!run.phase.equals("running"))return;
@@ -202,6 +230,7 @@ public final class Case3Session extends AbstractCaseSession {
             lastDelivered=total;
         }
         int aliveTransports=0;
+        factoryCompletions();
         // Transport and production evidence is written before the goal check, so the unload that
         // completes the goal is still recorded instead of being cut off by the end of the run.
         for(var entry:transports.entrySet()){
@@ -212,6 +241,12 @@ public final class Case3Session extends AbstractCaseSession {
             Set<Long> now=new LinkedHashSet<>();for(Object item:unit.getTransportedUnitList())now.add(((BaseUnit)item).objectId);
             Set<Long> before=cargo.getOrDefault(entry.getKey(),Set.of());
             if(!now.equals(before)){emit(transportLog,map("kind","cargo","transportId",entry.getKey(),"cargo",new ArrayList<>(now),"delta",now.size()-before.size()));cargo.put(entry.getKey(),now);}
+            // Real airborne transitions only: the scorer treats `takeoff`/`landed` as the ground
+            // windows in which a transport was ready but unused.
+            boolean flying=unit.i();Boolean wasAirborne=airborne.put(entry.getKey(),flying);
+            if(wasAirborne!=null&&wasAirborne!=flying)
+                emit(transportLog,map("kind","flight","transportId",entry.getKey(),"event",flying?"takeoff":"landed",
+                        "posZ",unit.posZ,"x",unit.posX,"y",unit.posY));
         }
         for(String type:targetTypes){int own=0;for(BaseUnit unit:BaseUnit.bE)if(MicroRuntime.alive(unit)&&unit.team!=null&&unit.team.teamId==Case3Transport.SELF_TEAM&&unit.r()!=null&&type.equals(unit.r().v()))own++;
             if(own>produced.getOrDefault(type,0)){emit(productionLog,map("kind","order","event","completed","unitType",type,"count",own));produced.put(type,own);}}

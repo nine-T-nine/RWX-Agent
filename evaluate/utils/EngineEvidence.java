@@ -65,10 +65,11 @@ public final class EngineEvidence extends UnitEventListener {
         Files.createDirectories(directory);
         // The counter alone ("match-001-team0") cannot say which match a directory belongs to: it is a
         // JVM-wide ordinal and separate launches share one parent directory. Stamp the wall clock into the
-        // name and honour an optional -Drwx.evaluate.label, so a run is identifiable from a plain listing.
+        // name and append a label, so a run is identifiable from a plain listing.
         String stamp=java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss",Locale.ROOT)
                 .format(java.time.LocalDateTime.now());
-        String runLabel=label();
+        String runLabel=label(engine);
+        String recorded=recordingName(engine);
         Path target;
         do {
             String name=String.format(Locale.ROOT,"match-%03d-%s-team%d",++matchNumber,stamp,team.teamId);
@@ -92,6 +93,9 @@ public final class EngineEvidence extends UnitEventListener {
                 // start instant and the requested label in the row: a directory can then be matched to it
                 // even after being copied, renamed or merged into another tree.
                 "startedAt",java.time.OffsetDateTime.now().toString(),"label",runLabel,
+                // The replay is what the operator recognises a match by, and it is also what
+                // `tools/match_materials.js` renames the directory after; keep both names in the row.
+                "replay",recorded,"gameVersion",engine.getVersionString(),
                 // Without these the report cannot tell a slow-clock diagnostic run from a scored
                 // realtime one, or a poll-only agent from one that was told about events it never
                 // asked for. `leaderboardEligible` is the gate: only realtime 1x runs may be ranked.
@@ -757,12 +761,38 @@ public final class EngineEvidence extends UnitEventListener {
         try{s.write("eventstream",data("connected",connected,"clients",clients));}
         catch(IOException|RuntimeException error){fail(error);}
     }
-    /** `-Drwx.evaluate.label` reduced to a path-safe token, or null when unset or blank after cleaning. */
-    private static String label(){
-        String raw=System.getProperty("rwx.evaluate.label");
+    /**
+     * Directory label: `-Drwx.evaluate.label` when set, otherwise the replay file being written.
+     *
+     * <p>The replay is named when the map loads, i.e. before the first tick, so it is already
+     * available here. Using it as the default means a plain listing of `evaluate/output/events-live`
+     * says which match each directory belongs to, instead of only the JVM-wide ordinal. Without a
+     * recording and without an explicit label there is nothing to derive, so the old numbered name
+     * stays.</p>
+     */
+    private static String label(GameEngine engine){
+        String cleaned=clean(System.getProperty("rwx.evaluate.label"));
+        return cleaned!=null?cleaned:clean(recordingName(engine));
+    }
+    /** The replay file currently being written, as a bare name with the `[local]`/`[v1.15]` decoration stripped. */
+    private static String recordingName(GameEngine engine){
+        if(engine==null||engine.replayEngine==null)return null;
+        String path=engine.replayEngine.getReplayFilePath();
+        if(path==null||path.isBlank())return null;
+        String name=path.replace('\\','/');
+        name=name.substring(name.lastIndexOf('/')+1);
+        if(name.toLowerCase(Locale.ROOT).endsWith(".replay"))name=name.substring(0,name.length()-7);
+        name=name.replaceFirst("(?i)^\\[(local|net|network)]\\s*","");
+        name=name.replaceFirst("\\s*\\[[vV][^\\]]*]","");
+        return name.isBlank()?null:name;
+    }
+    /** Path-safe token, or null when unset or blank after cleaning. */
+    private static String clean(String raw){
         if(raw==null)return null;
-        String cleaned=raw.replaceAll("[^A-Za-z0-9._-]+","-").replaceAll("^-+|-+$","");
-        if(cleaned.length()>40)cleaned=cleaned.substring(0,40).replaceAll("-+$","");
+        String cleaned=raw.replaceAll("[^A-Za-z0-9._-]+","-").replaceAll("[-_]{2,}","-")
+                .replaceAll("^[-_]+|[-_]+$","");
+        // 64 个字符足够放下"地图 + 开局时刻 + 人工后缀"，再长就开始挤 Windows 路径预算。
+        if(cleaned.length()>64)cleaned=cleaned.substring(0,64).replaceAll("[-_]+$","");
         return cleaned.isEmpty()?null:cleaned;
     }
     private synchronized void write(String kind,Map<String,Object> fields) throws IOException {

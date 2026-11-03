@@ -17,7 +17,9 @@ Group runs by (case, task, track, seed) -- one *configuration*. Keep exactly one
 "Newest" alone is not enough: the newest run of a group is sometimes the one that crashed.
 
 `replays/<run>.replay` follows its run: keep the replay iff the run is kept.
-`replays/[local] *.replay` are real player games and are never touched.
+`replays/[local] *.replay` are real player games and are never touched, and so is every other
+replay that is not a micro run name (full-match replays are named after `evaluate/output/<match>/`
+and are owned by `tools/match_materials.js`).
 `<CASE>/reports/` (generated HTML summaries) is not a run and is never touched.
 
 Usage
@@ -26,6 +28,7 @@ Usage
     python evaluate/tools/cleanup_micro_output.py --apply    # actually delete
 """
 import json
+import re
 import shutil
 import sys
 from collections import defaultdict
@@ -35,6 +38,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MICRO = ROOT / "evaluate" / "output" / "micro"
 REPLAYS = ROOT / "replays"
 NON_RUN = {"reports"}
+# Micro run name: `<case>_<task>_<track>_s<seed>_<stamp>[-n]`; the case starts with `CASE<n>-`.
+MICRO_RUN = re.compile(r"^CASE\d+-[A-Za-z0-9]+_\d+_\d+_\d+_(?:realtime|pause|human)_s\d+_\d{8}-\d{6}(?:-\d+)?$")
 
 apply = "--apply" in sys.argv
 
@@ -87,10 +92,13 @@ for key, members in sorted(groups.items()):
 
 keep_names = {r["name"] for r in keep}
 
-local, matched, orphan = [], [], []
+# Only micro run replays are ours to delete. A full-match replay is named after its
+# `evaluate/output/<match>/` directory, and `[local] *.replay` files are real player games: both are
+# somebody else's material, so they are counted as foreign and left alone.
+matched, orphan, foreign = [], [], []
 for f in sorted(REPLAYS.glob("*.replay")):
-    if f.stem.startswith("[local]"):
-        local.append(f)
+    if not MICRO_RUN.match(f.stem):
+        foreign.append(f)
     elif f.stem in keep_names:
         matched.append(f)
     else:
@@ -98,7 +106,7 @@ for f in sorted(REPLAYS.glob("*.replay")):
 
 print(f"runs: total={len(runs)} keep={len(keep)} drop={len(drop)}")
 print(f"  of dropped, aborted (no result.json): {sum(1 for r in drop if not r['result'])}")
-print(f"replays: player={len(local)} kept-run={len(matched)} to-remove={len(orphan)}")
+print(f"replays: kept-run={len(matched)} micro-to-remove={len(orphan)} not-micro={len(foreign)}")
 print()
 print("KEEP (one per configuration):")
 for r in sorted(keep, key=lambda r: (r["case"], r["name"])):

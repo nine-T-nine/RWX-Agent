@@ -3,7 +3,8 @@
 本文件回答两件事：**一局打完能拿到哪些材料**，以及**每个指标是怎么从这些材料算出来的**。
 怎么启动、怎么跑完一整轮评测、场景长什么样，见 [README.md](README.md)。
 
-引擎只写事实，不写分数。所有指标由 `evaluate/micro/` 的外部 Python 脚本离线计算，不折算总分。
+引擎只写事实，不写分数。所有指标由 `evaluate/micro/` 的外部 Python 脚本离线计算，**不折算总分**；
+另有与指标分开呈现的独立扣分文档 `score`（`case1-score-v1`，见 §13）。
 单位约定：世界坐标、游戏毫秒（`gameMs`，1 tick = 16 game-ms）、墙钟毫秒（`wallMs`）。
 
 ---
@@ -16,12 +17,14 @@
 - 节奏：我方底层命令间隔 p50/p90/max、交战期命令密度、最大无令间隔。
 - 反应：首次交火 → 首条命令的延迟；HP 下穿 50%/25% → 首条命令的延迟；两者分 `ANSWERED/LATE/UNANSWERED`。
 - 执行质量：射程内开火占比、射程外输出占比、交战期 idle 时长、坏引用命令数。
+- 扣分：独立的 `score`（`case1-score-v1`）：无关行为、机甲承受伤害、集体空闲三项封顶扣分（§13）。
 - Agent 行为（T2，仅 Agent）：A/B/C 计数、A→B 思考墙钟、B→A 等待、观察陈旧度、被拒/跳过比例、敌方武器轮数。
 - 回合行为（T3，仅 pause）：回合数、每回合思考墙钟、每回合命令数、空战斗回合占比、回合延迟。
 
 **不能**
 
-- 没有总分、没有跨指标归一化、没有跨 CASE 比较。`delta` 只在同一 `task+seed` 内可比。
+- 指标之间没有总分、没有跨指标归一化、没有跨 CASE 比较；`score` 是**只有扣分**的独立文档，
+  不含胜负，不能替代 `outcome`。`delta` 只在同一 `task+seed` 内可比。
 - 没有独立复算时（`evidence.source=live/unverified`）不能声称"结果经过复核"。
 - 没有 gateway 时（人类回放）T2/T3 全部 N/A，`decisionCycle` 一夜之间不存在。
 - `pause` 的 `cadence` 反映固定回合，不是思考速度；`thinkingWallMs` 在 pause 下不代表思考时间。
@@ -234,7 +237,8 @@ pause 下命令记录在 tick 之间、执行在 tick 之内，一发伤害可�
 | `run` | `case`、`task`、`seed`、`track`、`mode` |
 | `metrics` | 每个插件一项：`{id: {tier, sources, value}}`；`value.status` 为 `OK/N/A/ERROR` |
 | `mapping` | gateway B 请求 ↔ replay 底层命令：`matched`/`ambiguous`/`unmatched` + 逐条 `rows` |
-| `diagnostics` | `resimError`、`playbackChecksumWarnings`、`playbackWarnings`、`baselineError`、`unknownNativeActions`、`replay is incomplete` 等 |
+| `score` | 独立扣分文档（`case1-score-v1`）：`baseline`、`deduction`、`total`、3 项封顶扣分与明细，见 §13 |
+| `diagnostics` | `resimError`、`playbackChecksumWarnings`、`playbackWarnings`、`baselineError`、`unknownNativeActions`、`replay is incomplete`、`score_error` 等 |
 | `reference` | 人类基线（仅 T1）：`kind`、`path`、`metrics` |
 | `evidence` | `snapshots`/`events`/`nativePlayerCommands` 条数、`gateway` 是否存在、`playback` 全文、`source`（`re-sim` \| `live/unverified`）、`verified` |
 
@@ -435,8 +439,10 @@ pause 下命令记录在 tick 之间、执行在 tick 之内，一发伤害可�
 
 ## 11. 已知局限（不声称什么）
 
-- 没有总分，也没有跨指标归一化；不同 tier 的指标不能相加。
-- `shieldLossFractions` 是净损失，被护盾回复污染；"承受的护盾伤害"只能从 `events.jsonl` 累积（未做成指标）。
+- 指标之间没有总分，也没有跨指标归一化；不同 tier 的指标不能相加。独立的 `score`（§13）只做扣分、
+  不含结局，不能替代 `outcome`。
+- `shieldLossFractions` 是净损失，被护盾回复污染；"承受的护盾伤害"要从 `events.jsonl` 累积（§13 的
+  `mech_damage.detail.shieldDamageA2` 就是累计值，指标里没有单独一项）。
 - `IDLE_IN_COMBAT`、`FIRE_UPTIME` 受 250ms 快照粒度限制；`FIRE_UPTIME` 的武器状态判定还依赖
   `warmupFrames`/`cooldownFrames` 在采样点非零。
 - T2 的 `thinkingWallMs` 只覆盖 A→B；pause 的真实思考看 T3。
@@ -454,4 +460,64 @@ pause 下命令记录在 tick 之间、执行在 tick 之内，一发伤害可�
    `self_ids`/`enemy_ids`、`kills`、`engage_ms`、`state_at(ms)`、`unit_at(id,ms)`、`intervals()`。
 3. 只读证据，不参与游戏；异常自己抛，`evaluate.py` 会包成 `ERROR`。
 4. 若指标对人类也可算，标 `T1`；依赖 gateway 标 `T2`；依赖 turn lifecycle 标 `T3`。
-5. 在 `test/test_metrics.py` 里加一个手算可核的 fixture。
+5. 在 `evaluate/micro/test/test_metrics.py` 里加一个手算可核的 fixture；评分另有 `test/test_score.py`。
+
+---
+
+## 13. 评分（score）
+
+`evaluate.py` 在写指标的同时调用 `score.py`，产出**独立**的 `score` 文档（`version = case1-score-v1`）：
+基线 100，三项扣分各自先裁到 `[0,cap]`、保留 1 位小数再求和，`total = max(0, 100 − Σ)`。
+指标仍不加权；评分只消费同一份证据，`outcome`、`metrics` 都不受影响。
+
+| 项 | 上限 | 口径 |
+|---|---:|---|
+| `irrelevant` 卡死行为/无关行为 | 30 | 按次数 × 严重档位：越权/被拒请求 **7.5**；活跃期内失败的 B 请求（`invalid_request`/`error`）**4.5**；引用已死单位的底层命令、以及"所有单位都已死、实际作用不到任何人"的已提交命令各 **1.8** |
+| `mech_damage` 机枪机甲承受伤害 | 60 | `S = K*100 + A1/B1*20 + A2/B2*40`；`K` = 阵亡机甲 / 机甲总数；`A1/A2` = 机甲受到的 HP/护盾伤害（`events.jsonl` 的 `damage` 行累计）；`B1/B2` = 机甲原始最大 HP/护盾总和 |
+| `collective_idle` 集体空闲 | 40 | 所有存活机甲同时 idle 的时间段（>5s），每段 `25*f(秒)`；`f:<5s=0，(5,20) 自然指数{0,1}，>=20s=1`；先求和再封顶 |
+
+### 13.1 口径细节
+
+- **无关行为的三档**：草稿只给出 `1.8/4.5/7.5` 三个档位，没有指定事件类型；这里沿用 CASE3 的同一组映射
+  （越权 = 7.5、可执行请求失败 = 4.5、无效果动作 = 1.8）。`status=rejected` 的请求与 `violations.jsonl`
+  按 `requestId` 去重；`phase=ended` 之后的 "match has ended" 错误、以及 batch 子请求（`parent != null`）
+  不计——它们是收尾噪声，不是决策。CASE1 目前不写 `violations.jsonl`，越权命令只表现为 `status=rejected`。
+- **承受伤害默认只算终局存活机甲**：草稿的"（不包括死亡）"按字面理解成"死亡机甲不计入 A1/A2 与 B1/B2"，
+  死亡本身由 `K*100` 计分，避免同一损失算两次。把 `score.DAMAGE_SCOPE` 改成 `"all"` 可把死亡机甲也计入
+  A/B（`detail.scope` 记录实际取值）。全员阵亡时 A/B 为 0，只剩 `K=1 → 100`，封顶 60。
+- **HP/护盾伤害取事件累计值**：`damage` 行的 `hpDamage`/`shieldDamage` 是引擎在伤害钩子里记录的
+  "命中前池 − 命中后池"，不是按单发标称伤害折算。护盾会回复，所以它与 `outcome.shieldLossFractions`
+  （净损失）不同：前者是**承受量**，后者是净变化。缺 `events.jsonl` 或终态时该项 N/A，不猜。
+- **集体空闲的口径**：`order=idle` 且（无目标或最近 2 秒未开火）；死亡机甲不参与"都空闲"的判断
+  （全员阵亡不会再产生窗口）。时间来自 250 game-ms 快照，精度 250ms；从开局（`gameMs=0`，briefing 不计时）
+  起算，**不**限定在交战窗口内——草稿没有交战限定，所以开局的思考时间也会计入；
+  `detail.windows[].inCombat` 标出窗口是否与交战期（首次交火起）重叠，便于只读战斗期。
+- **自然指数很凸**：`f` 在 (5,20) 上是自然指数曲线，12.5 秒的窗口只有满额（25 分）的约 0.055%
+  （≈0.014 分），19 秒才到 36.8%（≈9.2 分），20 秒封顶 25 分。这是曲线形状本身，不是漏算。
+- **窗口按快照边界切分**：一个窗口从"所有机甲 idle"的第一帧开始，到第一帧"有机甲不再 idle"结束；
+  最后一次采样之后若仍全部 idle，窗口延伸到 `result.gameMs`。空闲期跨越单位死亡时以死亡帧截断。
+- **缺证据**：没有 `snapshots.jsonl`（没跑 re-sim、也不是 live 快照）时 `mech_damage` 与 `collective_idle`
+  记 N/A；没有 gateway 的人类回放仍可算（`irrelevant` 用 replay 里的坏引用）。`status=N/A` 的项记 0 分，
+  理由写进 `score.diagnostics`。
+
+### 13.2 读分注意
+
+- `score.items[].raw` 是封顶前的原始分，`points` 是裁到上限后的实际扣分，两者只在超上限时不同。
+- `case1-score-v1` **只有扣分项、不含结局**：躲着不打（`timeout`）可能比认真交战（`loss`）分高，
+  所以必须和 `metrics.outcome` 一起读，不能单独当排名依据。
+- `irrelevant` 的失败档只统计 B 类（可执行）请求；只读观察返回参数错误不算行为。
+- 同一份证据重复离线计算得到相同分数（纯函数）；换版本（`case1-score-v1` → 新版本）不可混榜。
+
+### 13.3 人类对局可统计性
+
+CASE1 是四个 CASE 里**唯一**接受 `mode=human` 的（`requiresAgentRealtime()` 返回 false）。人类局没有
+`gateway.jsonl`、没有 `violations.jsonl`，其余证据（`meta`/`result`/`match.replay`/re-sim 快照）照常生成。
+
+| 扣分项 | 人类可统计 | 依据 |
+|---|---|---|
+| `irrelevant`（30） | **部分** | 7.5 档（违规 / `status=rejected`）与 4.5 档（失败的 B 请求）只存在于 `gateway.jsonl`，人类恒为 0；只有 1.8 档"引用已死单位的底层命令"能从 replay 算 |
+| `mech_damage`（60） | **可以** | 只用 `engine/events.jsonl` 的伤害累计与终态单位 |
+| `collective_idle`（40） | **可以** | 只用 250 game-ms 快照 |
+
+读法：人类局的 `score.total` 天然偏高，`irrelevant` 的两个高档拿不到证据；不要把"没扣"读成"没做"。
+`status=N/A` 的项记 0 分但意思是"没证据"。CASE2/3/4 没有人类模式，不适用本表。

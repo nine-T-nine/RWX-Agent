@@ -107,3 +107,21 @@ test('a match that dies without an end row is marked aborted and keeps its last 
   assert.ok(result.window.endMs <= 200000);
   assert.match(result.ending.reason, /process_exit/);
 });
+
+test('a consolidated match finds its command log inside the match directory', async () => {
+  const {match} = workspace();
+  // `tools/match_materials.js` moves the log to `<match>/commands-<match>.txt`; preprocessing has to
+  // keep working from there, and the prepared inputs keep the same names so stage reports land back
+  // in the same match directory.
+  const name = path.basename(match);
+  fs.renameSync(path.join(path.dirname(match), `commands-${name}.txt`),
+    path.join(match, `commands-${name}.txt`));
+  const result = await preprocess(match);
+  assert.equal(result.ending.kind, 'surrender');
+  assert.equal(result.inputs.commands, path.join(match, `commands-${name}.txt`));
+  assert.ok(result.kept.commands > 0);
+  assert.ok(fs.existsSync(path.join(match, 'prepared', `commands-${name}.txt`)));
+  // One material, one copy: the preprocess record only lives where scoring reads it.
+  assert.ok(fs.existsSync(path.join(match, 'prepared', 'preprocess.json')));
+  assert.equal(fs.existsSync(path.join(match, 'preprocess.json')), false);
+});

@@ -1061,8 +1061,9 @@
     "sources": [
       "evaluate/output/<对局>/score.json（total-v1 综合分）",
       "evaluate/output/<对局>/stage_1/score.json、stage_2/score.json",
+      "evaluate/output/<对局>/meta.json（系统版本、模型、工具、思考强度、地图、时长、胜负、会话与 token）",
       "evaluate/output/<对局>/replay/*.summary.txt（地图、时长、命令量）",
-      "evaluate/output/events-live/（实时遥测，已按 match id 归档进各对局目录）",
+      "evaluate/output/<对局>/events-live/<对局>/（实时遥测，已按对局名归档）",
       "DSH 会话存档（模型、推理强度、工具调用与对局结局）"
     ],
     "limits": [

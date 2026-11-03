@@ -9,6 +9,32 @@
 
 ---
 
+## 0. 交付给被测 Agent 的文件
+
+**只交这两份**：
+
+| 文件 | 内容 |
+|---|---|
+| [START.md](START.md) | 任务、公开规则、参与流程、参与边界 |
+| [commands.md](commands.md) | 完整命令接口（会打进 core jar，供 `rwx-micro-2-help` 逐节读取） |
+
+**本目录其余文件都是管理员/开发者资料，不得出现在 Agent 可见的文件列表里**：
+
+| 文件 | 为什么不给 |
+|---|---|
+| `README.md`（本文件） | 含地图尺寸推算、矿脉采样、建造者参数、经济表细节与基线策略 |
+| `METRICS.md` | 含材料字段、指标阈值、`incomePerSecond` 真实换算与扣分口径 |
+| `prompt.txt` | 本 CASE 的实现提示词（含验收清单与源码勘察要求） |
+| `score_design.md` | 扣分规则草稿 |
+| `evaluate.py`、`score.py`、`greedy.py`、`metrics/`、`test/` | 评测实现、贪心基线与单测 |
+
+路由：
+
+- **只测本 CASE** → 只给 `START.md` + `commands.md`。
+- **一次测全部四个 CASE** → 先给 [`../EVALUATION.md`](../EVALUATION.md)，再给这两份。
+
+---
+
 ## 1. 场景布置
 
 ### 1.1 任务
@@ -128,13 +154,14 @@ python evaluate/micro/CASE2-LTE/evaluate.py evaluate/output/micro/CASE2-LTE/<run
 ```
 
 输出 `eval/metrics.json`、`report.txt`、`report.html`（后两者是同一份 JSON 的文本/HTML 包装）。
-本 CASE **不做 re-sim**：生命周期来自 live 引擎记录，replay 只用于核对底层命令。
+`metrics.json` 里除了事实指标还有独立的 `score` 扣分文档（上限 100 − 三项封顶扣分，口径见
+[METRICS.md §14](METRICS.md)）。本 CASE **不做 re-sim**：生命周期来自 live 引擎记录，replay 只用于核对底层命令。
 
 **④ 看结果**
 
 | 文件 | 看什么 |
 |---|---|
-| `eval/metrics.json` | 7 个指标 + `diagnostics` + `evidence`（`independentResimulation` 恒为 false） |
+| `eval/metrics.json` | 7 个指标 + 顶层 `score`（扣分）+ `diagnostics` + `evidence`（`independentResimulation` 恒为 false） |
 | `result.json` | authoritative 结局与 `targetReachedGameMs` |
 | `engine/lifecycle.jsonl` | 每条指令的阶段流水、native 关联、收入锚点 |
 
@@ -200,6 +227,7 @@ python -B evaluate/micro/CASE2-LTE/test/run_configs.py --dist desktop/build/head
 
 | 想知道 | 看 |
 |---|---|
+| 这次跑得怎么样（扣分） | `eval/metrics.json.score.total` / `score.items` |
 | 达标了吗、多快达标 | `outcome.targetReachedGameMs` / `gameElapsedMs` |
 | 收入怎么涨起来的 | `income_anchors` |
 | 哪条指令慢、慢在哪个阶段 | `instruction_lifecycle.phases` |
@@ -251,6 +279,7 @@ evaluate/micro/CASE2-LTE/
   commands.md          命令手册（会打进 core jar）
   prompt.txt           Agent 任务提示词
   evaluate.py          离线评测入口
+  score.py             扣分评分（case2-score-v1，写进 metrics.json 的 score）
   greedy.py            Greedy 基线
   metrics/             7 个指标插件（outcome/income_anchors/instruction_lifecycle/…）
   test/                test_lte.py（单测）、smoke.py（冒烟）、run_configs.py（批量跑）

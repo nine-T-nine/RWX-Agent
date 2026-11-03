@@ -9,7 +9,8 @@
  *   node evaluate/score_match.js "evaluate/output/<对局名>"
  *   node evaluate/score_match.js "<对局目录>" --out <目录> [--allow-stale] [--allow-ineligible]
  *
- * 读取：`stage_1/score.json`、`stage_2/score.json`，若存在 `preprocess.json` 则同时校验可评性。
+ * 读取：`stage_1/score.json`、`stage_2/score.json`，若存在 `prepared/preprocess.json`
+ * （旧布局的 `preprocess.json` 也认）则同时校验可评性。
  * 输出：`score.json` / `score.txt`（默认写回对局目录根）。
  */
 const fs = require('node:fs');
@@ -76,7 +77,8 @@ function main(argv) {
   const dir = path.resolve(target);
   const stage1 = loadStage(dir, 'stage_1', STAGE1_VERSION, options.allowStale);
   const stage2 = loadStage(dir, 'stage_2', STAGE2_VERSION, options.allowStale);
-  const pre = readJson(path.join(dir, 'preprocess.json'));
+  // 预处理产物只有一份，放在 `prepared/`；旧布局把它放在对局根目录，两个位置都认。
+  const pre = readJson(path.join(dir, 'prepared', 'preprocess.json')) ?? readJson(path.join(dir, 'preprocess.json'));
   const versionsCurrent = !stage1.stale && !stage2.stale;
   const result = {
     schema: 1, version: VERSION, baseline: 100, weights: {...WEIGHTS},

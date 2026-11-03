@@ -22,6 +22,8 @@ import static com.corrodinggames.rts.game.ai.custom.micro.MicroData.map;
  */
 public final class Case3Transport implements MicroCase {
     public static final int SELF_TEAM=0,ENEMY_TEAM=1;
+    /** One-time fog: start unexplored, reveal by vision, never regrow (engine fogMode 1). */
+    public static final int FOG_MODE=1;
     /** Target composition entry: internal unit id and how many per level multiplier. */
     public record Need(String type,int perLevel){ }
     /** Everything a task fixes before the seed-dependent layout. */
@@ -173,6 +175,7 @@ public final class Case3Transport implements MicroCase {
             }
         }
         return map("task",c.task,"type",t.type(),"level",t.level(),"mapSize",Case3Map.SIZE,"tileSize",Case3Map.TILE,
+                "fogMode",FOG_MODE,
                 "targetIslandTiles",new ArrayList<>(targetIsland),"baseIslandTiles",new ArrayList<>(baseIsland),
                 "targetIslandArea",targetIsland.size(),"baseIslandArea",baseIsland.size(),
                 "targetIslandBounds",map("minX",minX,"maxX",maxX,"minY",minY,"maxY",maxY),
@@ -247,12 +250,17 @@ public final class Case3Transport implements MicroCase {
         self.credits=((Number)meta.get("initialCredits")).doubleValue();
         GameTeam enemy=new GameTeam(ENEMY_TEAM);enemy.teamName="Coast";enemy.teamColorId=1;enemy.credits=0;
         e.playerTeam=self;e.networkEngine.localPlayerTeam=self;e.networkEngine.roomSettings.incomeMultiplier=1;
-        // One-time fog: every tile starts revealed (fog value 0 = visible) and, because the periodic
-        // maintenance pass is off, the fog data never grows back. 10 would mean "never explored".
-        // fogRenderActive mirrors roomSettings.revealedMap in GameLogic, i.e. the same "revealed" mode.
-        e.tileMap.fogEnabled=true;e.tileMap.fogPeriodicMaintenanceEnabled=false;e.tileMap.fogRenderActive=true;
-        for(PlayerTeam team:PlayerTeam.getSortedTeams(true))if(team.fogOfWarData!=null)
-            for(int x=0;x<e.tileMap.tileCountX;x++)for(int y=0;y<e.tileMap.tileCountY;y++)team.fogOfWarData[x][y]=0;
+        // One-time fog (fogMode 1): every tile starts unexplored (10) and only unit vision reveals
+        // it. The periodic maintenance pass is off, so an explored tile never fades back and a
+        // revealed map is the only thing that keeps the match fully visible (CASE1/CASE2 use that).
+        e.tileMap.fogEnabled=true;e.tileMap.fogPeriodicMaintenanceEnabled=false;e.tileMap.fogRenderActive=false;
+        // The engine only allocates the per-team fog arrays and its smoothing cache when the room
+        // setting enables fog, so provide both before the first tick.
+        e.tileMap.ensureFogCacheAllocated();
+        for(PlayerTeam team:PlayerTeam.getSortedTeams(true))if(team.teamId>=0){
+            if(team.fogOfWarData==null)team.fogOfWarData=new byte[e.tileMap.tileCountX][e.tileMap.tileCountY];
+            for(int x=0;x<e.tileMap.tileCountX;x++)for(int y=0;y<e.tileMap.tileCountY;y++)team.fogOfWarData[x][y]=10;
+        }
         e.hasWonGame=false;e.hasLostGame=false;e.isStopped=false;e.isPaused=false;e.currentTick=0;e.gameTimeMillis=0;
         e.networkEngine.nextUnitId=1000;
         meta.put("transportCapacity",capacity((String)meta.get("transportType")));

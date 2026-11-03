@@ -21,7 +21,11 @@ class EngineEvidenceTest {
         override fun r() = UnitTypeEnum.builder
         override fun d(team: PlayerTeam?) = true
     }
-    private fun withEvidence(label: String? = null, block: (GameEngine, PlayerTeam, Path) -> Unit) {
+    private fun withEvidence(
+        label: String? = null,
+        configure: (GameEngine) -> Unit = {},
+        block: (GameEngine, PlayerTeam, Path) -> Unit,
+    ) {
         val root = generateSequence(Path.of("").toAbsolutePath()) { it.parent }.first { Files.exists(it.resolve("settings.gradle.kts")) }
         val tmp = Files.createTempDirectory(Files.createDirectories(root.resolve("agent-tmp")), "engine-evidence-test-")
         val engine = GameEngine.getInstance() ?: GameLogic()
@@ -43,6 +47,7 @@ class EngineEvidenceTest {
             engine.playerTeam = team
             System.setProperty("rwx.evaluate.dir", tmp.toString()); System.setProperty("rwx.evaluate.team", "0")
             if (label != null) System.setProperty("rwx.evaluate.label", label)
+            configure(engine)
             EngineEvidence.beforeTick()
             block(engine, team, tmp)
         } finally {
@@ -254,4 +259,23 @@ class EngineEvidenceTest {
             assertTrue(Regex("""match-\d{3}-\d{8}-\d{6}-team0-CASE4-retreat-run-2""").matches(name), name)
             assertEquals("CASE4-retreat-run-2", rows(tmp).first()["label"]!!.jsonPrimitive.content)
         }
+    @Test fun `a recording replay name labels the directory so a listing says which match it is`() {
+        // `rwx-battleroom-start --record` names the replay when the map loads, before the first tick,
+        // so it is already known here. Without a label the directory name is only a JVM-wide ordinal.
+        val replay = "[local] Ice Island (2p) [v1.15] (3 11月 2026 09.32.06)_dsh4.1_tool3_vsHard_重坦.replay"
+        withEvidence(configure = { engine ->
+            ReplayEngine::class.java.getDeclaredField("replayFilePath").apply { isAccessible = true }
+                .set(engine.replayEngine, replay)
+        }) { _, _, tmp ->
+            val name = evidenceDir(tmp)
+            assertTrue(Regex("""match-\d{3}-\d{8}-\d{6}-team0-Ice-Island-2p-3-11-2026-09\.32\.06-dsh4\.1_tool3_vsHard""")
+                .matches(name), name)
+            val meta = rows(tmp).first()
+            assertEquals("Ice-Island-2p-3-11-2026-09.32.06-dsh4.1_tool3_vsHard",
+                meta["label"]!!.jsonPrimitive.content)
+            assertEquals("Ice Island (2p) (3 11月 2026 09.32.06)_dsh4.1_tool3_vsHard_重坦",
+                meta["replay"]!!.jsonPrimitive.content)
+            assertEquals("1.15", meta["gameVersion"]!!.jsonPrimitive.content)
+        }
+    }
 }

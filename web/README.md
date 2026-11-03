@@ -22,12 +22,14 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | 文件 | 内容 |
 | --- | --- |
 | `index.html` | 中文首页内容、导航、无脚本视频链接 |
-| `results.html` | 评测结果页：工具对比、当前标准、归档账本、材料缺口、口径限制 |
+| `results.html` | 评测结果页：完整对局评分、微操 CASE、工具对比、当前标准、归档账本与口径限制 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
 | `app.js` | 首页录像切换、平台切换、复制命令和手机导航 |
-| `results.js` | 读取 `resource/results.json` 渲染评测表格与卡片 |
+| `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染评测表格与卡片 |
 | `resource/matches.json` | 三场录像的名称、说明、时长及 SHA-256 |
 | `resource/results.json` | 全部对局的分数、模型 + 工具 + 推理强度、结局与备注 |
+| `resource/scoring.json` | 完整对局与四个微操 CASE 的扣分项、上限、公式、说明和环境图索引 |
+| `resource/cases/` | 四个微操 CASE 的固定 task + seed 真实窗口截图（WebP） |
 | `resource/matches/` | 已提交的 H.264/AAC 网页录像，完整时长、1080p/60fps |
 | `resource/posters/` | 从原录像提取的 WebP 封面 |
 
@@ -38,7 +40,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 评测结果来自仓库的评分产物（`evaluate/output/<对局>/score.json`，不纳入版本库）。更新流程：
 
 1. 按 `evaluate/README.md` 跑完评分，确认 `score.json` 的 `version` 为当前标准。
-2. 把对局的综合分、两阶段分、模型 + 工具 + 推理强度、结局与会话 id 写进 `resource/results.json`。
+2. 把对局的综合分、两阶段分、模型 + 工具 + 推理强度、结局与会话 id 写进 `resource/results.json`。模型、工具、推理强度、会话与 token 这些身份信息以对局目录的 `meta.json` 为准（`evaluate/tools/match_materials.js` 生成并维护），页面只做展示。
 3. 若对局无法关联或材料不足，写入 `insufficient` 而不是补分；归档对局只进 `legacy`。
 4. 运行 `python web/tools/check_site.py`：它会校验页面链接、录像校验和，以及每条记录的加权分与阶段分是否一致。
 

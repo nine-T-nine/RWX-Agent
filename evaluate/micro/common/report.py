@@ -34,6 +34,33 @@ def timeline(run):
               f'<text x="{width-85}" y="{height-18}" font-size="12">{end/1000:.2f}s</text>', '</svg>']
     return "".join(parts)
 
+def score_summary(score):
+    """One text line for the independent deduction document (None when no case.score exists)."""
+    if not score:
+        return None
+    if score.get("status") == "ERROR":
+        return f'Score: ERROR ({score.get("reason", "unknown")})'
+    items = ", ".join(f'{item.get("id")}={item.get("points")}' for item in score.get("items", []))
+    return (f'Score: {score.get("version")} total={score.get("total")} '
+            f'(deduction {score.get("deduction")}, baseline {score.get("baseline")}) | {items}')
+
+
+def score_table(score):
+    if not score or score.get("status") == "ERROR":
+        return ""
+    rows = []
+    for item in score.get("items", []):
+        detail = json.dumps(item.get("detail", {}), ensure_ascii=False, sort_keys=True)
+        rows.append(f'<tr><th>{html.escape(str(item.get("id", "")))}</th><td>{html.escape(str(item.get("title", "")))}</td>'
+                    f'<td>{item.get("cap")}</td><td>{item.get("raw")}</td><td>{item.get("points")}</td>'
+                    f'<td><pre>{html.escape(detail)}</pre></td></tr>')
+    notes = "<br>".join(html.escape(note) for note in score.get("notes", []))
+    return ('<h2>Deduction score (independent of the metrics)</h2><p>' + html.escape(score_summary(score))
+            + '</p><table><thead><tr><th>Item</th><th>Title</th><th>Cap</th><th>Raw</th><th>Points</th>'
+              '<th>Detail</th></tr></thead><tbody>' + "".join(rows) + '</tbody></table>'
+            + f'<p>{notes}</p>')
+
+
 def render(run, result):
     outcome = result["metrics"].get("outcome", {}).get("value", {})
     timing = result["metrics"].get("agent_timing", {}).get("value", {})
@@ -42,8 +69,9 @@ def render(run, result):
     second = (f'Realtime: track={run.meta.get("track")} | wallMs={timing.get("wallUsedMs", "N/A")} '
               f'| thinkingWallMs={timing.get("thinkingWallMs", "N/A")} '
               f'| evidence={evidence.get("source", "unknown")} verified={evidence.get("verified", False)}')
+    summary = score_summary(result.get("score"))
     reference = result.get("reference")
-    text = [first, second, "", "Metric | Tier | Agent/run | Human (T1 only)"]
+    text = [first, second] + ([summary] if summary else []) + ["", "Metric | Tier | Agent/run | Human (T1 only)"]
     rows = []
     for key, metric in result["metrics"].items():
         value = json.dumps(metric["value"], ensure_ascii=False, sort_keys=True)
@@ -56,6 +84,9 @@ def render(run, result):
     provenance = "" if not reference else f'<p>Reference: {html.escape(reference.get("kind", "human"))}. Only T1 is compared.</p>'
     document = '<!doctype html><meta charset="utf-8"><title>CASE1-duel evaluation</title><style>body{font:15px system-ui;max-width:1280px;margin:30px auto;padding:0 20px;color:#1a2530}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccd;padding:8px;text-align:left;vertical-align:top}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}svg{width:100%;background:#f7f9fb}</style>'
     document += f'<h1>{html.escape(first)}</h1><p>{html.escape(second)}</p>' + timeline(run) + provenance
+    if summary:
+        document += f'<p><strong>{html.escape(summary)}</strong></p>'
     document += '<table><thead><tr><th>Metric</th><th>Tier</th><th>Agent/run</th><th>Human (T1)</th></tr></thead><tbody>' + "".join(rows) + '</tbody></table>'
+    document += score_table(result.get("score"))
     document += '<h2>Diagnostics</h2><pre>' + html.escape(diagnostics) + '</pre>'
     return "\n".join(text) + "\n", document

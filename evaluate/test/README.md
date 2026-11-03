@@ -7,7 +7,7 @@
 从仓库根目录执行，无需启动游戏，无需npm/pip依赖：
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
+node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js evaluate/test/test-paths.js evaluate/test/test-match-materials.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -21,6 +21,7 @@ node --test evaluate/test/test-events.js
 node --test evaluate/test/test-stage2-fixes.js
 node --test evaluate/test/test-score.js evaluate/test/test-score-evidence.js
 node --test evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
+node --test evaluate/test/test-paths.js evaluate/test/test-match-materials.js
 python -m unittest discover -s evaluate/test -p 'test_*.py'
 ```
 
@@ -35,11 +36,13 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 | `test-stage2-fixes.js` | 第二轮回归：偷袭响应按空间关系而非 `kind` 判定、未来/同 tick 应用结果不提前计入、端口日志命令先于同刻记录注入、FEED 合并重算状态、工厂 task 与真实产出证明、严格10秒上界、`--commands`/`--economy` 必需性及经济序列核对、B-81 已死亡 builder 经 `--builder` 进入 STALE_COMMAND、拒绝请求分类/查询分离/与 STALE_COMMAND 去重、重复与已恢复重试的过滤、`actionable` 可扣分视图（timing/未证明/对象续用）、完整/截断/缺失结束标记 | 构造内存遥测；小报告写 `agent-tmp/` 临时目录并清理 |
 | `test-score.js` | 两阶段通用曲线原坐标计算、HP 损失和响应系数、过期时长分档、空闲独立曲线、资金平滑/折减/分段、分类封顶和覆盖配置、CLI 报告一致性 | 内存对象；临时报告写 `agent-tmp/` 并清理 |
 | `test-score-evidence.js` | B 端点整批工作连续可行性；区间中途缺钱/单位上限/动作不可用；建造落点与维修目标；HP 聚合、生效顺序与过期时间证据去重；空闲段的原生命令触碰排除与工厂"别处在排产"排除（指挥中心不计、类工厂按更宽集合） | 内存遥测；不启动引擎 |
-| `test-preprocess.js` | 结尾窗口判定（投降/退出/正常结束/截断/进程中止的优先级与取最早）、裁剪后 telemetry/commands/economy/replay 的一致性、合成 end 行与证据覆盖标注 | 合成小样本写系统临时目录 |
+| `test-preprocess.js` | 结尾窗口判定（投降/退出/正常结束/截断/进程中止的优先级与取最早）、裁剪后 telemetry/commands/economy/replay 的一致性、合成 end 行与证据覆盖标注、材料收敛后的命令日志位置、`preprocess.json` 只留一份 | 合成小样本写系统临时目录 |
+| `test-paths.js` | 对局路径唯一入口：两种布局（散着/已收敛）都解析到同一个工作区、`prepared/` 输入不拼出第二层目录、`--out` 仍可改向、对局名清洗保留 `--` 与括号、共享/归档目录（`_archive`、`*_old`、`micro`）不算对局 | 临时目录 |
+| `test-match-materials.js` | 材料收敛：命令日志与引擎证据被移动而不是复制、外层重复副本被删除、回放改名成 `<对局名>.replay`、只留一份 `preprocess.json`、`meta.json` 的自动字段与人工覆盖、重复运行无副作用、`_old`/`micro` 不碰、只有回放的局不建目录、内容冲突只报告、`--archive` 把 `*_old` 收进 `_archive/` 且默认不动归档 | 临时目录，不碰真实 `evaluate/output/` |
 | `test-score-match.js` | 综合分 `0.4/0.6` 权重、版本门（旧版本默认拒算、显式放行后标记）、预处理否决时综合分为空 | 临时目录写两阶段 score.json |
 | `test_replay.py` | 按引擎写侧布局合成二进制，覆盖UTF/gzip、命令各字段、JSONL导出、文本过滤、截断/损坏容错、strict模式；对仓库录像检查布局无漂移、元数据与时间一致 | 合成Replay和输出放临时目录；只读仓库 `replays/*.replay`，真实样本较多时用时更长 |
 
-本次评分相关 Node 用例已验证；完整数量以实际输出为准。Python 既有基线为27项。样本要求：
+Node 用例覆盖两轮统计、评分、事件检测、预处理、路径解析与材料收敛；完整数量以实际输出为准。Python 既有基线为27项。样本要求：
 
 - GPT映射回归依赖 `evaluate/output/` 中的对应原始commands与解析JSONL；目录不存在时skip，具体样本缺失时用例提前返回，因此不能仅凭总通过数认定真实GPT样本已验证。合成用例独立运行。
 - Python真实Replay回归在 `replays/` 不存在时skip；目录存在时要求至少一份样本，并对当前完整样本集设置命令总量和元数据断言。精简样本集可能不满足这些断言。
@@ -51,7 +54,7 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 
 | 文件 | 用途 |
 |---|---|
-| [EngineEvidenceTest.kt](../../core/src/test/kotlin/evaluate/utils/EngineEvidenceTest.kt) | 游戏秒采样、暂停、时间跳跃、命令收包状态（含 `--builder` 收包对象）、跨线程关联、死亡去重、跨局文件，以及初始建造者嵌套读取事务列表不中断采集 |
+| [EngineEvidenceTest.kt](../../core/src/test/kotlin/evaluate/utils/EngineEvidenceTest.kt) | 游戏秒采样、暂停、时间跳跃、命令收包状态（含 `--builder` 收包对象）、跨线程关联、死亡去重、跨局文件、初始建造者嵌套读取事务列表不中断采集，以及证据目录命名（显式标签、默认取回放名、`meta` 行记 `label`/`replay`/`gameVersion`） |
 | [EngineEvidenceTrimTest.kt](../../core/src/test/kotlin/evaluate/utils/EngineEvidenceTrimTest.kt) | `trimTelemetry` 把连续 frame 行合并为 frames 行：段内恒定步长、变速/跳号分段、单帧原样保留 |
 | [RwxCliCommandCaptureTest.kt](../../core/src/test/kotlin/com/corrodinggames/rts/game/ai/custom/rwx_cli_tool/RwxCliCommandCaptureTest.kt) | Socket执行前收包、协议/编码、毫秒、改名与并发、评测开关闸门、仅一份命令TXT且无stats |
 | [AppOptionsTest.kt](../../core/src/test/kotlin/io/github/rwx/app/AppOptionsTest.kt) | `--evaluate`开启CLI、默认证据目录、显式目录优先、参数处理 |

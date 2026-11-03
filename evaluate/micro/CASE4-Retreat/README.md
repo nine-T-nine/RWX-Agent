@@ -9,6 +9,32 @@ Agent 只会收到"清空左上角区域、善用维修湾"这个目标，**不�
 
 ---
 
+## 0. 交付给被测 Agent 的文件
+
+**只交这两份**：
+
+| 文件 | 内容 |
+|---|---|
+| [START.md](START.md) | 任务、公开规则、参与流程、参与边界 |
+| [command.md](command.md) | 完整命令接口（注意文件名是单数；会打进 core jar，供 `rwx-micro-4-help` 逐节读取） |
+
+**本目录其余文件都是管理员/开发者资料，不得出现在 Agent 可见的文件列表里**：
+
+| 文件 | 为什么不给 |
+|---|---|
+| `README.md`（本文件） | 含炮塔区矩形、落点算法、间距规则、**敌方炮塔数量与类型**、迷雾实现、参数表与预览工具 |
+| `METRICS.md` | 含材料字段、指标阈值与扣分口径 |
+| `prompt.txt` | 本 CASE 的实现提示词 |
+| `score_design.md` | 扣分规则草稿 |
+| `evaluate.py`、`score.py`、`baseline.py`、`baselines.json`、`metrics/`、`test/`、`layout-comparison.svg` | 评测实现、基线、布局对比图 |
+
+路由：
+
+- **只测本 CASE** → 只给 `START.md` + `command.md`。
+- **一次测全部四个 CASE** → 先给 [`../EVALUATION.md`](../EVALUATION.md)，再给这两份。
+
+---
+
 ## 1. 场景布置
 
 ### 1.1 地图
@@ -104,6 +130,36 @@ seed 影响：中心点、方向抽样、抖动与右下角折角点。同布局
 - `success`：本局全部炮塔被摧毁。`defeat`：我方坦克全部阵亡。`timeout`：预算耗尽。`error`：异常。
 - 敌方配置（`meta.turrets`）是评测方私有数据，不得经任何 Agent 可访问接口泄露。
 
+### 1.8 改场景与离线预览
+
+场景只由两处代码生成：`Case4Map`（地图尺寸/地面）与 `Case4Retreat`（区域、落点、出生点）。改完不必启动对局即可出图。
+
+| 想改 | 位置 |
+|---|---|
+| 地图边长 | `Case4Map.MIN_SIZE` / `MAX_SIZE`（默认 `[75,80)`，seed 决定具体值）；想固定尺寸就直接改 `width(seed)`/`height(seed)`。`TILE=20` 是格与世界单位的换算 |
+| 炮塔区矩形 | `Case4Retreat.REGION_FRACTION`（3/5）、`FIELD_MARGIN`（离边界 3 格） |
+| 场地半径 | `RADIUS_MIN` / `RADIUS_MAX`（8..18）、`regionRadius`、`minimumRadius`（按远程塔 10 格间距反推下限） |
+| 种子中心 | `pickCentre`（离矩形边与出生角的约束）、`BASE_CLEARANCE` |
+| 远程偏置 | `LONG_RANGE_BIAS_DEGREES` / `LONG_RANGE_BIAS_SPREAD`、`LONG_RANGE_RANDOM_SHARE`、`LONG_RANGE_LAYOUT_TRIALS`、`placeLongRangeGroup` |
+| 间距与放宽 | `SPACING_LONG` / `SPACING_SHORT` / `SPACING_CROSS`、`SPACING_FLOOR` / `RELAX_STEPS`、`fits` |
+| 落点抽样 | `placeOne`、`drawOne`（半径按 `√u` 均匀采样、`JITTER_TILES` 抖动） |
+| 数量/类型/迷雾/时限 | `spec(task)`；维修湾与坦克出生在 `layout()` 的 `bays` / `tanks` 段 |
+
+离线预览（不启动游戏、不读资源，输出 PNG + `layout.json` + `map.tmx`）：
+
+```powershell
+.\gradlew.bat :core:previewCase4 -Ptask=4_1_1 "-Pseed=1,2,3,5,8"
+.\gradlew.bat :core:previewCase4 -Ptask=4_3_2 -Pseed=5 -Pscale=14 -Pranges=1
+```
+
+产物在 `agent-tmp/case4-preview/<task>-s<seed>/`：`scene.png` 是该 seed 的俯视图（红=远程塔、蓝=近程塔、绿=维修湾、紫=坦克；
+虚线圆=场地半径、橙框=左上 3/5、箭头=225° 远程偏置），`layout.json` 与 `meta.json` 里那份落点数据同源。
+多个 seed 会额外生成 `compare-<task>.png` 拼图；`-Pscale` 是像素/格（默认 9），`-Pranges=1` 叠加每座塔的射程圈（看覆盖是否重叠）。
+
+预览直接调用 `Case4Retreat.layout(config, null)`——该方法不读 `GameEngine`，所以与真机布景逐格一致。
+它只验证"摆在哪"，不验证贴图、迷雾与寻路；定稿前仍应 `--window` 跑一局确认。
+改了落点逻辑后把 `meta.layoutVersion` 加一：同 seed 的旧落点与新落点不是同一场景，不能混比。
+
 ---
 
 ## 2. 快速开始
@@ -160,12 +216,15 @@ python evaluate/micro/CASE4-Retreat/evaluate.py evaluate/output/micro/CASE4-Retr
 
 | 文件 | 看什么 |
 |---|---|
-| `eval/metrics.json` | 9 个指标 + `diagnostics` + `evidence` |
+| `eval/metrics.json` | 9 个指标 + 顶层 `score`（扣分，`case4-score-v1`）+ `diagnostics` + `evidence` |
 | `engine/turret_damage.jsonl` | 每座塔每次受伤的真实序列（含攻击者） |
 | `engine/turret_destroyed.jsonl` | 摧毁顺序 + 当时我方全员 HP/护盾快照 |
 | `engine/repair_sessions.jsonl` | 正式维修会话（>5 游戏秒且实际回血） |
+| `engine/tank_state.jsonl` | 250 game-ms 的坦克位置/HP/order/所在维修湾（“坦克空闲”扣分的唯一来源） |
 
-无参数运行会打印摘要：`task seed: outcome (reason) game=…ms turrets=…/… tankHits=… hpLost=… tanksLost=… repairs=… healed=… violations=…`。
+无参数运行会打印摘要：`task seed: outcome (reason) game=…ms turrets=…/… tankHits=… hpLost=… tanksLost=… repairs=… healed=… violations=… score=… (deduction …; tank_loss=… tank_idle=… duration=…)`。
+
+扣分口径（三项封顶扣分、阈值、R、时长横坐标）见 [METRICS.md §13](METRICS.md)；分数与 `outcome`/指标分开读。
 
 **⑤ 冒烟/回归**（需要先构建 Headless 包：`.\gradlew.bat :desktop:headlessArchive`）
 
@@ -208,10 +267,10 @@ python -B evaluate/micro/CASE4-Retreat/test/smoke.py --dist desktop/build/headle
 
 ## 5. 材料与指标
 
-一局跑完能拿到 9 类材料：`meta` / `gateway` / `result` / `match.replay`+`replay/` / `delivery.jsonl` /
+一局跑完能拿到这些材料：`meta` / `gateway` / `result` / `match.replay`+`replay/` / `delivery.jsonl` /
 `engine/turret_damage.jsonl` / `engine/unit_damage.jsonl` / `engine/turret_destroyed.jsonl` /
-`engine/repair_sessions.jsonl` / `violations.jsonl`（另有 `eval/` 输出）。
-每份材料的字段、精度与坑，以及 9 个指标的完整定义，全部在 **[METRICS.md](METRICS.md)**。
+`engine/repair_sessions.jsonl` / `engine/tank_state.jsonl` / `violations.jsonl`（另有 `eval/` 输出）。
+每份材料的字段、精度与坑，以及 9 个指标的完整定义、扣分规则（§13），全部在 **[METRICS.md](METRICS.md)**。
 
 | 想知道 | 看 |
 |---|---|
@@ -222,6 +281,7 @@ python -B evaluate/micro/CASE4-Retreat/test/smoke.py --dist desktop/build/headle
 | 修完多久回战场 | `repair_effectiveness.repairEndToReengage` |
 | 治疗到底有没有效 | `repair_sessions.totalHealed` + `repairCoverage` |
 | Agent 观察是否滞后 | `ab_timing` + `gateway.jsonl` |
+| 这次扣了多少分 | `eval/metrics.json.score.total` / `score.items` |
 
 ---
 
@@ -246,6 +306,10 @@ python evaluate/micro/CASE4-Retreat/baseline.py --port-file agent-operation/tmp/
 
 阈值、目标 tie-break（按距离再按 id）、重入条件即以上三条，均可复现；基线**不读** `meta.json` 私有字段、证据或 Replay。
 
+基线局同时是评分基线：`baselines.json` 记录每个 task 的实测时长 `T`（整体时长项，level=1 为 50.24 / 51.31 / 118.94 s）
+与实测空闲比例 `w/T`（空闲项的 `R`）。还没有实测的 task/type 先退到同 type 默认值，再退到 `0.55 × 游戏上限`，见
+[METRICS.md §13](METRICS.md)。
+
 ---
 
 ## 7. 复现与清理
@@ -267,7 +331,19 @@ evaluate/micro/CASE4-Retreat/
   command.md           命令手册（会打进 core jar）
   prompt.txt           Agent 任务提示词
   evaluate.py          离线评测入口
+  score.py             扣分评分（case4-score-v1，写进 metrics.json 的 score）
+  baselines.json       整体时长的实测基线 T 与空闲基线 w/T
   baseline.py          通用基线（type 1~3 × level 1~3）
   metrics/             9 个指标插件（outcome/turret_progress/battle_damage/…）
-  test/                smoke.py 端到端冒烟
+  test/                smoke.py 端到端冒烟、test_score.py 评分单测
+```
+
+场景代码与预览工具不在本目录：
+
+```
+core/src/main/java/com/corrodinggames/rts/game/ai/custom/micro/case4/
+  Case4Map.java        地图尺寸与地面
+  Case4Retreat.java    区域/落点/出生点/迷雾/单位表
+core/src/test/kotlin/com/corrodinggames/rts/game/ai/custom/micro/
+  Case4ScenePreview.kt :core:previewCase4 的实现（离线出图）
 ```

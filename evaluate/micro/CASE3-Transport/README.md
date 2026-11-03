@@ -8,6 +8,32 @@
 
 ---
 
+## 0. 交付给被测 Agent 的文件
+
+**只交这两份**：
+
+| 文件 | 内容 |
+|---|---|
+| [START.md](START.md) | 任务、公开规则、参与流程、参与边界 |
+| [command.md](command.md) | 完整命令接口（注意文件名是单数；会打进 core jar，供 `rwx-micro-3-help` 逐节读取） |
+
+**本目录其余文件都是管理员/开发者资料，不得出现在 Agent 可见的文件列表里**：
+
+| 文件 | 为什么不给 |
+|---|---|
+| `README.md`（本文件） | 含地图生成算法、岛屿面积与圆心、防空塔布置（数量/环带/扇区）、席位权重、基线策略 |
+| `METRICS.md` | 含材料字段、指标阈值、扣分口径与引擎事实核验 |
+| `prompt.txt` | 本 CASE 的实现提示词 |
+| `score_design.md` | 扣分规则草稿 |
+| `evaluate.py`、`score.py`、`baselines.json`、`baseline/`、`metrics/`、`test/` | 评测实现、基线脚本与冒烟测试 |
+
+路由：
+
+- **只测本 CASE** → 只给 `START.md` + `command.md`。
+- **一次测全部四个 CASE** → 先给 [`../EVALUATION.md`](../EVALUATION.md)，再给这两份。
+
+---
+
 ## 1. 场景布置
 
 ### 1.1 地图
@@ -31,7 +57,9 @@
    最后叠加 ±0.35 格的亚格抖动。`meta.antiAirTurrets[].coastDepth` 记录实际离岸深度。
 5. 每座岛、工厂、提取器、运输出生点、卸载区都在生成后用引擎复核合法性，不合法直接失败，不带着无效布景开局。
 
-**迷雾**：一次性揭示——开局把各队 fog 数据填 0（0 = 当前可见），并关闭周期性维护，所以全图保持已揭示。
+**迷雾**：一次性迷雾（`meta.fogMode=1`）——开局所有格未探索（10），只由单位视野揭示；关闭周期性维护
+（`fogPeriodicMaintenanceEnabled=false`），已探索区域不会长回去。当前视野外的格在 `map-show` 里显示 `?`；
+单位只在视野内可见，建筑在已探索区域保留最后一次可见的位置。
 
 ### 1.3 兵力表
 
@@ -55,7 +83,7 @@
 |---|---|---|
 | 运输机 `dropship` | 容量 **4**、价格 800 | 内置 Java 单位 |
 | 飞行堡垒 `experimentalDropship` | 容量 **12**、HP 8000 | INI 定义 |
-| 席位权重 | `mechFlame`/`mechLightning` **2**、`experimentalTank` **5**、其余 **1** | `BaseUnit.getTransportSlotsNeeded()`——**不是**每单位 1 席 |
+| 席位权重 | `mechFlame`/`mechLightning` **2**、`experimentalTank`/`experimentalHoverTank` **5**、其余 **1** | `BaseUnit.getTransportSlotsNeeded()`——**不是**每单位 1 席 |
 | 装载 | 原生命令 `UnitCommandType.loadInto`（地面单位 → 运输机） | CLI 封装为 `rwx-micro-3-load` |
 | 卸载 | 运输机的 unload **action**（dropship 109 号）：开启后停在非液体地形**每 30 帧卸一个** | `rwx-micro-3-unload` 走 `setActionId`，不是伪造命令 |
 | 防空塔 `c_antiAirTurret` | HP 800、射程 **250** 世界单位（12.5 格）、`shootDelay` 80 帧、弹丸 60 伤害、**只打空中目标** | 4 发即让 dropship（HP 500）损失过半 |
@@ -114,13 +142,14 @@ python evaluate/micro/CASE3-Transport/evaluate.py evaluate/output/micro/CASE3-Tr
 ```
 
 输出 `eval/metrics.json`、`report.txt`、`report.html`。本 CASE **不做 re-sim**：生产/运输/目标证据来自 live 引擎记录，
-`match.replay` 只用于核对底层命令。
+`match.replay` 只用于核对底层命令。`metrics.json` 里除 9 个事实指标外还有独立的 `score` 扣分文档
+（100 − 五项封顶扣分，口径见 [METRICS.md §13](METRICS.md)）。
 
 **④ 看结果**
 
 | 文件 | 看什么 |
 |---|---|
-| `eval/metrics.json` | 9 个指标 + `diagnostics` + `evidence` |
+| `eval/metrics.json` | 9 个指标 + 顶层 `score`（扣分）+ `diagnostics` + `evidence` |
 | `engine/goal.jsonl` | 逐类型送达进度与首次达成 |
 | `engine/transport.jsonl` | 装载/货舱/移动/卸载/受伤的真实序列 |
 | `engine/production.jsonl` | 订单受理 → 开工 → 完成里程碑 |
@@ -175,6 +204,7 @@ python -B evaluate/micro/CASE3-Transport/test/smoke.py --dist desktop/build/head
 
 | 想知道 | 看 |
 |---|---|
+| 这次跑得怎么样（扣分） | `eval/metrics.json.score.total` / `score.items` |
 | 赢没赢、多快 | `outcome.goalReachedGameMs` |
 | 生产堵没堵 | `production_lifecycle.queueWait`、`perFactory` |
 | 运力用满了没有 | `transport_utilization.fillRate`、`emptyMoves` |
@@ -193,9 +223,10 @@ EngineEvidence、Replay 或其他 run。
 
 策略（确定性）：
 
-1. **卸载点**：开局用一次 `rwx-game-map-show --x 370 --y 370 --half-width 20 --half-height 20` 取目标岛陆地格，
+1. **卸载点**：用 `rwx-game-map-show --x 370 --y 370 --half-width 20 --half-height 20` 取目标岛陆地格，
    用 `rwx-game-unit-list --owner enemy --json` 取可见防空塔位置；在"四邻都是陆地"的格子里选**离最近炮塔最远**的一格
-   （并列取离基地最近）。取不到陆地时退回目标岛中心 `(370,370)`。
+   （并列取离基地最近）。一次性迷雾下开局看不到目标岛：窗口为空时先让机队直飞中心，每轮重读窗口，
+   等运输机把海岸揭示出来后再定卸载点；始终取不到陆地时退回 `(370,370)`。
 2. **生产**：每个空闲工厂接第一个"目标缺口 > 0"的类型；已下单未出现的计入 in-flight，避免超产。
 3. **装载**：id 最小的有空位运输机装 id 最小的空闲目标单位；每条装载请求按运输机记忆，
    直到单位真正进入货舱或 20 秒超时，避免重复下单或提前起飞。
@@ -204,15 +235,26 @@ EngineEvidence、Replay 或其他 run。
 5. **卸载与返航**：进入卸载点 140 世界单位内即发卸载动作，卸完立刻返回基地岛（离开防空射程）。
 6. 每 2 秒轮询一次公开状态；不用固定等待、不读隐藏数据。
 
-参考成绩（`seed=1`、`level=1`、基线策略、全部运输机存活、零违规）：
+参考成绩（`seed=1`、`level=1`、基线策略、零违规）：
 
-| task | 结果 | 达标 gameMs | 送达 |
+> **2026-11-03 起 CASE3 改为一次性迷雾**：下表与 `baselines.json` 的时长是在旧"全图已揭示"布景上测的，
+> 与迷雾下的新局不可直接比较；`duration` 项的 `T` 需要按新布景重测。
+
+| task | 最近实测 | 达标 gameMs | 送达 |
 |---|---|---:|---|
-| `3_1_1` | success | 87,168 | heavyTank 3/3、plasmaTank 2/2、c_artillery 3/3 |
-| `3_2_1` | success | 82,880 | mechMinigun 1/1、mechArtillery 2/2 |
-| `3_3_1` | success | 165,184 | mechFlame 1/1、mechLightning 1/1、c_mammothTank 2/2、heavyTank 3/3 |
+| `3_1_1` | 2026-11-03 success ×2 | 109,344 / 127,200 | heavyTank 3/3、plasmaTank 2/2、c_artillery 3/3 |
+| `3_2_1` | 2026-11-03 timeout（历史成功 82,880） | — | mechMinigun 1/1、mechArtillery 1/2 |
+| `3_3_1` | 2026-11-03 success | 198,448 | mechFlame 1/1、mechLightning 1/1、c_mammothTank 2/2、heavyTank 3/3 |
 
-这是同一策略的历史实测值，用来判断"一局跑通大概长什么样"，**不是**通过线。
+同一练习的多次历史样本（`3_1_1` 105.5–127.2 s）列在 [`baselines.json`](baselines.json)，
+它同时是「整体时长」项的基线 `T`；这些是"一局跑通大概长什么样"的参考，**不是**通过线。
+基线脚本在 2 号 type 上有偶发失败（2026-11-03 的那次跑满 20 分钟），重跑前先用
+`test/smoke.py` 确认环境和脚本行为。
+
+> **一次性迷雾下的基线现状**：现有策略在看到防空塔之前就按"部分揭示"的海岸选卸载点。
+> 2026-11-03 的 `3_1_1` 实跑里，一艘满载运输机在防空圈内被击落、机上单位随之损失；生产上限按
+> "已生产数"计，损失后无法补产，最终 timeout。要让基线在迷雾下继续可用，需要先侦察再定卸载点，
+> 或调整防空强度/补产规则。
 
 ---
 
@@ -235,6 +277,8 @@ evaluate/micro/CASE3-Transport/
   command.md           命令手册（会打进 core jar）
   prompt.txt           Agent 任务提示词
   evaluate.py          离线评测入口
+  score.py             扣分评分（case3-score-v1，写进 metrics.json 的 score）
+  baselines.json       实测基线时长（整体时长项的 T）
   metrics/             9 个指标插件（outcome/production_lifecycle/delivery/…）
   baseline/            type1-4 基线脚本 + common.py
   test/                smoke.py 端到端冒烟

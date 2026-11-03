@@ -7,6 +7,33 @@
 
 ---
 
+## 0. 交付给被测 Agent 的文件
+
+**只交这两份**：
+
+| 文件 | 内容 |
+|---|---|
+| [START.md](START.md) | 任务、公开规则、参与流程、参与边界 |
+| [commands.md](commands.md) | 完整命令接口（会打进 core jar，供 `rwx-micro-1-help` 逐节读取） |
+
+**本目录其余文件都是管理员/开发者资料，不得出现在 Agent 可见的文件列表里**：
+
+| 文件 | 为什么不给 |
+|---|---|
+| `README.md`（本文件） | 含地图生成算法、兵力表、敌方策略参数、赛道机制与目录结构 |
+| `METRICS.md` | 含材料字段、指标阈值、可比性规则与扣分口径 |
+| `score_design.md` | 扣分规则草稿 |
+| `evaluate.py`、`score.py`、`report_html.py`、`metrics/`、`test/`、`baselines/` | 评测实现、单测与人类基线登记 |
+
+路由：
+
+- **只测本 CASE** → 只给 `START.md` + `commands.md`，本文与 `METRICS.md` 都不要出现。
+- **一次测全部四个 CASE** → 先给 [`../EVALUATION.md`](../EVALUATION.md)，再给这两份。
+
+本目录没有 `prompt.txt`；CASE2/3/4 的那一份是实现提示词，同样不可外发。
+
+---
+
 ## 1. 场景布置
 
 ### 1.1 地图
@@ -130,11 +157,12 @@ python -B evaluate/micro/CASE1-duel/evaluate.py evaluate/output/micro/CASE1-duel
 
 | 文件 | 看什么 |
 |---|---|
-| `eval/metrics.json` | 全部指标 + `diagnostics` + `mapping` + `evidence`（是否过了复算闸门） |
-| `eval/report.txt` | 一屏文本表：指标 × tier × 本轮 × 人类基线 |
-| `eval/report.html` | 表格 + 双方 HP/护盾时间线 + B 类命令刻度 + 交战窗口 + pause 回合边界 |
+| `eval/metrics.json` | 全部指标 + 顶层 `score`（扣分，`case1-score-v1`）+ `diagnostics` + `mapping` + `evidence`（是否过了复算闸门） |
+| `eval/report.txt` | 一屏文本表：指标 × tier × 本轮 × 人类基线；首行另有 `Score:` 摘要 |
+| `eval/report.html` | 表格 + 双方 HP/护盾时间线 + B 类命令刻度 + 交战窗口 + pause 回合边界 + 扣分明细 |
 
 先看 `evidence.source`：`re-sim` 且 `verified=true` 才算过了复算闸门；`live/unverified` 只能当调试数据。
+分数与指标分开读：`score` 只有三项扣分（口径见 [METRICS.md §13](METRICS.md)），不含胜负，不能单独当排名依据。
 
 **⑥ 多局汇总（可选）**
 
@@ -193,7 +221,7 @@ python -B evaluate/micro/CASE1-duel/report_html.py
 
 一局跑完能拿到 9 份材料（`meta` / `gateway` / `result` / `match.replay` / `replay/` / `delivery.jsonl` /
 `engine` 快照与事件 / `playback.json` / `eval`），每份材料的字段、精度和能回答什么问题，以及 10 个指标的完整定义、
-阈值、可比性规则，全部在 **[METRICS.md](METRICS.md)**。
+阈值、可比性规则、扣分规则（§13），全部在 **[METRICS.md](METRICS.md)**。
 
 想看某个问题该翻哪里：
 
@@ -207,6 +235,7 @@ python -B evaluate/micro/CASE1-duel/report_html.py
 | Agent 想了多久 | `agent_timing.thinkingWallMs`（realtime）、`turns.thinkingWallMs`（pause） |
 | 命令到底被执行了没有 | `mapping`（网关请求 ↔ 底层命令）、`evidence` |
 | 结果能不能信 | `evidence.source` + `playback.json` |
+| 这次扣了多少分 | `eval/metrics.json.score.total` / `score.items` |
 
 ---
 
@@ -243,9 +272,13 @@ evaluate/micro/CASE1-duel/
   METRICS.md           材料清单 + 指标定义 + 阈值 + 局限
   START.md             参与者说明（只写对局所需内容）
   commands.md          命令手册（会打进 core jar，供 rwx-micro-1-help 读取）
-  prompt.md            Agent 任务提示词
+  score_design.md      扣分规则草稿（case1-score-v1 的依据）
   evaluate.py          离线评测入口
+  score.py             扣分评分（case1-score-v1，写进 metrics.json 的 score）
   report_html.py       多局汇总 HTML
   metrics/             10 个指标插件（outcome/cadence/ENGAGE_LAG/…/turns）
+  test/                test_score.py 评分单测
   baselines/index.json 人类基线登记表
 ```
+
+本 CASE 没有 `prompt.txt`；CASE2/3/4 的那一份是实现提示词，属于管理员资料。

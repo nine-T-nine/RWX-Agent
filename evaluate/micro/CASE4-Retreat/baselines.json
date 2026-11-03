@@ -1,0 +1,29 @@
+{
+  "schema": "rwx-micro-case4-baselines/1",
+  "note": "T for 整体时长 = the baseline script's median successful duration at 1x realtime, level=1 (task067 seed 1-5 for type 1 plus 2026-11-03 re-runs on the current build for types 1-3). Tasks without a successful measurement fall back to the per-type default, then to 0.55 x the task's game limit. Duration is scored from the authoritative end time, not from Agent observations. idleRatios records a measured baseline w/T; R = 5 x that value, otherwise R = 5%.",
+  "seconds": {
+    "4_1_1": 50.24,
+    "4_2_1": 51.312,
+    "4_3_1": 118.944
+  },
+  "measured": {
+    "4_1_1": [40.912, 41.536, 46.864, 53.616, 59.888, 64.992],
+    "4_2_1": [51.312],
+    "4_3_1": [118.944]
+  },
+  "defaults": {
+    "1": 50.24,
+    "2": 51.312,
+    "3": 118.944
+  },
+  "idleRatios": {},
+  "idleRatioDefaults": {},
+  "notes": [
+    "4_1_1 的 6 个样本全部 success，中位数 (46.864+53.616)/2 = 50.24。前 5 个来自 task067 的基线重跑（layoutVersion=2），",
+    "第 6 个是 2026-11-03 用补了 tank_state 证据的新构建重跑（46.864 s），行为与旧构建一致。",
+    "4_2_1 / 4_3_1 是 2026-11-03 新构建下的单次基线实跑（51.312 s / 118.944 s，均 success）；单样本先按该值作 T，",
+    "以后补跑再取中位数。level>1 的 task 没有实测，按同 type 的 T 计（敌军数量增加时这一项会偏严，需补跑）。",
+    "idleRatios 为空：三条基线局实测 w/T 都是 0（没有任何 >3s 的就绪窗口或 >8s 的滞留窗口），",
+    "0 不能作为归一化基准，所以空闲项继续用 R=5%；以后有非零的基线 w/T 再填进 idleRatios。"
+  ]
+}

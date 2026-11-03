@@ -1,0 +1,25 @@
+{
+  "schema": "rwx-micro-case3-baselines/1",
+  "note": "T for 整体时长 = the current baseline script's median at 1x realtime, seed=1, level=1. Tasks without a successful measurement fall back to the per-type default below. Duration is scored from the authoritative result.gameMs.",
+  "seconds": {
+    "3_1_1": 111.6,
+    "3_2_1": 82.88,
+    "3_3_1": 181.8
+  },
+  "measured": {
+    "3_1_1": [105.5, 109.3, 109.8, 111.6, 111.7, 127.0, 127.2],
+    "3_3_1": [165.184, 198.448]
+  },
+  "defaults": {
+    "1": 112.0,
+    "2": 85.0,
+    "3": 182.0,
+    "4": 600.0
+  },
+  "notes": [
+    "3_1_1 的前 5 个样本来自 2026-11-02 的基线重跑（见 .agent-memory/HISTORY/task-067.md），后两个是 2026-11-03 补采；中位数 111.6。",
+    "3_2_1 在 2026-11-03 的重跑以 timeout 结束（不是有效基线），沿用 82.88 的历史参考值。",
+    "3_3_1 中位数取 165.184（历史参考）与 198.448（2026-11-03 补采）的均值 181.8。",
+    "2026-11-03 起 CASE3 改为一次性迷雾：以上样本均在旧的“全图已揭示”布景上测得，需按新布景重测后更换。"
+  ]
+}

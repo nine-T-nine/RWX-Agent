@@ -14,6 +14,9 @@
  *   telemetry.jsonl / economy.log / commands.txt / replay.jsonl   —— 裁剪后的输入
  *   preprocess.json                                              —— 结尾类型、窗口、证据覆盖
  *
+ * 一局的材料只保留一处：`preprocess.json` 只写进 `<out>`（默认 `prepared/`），不再往对局根目录
+ * 复制第二份；`score_match.js` 两个位置都认，优先 `prepared/`。
+ *
  * 只做裁剪和标注，不改任何计分口径；两轮评分仍跑在裁剪后的材料上。
  */
 const fs = require('node:fs');
@@ -199,10 +202,16 @@ function trimEconomy(input, output, cutMs) {
   return count;
 }
 
-/** Find the four inputs of one match workspace without guessing names twice. */
+/**
+ * Find the four inputs of one match workspace without guessing names twice.
+ *
+ * 材料收敛之后，命令日志在 `<对局>/commands-<对局>.txt`、引擎证据在 `<对局>/events-live/<对局>/`；
+ * 收敛之前命令日志还在上一级 `evaluate/output/`。两种布局都认，顺序固定，避免同一局在两个位置
+ * 都有一份时读到旧的那份。
+ */
 function discover(dir) {
-  const root = path.resolve(dir, '..');
-  const name = path.basename(path.resolve(dir));
+  const matchDir = path.resolve(dir);
+  const name = path.basename(matchDir);
   const firstIn = (base, pattern) => {
     if (!fs.existsSync(base)) return null;
     for (const entry of fs.readdirSync(base, {withFileTypes: true})) {
@@ -214,13 +223,34 @@ function discover(dir) {
     }
     return null;
   };
-  const commands = fs.existsSync(path.join(root, `commands-${name}.txt`)) ? path.join(root, `commands-${name}.txt`)
-    : firstIn(root, new RegExp(`^commands-${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*\\.txt$`));
-  const replay = firstIn(path.join(dir, 'replay'), /\.jsonl$/);
-  const telemetry = firstIn(path.join(dir, 'events-live'), /^telemetry\.jsonl$/)
-    || firstIn(path.join(dir, 'engine'), /^telemetry\.jsonl$/);
+  const commands = commandLog(matchDir, name);
+  const replay = firstIn(path.join(matchDir, 'replay'), /\.jsonl$/)
+    || firstIn(path.join(matchDir, 'prepared'), /^replay\.jsonl$/);
+  const telemetry = firstIn(path.join(matchDir, 'events-live'), /^telemetry\.jsonl$/)
+    || firstIn(path.join(matchDir, 'engine'), /^telemetry\.jsonl$/);
   const economy = telemetry ? path.join(path.dirname(telemetry), 'economy.log') : null;
   return {commands, replay, telemetry, economy: economy && fs.existsSync(economy) ? economy : null};
+}
+
+/** 原始命令日志：先用对局目录里的规范名字，再退回上一级的旧布局。 */
+function commandLog(matchDir, name) {
+  const flat = path.join(matchDir, `commands-${name}.txt`);
+  if (fs.existsSync(flat)) return flat;
+  if (fs.existsSync(matchDir)) {
+    // 目录里只有一个命令日志时直接用；`prepared/` 里的裁剪版本不算原始输入。
+    const loose = fs.readdirSync(matchDir, {withFileTypes: true})
+      .filter(entry => entry.isFile() && /^commands?-.*\.txt$/i.test(entry.name))
+      .map(entry => entry.name).sort();
+    if (loose.length === 1) return path.join(matchDir, loose[0]);
+  }
+  const root = path.dirname(matchDir);
+  if (!fs.existsSync(root)) return null;
+  const exact = path.join(root, `commands-${name}.txt`);
+  if (fs.existsSync(exact)) return exact;
+  // 旧布局里日志名可能比目录名多一个后缀（`…_重坦` 对 `…_重`）：按前缀找，取排序第一份。
+  const prefix = new RegExp(`^commands-${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*\\.txt$`);
+  const matches = fs.readdirSync(root).filter(file => prefix.test(file)).sort();
+  return matches.length ? path.join(root, matches[0]) : null;
 }
 
 async function preprocess(dir, options = {}) {
@@ -286,7 +316,6 @@ async function preprocess(dir, options = {}) {
     ineligibleReason: reasons.length ? reasons.join('; ') : null,
   };
   fs.writeFileSync(path.join(out, 'preprocess.json'), JSON.stringify(result, null, 2) + '\n');
-  fs.copyFileSync(path.join(out, 'preprocess.json'), path.join(matchDir, 'preprocess.json'));
   return result;
 }
 

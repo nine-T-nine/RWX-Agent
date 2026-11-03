@@ -2,7 +2,33 @@
 
 小规模、固定场景、可复现的实时/回合制操控评测。引擎负责布景、生命周期、命令隔离、薄网关、自动录像和结果文件；指标全部在 `evaluate/micro/` 的 Python 脚本里离线计算。
 
+## 0. 文档分层：谁能看哪一份
+
+四个 CASE 共用一套约定，但**文档分两套**。给被测 Agent 的文件里只写参与对局所需内容，
+场景数据、指标口径与评分公式一律留在管理员侧。
+
+| 文件 | 读者 | 内容 |
+|---|---|---|
+| [`EVALUATION.md`](EVALUATION.md) | **被测 Agent** | 一次跑完四个 CASE 的统一入口：测试结构、启动模板、连接协议、各 CASE 第一步、参与边界 |
+| `CASE*/START.md` | **被测 Agent** | 单个 CASE 的任务、公开规则、参与流程 |
+| `CASE*/commands.md`、`CASE*/command.md` | **被测 Agent** | 命令手册（会打进 core jar，供 `rwx-micro-<n>-help` 读取） |
+| `CASE*/README.md` | 管理员 / 开发者 | 怎么跑、场景怎么布、材料在哪 |
+| `CASE*/METRICS.md` | 管理员 / 开发者 | 材料字段、指标定义、阈值、扣分口径 |
+| `CASE*/prompt.txt`、`CASE*/score_design.md`、`CASE*/*.py` | 管理员 / 开发者 | 设计稿、实现提示词、评分实现 |
+| `design.txt` | 管理员 | 最初的 CASE 设计草稿（含未实现的提案） |
+| 本文件 | 管理员 / 开发者 | 运行时机制、证据契约、新增 CASE 流程、人类基线 |
+
+两条硬规则：
+
+- **只把 `START.md` + `commands.md`（或 `command.md`）交给被测 Agent。** 同一目录下的
+  `README.md`、`METRICS.md`、`prompt.txt`、`score_design.md` 不得出现在 Agent 可见的文件列表里。
+- 只测一个 CASE 时，Agent 只看该 CASE 的 `START.md`；测全部四个时才给它 [`EVALUATION.md`](EVALUATION.md)。
+  `EVALUATION.md` 里不含任何 CASE 的敌方配置、数量、坐标或布景算法。
+
 ## 1. 启动
+
+> 本节是管理员视角的参数说明。被测 Agent 的启动模板见 [`EVALUATION.md`](EVALUATION.md) 与各 CASE 的
+> `START.md`；三处参数含义一致，只是面向的读者不同。
 
 从仓库根目录启动
 
@@ -38,8 +64,9 @@
   result.json      结束时写
   match.replay     自动录像（类型1另有 map.tmx）
   replay/          离线：replay.py 解析出的底层命令
-  engine/          离线：re-sim 的 snapshots.jsonl/events.jsonl/final.json/playback.json
-  eval/            离线：metrics.json/report.txt/report.html
+  engine/          离线：re-sim 的 snapshots.jsonl/events.jsonl/final.json/playback.json；
+                   CASE 自有的 live 证据（CASE2 lifecycle、CASE3 production/transport、CASE4 turret_*/repair_sessions/tank_state 等）
+  eval/            离线：metrics.json/report.txt/report.html（有 `score.py` 时 metrics.json 还带顶层 `score`）
 ```
 
 ### meta.json
@@ -85,6 +112,10 @@ python evaluate/micro/CASE1-duel/evaluate.py <run目录> [--resim auto|force|ski
 3. 有 gateway 时按 (tick 窗口、种类、单位集合) 顺序匹配 B 请求；歧义/未匹配如实报告。
 4. 自动发现 `metrics/*.py`（导出 `ID`、`TIER`、`compute(run)`），单指标异常不拖垮其它。
 5. 生成 `eval/metrics.json`、`report.txt`、`report.html`（结局/实时性摘要 + 双方总 HP/护盾时间线 + B 类命令刻度 + 交战窗口 + pause 回合边界）。
+6. 如果 CASE 目录里有 `score.py`（导出 `compute(run)`），同一份证据再生成顶层 `score` 扣分文档；指标仍不加权，评分与指标分开呈现。
+   目前四个 CASE 各有一份：`case1-score-v1`（无关行为 / 机甲承受伤害 / 集体空闲）、`case2-score-v1`、
+   `case3-score-v1`、`case4-score-v1`（坦克损失 / 坦克空闲 / 整体时长）。口径在各自 `METRICS.md` 的“评分”章节；
+   `score` 只有扣分项、不含胜负，必须和 `outcome` 一起读。
 
 `--resim` 需要 Headless 发行包（`--dist`，默认 `desktop/build/headless`）和 Java（`--java` 或 `JAVA_HOME`）。re-sim 进程在隔离目录的 `replays/` 里读副本，不污染仓库 `replays/`。
 
@@ -120,7 +151,7 @@ python evaluate/micro/CASE1-duel/evaluate.py <run目录> [--resim auto|force|ski
 ### 4.2 评测侧（`evaluate/micro/<CASE>/`）
 
 1. 文档：`README.md`、`commands.md`（会打进 core jar，供本 case 的 `rwx-micro-<n>-help` 读取；文件名也兼容 `command.md`）、`START.md`、`METRICS.md`。`commands.md` 的一级章节必须写成 `## 1. 标题` 这种带编号的形式，help 的 `--list`/章节选取才可用。
-2. `evaluate.py` + `metrics/*.py`：每个插件声明 `ID/TIER/SOURCES` 并提供 `compute(run)`，插件只读证据文件、不参与游戏；可复用 `common/` 的 replay/resim/统计工具。
+2. `evaluate.py` + `metrics/*.py`：每个插件声明 `ID/TIER/SOURCES` 并提供 `compute(run)`，插件只读证据文件、不参与游戏；可复用 `common/` 的 replay/resim/统计工具。若本 CASE 有扣分规则，再加 `score.py`（`compute(run)` → 封顶扣分文档，复用 `common/scoring.py` 的曲线）。
 3. `baseline*.py`：只用本 case 的公开命令（见 `START.md` 白名单），不读 `meta.json` 私有字段、证据或 Replay。
 4. `test/smoke.py`：至少覆盖基线取胜、缩短预算 → timeout、无 Agent → error、越权命令被拒、同 task+seed 布景可复现。
 
@@ -140,15 +171,49 @@ python evaluate/micro/CASE1-duel/evaluate.py <run目录> [--resim auto|force|ski
 - `delta` 只用于同一 task+seed 内；`timeout` 不高于 `loss`，不要把它当胜利。
 - GUI 在当前环境仍**未验证**：鼠标操控、胜负展示、暂停/变速拦截都没有实跑证据。`mode=human` 目前只把“解除暂停”当作开局，**没有强制禁用 GUI 的暂停/变速**；正式人类基线需要人工监督“1× 不暂停”，或后续补真正的锁。文档不伪造结果。
 
+### 5.1 评分（`score` 文档）能否用于人类对局
+
+只有 **CASE1** 接受 `mode=human`；CASE2/3/4 在 `MicroConfig` 里用默认 `requiresAgentRealtime()` 拒绝
+`mode=human` 和 `track=pause`，**根本没有人类对局**。
+
+CASE1 人类局有三份差异：没有 `gateway.jsonl`（没有 CLI 请求）、没有 `violations.jsonl`、
+没有 `engine/*` 之外的私有证据，其余（`meta`/`result`/`match.replay`/re-sim 快照）照常生成。
+
+| CASE1 扣分项 | 人类可统计 | 说明 |
+|---|---|---|
+| `irrelevant` 无关行为（上限 30） | **部分** | 7.5 档（违规/被拒请求）与 4.5 档（失败的 B 请求）只存在于 `gateway.jsonl`，人类恒为 0；只有 1.8 档的"引用已死单位的底层命令"能从 replay 算 |
+| `mech_damage` 承受伤害（上限 60） | **可以** | 只用 `engine/events.jsonl` + 终态单位；人类局跑了 re-sim 就有 |
+| `collective_idle` 集体空闲（上限 40） | **可以** | 只用 250 game-ms 快照 |
+
+读法上的三个限制：
+
+- 人类局的 `score.total` **天然偏高**：`irrelevant` 的两档拿不到证据，不扣分不等于没做无关操作。
+- 缺证据的项记 `N/A` 且不扣分；`N/A` 是"没证据"，不是"表现满分"。
+- `score` 不含胜负，必须与 `outcome` 一起读；`case1-score-v1` 与其它版本不可混榜。
+
+CASE2/3/4 的扣分项都以 `gateway.jsonl` 的 A/B 请求或 `engine/*` 的原生命令为依据，没有人类模式也就没有可比数据。
+需要人类参照时，只能用 CASE1 的 T1 指标（`METRICS.md` 里的 `tier=T1` 那一组），不要拿 `score` 直接对比。
+
 ## 6. 目录
 
 ```
 evaluate/micro/
+  EVALUATION.md            被测 Agent 的总入口（一次测全部 CASE 时只给它这一份）
   config.json              默认 case 参数
+  design.txt               最初的 CASE 设计草稿（含未实现的提案）
   common/                  Run 载入、replay 语义、resim、指标计算、报告
   test/                    Python fixture 测试（手算可核）
-  CASE1-duel/              README、START、commands、METRICS、NOTES、PROGRESS
-                           evaluate.py、metrics/、baselines/
+  CASE1-duel/              README、START、commands、METRICS、score_design
+                           evaluate.py、score.py、metrics/、baselines/、report_html.py
+  CASE2-LTE/               README、START、commands、METRICS、prompt.txt、score_design
+                           evaluate.py、score.py、greedy.py、metrics/、test/
+  CASE3-Transport/         README、START、command、METRICS、prompt.txt、score_design
+                           evaluate.py、score.py、baselines.json、baseline/、metrics/
+  CASE4-Retreat/           README、START、command、METRICS、prompt.txt、score_design
+                           evaluate.py、score.py、baselines.json、baseline.py、metrics/
 ```
+
+`report_html.py`（多局汇总）目前只有 CASE1 有；CASE3/CASE4 的命令手册文件名是单数 `command.md`，
+CASE1/CASE2 是 `commands.md`，两种名字运行时都认。
 
 同一配置反复重跑会在 `evaluate/output/micro/` 留下只差时间戳的兄弟目录，根目录 `replays/` 也会跟着堆积。整理用 [`tools/cleanup_micro_output.py`](../tools/README.md)：先不带参数看计划，确认后再加 `--apply`。

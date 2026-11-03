@@ -26,8 +26,8 @@ public final class Case4Session extends AbstractCaseSession {
     private final Map<Long,Long> sessionStart=new LinkedHashMap<>(),sessionLastHeal=new LinkedHashMap<>();
     private final Map<Long,Float> sessionStartHp=new LinkedHashMap<>();
     private final Map<Long,Set<Long>> sessionBays=new LinkedHashMap<>();
-    private final BufferedWriter turretDamage,unitDamage,turretDestroyed,repairSessions;
-    private long goalReachedGameMs=-1;
+    private final BufferedWriter turretDamage,unitDamage,turretDestroyed,repairSessions,tankState;
+    private long goalReachedGameMs=-1,nextTankSample;
     private boolean goalReached;
     @SuppressWarnings("unchecked") public Case4Session(MicroRuntime run,Map<String,Object> meta)throws IOException {
         super(run,meta);
@@ -41,9 +41,11 @@ public final class Case4Session extends AbstractCaseSession {
         unitDamage=Files.newBufferedWriter(run.writer.directory.resolve("engine/unit_damage.jsonl"));
         turretDestroyed=Files.newBufferedWriter(run.writer.directory.resolve("engine/turret_destroyed.jsonl"));
         repairSessions=Files.newBufferedWriter(run.writer.directory.resolve("engine/repair_sessions.jsonl"));
+        // Deduction-score evidence: a 250 game-ms readiness/loiter timeline (not an Agent-visible feed).
+        tankState=Files.newBufferedWriter(run.writer.directory.resolve("engine/tank_state.jsonl"));
     }
     protected BufferedWriter nativeLog(){return unitDamage;}
-    protected void closeLogs()throws IOException{turretDamage.close();unitDamage.close();turretDestroyed.close();repairSessions.close();}
+    protected void closeLogs()throws IOException{turretDamage.close();unitDamage.close();turretDestroyed.close();repairSessions.close();tankState.close();}
     public void requestFinished(MicroRuntime.Request q,boolean error,String status) {
         if(q!=null&&q.kind.equals("B")&&error)emit(unitDamage,map("kind","request","requestId",q.seq,"event","rejected","reason",status));
     }
@@ -198,6 +200,7 @@ public final class Case4Session extends AbstractCaseSession {
             } else if(sessionStart.containsKey(entry.getKey())&&now-(sessionLastHeal.getOrDefault(entry.getKey(),now))>1000)
                 closeSession(entry.getKey(),now,"idle");
         }
+        sampleTanks(now);
         if(!goalReached&&Case4Retreat.goalReached(engine,meta)){
             goalReached=true;goalReachedGameMs=engine.gameTimeMillis;
             emit(turretDestroyed,map("kind","reached","gameMs",engine.gameTimeMillis,"tick",engine.currentTick,"tanks",snapshot()));
@@ -205,6 +208,27 @@ public final class Case4Session extends AbstractCaseSession {
         }
         int aliveTanks=0;for(OrderableUnit tank:tanks.values())if(MicroRuntime.alive(tank))aliveTanks++;
         if(aliveTanks==0){run.end("defeat","tanks-lost");return;}
+    }
+    /**
+     * 250 game-ms readiness timeline for the deduction score: position, HP/shield, current order and
+     * the repair bays currently in range (the same {@link #REPAIR_RANGE} check the healer uses).
+     * Facts only — the Python scorer decides what "ready" or "loitering" means.
+     */
+    private void sampleTanks(long now) {
+        if(now<nextTankSample)return;
+        nextTankSample=(now/250+1)*250;
+        List<Map<String,Object>> rows=new ArrayList<>();
+        for(var entry:tanks.entrySet()){
+            OrderableUnit tank=entry.getValue();
+            boolean alive=MicroRuntime.alive(tank);
+            var waypoint=tank.getCurrentWaypoint();
+            rows.add(map("unitId",entry.getKey(),"alive",alive,"x",tank.posX,"y",tank.posY,
+                    "hp",Math.max(0f,tank.currentHealth),"maxHp",tank.maxHealth,"shield",Math.max(0f,tank.shield),
+                    "order",waypoint==null?"idle":waypoint.getCommandType().name(),
+                    "target",tank.attackTarget==null?null:tank.attackTarget.objectId,
+                    "repairBayIds",alive?new ArrayList<>(baysInRange(tank)):List.of()));
+        }
+        emit(tankState,map("kind","state","tanks",rows));
     }
     private Set<Long> baysInRange(OrderableUnit tank) {
         Set<Long> out=new LinkedHashSet<>();

@@ -3,7 +3,8 @@
 本文件回答两件事：**一局打完能拿到哪些材料**，以及**每个指标是怎么从这些材料算出来的**。
 怎么启动、场景怎么布、完整评测流程，见 [README.md](README.md)。
 
-引擎只写事实，`evaluate.py` 加载 `metrics/*.py` 插件离线计算，不设加权总分。
+引擎只写事实，`evaluate.py` 加载 `metrics/*.py` 插件离线计算，再调用 `score.py` 产出**独立的** `score` 文档；
+指标不设加权总分，评分只消费同一份证据（口径见 §14）。
 `schema = rwx-micro-lte-metrics/2`；每个 metric 含 `tier`/`sources`/`value`，`value.status` 为 `OK/N/A/ERROR`。
 
 ---
@@ -122,8 +123,13 @@
 **① `instruction`** — 每条 B 指令的阶段流水
 
 ```json
-{"kind":"instruction","requestId":9,"event":"order_started","tick":58,"gameMs":928,"wallMs":2854}
+{"kind":"instruction","requestId":9,"event":"order_started","operation":"build","actor":1000,
+ "resourceId":"R1","buildingId":null,"targetLevel":1,"actionId":"b_extractorT1",
+ "cost":700.0,"actualCost":700.0,"credits":1400.0,"tick":58,"gameMs":928,"wallMs":2854}
 ```
+
+`cost` 是这条指令的标准费用（建造 700 / T1→T2 1400 / T2→T3 4000），`actualCost` 是引擎真实扣款，
+`credits` 是**写这一行时**的阵营余额（评分用它作为资金曲线的精确锚点，见 §14）。
 
 `event` 取值：
 
@@ -137,10 +143,12 @@
 
 ```json
 {"kind":"native","requestId":9,"nativeIndex":3,"tick":58,"gameMs":928,"wallMs":2854,
- "actor":1000,"operation":"build","buildType":"extractorT1","actionId":"b_extractorT1","resourceId":"R1"}
+ "actor":1000,"operation":"build","buildType":"extractorT1","actionId":"b_extractorT1",
+ "resourceId":"R1","credits":2100.0}
 ```
 
-`nativeIndex` 是命令在 `ReplayWriter` 中的真实插入序号；`operation` 为 `build` 或 `upgrade`。
+`nativeIndex` 是命令在 `ReplayWriter` 中的真实插入序号；`operation` 为 `build` 或 `upgrade`；
+`credits` 是录制该命令前的余额。
 
 **③ `income`** — 收入锚点
 
@@ -202,6 +210,7 @@
 | `schema` | `rwx-micro-lte-metrics/2` |
 | `run` | `case`、`task`、`seed`、`track`、`mode` |
 | `metrics` | 7 个插件，每项 `{tier, sources, value}` |
+| `score` | 独立扣分文档（`case2-score-v1`）：`baseline`、`deduction`、`total`、3 项封顶扣分与明细，见 §14 |
 | `diagnostics` | 本 CASE 自己产出的 + 插件追加的（如 `severe/native_authority_mismatch`、`incomplete_replay`、`missing_replay`） |
 | `reference` | 恒为 `null`（本 CASE 不接人类基线） |
 | `evidence` | `source`（固定字符串 `live lifecycle + native replay`）、`independentResimulation: false`、`gatewayRequests`、`events`、`nativeCommands` |
@@ -408,3 +417,48 @@ T1 表示"只要有引擎证据就能算"（本 CASE 没有人类基线，但 T1
 
 边界：任意本地 Java 代码直接篡改引擎内存**不属于**命令权限边界；GUI、人类控制和独立重放复算不是本版
 验收对象（窗口只用于观看与结算动画）。
+
+---
+
+## 14. 评分（score）
+
+`evaluate.py` 在写指标的同时调用 `score.py`，产出**独立**的 `score` 文档（`version = case2-score-v1`）：
+基线 100，三项扣分各自先裁到 `[0,cap]`、保留 1 位小数再求和，`total = max(0, 100 − Σ)`。
+指标只陈述事实，评分只消费同一份证据；两者不要混读。
+
+| 项 | 上限 | 口径 |
+|---|---:|---|
+| `action_delay` 行动延迟 | 50 | 每条**实际生效**（有 `order_started`）的建造/升级指令，从生效时刻 `B` 往回找"资金足够 `cost` 且执行者空闲"的最早时刻 `i`；窗口 `(B−i)` 按 `[0,3](3,10](10,25](25,45](45,?)` 分档，`K = Σ(档占比 × 权重)`，权重 `0/3/6/10/18`，`S = K×50` |
+| `irrelevant` 无关行为 | 30 | 违规请求 ×4；被替换/取消/失败/超时的 B 指令 ×2.5；超出目标组成的多余建造或升级 ×1 |
+| `cadence` 底层命令执行间隔 | 50 | 序列 = **相邻 native 命令**的间隔（秒）；`S = 0.2·f(去离群均值) + 0.8·ΣP(离群值−均值)`，`f:[15,60]` 自然指数 `{0,100}`，`P:[25,120]` 自然指数 `{0,100}`、`ΣP` 最多 100 |
+
+### 14.1 口径细节
+
+- **K 不除以最大权重**：草稿写的是"按权重求和"，所以某一档占比一上去就会顶到上限（例如 5 条指令里
+  1 条落在 `(3,10]`，`K=0.6`、`S=30`）。上限就是唯一的收敛机制，不要把它当成 [0,1] 的系数。
+  想改成归一化只需把 `common/scoring.py` 的 `NORMALIZE_DELAY_COEFFICIENT` 置 `True`（两 CASE 共用）。
+- **资金曲线**：新对局的 `instruction`/`native` 行带 `credits`（写该行时的余额），是精确锚点；旧证据没有
+  `credits` 时，用 `initialCredits + 收入锚点（标称值 × 1000/640 credits/游戏秒）− 实际扣费` 重建。
+  `detail.creditSource` 会写 `recorded credits` 或 `rebuilt from costs + income anchors`。
+- **执行者空闲**：建造看建造者（`meta.builder.id`，通常是 1000），升级看被升级建筑；空闲起点取同一 actor
+  上一条指令的终态时刻（`completed`/`failed`/`cancelled`/…）。升级建筑从 `queued` 起算占用。
+  指令自己的扣款不算进自己的窗口（`Credits.earliest` 只看严格早于 `B` 的锚点）。
+- **多余建造/升级**：把 `targetComposition`（`4 x T1`、`2 x T2 + 2 x T1` 这类）解析成各等级数量，与实际
+  `completed` 的建造数、T2/T3 升级数比较，超出部分每条记 1 分。换一种等价但超出该组成的路线（例如
+  用 T3 顶到同一收入）同样按"多余"计。
+- **被对局结束截断的指令不算浪费**：`finish()` 在达标/超时时会把仍在执行的指令记成 `cancelled`/`timeout`，
+  终态时刻与 `result.gameMs` 相同时不计入"被替换/取消/失败/超时"，否则每局收尾都会白扣 2.5。
+- **离群值**：`> Q3 + 1.5×IQR`，与指标插件同一规则；去离群后的均值才是 `f` 的输入。
+- **缺证据**：没有 `cost`、没有 native 命令、间隔样本不足两条时，该项记 `status = "N/A"`、扣 0，理由写进
+  `score.diagnostics`；不按经验补数。
+
+### 14.2 读分注意
+
+- `score.items[].raw` 是封顶前的原始分，`points` 是裁到上限后的实际扣分；两者只在超上限时不同。
+- 曲线与完整对局评分同一实现（`evaluate/micro/common/scoring.py` 对应 `evaluate/scoring-curves.js`）：
+  自然指数在对数横坐标上极凸，`f(mean)` 在 `mean` 远低于 60 s 时几乎为 0，这是形状本身决定的，不是漏算。
+- 同一份证据重复离线计算得到相同分数（纯函数）；换版本（`case2-score-v1` → 新版本）不可混榜。
+
+**人类对局**：本 CASE 拒绝 `mode=human`（`MicroConfig` 走默认 `requiresAgentRealtime()`），启动即报错。
+因此 `action_delay`/`irrelevant`/`cadence` **三项都没有人类数据**——既算不出人类分，也不存在人类基线；
+讨论"这一局人类会得多少分"没有证据基础。

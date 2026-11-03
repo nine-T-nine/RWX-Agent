@@ -82,6 +82,9 @@ class TransportCaseTest {
             val case = Case3Transport()
             case.prepareMap(config, dir)
             val meta = case.layout(config, null)
+            // One-time fog: unexplored at the start, vision reveals it, nothing regrows.
+            assertEquals(1, Case3Transport.FOG_MODE)
+            assertEquals(1, (meta["fogMode"] as Number).toInt())
             val base = (meta["baseIslandTiles"] as List<*>).map { (it as Number).toInt() }.toSet()
             val target = (meta["targetIslandTiles"] as List<*>).map { (it as Number).toInt() }.toSet()
             val units = meta["units"] as List<*>

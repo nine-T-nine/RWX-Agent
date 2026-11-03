@@ -1,7 +1,8 @@
-"""CASE4-Retreat offline metrics runner (Python 3.11+, stdlib only).
+"""CASE4-Retreat offline metrics runner and deduction score (Python 3.11+, stdlib only).
 
-The engine only writes facts; every number below is derived here from one run directory. No
-weighted total score is produced and no artificial time penalty is applied.
+The engine only writes facts; every number below is derived here from one run directory. Metrics
+stay factual and `score.py` turns the same evidence into the capped deductions of
+`score_design.md` under the separate top-level `score` key.
 """
 from __future__ import annotations
 import argparse
@@ -13,7 +14,9 @@ import sys
 
 CASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(CASE / "metrics"))
+sys.path.insert(0, str(CASE))
 from _shared import Case4Run  # noqa: E402
+from score import compute as compute_score  # noqa: E402
 
 
 def evaluate(directory):
@@ -24,7 +27,8 @@ def evaluate(directory):
               "evidence": {"source": "gateway + engine battle evidence + replay",
                            "gatewayRequests": len(run.gateway), "turretDamage": len(run.turret_damage),
                            "unitDamage": len(run.unit_damage), "destroyed": len(run.destroyed()),
-                           "repairSessions": len(run.repairs), "violations": len(run.violations)}}
+                           "repairSessions": len(run.repairs), "tankState": len(run.tank_state),
+                           "violations": len(run.violations)}}
     for file in sorted((CASE / "metrics").glob("*.py")):
         if file.stem.startswith("_"):
             continue
@@ -40,6 +44,12 @@ def evaluate(directory):
         result["diagnostics"].append({"severity": "severe", "reason": "engine_error"})
     if any(row.get("status") == "rejected" for row in run.gateway) and not run.violations:
         result["diagnostics"].append({"severity": "severe", "reason": "native_authority_mismatch"})
+    try:
+        result["score"] = compute_score(run)
+    except Exception as exc:  # a scoring bug must not hide the raw metrics
+        result["score"] = {"schema": "rwx-micro-score/1", "version": "case4-score-v1", "status": "ERROR",
+                           "reason": f"{type(exc).__name__}: {exc}"}
+        result["diagnostics"].append({"severity": "severe", "reason": "score_error", "detail": str(exc)})
     output = run.directory / "eval"
     output.mkdir(exist_ok=True)
     body = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -69,12 +79,15 @@ def main():
         progress = metrics["turret_progress"]["value"]
         damage = metrics["battle_damage"]["value"]
         repair = metrics["repair_sessions"]["value"]
+        score = document.get("score") or {}
+        items = " ".join(f'{item["id"]}={item.get("points")}' for item in score.get("items", []))
         print(f'{document["run"]["task"]} s{document["run"]["seed"]}: {outcome.get("outcome")} '
               f'({outcome.get("endReason")}) game={outcome.get("gameMs")}ms '
               f'turrets={progress["totals"]["destroyed"]}/{progress["totals"]["turrets"]} '
               f'tankHits={damage["totals"]["hits"]} hpLost={damage["totals"]["hpLost"]} '
               f'tanksLost={damage["totals"]["tanksLost"]} repairs={repair["count"]} '
-              f'healed={repair["totalHealed"]} violations={metrics["violations"]["value"]["count"]}')
+              f'healed={repair["totalHealed"]} violations={metrics["violations"]["value"]["count"]} '
+              f'score={score.get("total")} (deduction {score.get("deduction")}; {items})')
 
 
 if __name__ == "__main__":

@@ -13,6 +13,18 @@ from common.resim import resim
 from common.native_actions import match_gateway
 from common.report import render
 
+
+def _load_score():
+    """Load `score.py` by path: this module is also imported by test_metrics.py via importlib,
+    and putting the case directory on sys.path would shadow other cases' `score` modules."""
+    spec = importlib.util.spec_from_file_location("case1_score", CASE / "score.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.compute
+
+
+compute_score = _load_score()
+
 def load_reference(run, choice, index_path):
     if choice == "none":
         return None
@@ -81,6 +93,12 @@ def evaluate(directory, resim_mode="auto", baseline="auto", *, dist=None, java=N
         result["reference"] = load_reference(run, baseline, Path(baseline_index) if baseline_index else CASE / "baselines/index.json")
     except Exception as exc:
         result["diagnostics"].append({"baselineError": str(exc)})
+    try:
+        result["score"] = compute_score(run)
+    except Exception as exc:  # a scoring bug must not hide the raw metrics
+        result["score"] = {"schema": "rwx-micro-score/1", "version": "case1-score-v1", "status": "ERROR",
+                           "reason": f"{type(exc).__name__}: {exc}"}
+        result["diagnostics"].append({"severity": "severe", "reason": "score_error", "detail": str(exc)})
     output = directory / "eval"
     output.mkdir(exist_ok=True)
     text, document = render(run, result)
@@ -101,7 +119,11 @@ def main():
     args = parser.parse_args()
     result = evaluate(args.run, args.resim, args.baseline, dist=args.dist, java=args.java,
                       settings=read_json(args.metrics_config, {}) if args.metrics_config else None, baseline_index=args.baseline_index)
+    score = result.get("score") or {}
     print(json.dumps({"output": str(args.run / "eval"), "outcome": result["metrics"].get("outcome", {}).get("value"),
+                      "score": {"version": score.get("version"), "status": score.get("status", "OK"),
+                                "total": score.get("total"), "deduction": score.get("deduction")},
+                      "items": {item["id"]: item.get("points") for item in score.get("items", [])},
                       "diagnostics": result["diagnostics"]}, ensure_ascii=True))
 
 if __name__ == "__main__":

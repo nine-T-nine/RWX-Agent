@@ -5,7 +5,9 @@ Deterministic policy (only public observations; never meta/evidence/replays):
 1. landing point: one public `rwx-game-map-show` window around the target island gives the land
    tiles, and `rwx-game-unit-list --owner enemy` gives the visible anti-air turrets.  The unload
    point is the interior land tile farthest from the nearest turret (ties: closest to the base),
-   so the transports spend as little time inside anti-air range as possible;
+   so the transports spend as little time inside anti-air range as possible.  One-time fog hides
+   the island at the start, so while the window shows no land the fleet heads for the centre and
+   the window is re-read every poll until a transport reveals the coast;
 2. production: every idle factory is kept busy with the first requirement still short of its
    target, counting units that were ordered but have not appeared yet;
 3. loading: the lowest-id transport with free slots takes the lowest-id idle target units that fit
@@ -166,6 +168,13 @@ def play(client):
         goal = client.call("rwx-micro-3-goal --json")
         production = client.call("rwx-micro-3-production --json")
         fleet = client.call("rwx-micro-3-fleet --json")["transports"]
+        # One-time fog hides the target island until a transport is close enough to see it, so the
+        # first terrain window is empty. Re-read it every poll while it is empty and re-pick the
+        # landing point as soon as real land appears; until then the fleet flies to the centre.
+        if not land:
+            land, tile_size = land_tiles(client)
+            if land:
+                landing, land, tile_size = choose_landing(client)
         units = client.call("rwx-game-unit-list --owner self --full --json")["units"]
         produced = production["producedCounts"]
         missing = {r["type"]: r["remaining"] for r in goal["requirements"]}

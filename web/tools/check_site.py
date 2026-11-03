@@ -73,6 +73,27 @@ def check_ledger():
     return data
 
 
+def check_scoring():
+    data = json.loads((WEB / 'resource/scoring.json').read_text(encoding='utf-8'))
+    assert data['schema'] == 1
+    stages = data['fullMatch']['stages']
+    assert [stage['id'] for stage in stages] == ['stage1', 'stage2']
+    assert len(stages[0]['items']) == 12, 'Stage 1 must list all 12 deduction items'
+    assert len(stages[1]['items']) == 6, 'Stage 2 must list all 6 deduction families'
+    cases = data['microCases']
+    assert [case['id'] for case in cases] == ['case1', 'case2', 'case3', 'case4']
+    for group in [*stages, *cases]:
+        assert group['version'] and group['items']
+        for item in group['items']:
+            assert item['name'] and item['formula'] and item['description']
+            assert item['cap'] > 0
+    for case in cases:
+        assert case['environment'] and case['imageAlt'] and case['imageCaption']
+        image = (WEB / case['image'].removeprefix('./')).resolve()
+        assert image.is_relative_to(WEB) and image.is_file(), 'Missing CASE image: ' + case['image']
+    return data
+
+
 if __name__ == '__main__':
     page = parse('index.html')
     html = (WEB / 'index.html').read_text(encoding='utf-8')
@@ -101,13 +122,15 @@ if __name__ == '__main__':
         assert item['video'] in html, 'Missing no-JavaScript video link: ' + item['id']
 
     ledger = check_ledger()
+    scoring = check_scoring()
 
     deployed = [WEB / name for name in ('index.html', 'styles.css', 'app.js', 'results.html', 'results.js', 'favicon.svg', '.nojekyll',
-                                        'resource/matches.json', 'resource/results.json')]
-    for folder in ('matches', 'posters'):
+                                        'resource/matches.json', 'resource/results.json', 'resource/scoring.json')]
+    for folder in ('matches', 'posters', 'cases'):
         deployed.extend(p for p in (WEB / 'resource' / folder).rglob('*') if p.is_file())
     total = sum(path.stat().st_size for path in deployed)
     assert total < 1_000_000_000, 'Site exceeds GitHub Pages size limit'
     print(f'PASS: {len(recordings)} recordings, {ledger["overview"]["currentMatches"]} current matches, '
-          f'{ledger["overview"]["legacyMatches"]} archived, {len(deployed)} deployable files, '
+          f'{ledger["overview"]["legacyMatches"]} archived, {len(scoring["microCases"])} micro cases, '
+          f'{len(deployed)} deployable files, '
           f'{total / 1024 / 1024:.1f} MiB; local links, video checksums and ledger scores valid.')

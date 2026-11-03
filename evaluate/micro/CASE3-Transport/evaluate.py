@@ -1,7 +1,8 @@
-"""CASE3-Transport offline metrics runner (Python 3.11+, stdlib only).
+"""CASE3-Transport offline metrics runner and deduction score (Python 3.11+, stdlib only).
 
 The engine only writes facts; every number below is derived here from one run directory
-(meta/result/gateway/engine/violations). No weighted total score is produced.
+(meta/result/gateway/engine/violations). `score.py` turns the same evidence into the capped
+deductions of `score_design.md` under the separate top-level `score` key.
 """
 from __future__ import annotations
 import argparse
@@ -14,6 +15,7 @@ import sys
 CASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(CASE / "metrics"))
 from _shared import Case3Run, read_json  # noqa: E402
+from score import compute as compute_score  # noqa: E402
 
 
 def evaluate(directory):
@@ -40,6 +42,12 @@ def evaluate(directory):
         result["diagnostics"].append({"severity": "severe", "reason": "engine_error"})
     if any(row.get("status") == "rejected" for row in run.gateway) and not run.violations:
         result["diagnostics"].append({"severity": "severe", "reason": "native_authority_mismatch"})
+    try:
+        result["score"] = compute_score(run)
+    except Exception as exc:  # a scoring bug must not hide the raw metrics
+        result["score"] = {"schema": "rwx-micro-score/1", "version": "case3-score-v1", "status": "ERROR",
+                           "reason": f"{type(exc).__name__}: {exc}"}
+        result["diagnostics"].append({"severity": "severe", "reason": "score_error", "detail": str(exc)})
     output = run.directory / "eval"
     output.mkdir(exist_ok=True)
     body = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -69,12 +77,15 @@ def main():
         delivery = metrics["delivery"]["value"]
         transport = metrics["transport_utilization"]["value"]
         damage = metrics["transport_damage"]["value"]
+        score = document["score"]
         print(f'{document["run"]["task"]} s{document["run"]["seed"]}: {outcome.get("outcome")} '
               f'({outcome.get("endReason")}) game={outcome.get("gameMs")}ms '
               f'delivered={outcome.get("delivered")} rate={outcome.get("deliveryRate")} '
               f'hits={damage["totals"]["hits"]} hpLost={damage["totals"]["hpLost"]} '
               f'loads={transport["totals"]["loadCommands"]} emptyMoves={transport["totals"]["emptyMoves"]} '
-              f'violations={metrics["violations"]["value"]["count"]}')
+              f'violations={metrics["violations"]["value"]["count"]} '
+              f'score={score.get("total")} (deduction {score.get("deduction")}; '
+              + ", ".join(f'{item["id"]}={item.get("points")}' for item in score.get("items", [])) + ")")
         for need in delivery["types"]:
             print(f'  {need["unitType"]}: {need["delivered"]}/{need["required"]} '
                   f'first={need["firstDeliveryGameMs"]} last={need["lastDeliveryGameMs"]}')

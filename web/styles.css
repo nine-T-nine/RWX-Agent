@@ -103,3 +103,46 @@
 .deduction-grid li:last-child{border-bottom:0}
 .deduction-grid li b{font-family:var(--mono);color:#e2d7f5;font-weight:400}
 @media(max-width:880px){.deduction-grid{grid-template-columns:1fr}}
+
+/* Scoring reference tables (results.html) */
+.scoring-section{padding-bottom:76px}
+.micro-cases-section{padding-top:76px}
+.scoring-heading{margin-bottom:26px}
+.score-formula-strip{display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:1px;background:var(--line);border:1px solid var(--line)}
+.score-formula-strip span{background:#15101d;padding:17px 20px;color:#cfc5d7;font-family:var(--mono);font-size:12px;line-height:1.7}
+.score-formula-strip b{color:var(--accent);font-weight:600}
+.scoring-stages{display:grid;gap:58px;margin-top:48px;min-width:0}
+.scoring-stage{min-width:0}
+.scoring-stage-head{display:grid;grid-template-columns:minmax(270px,.75fr) minmax(360px,1.25fr);gap:42px;align-items:end}
+.scoring-stage-head span,.case-label{display:block;color:var(--accent);font-family:var(--mono);font-size:10px;letter-spacing:.09em}
+.scoring-stage-head h3{margin:8px 0 0;font-size:25px;line-height:1.35}
+.scoring-stage-head p{margin:0;color:#b8aec0;font-size:14px;line-height:1.9}
+.scoring-table-wrap{margin-top:22px;width:100%;min-width:0}
+.scoring-table{min-width:1040px;font-size:15px}
+.scoring-table caption{padding:16px 20px;font-size:12px;color:#9688a0}
+.scoring-table th,.scoring-table td{padding:17px 20px;line-height:1.75}
+.scoring-table thead th{font-size:11px;letter-spacing:.08em}
+.scoring-table thead th:nth-child(1){width:20%}
+.scoring-table thead th:nth-child(2){width:8%}
+.scoring-table thead th:nth-child(3){width:42%}
+.scoring-table thead th:nth-child(4){width:30%}
+.scoring-table tbody th{color:#eee6f4;font-size:16px;font-weight:650;font-family:var(--sans)}
+.scoring-table td{font-family:var(--sans);font-size:14.5px;color:#d4cadb}
+.scoring-table td:nth-child(2){font-family:var(--mono);color:var(--accent);font-size:16px}
+.scoring-table td:nth-child(2) b{font-size:17px;color:var(--accent)}
+.scoring-table .formula-cell{color:#e2d9ea}
+.scoring-table .description-cell{color:#aea2b6}
+.micro-cases-list{display:grid;gap:72px;min-width:0}
+.micro-case{border-top:1px solid var(--line);padding-top:26px;min-width:0}
+.case-overview{display:grid;grid-template-columns:minmax(350px,.9fr) minmax(360px,1.1fr);gap:38px;align-items:center}
+.case-figure{margin:0;border:1px solid #493c5a;background:#15101d;box-shadow:9px 10px 0 #100b17;overflow:hidden}
+.case-figure img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.case-figure figcaption{border-top:1px solid var(--line);padding:10px 13px;color:#887a92;font-family:var(--mono);font-size:9px;line-height:1.6}
+.case-copy h3{margin:9px 0 13px;font-size:clamp(25px,3vw,37px);line-height:1.2;letter-spacing:-.035em}
+.case-copy>p{margin:0;color:#c0b5c7;font-size:15px;line-height:1.95;max-width:640px}
+.case-score-rule{display:flex;align-items:center;gap:15px;margin-top:24px;padding-top:17px;border-top:1px solid var(--line)}
+.case-score-rule b{font-size:12px;color:var(--accent)}
+.case-score-rule span{font-family:var(--mono);font-size:11px;color:#9b8da5}
+.micro-case>.scoring-table-wrap{margin-top:28px}
+@media(max-width:880px){.score-formula-strip{grid-template-columns:1fr}.scoring-stage-head,.case-overview{grid-template-columns:1fr}.case-overview{gap:27px}.case-figure{max-width:680px}.scoring-stage-head{gap:14px}.micro-cases-list{gap:58px}}
+@media(max-width:600px){.scoring-section{padding-bottom:52px}.micro-cases-section{padding-top:52px}.score-formula-strip span{font-size:10px;padding:14px 15px}.scoring-stages{gap:44px;margin-top:37px}.scoring-stage-head h3{font-size:22px}.scoring-stage-head p,.case-copy>p{font-size:13px}.scoring-table{min-width:900px}.scoring-table th,.scoring-table td{padding:15px 16px}.scoring-table tbody th{font-size:15px}.scoring-table td{font-size:13.5px}.case-figure{box-shadow:5px 6px 0 #100b17}.case-score-rule{align-items:flex-start;flex-direction:column;gap:5px}.micro-cases-list{gap:50px}}

@@ -170,6 +170,55 @@ function renderMethod(data) {
   if (limits) limits.innerHTML = data.method.limits.map((s) => `<li>${esc(s)}</li>`).join("");
 }
 
+function scoringTable(items, caption) {
+  return `<div class="table-wrap scoring-table-wrap"><table class="data-table scoring-table">
+    <caption>${esc(caption)}</caption>
+    <thead><tr><th scope="col">扣分项</th><th scope="col">上限</th><th scope="col">评分公式 / 参数</th><th scope="col">说明</th></tr></thead>
+    <tbody>${items.map((item) => `<tr>
+      <th scope="row">${esc(item.name)}</th>
+      <td><b>${esc(item.cap)}</b></td>
+      <td class="formula-cell">${esc(item.formula)}</td>
+      <td class="description-cell">${esc(item.description)}</td>
+    </tr>`).join("")}</tbody>
+  </table></div>`;
+}
+
+function renderScoring(data) {
+  const stages = document.querySelector("#full-match-scoring");
+  const cases = document.querySelector("#micro-cases-list");
+  if (stages) {
+    stages.innerHTML = data.fullMatch.stages.map((stage) => `<article class="scoring-stage">
+      <header class="scoring-stage-head">
+        <div><span>${esc(stage.label)} / ${esc(stage.version)}</span><h3>${esc(stage.title)}</h3></div>
+        <p>${esc(stage.summary)}</p>
+      </header>
+      ${scoringTable(stage.items, `${stage.label}扣分项，共 ${stage.items.length} 项`)}
+    </article>`).join("");
+  }
+  if (cases) {
+    cases.innerHTML = data.microCases.map((item) => `<article class="micro-case" id="${esc(item.id)}">
+      <div class="case-overview">
+        <figure class="case-figure">
+          <img src="${esc(item.image)}" alt="${esc(item.imageAlt)}" width="1536" height="864" loading="lazy">
+          <figcaption>${esc(item.imageCaption)}</figcaption>
+        </figure>
+        <div class="case-copy">
+          <span class="case-label">${esc(item.label)} / ${esc(item.version)}</span>
+          <h3>${esc(item.title)}</h3>
+          <p>${esc(item.environment)}</p>
+          <div class="case-score-rule"><b>CASE 得分</b><span>max(0, 100 − Σ 每项封顶扣分)</span></div>
+        </div>
+      </div>
+      ${scoringTable(item.items, `${item.label} 扣分项，共 ${item.items.length} 项`)}
+    </article>`).join("");
+  }
+  const anchor = decodeURIComponent(window.location.hash.slice(1));
+  const scoringAnchors = new Set(["scoring", "micro-cases", ...data.microCases.map((item) => item.id)]);
+  if (scoringAnchors.has(anchor)) {
+    requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView());
+  }
+}
+
 const standardLine = document.querySelector("#standard-line");
 
 const menuToggle = document.querySelector(".menu-toggle");
@@ -217,4 +266,18 @@ fetch(new URL("./resource/results.json", import.meta.url))
       el.textContent = "数据未加载：请通过 HTTP 服务打开页面（见 web/README.md）。";
       el.hidden = false;
     });
+  });
+
+fetch(new URL("./resource/scoring.json", import.meta.url))
+  .then((response) => {
+    if (!response.ok) throw new Error("scoring.json unavailable");
+    return response.json();
+  })
+  .then((data) => renderScoring(data))
+  .catch(() => {
+    const status = document.querySelector("#scoring-status");
+    if (status) {
+      status.textContent = "评分方法未加载：请通过 HTTP 服务打开页面，或直接查看 resource/scoring.json。";
+      status.hidden = false;
+    }
   });

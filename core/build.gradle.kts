@@ -67,3 +67,21 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.httpclient)
 }
+
+// CASE4 scene preview: renders the generated layout offline, without booting a match.
+// `.\gradlew.bat :core:previewCase4 -Ptask=4_1_1 -Pseed=1,2,3,5,8 [-Pscale=9] [-Pout=agent-tmp/case4-preview]`
+tasks.register<JavaExec>("previewCase4") {
+    group = "verification"
+    description = "Render CASE4 layouts to PNG/JSON for the given task and seeds"
+    dependsOn(tasks.named("testClasses"))
+    classpath = sourceSets.getByName("test").runtimeClasspath
+    mainClass.set("com.corrodinggames.rts.game.ai.custom.micro.Case4ScenePreview")
+    workingDir = rootProject.projectDir
+    args(
+        providers.gradleProperty("task").getOrElse("4_1_1"),
+        providers.gradleProperty("seed").getOrElse("1,2,3,5,8"),
+        providers.gradleProperty("out").getOrElse("agent-tmp/case4-preview"),
+        providers.gradleProperty("scale").getOrElse("9"),
+        providers.gradleProperty("ranges").getOrElse("0"),
+    )
+}

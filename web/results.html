@@ -25,7 +25,7 @@
       <a class="brand" href="./index.html" aria-label="RWX-Agent 首页"><span class="brand-mark"><svg><use href="#i-target"/></svg></span><span>RWX<span class="brand-dash">—</span>Agent<span class="brand-period">.</span></span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="展开导航"><span></span><span></span></button>
       <nav id="primary-nav" aria-label="主导航">
-        <a href="./index.html#about">关于战场</a><a href="./index.html#capabilities">项目能力</a><a href="./index.html#matches">经典对局</a><a href="./results.html" aria-current="page">评测结果</a>
+        <a href="#scoring">完整对局评分</a><a href="#micro-cases">微操 CASE</a><a href="#current">对局榜单</a><a href="./results.html" aria-current="page">评测结果</a>
       </nav>
       <a class="header-github" href="https://github.com/nine-T-nine/RWX-Agent" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-github"/></svg> GitHub <svg class="icon small"><use href="#i-external"/></svg></a>
     </div>
@@ -94,8 +94,33 @@
       </div>
     </section>
 
+    <section id="scoring" class="section shell scoring-section">
+      <div class="section-heading"><span class="section-index">03 / FULL-MATCH SCORING</span><span class="section-kicker">完整对局 · 两阶段扣分表</span></div>
+      <div class="results-heading scoring-heading">
+        <h2>完整对局怎么扣分</h2>
+        <p>第一、第二阶段都从 100 分起扣；每项先按自己的上限封顶，再求和。扣分项与说明保持稳定，公式和参数集中在独立数据文件中，便于后续调整。</p>
+      </div>
+      <div class="score-formula-strip" aria-label="完整对局评分公式">
+        <span><b>S1</b> = max(0, 100 − Σ 第一阶段扣分)</span>
+        <span><b>S2</b> = max(0, 100 − Σ 第二阶段扣分)</span>
+        <span><b>总分</b> = 0.4 × S1 + 0.6 × S2</span>
+      </div>
+      <div id="full-match-scoring" class="scoring-stages" aria-live="polite"></div>
+      <p id="scoring-status" class="data-pending" hidden></p>
+      <noscript><p class="callout">评分表需要 JavaScript 渲染；也可以直接查看 <a href="./resource/scoring.json">scoring.json</a>。</p></noscript>
+    </section>
+
+    <section id="micro-cases" class="section shell micro-cases-section">
+      <div class="section-heading"><span class="section-index">04 / MICRO CASES</span><span class="section-kicker">固定场景 · 独立评分</span></div>
+      <div class="results-heading scoring-heading">
+        <h2>微操 CASE 评分</h2>
+        <p>每个 CASE 独立按 100 分起扣，不与完整对局混榜。环境截图来自固定 task + seed 的真实游戏窗口，用来快速理解任务空间；不同 task 或 seed 的具体布局会变化。</p>
+      </div>
+      <div id="micro-cases-list" class="micro-cases-list" aria-live="polite"></div>
+    </section>
+
     <section id="deductions" class="section shell">
-      <div class="section-heading"><span class="section-index">03 / DEDUCTION BREAKDOWN</span><span class="section-kicker">两个阶段 · 每一分扣在哪里</span></div>
+      <div class="section-heading"><span class="section-index">05 / DEDUCTION BREAKDOWN</span><span class="section-kicker">两个阶段 · 每一分扣在哪里</span></div>
       <div class="results-heading">
         <h2>逐项扣分</h2>
         <p>两个阶段都是 100 分起扣：第一阶段 12 项、第二阶段按 6 类事件封顶。表内数字是实际扣分与该项上限；达到上限标“封顶”，原始累计超过上限时附“原始”。</p>
@@ -109,7 +134,7 @@
     </section>
 
     <section id="legacy" class="section shell">
-      <div class="section-heading"><span class="section-index">04 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
+      <div class="section-heading"><span class="section-index">06 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
       <div class="results-heading">
         <h2>归档对局</h2>
         <p>这些对局的材料在 2026-11-02 至 03 的整备中归档为 <code>_old</code>：当时没有保留完整的伤害 / HP 证据，无法按当前口径复算第二阶段的偷袭与损失扣分。分数只能代表当时的材料，模型与工具归属按目录名记录，未逐局核验。</p>
@@ -122,7 +147,7 @@
     </section>
 
     <section id="gaps" class="section shell">
-      <div class="section-heading"><span class="section-index">05 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
+      <div class="section-heading"><span class="section-index">07 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
       <div class="results-heading">
         <h2>没有进入排名的材料</h2>
         <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。</p>
@@ -131,7 +156,7 @@
     </section>
 
     <section id="method" class="section shell">
-      <div class="section-heading"><span class="section-index">06 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
+      <div class="section-heading"><span class="section-index">08 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
       <div class="results-heading">
         <h2>分数是怎么来的</h2>
         <p>数据直接取自评分产物与 DSH 会话存档，页面不做二次换算。</p>

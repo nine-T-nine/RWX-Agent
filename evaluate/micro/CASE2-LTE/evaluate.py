@@ -1,4 +1,8 @@
-"""Offline LTE evidence reader and metrics plugin runner (Python 3.11+, stdlib only)."""
+"""Offline LTE evidence reader, metrics plugin runner and deduction score (Python 3.11+, stdlib only).
+
+Metrics stay factual; `score.py` turns the same evidence into the capped deductions of
+`score_design.md` under the separate top-level `score` key.
+"""
 from __future__ import annotations
 import argparse
 import html
@@ -11,6 +15,7 @@ CASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(CASE.parent))
 sys.path.insert(0, str(CASE / "metrics"))
 from common.run import read_json, read_lines, Replay, write_outputs
+from score import compute as compute_score
 
 
 class LteRun:
@@ -55,6 +60,12 @@ def evaluate(directory):
         except Exception as exc:
             value = {"status": "ERROR", "reason": str(exc)}
         result["metrics"][module.ID] = {"tier": module.TIER, "sources": module.SOURCES, "value": value}
+    try:
+        result["score"] = compute_score(run)
+    except Exception as exc:  # a scoring bug must not hide the raw metrics
+        result["score"] = {"schema": "rwx-micro-score/1", "version": "case2-score-v1", "status": "ERROR",
+                           "reason": f"{type(exc).__name__}: {exc}"}
+        result["diagnostics"].append({"severity": "severe", "reason": "score_error", "detail": str(exc)})
     output = run.directory / "eval"
     output.mkdir(exist_ok=True)
     body = json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -71,4 +82,9 @@ if __name__ == "__main__":
     parser.add_argument("run", type=Path)
     args = parser.parse_args()
     result = evaluate(args.run)
-    print(json.dumps({"output": str(args.run / "eval"), "diagnostics": result["diagnostics"]}, ensure_ascii=True))
+    score = result["score"]
+    print(json.dumps({"output": str(args.run / "eval"), "diagnostics": result["diagnostics"],
+                      "score": {"version": score.get("version"), "total": score.get("total"),
+                                "deduction": score.get("deduction"),
+                                "items": {item["id"]: item.get("points") for item in score.get("items", [])}}},
+                     ensure_ascii=True))

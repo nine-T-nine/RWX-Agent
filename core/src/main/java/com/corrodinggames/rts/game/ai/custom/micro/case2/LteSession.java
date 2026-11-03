@@ -52,10 +52,13 @@ public final class LteSession implements MicroSession {
         if(q.kind.equals("B")&&error)emit(map("kind","instruction","requestId",q.seq,"event","rejected","reason",status));
     }
     private void emit(Map<String,Object> row){row.putAll(stamp());MicroRunWriter.line(events,row);}
+    private double credits(){return builder.team.credits;}
     private void event(Instruction i,String name) {
+        // `credits` is the team balance at the moment this row is written; the scorer uses it as an
+        // exact anchor when it reconstructs how much earlier an instruction could have been issued.
         emit(map("kind","instruction","requestId",i.request,"event",name,"operation",i.kind,"actor",i.actor,
                 "resourceId",i.resource,"buildingId",i.building==null?null:i.building.objectId,"targetLevel",i.targetLevel,
-                "actionId",i.action,"cost",i.cost,"actualCost",i.actualCost));
+                "actionId",i.action,"cost",i.cost,"actualCost",i.actualCost,"credits",credits()));
     }
     private void phase(Instruction i,String next) {
         if(i.phase.equals(next))return;
@@ -144,7 +147,7 @@ public final class LteSession implements MicroSession {
         i.creditsBefore=builder.team.credits;
         emit(map("kind","native","requestId",i.request,"nativeIndex",nativeIndex++,"actor",i.actor,"operation",i.kind,
                 "actionId",i.kind.equals("upgrade")?i.action:null,"buildType",i.kind.equals("build")?Case2Lte.type(1).v():null,
-                "resourceId",i.resource));
+                "resourceId",i.resource,"credits",i.creditsBefore));
     }
     public void applied(com.corrodinggames.rts.gameFramework.Command c) {
         Instruction i=permitted.get(c);if(i==null)return;i.applied=true;event(i,"order_started");
