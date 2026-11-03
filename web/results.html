@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b100d">
+  <title>评测结果｜RWX-Agent</title>
+  <meta name="description" content="RWX-Agent 已完成的全部对局评分：当前标准 total-v1、三个阶段版本、模型与工具归属，以及 DSH 三种工具接口的对比分析。">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./results.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6m0-6-9 9M10 5H5a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h13a1 1 0 0 0 1-1v-5"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5m0 10v5M2 12h5m10 0h5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10m5 10V4m5 16v-7m5 7V8"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-4 1-4-2-6-2m12 5v-4c0-1 .1-1.5-.5-2 3-.3 6-1.5 6-6a4.7 4.7 0 0 0-1.3-3.2c.2-1 .2-2.1-.4-3.2 0 0-1.1-.4-3.6 1.3a12 12 0 0 0-6.4 0C6.3 3.2 5.2 3.6 5.2 3.6c-.6 1.1-.6 2.2-.4 3.2A4.7 4.7 0 0 0 3.5 10c0 4.5 3 5.7 6 6-.6.5-.6 1.2-.5 2v4"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="./index.html" aria-label="RWX-Agent 首页"><span class="brand-mark"><svg><use href="#i-target"/></svg></span><span>RWX<span class="brand-dash">—</span>Agent<span class="brand-period">.</span></span></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="展开导航"><span></span><span></span></button>
+      <nav id="primary-nav" aria-label="主导航">
+        <a href="./index.html#about">关于战场</a><a href="./index.html#capabilities">项目能力</a><a href="./index.html#matches">经典对局</a><a href="./results.html" aria-current="page">评测结果</a>
+      </nav>
+      <a class="header-github" href="https://github.com/nine-T-nine/RWX-Agent" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-github"/></svg> GitHub <svg class="icon small"><use href="#i-external"/></svg></a>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="results-hero shell">
+      <div class="eyebrow"><span class="status-dot"></span> EVALUATION LEDGER / TOTAL-V1</div>
+      <h1>评测结果</h1>
+      <p class="results-lead">这里列出目前所有完成过的 RWX 对局：当前标准可以横向比较，归档账本只作历史参考，材料不足的对局单独列出、不计分。</p>
+      <p class="results-standard" id="standard-line">total-v1 = stage1-v2 × 0.4 + stage2-v2 × 0.6。</p>
+      <div class="kpi-row" id="results-kpis"></div>
+    </section>
+
+    <section id="tools" class="section shell">
+      <div class="section-heading"><span class="section-index">01 / TOOL COMPARISON</span><span class="section-kicker">同一模型 · 同一地图 · 三种接口</span></div>
+      <div class="results-heading">
+        <h2>换了工具，分数变了吗？</h2>
+        <p>三局都由 <code>deepseek-v4.1-flash</code>（推理强度 high）在 Ice Island (2p) 对阵 Hard AI、x2 收入下完成。唯一的变量名义上是工具接口：原生 shell、MCP 第二版、MCP 第三版。</p>
+      </div>
+
+      <div class="tool-cards" id="tool-cards"></div>
+
+      <p class="callout"><b>一句话结论：</b>工具接口没有改变胜负——三局全败；tool3 领先的 10.7 分几乎全部来自第二阶段的资源与工厂利用率，而第一阶段它其实不如没有 MCP 的 tool1。</p>
+
+      <div class="table-wrap">
+        <table class="data-table" id="tool-metrics">
+          <caption>三局的可比指标（均为同一地图、同一对手、同一经济倍率；分数越高越好，扣分类指标越低越好）</caption>
+        </table>
+      </div>
+      <noscript><p class="callout">表格由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
+
+      <div class="findings">
+        <article class="finding">
+          <h3>1. 三局都输了，分数差异只在过程指标上</h3>
+          <p>tool1 与 tool3 在主基地失守后主动投降，tool2 在 12:22 被摧毁。评分体系里没有胜负项，所以“分数更高”只说明过程更规整，不说明更接近赢。要判断强弱，必须在同一工具下重复多局。</p>
+        </article>
+        <article class="finding">
+          <h3>2. 没有 MCP 的 tool1，第一阶段反而最高（70.5）</h3>
+          <p>它的首个行动指令扣分最多（13.5），但其余项最多只扣 4.7 分——原生工具一次 pwsh 可以批量下发多条命令，动作连续。真正拖累它的是第二阶段 57.8：资金闲置扣 7 分、工厂空闲 4.5 分、被偷袭损失 10.7 分。</p>
+        </article>
+        <article class="finding">
+          <h3>3. tool2 是三局最低（60.1），MCP 并没有自动变快</h3>
+          <p>它的决策周期 20.0 秒为三者最慢，行动指令只有 58 条，偷袭损失扣分 14.07 为三者最高。工具总耗时 286 秒，是 tool1（125 秒）的 2.3 倍：把“观察 + 下令”打包成一次调用后，每一步都要等桥接返回，1x 实时里反而压缩了可用决策次数。</p>        </article>
+        <article class="finding">
+          <h3>4. tool3 的领先来自第二阶段（73.2）</h3>
+          <p>资金闲置 0 分、工厂空闲 0 分、偷袭损失 6.77 分，是它把资金持续转成建筑与部队的直接结果；代价是第一阶段只有 67.2——底层生产指令 7.46 条/分触发满额扣分（6/6），行动被拆成 884 次查询对 176 次行动。</p>
+        </article>
+        <article class="finding">
+          <h3>5. 不能把 +10.7 归因给“MCP 更好”</h3>
+          <p>tool3 与 tool2 的差别不只是接口：提示词增加了路径与暂停说明，并补上“游戏秒 / 收入单位”的口径，桥接摘要也加了 <code>/s 游戏秒</code> 后缀；同一工具的两局基线（tool1 62.9、更早一局 61.9）本身就相差 1.0 分。每臂 1 局的样本量下，这个差值无法与提示词变化、局间方差分离。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="current" class="section shell">
+      <div class="section-heading"><span class="section-index">02 / CURRENT STANDARD</span><span class="section-kicker">当前标准 · 可横向比较</span></div>
+      <div class="results-heading">
+        <h2>当前标准下的全部对局</h2>
+        <p>以下 5 局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="current-table">
+          <caption>按综合分排序；结局一列是游戏内结果，不参与计分。</caption>
+        </table>
+      </div>
+    </section>
+
+    <section id="legacy" class="section shell">
+      <div class="section-heading"><span class="section-index">03 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
+      <div class="results-heading">
+        <h2>归档对局</h2>
+        <p>这些对局的材料在 2026-11-02 至 03 的整备中归档为 <code>_old</code>：当时没有保留完整的伤害 / HP 证据，无法按当前口径复算第二阶段的偷袭与损失扣分。分数只能代表当时的材料，模型与工具归属按目录名记录，未逐局核验。</p>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="legacy-table">
+          <caption>仅第一阶段 / 第二阶段分，不含综合分。</caption>
+        </table>
+      </div>
+    </section>
+
+    <section id="gaps" class="section shell">
+      <div class="section-heading"><span class="section-index">04 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
+      <div class="results-heading">
+        <h2>没有进入排名的材料</h2>
+        <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。</p>
+      </div>
+      <div class="gap-list" id="gap-list"></div>
+    </section>
+
+    <section id="method" class="section shell">
+      <div class="section-heading"><span class="section-index">05 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
+      <div class="results-heading">
+        <h2>分数是怎么来的</h2>
+        <p>数据直接取自评分产物与 DSH 会话存档，页面不做二次换算。</p>
+      </div>
+      <div class="method-grid">
+        <div>
+          <h3>数据来源</h3>
+          <ul class="method-list" id="method-sources"></ul>
+        </div>
+        <div>
+          <h3>已知限制</h3>
+          <ul class="method-list" id="method-limits"></ul>
+        </div>
+      </div>
+      <p class="method-note">判定标准与曲线定义见仓库 <a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/STAGE1_SCORING.md" target="_blank" rel="noopener noreferrer">STAGE1_SCORING.md <svg class="icon small"><use href="#i-external"/></svg></a> 与 <a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/STAGE2_SCORING.md" target="_blank" rel="noopener noreferrer">STAGE2_SCORING.md <svg class="icon small"><use href="#i-external"/></svg></a>。</p>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="shell footer-inner"><a class="brand footer-brand" href="./index.html"><span class="brand-mark"><svg><use href="#i-target"/></svg></span><span>RWX<span class="brand-dash">—</span>Agent<span class="brand-period">.</span></span></a><span>Rusted Warfare 由 Corroding Games 制作。<br>RWX-Agent 基于 RWX 扩展修改。</span><a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">开源许可证 <svg class="icon small"><use href="#i-external"/></svg></a><a class="back-top" href="#" aria-label="返回顶部">BACK TO TOP <span>↑</span></a></div></footer>
+</body>
+</html>

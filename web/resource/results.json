@@ -1,0 +1,767 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-11-03T10:30:00+08:00",
+  "standard": {
+    "total": "total-v1",
+    "stage1": "stage1-v2",
+    "stage2": "stage2-v2",
+    "weights": {
+      "stage1": 0.4,
+      "stage2": 0.6
+    },
+    "summary": "总分 = 第一阶段 × 0.4 + 第二阶段 × 0.6，两项均为 0–100，越高越好；两阶段仍分开呈现，综合分只用于横向比较。"
+  },
+  "overview": {
+    "currentMatches": 5,
+    "best": {
+      "id": "tool3",
+      "total": 70.82
+    },
+    "legacyMatches": 11,
+    "insufficient": 1
+  },
+  "current": [
+    {
+      "id": "tool1",
+      "title": "tool1 · 原始 DSH 工具",
+      "tool": "pwsh + RWX CLI",
+      "toolDetail": "MCP 桥接未注册，全部指令经 pwsh 批量执行 rwx-* 命令（81 次调用）",
+      "mcp": false,
+      "group": "trio",
+      "date": "2026-11-03 00:29",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-28a38d0e-4f19-47fd-8a92-f85e284ba666",
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "detail": "主基地被摧毁后 13:15 投降",
+        "atSeconds": 794.9
+      },
+      "scores": {
+        "total": 62.878,
+        "stage1": 70.5,
+        "stage2": 57.797
+      },
+      "metrics": {
+        "nativeCommands": 169,
+        "queries": 71,
+        "actions": 90,
+        "otherCommands": 55,
+        "decisionCycleSeconds": 17.514,
+        "productionPerMinute": 9.1517,
+        "firstOrderSeconds": 39.344,
+        "attributionMissing": 63,
+        "durationSeconds": 786.736,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "points": 13.5,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "points": 4.7,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "points": 0,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "points": 1.3,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "points": 0,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 87,
+        "toolSeconds": 125,
+        "llmSeconds": 938,
+        "outputTokens": 59897
+      },
+      "evidence": {
+        "damageRows": 3134,
+        "hpLossRows": 3134,
+        "complete": true
+      },
+      "notes": [
+        "提示词已要求使用 mcp__rwx__*，但当时桥接未注册，实际退化为原生 shell 工具，因此作为“无 MCP”基线。",
+        "底层命令归属缺失 63/169（37%），会压低第一阶段的生产速率项（本局该项 0/6）。"
+      ]
+    },
+    {
+      "id": "tool2",
+      "title": "tool2 · MCP 桥接第二版",
+      "tool": "mcp__rwx__*（rwx_step 为主）",
+      "toolDetail": "64 次 rwx_step / 5 次 rwx_query / 3 次 rwx_status，仅 14 次 pwsh 用于开局与收尾",
+      "mcp": true,
+      "group": "trio",
+      "date": "2026-11-03 07:22",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-bf167b70-4046-4cac-b35e-d3c11222042b",
+      "result": {
+        "outcome": "defeat",
+        "label": "被击败",
+        "detail": "约 12:22 主基地被摧毁",
+        "atSeconds": 735.6
+      },
+      "scores": {
+        "total": 60.117,
+        "stage1": 66.4,
+        "stage2": 55.928
+      },
+      "metrics": {
+        "nativeCommands": 125,
+        "queries": 298,
+        "actions": 58,
+        "otherCommands": 7,
+        "decisionCycleSeconds": 20.022,
+        "productionPerMinute": 7.9778,
+        "firstOrderSeconds": 36.192,
+        "attributionMissing": 41,
+        "durationSeconds": 714.48,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "points": 13.2,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "points": 5.3,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "points": 0.8,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "points": 1.6,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "points": 2.3,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "points": 0.4,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 94,
+        "toolSeconds": 286,
+        "llmSeconds": 855,
+        "outputTokens": 44200
+      },
+      "evidence": {
+        "damageRows": 2051,
+        "hpLossRows": 2051,
+        "complete": true
+      },
+      "notes": [
+        "目录名误写成 tool1，但录像名为 dsh4.1_tool2_vsHard，且 MCP 调用日志一致，已按 tool2 归档。",
+        "同为 MCP + 同一模型，综合分反而低于无 MCP 的 tool1，说明接口形态本身不构成分数优势。"
+      ]
+    },
+    {
+      "id": "tool3",
+      "title": "tool3 · MCP 桥接第三版",
+      "tool": "mcp__rwx__*（rwx_step 为主）",
+      "toolDetail": "117 次 rwx_step / 13 次 rwx_query / 2 次 rwx_status，仅 3 次 pwsh",
+      "mcp": true,
+      "group": "trio",
+      "date": "2026-11-03 09:29",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-c716b0ab-15a9-4cda-8b14-40ace28a13dc",
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "detail": "基地被打崩后 19:57 投降",
+        "atSeconds": 1197.6
+      },
+      "scores": {
+        "total": 70.82,
+        "stage1": 67.2,
+        "stage2": 73.233
+      },
+      "metrics": {
+        "nativeCommands": 353,
+        "queries": 884,
+        "actions": 176,
+        "otherCommands": 16,
+        "decisionCycleSeconds": 12.785,
+        "productionPerMinute": 7.4647,
+        "firstOrderSeconds": 30.336,
+        "attributionMissing": 204,
+        "durationSeconds": 1197.632,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "points": 12.8,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "points": 2.9,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "points": 3.1,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "points": 0,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "points": 2.1,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "points": 0.9,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "points": 6,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 141,
+        "toolSeconds": 420,
+        "llmSeconds": 1090,
+        "outputTokens": 69901
+      },
+      "evidence": {
+        "damageRows": 4533,
+        "hpLossRows": 4533,
+        "complete": true
+      },
+      "notes": [
+        "三局中综合分最高，但仍是败局；相对 tool2 的差异主要来自提示词与收入单位标注，而非新增的游戏操作能力。",
+        "底层命令归属缺失 204/353（58%），是全组最高，说明“更多命令”并不等于“更多可归因的有效操作”。",
+        "单局样本；对手、地图、经济倍率固定，没有重复对局，无法据此判定工具版本带来稳定提升。"
+      ]
+    },
+    {
+      "id": "native-2358",
+      "title": "基线 · 无 MCP（更早一局）",
+      "tool": "pwsh + RWX CLI",
+      "toolDetail": "109 次 pwsh 批量调用，MCP 尚未接入",
+      "mcp": false,
+      "group": "extra",
+      "date": "2026-11-02 23:58",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-d7132417-0f53-4b70-a4d8-b376ed9a839d",
+      "result": {
+        "outcome": "defeat",
+        "label": "被击败",
+        "detail": "约 18:01 被全歼",
+        "atSeconds": 1077.2
+      },
+      "scores": {
+        "total": 61.904,
+        "stage1": 56.5,
+        "stage2": 65.507
+      },
+      "metrics": {
+        "nativeCommands": 458,
+        "queries": 81,
+        "actions": 102,
+        "otherCommands": 185,
+        "decisionCycleSeconds": 16.798,
+        "productionPerMinute": 4.3322,
+        "firstOrderSeconds": 76.736,
+        "attributionMissing": 417,
+        "durationSeconds": 1066.432,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "points": 15,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "points": 4.5,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "points": 1.6,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "points": 2.4,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "points": 1.6,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "points": 0.5,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "points": 1.9,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "points": 6,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 127,
+        "toolSeconds": 218,
+        "llmSeconds": 1188,
+        "outputTokens": 61403
+      },
+      "evidence": {
+        "damageRows": 2974,
+        "hpLossRows": 2974,
+        "complete": true
+      },
+      "notes": [
+        "与 tool1 同为无 MCP 基线，用于观察同工具、同模型下的局间波动：62.9 与 61.9（相差 1.0）。"
+      ]
+    },
+    {
+      "id": "mcp-early",
+      "title": "MCP 首次可用",
+      "tool": "mcp__rwx__*（早期桥接）",
+      "toolDetail": "92 次 rwx_step / 2 次 rwx_query / 1 次 rwx_status，8 次 pwsh",
+      "mcp": true,
+      "group": "extra",
+      "date": "2026-11-03 01:34",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-7c90b228-121c-43c1-8cd4-a063fa3373de",
+      "result": {
+        "outcome": "defeat",
+        "label": "被击败",
+        "detail": "约 20:28 被击败",
+        "atSeconds": 1222.3
+      },
+      "scores": {
+        "total": 67.171,
+        "stage1": 63.6,
+        "stage2": 69.551
+      },
+      "metrics": {
+        "nativeCommands": 312,
+        "queries": 468,
+        "actions": 125,
+        "otherCommands": 7,
+        "decisionCycleSeconds": 15.574,
+        "productionPerMinute": 7.7557,
+        "firstOrderSeconds": 29.088,
+        "attributionMissing": 159,
+        "durationSeconds": 1222.32,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "points": 12.7,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "points": 4.2,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "points": 0,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "points": 4.5,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "points": 1,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "points": 4,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 107,
+        "toolSeconds": 236,
+        "llmSeconds": 1207,
+        "outputTokens": 54955
+      },
+      "evidence": {
+        "damageRows": 5269,
+        "hpLossRows": 5269,
+        "complete": true
+      },
+      "notes": [
+        "桥接首次真正可用的一局（此前 01:13 的会话因未注册 MCP 直接停止），提示词仍是 v1 版本。",
+        "与 tool3 同为 MCP 长局，综合分 67.2，说明 MCP 局本身可以在 67 分区间，并非 tool3 独有。"
+      ]
+    }
+  ],
+  "legacy": [
+    {
+      "id": "4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
+      "date": "2026-10-27",
+      "model": "GPT（型号未记录）",
+      "tool": "原始工具",
+      "note": "未完成对局",
+      "scores": {
+        "stage1": 83.8,
+        "stage2": 100
+      }
+    },
+    {
+      "id": "4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
+      "date": "2026-10-27",
+      "model": "Claude（型号未记录）",
+      "tool": "原始工具",
+      "note": "只打了约一半",
+      "scores": {
+        "stage1": 50.5,
+        "stage2": 86
+      }
+    },
+    {
+      "id": "4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
+      "date": "2026-10-27",
+      "model": "Claude（型号未记录）",
+      "tool": "原始工具",
+      "note": "投降结束",
+      "scores": {
+        "stage1": 65.7,
+        "stage2": 100
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261029--20-40_deepseek4.1vsHard_old",
+      "date": "2026-10-29 20:40",
+      "model": "DeepSeek 4.1",
+      "tool": "原始工具",
+      "note": "旧材料归档",
+      "scores": {
+        "stage1": 54.5,
+        "stage2": 93
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261030--01-39_dsh1017vsHard_old",
+      "date": "2026-10-30 01:39",
+      "model": "DSH 1.0.17",
+      "tool": "原始工具",
+      "note": "旧材料归档",
+      "scores": {
+        "stage1": 53.1,
+        "stage2": 92
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
+      "date": "2026-11-01 16:43",
+      "model": "GPT-5.6 Sol",
+      "tool": "原始工具",
+      "note": "未完赛",
+      "scores": {
+        "stage1": 64.7,
+        "stage2": 65
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--18-51_Pi+claudeOpus5.5+dshvsHard_old",
+      "date": "2026-11-01 18:51",
+      "model": "Pi + Claude Opus 5.5 + DSH",
+      "tool": "原始工具",
+      "note": "旧材料归档",
+      "scores": {
+        "stage1": 73,
+        "stage2": 69.174
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--19-16_Pi+deepseek4.1_old",
+      "date": "2026-11-01 19:16",
+      "model": "Pi + DeepSeek 4.1",
+      "tool": "原始工具",
+      "note": "旧材料归档",
+      "scores": {
+        "stage1": 66.4,
+        "stage2": 71.999
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--19-50_Pi=deepseek掺水_old",
+      "date": "2026-11-01 19:50",
+      "model": "Pi + DeepSeek（掺水）",
+      "tool": "原始工具",
+      "note": "旧材料归档",
+      "scores": {
+        "stage1": 65.4,
+        "stage2": 65
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--21-31_Pi+Kimi3.1provsHard_延迟_old",
+      "date": "2026-11-01 21:31",
+      "model": "Pi + Kimi 3.1 Pro",
+      "tool": "原始工具",
+      "note": "延迟显著",
+      "scores": {
+        "stage1": 55.7,
+        "stage2": 60.474
+      }
+    },
+    {
+      "id": "Ice-Island-(2p)-20261101--21-51_Pi+Kimi3.1provsHard_延迟2_old",
+      "date": "2026-11-01 21:51",
+      "model": "Pi + Kimi 3.1 Pro",
+      "tool": "原始工具",
+      "note": "延迟显著",
+      "scores": {
+        "stage1": 53.6,
+        "stage2": 51
+      }
+    }
+  ],
+  "insufficient": [
+    {
+      "id": "ff76adff",
+      "title": "session-ff76adff · 桥接未注册",
+      "date": "2026-11-03 01:13",
+      "detail": "会话读到评测说明后确认没有 mcp__rwx__* 工具，按规则停止，没有开局，因此没有任何对局材料。",
+      "impact": "不计分；它证明了“桥接未注册时 Agent 会中止”，不能当作一局失败的战绩。"
+    },
+    {
+      "id": "commands-only",
+      "title": "3 份 commands-*_analysis_old",
+      "date": "2026-10-27",
+      "detail": "只有命令日志，没有回放与遥测，无法重建战场与资源曲线。",
+      "impact": "不计分。"
+    },
+    {
+      "id": "local-replay",
+      "title": "[local]_Ice_Island_(2p)_[v1.15]_old",
+      "date": "2026-11-01",
+      "detail": "仅保留原始回放，没有评分产物。",
+      "impact": "不计分。"
+    }
+  ],
+  "method": {
+    "sources": [
+      "evaluate/output/<对局>/score.json（total-v1 综合分）",
+      "evaluate/output/<对局>/stage_1/score.json、stage_2/score.json",
+      "evaluate/output/<对局>/replay/*.summary.txt（地图、时长、命令量）",
+      "evaluate/output/events-live/（实时遥测，已按 match id 归档进各对局目录）",
+      "DSH 会话存档（模型、推理强度、工具调用与对局结局）"
+    ],
+    "limits": [
+      "每个工具版本只有 1 局，局间方差与工具差异无法分离；同工具的两局基线相差 1.0 分。",
+      "地图、对手、经济倍率固定为 Ice Island (2p) / Hard / x2，结论不能外推到其它地图或难度。",
+      "底层命令归属缺失 33%–58%，会直接影响第一阶段的生产速率项。",
+      "tool2 与 tool3 的提示词并非只差工具：tool3 增加了路径说明、暂停说明与“游戏秒/收入单位”标注，桥接摘要也同步加了单位后缀。",
+      "三局结局都是失败，分数差异不能解读为“更会赢”。"
+    ]
+  }
+}

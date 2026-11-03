@@ -1,8 +1,9 @@
 # RWX-Agent 项目网站
 
-介绍项目能力并播放三场实机对局的静态网站，无前端依赖或构建步骤。
+介绍项目能力并播放三场实机对局的静态网站，外加一页评测结果；无前端依赖或构建步骤。
 
 - 网站：https://nine-t-nine.github.io/RWX-Agent/
+- 评测结果：https://nine-t-nine.github.io/RWX-Agent/results.html
 - 本项目源码：https://github.com/nine-T-nine/RWX-Agent
 - RWX 上游：https://github.com/yomi2539/RWX
 
@@ -14,20 +15,34 @@
 python -m http.server 4173 --bind 127.0.0.1 --directory web
 ```
 
-打开 http://127.0.0.1:4173/ 。使用 HTTP 服务预览，以便 JavaScript 读取录像清单。
+打开 http://127.0.0.1:4173/ 。使用 HTTP 服务预览，以便 JavaScript 读取录像清单与评测数据。
 
 ## 修改页面
 
 | 文件 | 内容 |
 | --- | --- |
-| `index.html` | 中文页面内容、导航、无脚本视频链接 |
+| `index.html` | 中文首页内容、导航、无脚本视频链接 |
+| `results.html` | 评测结果页：工具对比、当前标准、归档账本、材料缺口、口径限制 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
-| `app.js` | 录像切换、平台切换、复制命令和手机导航 |
+| `app.js` | 首页录像切换、平台切换、复制命令和手机导航 |
+| `results.js` | 读取 `resource/results.json` 渲染评测表格与卡片 |
 | `resource/matches.json` | 三场录像的名称、说明、时长及 SHA-256 |
+| `resource/results.json` | 全部对局的分数、模型 + 工具 + 推理强度、结局与备注 |
 | `resource/matches/` | 已提交的 H.264/AAC 网页录像，完整时长、1080p/60fps |
 | `resource/posters/` | 从原录像提取的 WebP 封面 |
 
 本页没有接入游戏实例或云端模型 API。页面中的命令用于在访问者本机启动游戏；录像是真实录制的对局，不是在线游戏画面。
+
+## 更新评测结果
+
+评测结果来自仓库的评分产物（`evaluate/output/<对局>/score.json`，不纳入版本库）。更新流程：
+
+1. 按 `evaluate/README.md` 跑完评分，确认 `score.json` 的 `version` 为当前标准。
+2. 把对局的综合分、两阶段分、模型 + 工具 + 推理强度、结局与会话 id 写进 `resource/results.json`。
+3. 若对局无法关联或材料不足，写入 `insufficient` 而不是补分；归档对局只进 `legacy`。
+4. 运行 `python web/tools/check_site.py`：它会校验页面链接、录像校验和，以及每条记录的加权分与阶段分是否一致。
+
+`check_site.py` 不读取 `evaluate/`（该目录不进版本库），因此分数一致性以 `results.json` 内部为准。
 
 ## 重新生成媒体
 

@@ -151,3 +151,9 @@ rwx-game-replay-status
 
 - [第一轮：实时性材料、映射与评分规则](STAGE1_SCORING.md)
 - [第二轮：证据采集、事件判定与评分规则](STAGE2_SCORING.md)
+
+## 结果发布
+
+对外展示的评测账本在 [`web/results.html`](../web/results.html)，数据来自 [`web/resource/results.json`](../web/resource/results.json)：当前标准对局、归档 `_old` 对局与“材料不足不计分”分开记录，每条注明模型、工具与推理强度。
+
+`evaluate/output/` 不进版本库，因此公开页面只保留结论与关键指标；更新步骤（含 `check_site.py` 校验）见 [`web/README.md`](../web/README.md#更新评测结果)。同一批对局比较工具体系时，需保证模型、地图、对手、经济倍率一致，并按工具各跑多局，避免用单局差值下结论。
