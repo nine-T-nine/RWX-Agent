@@ -2,12 +2,10 @@
 
 > Evaluate the economy using **income multiplier, current income, available credits, number/level of resource deposits, factory throughput, current threats, and the next major expense**. Neither income nor balance alone is enough.
 >
-> **Every income figure is per game second.** The engine settles once per 40 ticks (40 ticks = 0.64 game seconds); the
-> docs and command output are already converted to per game second, and the room multiplier is applied on top of the
-> converted value. So "1 Command Center + 2 T1 extractors at x2" must come out as `28.1×2 + 12.5×2×2 = 106.25/s` —
-> the same number `rwx-game-state` reports. If your arithmetic does not land there, you misread a figure; do not plan
-> past it. The GUI's native number next to the resource is the raw per-40-tick figure (about the per-game-second rate
-> divided by 1.5625), not a per-second income; do not check your arithmetic against it.
+> **Every income figure is per second.** The engine settles once per 40 ticks (0.64 s at 1x); the docs and command
+> output are already converted to per second, and the room multiplier is applied on top of the converted value.
+> So "1 Command Center + 2 T1 extractors at x2" must come out as `28.1×2 + 12.5×2×2 = 106.25/s` — the same number
+> `rwx-game-state` reports. If your arithmetic does not land there, you misread a figure; do not plan past it.
 
 ## 1. Income Multiplier
 
@@ -19,7 +17,7 @@
 
 ## 2. Spending Capacity by Income
 
-| Income per game second | Rough tier | Suitable production options |
+| Income per second | Rough tier | Suitable production options |
 |---|---|---|
 | ≤50/s | Poor | T1 Tanks, a few Heavy/Plasma Tanks, basic Mechs, Anti-Air Mechs, Artillery Mechs, Interceptors and Gunships, Battleships |
 | 50–100/s | Typical opening | Units costing around 2,000 credits or less are generally viable |

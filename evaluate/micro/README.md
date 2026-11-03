@@ -2,10 +2,6 @@
 
 小规模、固定场景、可复现的实时/回合制操控评测。引擎负责布景、生命周期、命令隔离、薄网关、自动录像和结果文件；指标全部在 `evaluate/micro/` 的 Python 脚本里离线计算。
 
-> **时间与单位约定**：micro 输出里凡以 `gameMs`/`tick`/`t=` 表示的都是**游戏时间**；`wallMs`/`remainingWallMs` 才是真实时间。`incomePerSecond` 是引擎标称字段（每 40 tick 的额度，40 tick = 0.64 游戏秒），实际每游戏秒到账约为其 ×1.5625；1x 不暂停时每游戏秒与每墙钟秒相同。
->
-> 注意：micro 的 `turnSeconds`/`turnTicks` 目前按 **60 tick = 1 秒** 的名义换算，而引擎时钟是 16 ms/tick（**62.5 tick/秒**），两者相差约 4%。与 `t=`/`gameMs` 对账时以引擎时钟为准，不要把 `turnSeconds` 当精确秒数。
-
 ## 1. 启动
 
 从仓库根目录启动

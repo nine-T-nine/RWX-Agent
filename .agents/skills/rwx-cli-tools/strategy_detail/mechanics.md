@@ -6,7 +6,7 @@
 
 | Mechanic | Strategic implication |
 |---|---|
-| Command Center: +28 income per game second (at x1; the room income multiplier scales it), high HP, can attack aircraft, moderate damage but slow firing | Can handle minor harassment alone, but should not be expected to stop swarms or dedicated counters |
+| Command Center: +28/s income (at x1; the room income multiplier scales it), high HP, can attack aircraft, moderate damage but slow firing | Can handle minor harassment alone, but should not be expected to stop swarms or dedicated counters |
 | Factory orders deduct credits immediately | Check available balance and urgent expenses before queueing production |
 | Shields usually regenerate; electrical damage penetrates shields | Electrical weapons may be valuable against heavily shielded Mechs |
 | Many Mechs can cross mountainous terrain | Exploit difficult routes, while respecting artillery and electrical counters |

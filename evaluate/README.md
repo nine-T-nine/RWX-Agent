@@ -4,8 +4,6 @@
 
 本文只讲完整对局。微操评测的任务选择、启动参数与结算方式见 [`micro/README.md`](micro/README.md) 及各 Case 文档，不要套用本页的完整对局提示词。
 
-> **时间与单位约定（全目录适用）**：评估材料与文档里的 `timeMs`/`sampleMs`/`tick`/`[MM:SS]`/“秒”一律是**游戏时间**（1x 实时不暂停时等于真实时间；暂停停走、变速变快变慢）。收入单位是“信用点/**游戏秒**”：引擎原生按每 40 tick 结算（40 tick = 0.64 游戏秒），`economy.log` 的 `income` 是每 40 tick 的额度，×1.5625 才是每游戏秒；telemetry 的 `incomePerSecond` 已是每游戏秒。只有明确写 `wall` 的字段是真实时间。游戏界面（GUI）上资源旁的原生数字属于每 40 tick 口径，不作为评估口径。
-
 > 第一轮、第二轮评估所需材料、采集与分析逻辑、判定规则和评分公式分别集中在 [`STAGE1_SCORING.md`](STAGE1_SCORING.md) 与 [`STAGE2_SCORING.md`](STAGE2_SCORING.md)。本 README 不重复这些底层细节。
 
 ## 选择完整对局场景
