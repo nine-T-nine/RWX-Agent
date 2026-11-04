@@ -73,50 +73,92 @@ function stage2Row(family) {
   </tr>`;
 }
 
+const matchData = new Map();
+
+function matchBody(m) {
+  const notes = (m.notes || []).map((note) => `<li>${esc(note)}</li>`).join("");
+  return `<div class="match-stages">
+    <section class="match-stage">
+      <h4><span>第一阶段</span>12 项 · 扣 ${fmt(m.breakdown.stage1.deduction, 2)} → ${fmt(m.breakdown.stage1.score, 2)}</h4>
+      <div class="table-wrap detail-wrap">
+        <table class="detail-table">
+          <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
+          <tbody>${m.metrics.stage1Items.map(stage1Row).join("")}</tbody>
+        </table>
+      </div>
+    </section>
+    <section class="match-stage">
+      <h4><span>第二阶段</span>6 类 · 扣 ${fmt(m.breakdown.stage2.deduction, 2)} → ${fmt(m.breakdown.stage2.score, 2)}</h4>
+      <div class="table-wrap detail-wrap">
+        <table class="detail-table">
+          <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
+          <tbody>${m.breakdown.stage2.families.map(stage2Row).join("")}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  ${notes ? `<ul class="match-notes">${notes}</ul>` : ""}`;
+}
+
+/** 默认全部折叠；第一次展开时才生成该局的两张表（按需加载）。 */
 function renderMatchDetails(data) {
   const host = document.querySelector("#match-details");
   if (!host) return;
   const matches = data.current.slice().sort((a, b) => b.scores.total - a.scores.total);
   host.innerHTML = matches.map((m, index) => {
-    const notes = (m.notes || []).map((note) => `<li>${esc(note)}</li>`).join("");
+    matchData.set(m.id, m);
     const group = m.group === "trio" ? "同图对比组" : "单局记录";
-    return `<article class="match-detail" id="match-${esc(m.id)}">
-      <header class="match-head">
+    return `<details class="match-detail" id="match-${esc(m.id)}">
+      <summary class="match-head">
         <span class="match-rank">${String(index + 1).padStart(2, "0")}</span>
-        <div class="match-head-copy">
-          <h3>${esc(m.title)}<span class="match-group">${group}</span></h3>
-          <p class="match-meta">${esc(m.date)} · ${esc(m.map)} · ${esc(m.opponent)} · ${esc(m.agent.model)}（推理强度 ${esc(m.agent.reasoning)}）· 会话 ${esc(sessionShort(m.session))}</p>
-          <p class="match-tool">${esc(m.tool)}${m.toolDetail ? ` — ${esc(m.toolDetail)}` : ""}</p>
-        </div>
-        <div class="match-score">
+        <span class="match-head-copy">
+          <span class="match-title">${esc(m.title)}<span class="match-group">${group}</span></span>
+          <span class="match-meta">${esc(m.date)} · ${esc(m.map)} · ${esc(m.opponent)} · ${esc(m.agent.model)}（推理强度 ${esc(m.agent.reasoning)}）· 会话 ${esc(sessionShort(m.session))}</span>
+          <span class="match-tool">${esc(m.tool)}${m.toolDetail ? ` — ${esc(m.toolDetail)}` : ""}</span>
+        </span>
+        <span class="match-score">
           <b>${fmtTotal(m.scores.total)}</b>
           <span>综合分</span>
           <i>S1 ${fmt(m.scores.stage1)} · S2 ${fmt(m.scores.stage2)}</i>
-        </div>
-      </header>
-      <div class="match-stages">
-        <section class="match-stage">
-          <h4><span>第一阶段</span>12 项 · 扣 ${fmt(m.breakdown.stage1.deduction, 2)} → ${fmt(m.breakdown.stage1.score, 2)}</h4>
-          <div class="table-wrap detail-wrap">
-            <table class="detail-table">
-              <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
-              <tbody>${m.metrics.stage1Items.map(stage1Row).join("")}</tbody>
-            </table>
-          </div>
-        </section>
-        <section class="match-stage">
-          <h4><span>第二阶段</span>6 类 · 扣 ${fmt(m.breakdown.stage2.deduction, 2)} → ${fmt(m.breakdown.stage2.score, 2)}</h4>
-          <div class="table-wrap detail-wrap">
-            <table class="detail-table">
-              <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
-              <tbody>${m.breakdown.stage2.families.map(stage2Row).join("")}</tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-      ${notes ? `<ul class="match-notes">${notes}</ul>` : ""}
-    </article>`;
+        </span>
+        <span class="match-toggle" aria-hidden="true"></span>
+      </summary>
+      <div class="match-body"></div>
+    </details>`;
   }).join("");
+
+  const open = (details) => {
+    details.open = true;
+    const body = details.querySelector(".match-body");
+    if (!body || body.dataset.loaded === "1") return;
+    const entry = matchData.get(details.id.replace(/^match-/, ""));
+    if (!entry) return;
+    body.innerHTML = matchBody(entry);
+    body.dataset.loaded = "1";
+  };
+
+  for (const details of host.querySelectorAll("details.match-detail")) {
+    details.addEventListener("toggle", () => {
+      if (details.open) open(details);
+    });
+  }
+
+  const openFromHash = () => {
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    const target = hash ? document.getElementById(hash) : null;
+    if (!target || target.tagName !== "DETAILS") return;
+    open(target);
+    // 展开后才把表格插进来，页面高度会变；等一帧再滚，否则会被折叠时的高度截断。
+    setTimeout(() => target.scrollIntoView({ block: "start" }), 80);
+  };
+  window.addEventListener("hashchange", openFromHash);
+  host.addEventListener("click", (event) => {
+    const link = event.target.closest('a[href^="#match-"]');
+    if (!link) return;
+    const target = document.querySelector(link.getAttribute("href"));
+    if (target && target.tagName === "DETAILS") open(target);
+  });
+  openFromHash();
 }
 
 function renderLegacy(data) {  const table = document.querySelector("#legacy-table");
