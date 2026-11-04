@@ -44,7 +44,7 @@
       <div class="section-heading"><span class="section-index">01 / CURRENT STANDARD</span><span class="section-kicker">当前标准 · 可横向比较</span></div>
       <div class="results-heading">
         <h2>当前标准下的全部对局</h2>
-        <p>下列对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”，每局 18 个扣分项的明细在同一页的「逐局扣分明细」里，最后一列可以直接跳过去。</p>
+        <p>下列对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”；每局 18 个扣分项在下面的「扣分明细总表」里横向展开，最后一列可以直接跳到该局那一行。</p>
       </div>
       <p class="callout"><b>同图可比的三局：</b>同一模型、同一地图（Ice Island (2p)，对手 Hard，x2 收入）下，tool3 74.26 &gt; tool1 67.67 &gt; tool2 61.61。差距几乎都来自第二阶段（资源与工厂利用率），第一阶段 tool3 反而不如 tool1；每臂只有 1 局，提示词也不只差接口，所以这 12.7 分不能全部归因给 MCP。其余对局换了地图、对手或交付方式，只作单局记录。</p>
       <div class="table-wrap">
@@ -55,13 +55,13 @@
     </section>
 
     <section id="deductions" class="section shell">
-      <div class="section-heading"><span class="section-index">02 / DEDUCTION BREAKDOWN</span><span class="section-kicker">每一局 · 每一项扣在哪</span></div>
+      <div class="section-heading"><span class="section-index">02 / DEDUCTION MATRIX</span><span class="section-kicker">横向比较 · 悬浮看证据</span></div>
       <div class="results-heading">
-        <h2>逐局扣分明细</h2>
-        <p>每局两张表：第一阶段 12 项（开局、观察与决策节奏、生产），第二阶段 6 类事件（偷袭、绞肉、指令过期、建造者与工厂闲置、资金闲置）。默认全部折叠，点开某一局才加载它的两张表；「扣分」是实际扣分，达到该项上限标“封顶”；「本局证据」是该局触发扣分的原始事实，直接来自评分产物，与上面的综合分同源。</p>
+        <h2>扣分明细总表</h2>
+        <p>一张表看全部对局：每一行是一局，左侧固定列是对局标识，右侧 18 列依次是第一阶段 12 项与第二阶段 6 类。格子里只写扣分，<b>鼠标悬浮</b>才显示该项在本局的证据、上限与原始值；深色底表示达到该项上限，0 记作 ·。表下方的「合计」给出两阶段扣分与综合分。</p>
       </div>
-      <div id="match-details" class="match-details" aria-live="polite"></div>
-      <noscript><p class="callout">逐局明细由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
+      <div class="matrix-wrap" id="match-matrix" aria-live="polite"></div>
+      <noscript><p class="callout">扣分明细由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
     </section>
 
     <section id="scoring" class="section shell scoring-section">

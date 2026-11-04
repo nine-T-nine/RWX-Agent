@@ -53,112 +53,95 @@ function renderCurrent(data) {
 
 const FAMILY_LABEL = { AMBUSH: "偷袭", GRINDER: "绞肉机", STALE: "指令过期", BUILDER_IDLE: "建造者闲置", FACTORY_IDLE: "工厂闲置", FUNDS: "资金闲置" };
 
-const capBadge = (points, cap) => (points >= cap - 1e-9 ? ' <span class="cap-hit">封顶</span>' : "");
+const STAGE1_SHORT = {
+  "A1-first-order": "首个行动",
+  "A1-first-mining": "首个采矿",
+  "A1-first-builder": "建造者",
+  "A2-decision-cycle": "A→B 周期",
+  "A2-wait-after-action": "B→A 等待",
+  "A2-wait-outliers": "等待离群",
+  "A2-decision-outliers": "决策离群",
+  "A4-native-cadence": "底层间隔",
+  "A5-AA": "A→A 离群",
+  "A5-BB": "B→B 离群",
+  "A4-production-rate": "生产/分",
+  "A5-query-action-ratio": "A/B",
+};
 
-function stage1Row(item) {
-  return `<tr>
-    <th scope="row">${esc(item.label)}</th>
-    <td class="detail-points"><b>${fmt(item.points, 2)}</b>${capBadge(item.points, item.cap)}<span class="cell-sub">上限 ${fmt(item.cap, 0)}</span></td>
-    <td class="detail-evidence">${esc(item.detail || "—")}</td>
-  </tr>`;
+const STAGE2_SHORT = {
+  AMBUSH: "偷袭",
+  GRINDER: "绞肉机",
+  STALE: "指令过期",
+  BUILDER_IDLE: "建造闲置",
+  FACTORY_IDLE: "工厂闲置",
+  FUNDS: "资金闲置",
+};
+
+function matrixCell(points, cap, tip) {
+  const hit = points > 0 && points >= cap - 1e-9;
+  const text = points > 0 ? fmt(points, 2) : "·";
+  return `<td class="matrix-cell${points > 0 ? " is-hit" : ""}${hit ? " is-capped" : ""}" title="${esc(tip)}">${text}</td>`;
 }
 
-function stage2Row(family) {
-  const raw = family.raw > family.capped + 1e-9 ? `原始 ${fmt(family.raw, 1)} · ` : "";
-  const events = family.events == null ? "" : ` · ${family.events} 段`;
-  return `<tr>
-    <th scope="row">${esc(FAMILY_LABEL[family.family] || family.family)}</th>
-    <td class="detail-points"><b>${fmt(family.capped, 2)}</b>${capBadge(family.capped, family.cap)}<span class="cell-sub">${raw}上限 ${fmt(family.cap, 0)}${events}</span></td>
-    <td class="detail-evidence">${esc(family.detail || "—")}</td>
-  </tr>`;
-}
-
-const matchData = new Map();
-
-function matchBody(m) {
-  const notes = (m.notes || []).map((note) => `<li>${esc(note)}</li>`).join("");
-  return `<div class="match-stages">
-    <section class="match-stage">
-      <h4><span>第一阶段</span>12 项 · 扣 ${fmt(m.breakdown.stage1.deduction, 2)} → ${fmt(m.breakdown.stage1.score, 2)}</h4>
-      <div class="table-wrap detail-wrap">
-        <table class="detail-table">
-          <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
-          <tbody>${m.metrics.stage1Items.map(stage1Row).join("")}</tbody>
-        </table>
-      </div>
-    </section>
-    <section class="match-stage">
-      <h4><span>第二阶段</span>6 类 · 扣 ${fmt(m.breakdown.stage2.deduction, 2)} → ${fmt(m.breakdown.stage2.score, 2)}</h4>
-      <div class="table-wrap detail-wrap">
-        <table class="detail-table">
-          <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
-          <tbody>${m.breakdown.stage2.families.map(stage2Row).join("")}</tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-  ${notes ? `<ul class="match-notes">${notes}</ul>` : ""}`;
-}
-
-/** 默认全部折叠；第一次展开时才生成该局的两张表（按需加载）。 */
-function renderMatchDetails(data) {
-  const host = document.querySelector("#match-details");
+/** 一张矩阵表：行是对局、列是 18 个扣分项，格子里只有扣分，证据挂在 title 上。 */
+function renderMatrix(data) {
+  const host = document.querySelector("#match-matrix");
   if (!host) return;
   const matches = data.current.slice().sort((a, b) => b.scores.total - a.scores.total);
-  host.innerHTML = matches.map((m, index) => {
-    matchData.set(m.id, m);
-    const group = m.group === "trio" ? "同图对比组" : "单局记录";
-    return `<details class="match-detail" id="match-${esc(m.id)}">
-      <summary class="match-head">
-        <span class="match-rank">${String(index + 1).padStart(2, "0")}</span>
-        <span class="match-head-copy">
-          <span class="match-title">${esc(m.title)}<span class="match-group">${group}</span></span>
-          <span class="match-meta">${esc(m.date)} · ${esc(m.map)} · ${esc(m.opponent)} · ${esc(m.agent.model)}（推理强度 ${esc(m.agent.reasoning)}）· 会话 ${esc(sessionShort(m.session))}</span>
-          <span class="match-tool">${esc(m.tool)}${m.toolDetail ? ` — ${esc(m.toolDetail)}` : ""}</span>
-        </span>
-        <span class="match-score">
-          <b>${fmtTotal(m.scores.total)}</b>
-          <span>综合分</span>
-          <i>S1 ${fmt(m.scores.stage1)} · S2 ${fmt(m.scores.stage2)}</i>
-        </span>
-        <span class="match-toggle" aria-hidden="true"></span>
-      </summary>
-      <div class="match-body"></div>
-    </details>`;
+  const stage1 = matches[0].metrics.stage1Items;
+  const stage2 = matches[0].breakdown.stage2.families;
+
+  const head = `<thead>
+    <tr class="group-row">
+      <th class="match-col" rowspan="2" scope="col">对局</th>
+      <th class="stage1" colspan="${stage1.length}">第一阶段 · ${stage1.length} 项</th>
+      <th class="stage2" colspan="${stage2.length}">第二阶段 · ${stage2.length} 类</th>
+      <th colspan="3">合计</th>
+    </tr>
+    <tr class="item-row">
+      ${stage1.map((item) => `<th scope="col">${esc(STAGE1_SHORT[item.id] || item.label)}</th>`).join("")}
+      ${stage2.map((item) => `<th scope="col">${esc(STAGE2_SHORT[item.family] || FAMILY_LABEL[item.family] || item.family)}</th>`).join("")}
+      <th scope="col">扣 S1</th><th scope="col">扣 S2</th><th scope="col">综合</th>
+    </tr>
+  </thead>`;
+
+  const rows = matches.map((m, index) => {
+    const cells1 = stage1.map((item) => {
+      const row = m.metrics.stage1Items.find((x) => x.id === item.id);
+      if (!row) return '<td class="matrix-cell" title="本局缺少这一项">—</td>';
+      const tip = `${row.label}：扣 ${fmt(row.points, 2)} / 上限 ${row.cap}` +
+        (row.detail ? ` · ${row.detail}` : "");
+      return matrixCell(row.points, row.cap, tip);
+    }).join("");
+    const cells2 = stage2.map((item) => {
+      const row = m.breakdown.stage2.families.find((x) => x.family === item.family);
+      if (!row) return '<td class="matrix-cell" title="本局缺少这一类">—</td>';
+      const raw = row.raw > row.capped + 1e-9 ? ` · 原始 ${fmt(row.raw, 1)}` : "";
+      const tip = `${FAMILY_LABEL[row.family] || row.family}：扣 ${fmt(row.capped, 2)} / 上限 ${row.cap}${raw}` +
+        (row.detail ? ` · ${row.detail}` : "");
+      return matrixCell(row.capped, row.cap, tip);
+    }).join("");
+    return `<tr id="match-${esc(m.id)}">
+      <th scope="row" class="match-col">
+        <span class="matrix-rank">${String(index + 1).padStart(2, "0")}</span>
+        <span class="matrix-title">${esc(m.title)}</span>
+        <span class="matrix-sub">${esc(m.date)} · ${esc(m.map)}</span>
+      </th>
+      ${cells1}${cells2}
+      <td class="matrix-total">${fmt(m.breakdown.stage1.deduction, 1)}</td>
+      <td class="matrix-total">${fmt(m.breakdown.stage2.deduction, 1)}</td>
+      <td class="matrix-grand">${fmtTotal(m.scores.total)}</td>
+    </tr>`;
   }).join("");
 
-  const open = (details) => {
-    details.open = true;
-    const body = details.querySelector(".match-body");
-    if (!body || body.dataset.loaded === "1") return;
-    const entry = matchData.get(details.id.replace(/^match-/, ""));
-    if (!entry) return;
-    body.innerHTML = matchBody(entry);
-    body.dataset.loaded = "1";
-  };
+  host.innerHTML = `<table class="matrix">
+    <caption>格子里是该局该项的扣分（0 记作 ·，深色底表示达到该项上限）；鼠标悬浮可看该项在本局的证据与上限。</caption>
+    ${head}<tbody>${rows}</tbody>
+  </table>`;
 
-  for (const details of host.querySelectorAll("details.match-detail")) {
-    details.addEventListener("toggle", () => {
-      if (details.open) open(details);
-    });
-  }
-
-  const openFromHash = () => {
-    const hash = decodeURIComponent(window.location.hash.slice(1));
-    const target = hash ? document.getElementById(hash) : null;
-    if (!target || target.tagName !== "DETAILS") return;
-    open(target);
-    // 展开后才把表格插进来，页面高度会变；等一帧再滚，否则会被折叠时的高度截断。
-    setTimeout(() => target.scrollIntoView({ block: "start" }), 80);
-  };
-  window.addEventListener("hashchange", openFromHash);
-  host.addEventListener("click", (event) => {
-    const link = event.target.closest('a[href^="#match-"]');
-    if (!link) return;
-    const target = document.querySelector(link.getAttribute("href"));
-    if (target && target.tagName === "DETAILS") open(target);
-  });
-  openFromHash();
+  const hash = decodeURIComponent(window.location.hash.slice(1));
+  const target = hash.startsWith("match-") ? document.getElementById(hash) : null;
+  if (target) requestAnimationFrame(() => target.scrollIntoView({ block: "center" }));
 }
 
 function renderLegacy(data) {  const table = document.querySelector("#legacy-table");
@@ -262,7 +245,7 @@ fetch(new URL("./resource/results.json", import.meta.url))
   .then((data) => {
     renderKpis(data);
     renderCurrent(data);
-    renderMatchDetails(data);
+    renderMatrix(data);
     renderLegacy(data);
     renderGaps(data);
     renderMethod(data);
