@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-04T14:56:52+08:00",
+  "generatedAt": "2026-11-04",
   "standard": {
     "total": "total-v1",
     "stage1": "stage1-v2",
@@ -21,7 +21,7 @@
     }
   },
   "overview": {
-    "currentMatches": 6,
+    "currentMatches": 9,
     "best": {
       "id": "tool3",
       "total": 74.264
@@ -1098,6 +1098,562 @@
           ]
         }
       }
+    },
+    {
+      "id": "team8p-pi-mail",
+      "title": "Pi 四会话 · 同队开工（邮件）",
+      "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
+      "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不经 --session，警报游标共享；协作靠 agent-tmp/mail.md 信箱（本局启用 mail）",
+      "mcp": false,
+      "group": "extra",
+      "date": "2026-11-04 20:53",
+      "map": "火山 (8p)",
+      "opponent": "AI - Very Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-01a1a69a-1927-77ed-8388-593c007bcd8e",
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "detail": "t≈10:39 我方主基地（commandCenter #66）被摧毁",
+        "atSeconds": 639.504
+      },
+      "scores": {
+        "total": 58.74,
+        "stage1": 67.3,
+        "stage2": 53.033
+      },
+      "metrics": {
+        "nativeCommands": 351,
+        "queries": 244,
+        "actions": 125,
+        "otherCommands": 24,
+        "decisionCycleSeconds": 9.6587,
+        "productionPerMinute": 8.1802,
+        "firstOrderSeconds": 50.176,
+        "attributionMissing": 19,
+        "durationSeconds": 639.504,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "label": "首个行动指令",
+            "points": 14.3,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "label": "首个采矿建造",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "label": "首个建造者生产",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
+            "points": 1.9,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
+            "points": 3.2,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
+            "points": 0.8,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
+            "points": 0.3,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "label": "A→A 离群占比",
+            "points": 2.2,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "label": "B→B 离群占比",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
+            "points": 0,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "label": "A / B",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 389,
+        "toolSeconds": 0,
+        "llmSeconds": 2921,
+        "outputTokens": 167836
+      },
+      "evidence": {
+        "damageRows": 2457,
+        "hpLossRows": 2457,
+        "complete": true
+      },
+      "notes": [
+        "同队四智能体（1 发起 + 3 加入）共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2。",
+        "结局：t≈10:39 我方主基地被摧毁，战败；有效窗口 639.5s，回放完整。",
+        "Stage2 BUILDER_IDLE 原始 136.5 顶满 20；AMBUSH 9.364（末段 t≈9:08 一次损失）、STALE 9（部分事件缺过期证据）。",
+        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 67.3,
+          "deduction": 32.7,
+          "start": 100
+        },
+        "stage2": {
+          "score": 53.033,
+          "deduction": 46.967,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 136.516,
+              "capped": 20,
+              "cap": 20,
+              "items": 37
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 9.364,
+              "capped": 9.364,
+              "cap": 35,
+              "items": 8
+            },
+            {
+              "family": "STALE",
+              "raw": 9,
+              "capped": 9,
+              "cap": 15,
+              "items": 3
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 5
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.603,
+              "capped": 1.603,
+              "cap": 15,
+              "items": 13
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 13
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "team8p-pi-nomail",
+      "title": "Pi 四会话 · 同队开工（无邮件）",
+      "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
+      "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；部分调用带 --session pi / op-c；本局关闭 mail.md 信箱（nomail）",
+      "mcp": false,
+      "group": "extra",
+      "date": "2026-11-04 21:15",
+      "map": "火山 (8p)",
+      "opponent": "AI - Very Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-01a1a6b1-5e61-7392-94ed-d2156ebfc475",
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "detail": "t≈12:49 主动投降（主基地仍在，但被压到基地内线）",
+        "atSeconds": 768.928
+      },
+      "scores": {
+        "total": 67.536,
+        "stage1": 64.9,
+        "stage2": 69.293
+      },
+      "metrics": {
+        "nativeCommands": 934,
+        "queries": 259,
+        "actions": 168,
+        "otherCommands": 47,
+        "decisionCycleSeconds": 13.6065,
+        "productionPerMinute": 8.9735,
+        "firstOrderSeconds": 46.464,
+        "attributionMissing": 17,
+        "durationSeconds": 768.928,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "label": "首个行动指令",
+            "points": 14,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "label": "首个采矿建造",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "label": "首个建造者生产",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
+            "points": 3.4,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
+            "points": 4,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
+            "points": 1.3,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
+            "points": 0.2,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "label": "A→A 离群占比",
+            "points": 2.2,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "label": "B→B 离群占比",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
+            "points": 0,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "label": "A / B",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 308,
+        "toolSeconds": 0,
+        "llmSeconds": 2332,
+        "outputTokens": 177767
+      },
+      "evidence": {
+        "damageRows": 3812,
+        "hpLossRows": 3812,
+        "complete": true
+      },
+      "notes": [
+        "同队四智能体共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2；相比 20:53 那局关闭了 mail 协作。",
+        "结局：t≈12:49 主动投降，战败；有效窗口 768.9s，回放完整。",
+        "Stage2 主要扣分：BUILDER_IDLE 原始 105.8 顶满 20、FUNDS 7、FACTORY_IDLE 3.523；AMBUSH 仅 0.184、STALE 0。",
+        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 64.9,
+          "deduction": 35.1,
+          "start": 100
+        },
+        "stage2": {
+          "score": 69.293,
+          "deduction": 30.707,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 105.796,
+              "capped": 20,
+              "cap": 20,
+              "items": 36
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 1
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3.523,
+              "capped": 3.523,
+              "cap": 15,
+              "items": 25
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.184,
+              "capped": 0.184,
+              "cap": 35,
+              "items": 8
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 8
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "items": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "team8p-dsh-nomail",
+      "title": "DSH 四会话 · 同队开工（无邮件）",
+      "tool": "DSH 4 会话（pwsh 调 rwx-cli.py，无 MCP）",
+      "toolDetail": "四个 DSH 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不带 --session，全部指令经 pwsh 批量执行 rwx-* 命令；本局关闭 mail 信箱（nomail）",
+      "mcp": false,
+      "group": "extra",
+      "date": "2026-11-04 22:28",
+      "map": "火山 (8p)",
+      "opponent": "AI - Hard ×2 · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-5786f3b0-71f3-4f8a-bd77-cc45f9b26834",
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "detail": "t≈11:00 我方主基地（commandCenter #66）被摧毁",
+        "atSeconds": 666.08
+      },
+      "scores": {
+        "total": 62.711,
+        "stage1": 68.7,
+        "stage2": 58.719
+      },
+      "metrics": {
+        "nativeCommands": 297,
+        "queries": 243,
+        "actions": 155,
+        "otherCommands": 37,
+        "decisionCycleSeconds": 8.1384,
+        "productionPerMinute": 8.4105,
+        "firstOrderSeconds": 37.616,
+        "attributionMissing": 31,
+        "durationSeconds": 666.08,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "label": "首个行动指令",
+            "points": 13.3,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "label": "首个采矿建造",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "label": "首个建造者生产",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
+            "points": 1.3,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
+            "points": 2.4,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
+            "points": 0.5,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
+            "points": 0.5,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "label": "A→A 离群占比",
+            "points": 2.2,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "label": "B→B 离群占比",
+            "points": 1.1,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
+            "points": 0,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "label": "A / B",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 272,
+        "toolSeconds": 0,
+        "llmSeconds": 2847,
+        "outputTokens": 183155
+      },
+      "evidence": {
+        "damageRows": 2748,
+        "hpLossRows": 2748,
+        "complete": true
+      },
+      "notes": [
+        "同队四智能体共控一个玩家：火山 (8p) 地图 1v2，对手为两个 AI - Hard（出生点 6/8），x2 收入，档位 2。",
+        "结局：t≈11:00 我方主基地被摧毁，战败；有效窗口 666.1s，回放完整。",
+        "Stage2 主要扣分：BUILDER_IDLE 原始 75.9 顶满 20、STALE 12（五段指令过期）、FUNDS 7；AMBUSH 仅 0.437。",
+        "对手为两个 Hard 而非 Very Hard，与 20:53 / 21:15 两局不是同一对手配置，分数不可直接横比。",
+        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 68.7,
+          "deduction": 31.3,
+          "start": 100
+        },
+        "stage2": {
+          "score": 58.719,
+          "deduction": 41.281,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 75.907,
+              "capped": 20,
+              "cap": 20,
+              "items": 17
+            },
+            {
+              "family": "STALE",
+              "raw": 12,
+              "capped": 12,
+              "cap": 15,
+              "items": 5
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 2
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.844,
+              "capped": 1.844,
+              "cap": 15,
+              "items": 34
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.437,
+              "capped": 0.437,
+              "cap": 35,
+              "items": 10
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 5
+            }
+          ]
+        }
+      }
     }
   ],
   "legacy": [
@@ -1269,7 +1825,8 @@
       "tool2 与 tool3 的提示词并非只差工具：tool3 增加了路径说明、暂停说明与“游戏秒/收入单位”标注，桥接摘要也同步加了单位后缀。",
       "三局结局都是失败，分数差异不能解读为“更会赢”。",
       "2026-11-04 新增的两局不在三接口对比组里：Fire Bridge (2p) 换了地图；Ice Island 的 push 局把事件交付改成推送（L2 harness）。两局各 1 场，分数只与同图同工具的局可比。",
-      "2026-11-04 两局的 runtime 只保留 DSH 步数 / 工具调用数与 output token；工具与模型耗时未按旧局同口径拆分。"
+      "2026-11-04 两局的 runtime 只保留 DSH 步数 / 工具调用数与 output token；工具与模型耗时未按旧局同口径拆分。",
+      "2026-11-04 新增的三局火山 (8p) 是同队四智能体共控一个玩家：两局对手为 1 个 Very Hard（其中一局关掉邮件协作），一局为 2 个 Hard；与 2p 三接口对比组不是同一对手配置，只作单局记录。"
     ]
   }
 }
