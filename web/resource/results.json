@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-03T12:05:00+08:00",
+  "generatedAt": "2026-11-04T14:56:52+08:00",
   "standard": {
     "total": "total-v1",
     "stage1": "stage1-v2",
@@ -21,7 +21,7 @@
     }
   },
   "overview": {
-    "currentMatches": 4,
+    "currentMatches": 6,
     "best": {
       "id": "tool3",
       "total": 74.264
@@ -740,6 +740,364 @@
           ]
         }
       }
+    },
+    {
+      "id": "firebridge-opencode",
+      "title": "Fire Bridge · opencode CLI",
+      "tool": "pwsh + RWX CLI",
+      "toolDetail": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册",
+      "mcp": false,
+      "group": "extra",
+      "date": "2026-11-04 00:12",
+      "map": "Fire Bridge (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "ses_e5dd17036ffeHnTNEmEtxzL5Za",
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "detail": "18:24 主基地被摧毁，18:28 投降",
+        "atSeconds": 1106.016
+      },
+      "scores": {
+        "total": 71.826,
+        "stage1": 62.9,
+        "stage2": 77.777
+      },
+      "metrics": {
+        "nativeCommands": 446,
+        "queries": 100,
+        "actions": 118,
+        "otherCommands": 220,
+        "decisionCycleSeconds": 10.5716,
+        "productionPerMinute": 6.6275,
+        "firstOrderSeconds": 16,
+        "attributionMissing": 371,
+        "durationSeconds": 1104.496,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "label": "首个行动指令",
+            "points": 10.7,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "label": "首个采矿建造",
+            "points": 4,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "label": "首个建造者生产",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
+            "points": 2.2,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
+            "points": 5,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
+            "points": 1.2,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
+            "points": 0.5,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
+            "points": 0.7,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "label": "A→A 离群占比",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "label": "B→B 离群占比",
+            "points": 1.8,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
+            "points": 6,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "label": "A / B",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": null,
+        "toolCalls": 135,
+        "toolSeconds": null,
+        "llmSeconds": null,
+        "outputTokens": 17054,
+        "note": "opencode 会话：135 次 shell 调用；步数与工具/模型耗时未按 DSH 同口径拆分。"
+      },
+      "evidence": {
+        "damageRows": 4032,
+        "hpLossRows": 4032,
+        "complete": true
+      },
+      "notes": [
+        "Fire Bridge (2p) 首局：地图与之前四局（Ice Island (2p)）不同，分数不能直接横比。",
+        "MCP 桥接未注册，135 次 shell 批量调用；工具形态与 tool1 / native-2358 同类。",
+        "满扣项：Stage1 底层生产 6.63 条/分钟（0/6）；Stage2 建造者空闲原始 67.48 封顶 20。"
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 62.9,
+          "deduction": 37.1,
+          "start": 100
+        },
+        "stage2": {
+          "score": 77.777,
+          "deduction": 22.223,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 67.481,
+              "capped": 20,
+              "cap": 20,
+              "items": 26
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.818,
+              "capped": 1.818,
+              "cap": 15,
+              "items": 24
+            },
+            {
+              "family": "FUNDS",
+              "raw": 0.349,
+              "capped": 0.349,
+              "cap": 20,
+              "items": 5
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.056,
+              "capped": 0.056,
+              "cap": 35,
+              "items": 8
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dsh-push",
+      "title": "Ice Island · push 注入（L2）",
+      "tool": "mcp__rwx__*（rwx_step 为主）+ 推送插件",
+      "toolDetail": "51 次 rwx_step / 7 次 rwx_query / 1 次 rwx_status / 1 次 rwx_observe；30 条 [RWX-PUSH] 注入",
+      "mcp": true,
+      "group": "extra",
+      "date": "2026-11-04 11:01",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "agent": {
+        "provider": "dsh",
+        "model": "deepseek-v4.1-flash",
+        "reasoning": "high"
+      },
+      "session": "session-376f34c0-8868-40ea-9616-e9bbe71df60b",
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "detail": "11:10 只剩 1 坦克 + 1 工厂、收入 0，主动投降",
+        "atSeconds": 670.848
+      },
+      "scores": {
+        "total": 69.217,
+        "stage1": 64.7,
+        "stage2": 72.228
+      },
+      "metrics": {
+        "nativeCommands": 145,
+        "queries": 130,
+        "actions": 84,
+        "otherCommands": 4,
+        "decisionCycleSeconds": 20.7692,
+        "productionPerMinute": 8.2284,
+        "firstOrderSeconds": 52.4,
+        "attributionMissing": 53,
+        "durationSeconds": 670.848,
+        "stage1Items": [
+          {
+            "id": "A1-first-order",
+            "label": "首个行动指令",
+            "points": 14.4,
+            "cap": 15
+          },
+          {
+            "id": "A1-first-mining",
+            "label": "首个采矿建造",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A1-first-builder",
+            "label": "首个建造者生产",
+            "points": 5,
+            "cap": 5
+          },
+          {
+            "id": "A2-decision-cycle",
+            "label": "A→B 周期去离群均值",
+            "points": 5.5,
+            "cap": 8
+          },
+          {
+            "id": "A2-wait-after-action",
+            "label": "B→A 等待去离群均值",
+            "points": 0,
+            "cap": 18
+          },
+          {
+            "id": "A2-wait-outliers",
+            "label": "B→A 等待离群值",
+            "points": 0,
+            "cap": 10
+          },
+          {
+            "id": "A2-decision-outliers",
+            "label": "A→B 决策离群值",
+            "points": 1.6,
+            "cap": 8
+          },
+          {
+            "id": "A4-native-cadence",
+            "label": "相邻底层命令间隔",
+            "points": 1.1,
+            "cap": 15
+          },
+          {
+            "id": "A5-AA",
+            "label": "A→A 离群占比",
+            "points": 2.7,
+            "cap": 8
+          },
+          {
+            "id": "A5-BB",
+            "label": "B→B 离群占比",
+            "points": 0,
+            "cap": 8
+          },
+          {
+            "id": "A4-production-rate",
+            "label": "底层生产指令 / 分钟",
+            "points": 0,
+            "cap": 6
+          },
+          {
+            "id": "A5-query-action-ratio",
+            "label": "A / B",
+            "points": 0,
+            "cap": 10
+          }
+        ]
+      },
+      "runtime": {
+        "steps": 69,
+        "toolCalls": 73,
+        "toolSeconds": null,
+        "llmSeconds": null,
+        "outputTokens": 44419,
+        "note": "DSH 会话：69 步、73 次工具调用；工具与模型耗时未拆分。"
+      },
+      "evidence": {
+        "damageRows": 2305,
+        "hpLossRows": 2305,
+        "complete": true
+      },
+      "notes": [
+        "push（L2 harness）首局：MCP 负责命令，DSH 插件把损失 / 击毁 / 新单位推给 Agent；按 push/README §8 不与纯 MCP 局混榜。",
+        "注入延迟实测：30 条 [RWX-PUSH] 全部等当前工具调用返回后才交付，事件→动作 p50 29.8s；全程只有 2 个 turn，Agent 从未 idle。",
+        "满扣项：Stage1 首个行动 52.4s、底层生产 8.23 条/分钟（0/6）；Stage2 建造者空闲原始 179.36 顶满 20。"
+      ],
+      "breakdown": {
+        "stage1": {
+          "score": 64.7,
+          "deduction": 35.3,
+          "start": 100
+        },
+        "stage2": {
+          "score": 72.228,
+          "deduction": 27.772,
+          "families": [
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 179.363,
+              "capped": 20,
+              "cap": 20,
+              "items": 45
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "items": 2
+            },
+            {
+              "family": "AMBUSH",
+              "raw": 0.772,
+              "capped": 0.772,
+              "cap": 35,
+              "items": 8
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "items": 12
+            },
+            {
+              "family": "GRINDER",
+              "raw": 0,
+              "capped": 0,
+              "cap": 20,
+              "items": 5
+            }
+          ]
+        }
+      }
     }
   ],
   "legacy": [
@@ -909,7 +1267,9 @@
       "地图、对手、经济倍率固定为 Ice Island (2p) / Hard / x2，结论不能外推到其它地图或难度。",
       "底层命令归属缺失 33%–58%，会直接影响第一阶段的生产速率项。",
       "tool2 与 tool3 的提示词并非只差工具：tool3 增加了路径说明、暂停说明与“游戏秒/收入单位”标注，桥接摘要也同步加了单位后缀。",
-      "三局结局都是失败，分数差异不能解读为“更会赢”。"
+      "三局结局都是失败，分数差异不能解读为“更会赢”。",
+      "2026-11-04 新增的两局不在三接口对比组里：Fire Bridge (2p) 换了地图；Ice Island 的 push 局把事件交付改成推送（L2 harness）。两局各 1 场，分数只与同图同工具的局可比。",
+      "2026-11-04 两局的 runtime 只保留 DSH 步数 / 工具调用数与 output token；工具与模型耗时未按旧局同口径拆分。"
     ]
   }
 }

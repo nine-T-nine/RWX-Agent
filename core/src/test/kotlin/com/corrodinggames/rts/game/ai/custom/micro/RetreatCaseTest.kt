@@ -142,7 +142,6 @@ class RetreatCaseTest {
         var sumX = 0.0
         var sumY = 0.0
         var count = 0
-        var upperLeft = 0
         for (task in listOf("4_2_1", "4_3_1")) {
             for (seed in 1..8) {
                 val meta = layout(task, seed.toString())
@@ -153,16 +152,22 @@ class RetreatCaseTest {
                     val dx = (gun["tileX"] as Int) - centreX
                     val dy = (gun["tileY"] as Int) - centreY
                     sumX += dx; sumY += dy; count++
-                    if (dx < 0 && dy < 0) upperLeft++
+                    // The bias points at 225 degrees (up-left, away from the player's corner). The
+                    // field is a 2:1 ellipse whose short axis (0.5r) points up-left, while the two
+                    // long-range guns must stay 10 tiles apart, so the pair necessarily splits into
+                    // one left arm and one up arm: neither arm is strictly up-left on its own. What
+                    // still has to hold is that no gun crosses the axis back toward the corner,
+                    // i.e. every offset keeps a positive projection along the bias (x + y < 0).
+                    // README: the 80% share is a sampling probability, not a quadrant guarantee.
+                    assertTrue(dx + dy < 0.0,
+                        "$task seed $seed long-range gun offset ($dx,$dy) leans toward the corner")
                 }
             }
         }
         assertTrue(count >= 12, "only $count long-range guns sampled")
-        // The bias points at 225 degrees (up-left, i.e. away from the player's corner); a fifth of
-        // the guns is allowed to ignore it, so the pooled mean still has to point up-left.
+        // The pooled centroid must still point up-left, as the docs promise for the group as a whole.
         assertTrue(sumX / count < -2.0, "mean x offset ${sumX / count} is not to the left")
         assertTrue(sumY / count < -2.0, "mean y offset ${sumY / count} is not upward")
-        assertTrue(upperLeft * 10 >= count * 6, "only $upperLeft of $count guns are up-left")
     }
     @Test fun `repair bays form an L and the tanks start beside them`() {
         for (task in listOf("4_1_1", "4_2_1", "4_3_1")) {

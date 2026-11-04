@@ -186,6 +186,8 @@ node evaluate/tools/match_materials.js --apply --match "<对局名>" `
 ```powershell
 $m = "evaluate/output/<对局名>"
 node evaluate/tools/match_materials.js --apply      # 0 收敛材料、改回放名、写 meta.json
+python evaluate/utils/replay.py "replays/<对局名>.replay" --commands "$m/commands-<对局名>.txt"
+                                                                    # 0.5 解析回放 → <对局名>/replay/
 node evaluate/preprocess.js "$m"                                    # 1 结尾分类 + 裁窗口
 node evaluate/evaluate_stage_1.js "$m/prepared/commands-<对局名>.txt" "$m/prepared/replay.jsonl"
 node evaluate/evaluate_stage_2.js "$m/prepared/telemetry.jsonl" `
@@ -196,7 +198,7 @@ node evaluate/score_match.js "$m"                                   # 5 综合�
 node evaluate/tools/match_materials.js --apply "$m"                 # 6 刷新 meta.json
 ```
 
-- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，两轮都只吃裁剪后的输入。记录只保留这一份，不再往对局根目录复制第二份。
+- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，两轮都只吃裁剪后的输入。记录只保留这一份，不再往对局根目录复制第二份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。
 - 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，综合分留空。
 - 综合得分 `stage1*0.4 + stage2*0.6`，写在对局目录的 `score.json`。它只接受当前版本（`stage1-v2` / `stage2-v2`）；旧版本报告默认拒算，确需复算加 `--allow-stale`。
 - 两轮报告仍各自独立，综合分只用于横向比较；旧版本材料一律以 `_old` 后缀归档，不参与排名。
