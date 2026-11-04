@@ -1303,7 +1303,7 @@
       "result": {
         "outcome": "defeat",
         "label": "主动投降",
-        "detail": "t≈12:49 主动投降（主基地仍在，但被压到基地内线）",
+        "detail": "t≈12:49 主动投降",
         "atSeconds": 768.928
       },
       "scores": {
