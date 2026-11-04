@@ -22,12 +22,12 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | 文件 | 内容 |
 | --- | --- |
 | `index.html` | 中文首页内容、导航、无脚本视频链接 |
-| `results.html` | 评测结果页：完整对局评分、微操 CASE、工具对比、当前标准、归档账本与口径限制 |
+| `results.html` | 评测结果页：当前标准对局表、逐局扣分明细、评分规则、微操 CASE、归档账本与口径限制 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
 | `app.js` | 首页录像切换、平台切换、复制命令和手机导航 |
-| `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染评测表格与卡片 |
+| `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染评测表格与逐局明细 |
 | `resource/matches.json` | 四场录像的名称、说明、时长及 SHA-256 |
-| `resource/results.json` | 全部对局的分数、模型 + 工具 + 推理强度、结局与备注 |
+| `resource/results.json` | 全部对局的分数、模型 + 工具 + 推理强度、结局、逐项扣分证据与备注 |
 | `resource/scoring.json` | 完整对局与四个微操 CASE 的扣分项、上限、公式、说明和环境图索引 |
 | `resource/cases/` | 四个微操 CASE 的固定 task + seed 真实窗口截图（WebP） |
 | `resource/matches/` | 已提交的 H.264/AAC 网页录像，完整时长、1080p/60fps |
@@ -41,8 +41,9 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 
 1. 按 `evaluate/README.md` 跑完评分，确认 `score.json` 的 `version` 为当前标准。
 2. 把对局的综合分、两阶段分、模型 + 工具 + 推理强度、结局与会话 id 写进 `resource/results.json`。模型、工具、推理强度、会话与 token 这些身份信息以对局目录的 `meta.json` 为准（`evaluate/tools/match_materials.js` 生成并维护），页面只做展示。
-3. 若对局无法关联或材料不足，写入 `insufficient` 而不是补分；归档对局只进 `legacy`。
-4. 运行 `python web/tools/check_site.py`：它会校验页面链接、录像校验和，以及每条记录的加权分与阶段分是否一致。
+3. 跑 `node evaluate/tools/results_details.js`：它按 `id → evaluate/output/<对局>` 的映射读取 `stage_1/score.json` 与 `stage_2/score.json`，把每一项扣分的本局证据写进 `metrics.stage1Items[].detail`、`breakdown.stage2.families[].detail` 与 `events`（第二阶段没出现的类别补 0 行），同时核对两阶段分与账本是否一致。新对局要在该脚本的 `DIRS` 里补一行映射，或在账本条目里直接写 `match` 字段。
+4. 若对局无法关联或材料不足，写入 `insufficient` 而不是补分；归档对局只进 `legacy`。
+5. 运行 `python web/tools/check_site.py`：它会校验页面链接、录像校验和，以及每条记录的加权分与阶段分是否一致。
 
 `check_site.py` 不读取 `evaluate/`（该目录不进版本库），因此分数一致性以 `results.json` 内部为准。
 

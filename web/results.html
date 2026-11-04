@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d0913">
   <title>评测结果｜RWX-Agent</title>
-  <meta name="description" content="RWX-Agent 已完成的全部对局评分：当前标准 total-v1、三个阶段版本、模型与工具归属，以及 DSH 三种工具接口的对比分析。">
+  <meta name="description" content="RWX-Agent 已完成的全部对局评分：当前标准 total-v1 的每一局都展开到每个扣分项，附本局证据；另有归档账本、材料不足记录与口径限制。">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./results.js"></script>
@@ -25,7 +25,7 @@
       <a class="brand" href="./index.html" aria-label="RWX-Agent 首页"><span class="brand-mark"><svg><use href="#i-target"/></svg></span><span>RWX<span class="brand-dash">—</span>Agent<span class="brand-period">.</span></span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="展开导航"><span></span><span></span></button>
       <nav id="primary-nav" aria-label="主导航">
-        <a href="#scoring">完整对局评分</a><a href="#micro-cases">微操 CASE</a><a href="#current">对局榜单</a><a href="./results.html" aria-current="page">评测结果</a>
+        <a href="#current">对局榜单</a><a href="#deductions">逐局明细</a><a href="#scoring">评分规则</a><a href="#micro-cases">微操 CASE</a><a href="./results.html" aria-current="page">评测结果</a>
       </nav>
       <a class="header-github" href="https://github.com/nine-T-nine/RWX-Agent" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-github"/></svg> GitHub <svg class="icon small"><use href="#i-external"/></svg></a>
     </div>
@@ -35,63 +35,33 @@
     <section class="results-hero shell">
       <div class="eyebrow"><span class="status-dot"></span> EVALUATION LEDGER / TOTAL-V1</div>
       <h1>评测结果</h1>
-      <p class="results-lead">这里列出目前所有完成过的 RWX 对局：当前标准里同图、同工具的对局可以横向比较，归档账本只作历史参考，材料不足的对局单独列出、不计分。</p>
+      <p class="results-lead">这里列出目前所有完成过的 RWX 对局：当前标准的每一局都按同一张表展开到每个扣分项，归档账本只作历史参考，材料不足的对局单独列出、不计分。</p>
       <p class="results-standard" id="standard-line">total-v1 = stage1-v2 × 0.4 + stage2-v2 × 0.6。</p>
       <div class="kpi-row" id="results-kpis"></div>
     </section>
 
-    <section id="tools" class="section shell">
-      <div class="section-heading"><span class="section-index">01 / TOOL COMPARISON</span><span class="section-kicker">同一模型 · 同一地图 · 三种接口</span></div>
-      <div class="results-heading">
-        <h2>换了工具，分数变了吗？</h2>
-        <p>三局都由 <code>deepseek-v4.1-flash</code>（推理强度 high）在 Ice Island (2p) 对阵 Hard AI、x2 收入下完成。唯一的变量名义上是工具接口：原生 shell、MCP 第二版、MCP 第三版。</p>
-      </div>
-
-      <div class="tool-cards" id="tool-cards"></div>
-
-      <p class="callout"><b>一句话结论：</b>工具接口没有改变胜负——三局全败；tool3 领先的 12.7 分几乎全部来自第二阶段的资源与工厂利用率，而第一阶段它其实不如没有 MCP 的 tool1。</p>
-
-      <div class="table-wrap">
-        <table class="data-table" id="tool-metrics">
-          <caption>三局的可比指标（均为同一地图、同一对手、同一经济倍率；分数越高越好，扣分类指标越低越好）</caption>
-        </table>
-      </div>
-      <noscript><p class="callout">表格由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
-
-      <div class="findings">
-        <article class="finding">
-          <h3>1. 三局都输了，分数差异只在过程指标上</h3>
-          <p>tool1 与 tool3 在主基地失守后主动投降，tool2 在 12:22 被摧毁。评分体系里没有胜负项，所以“分数更高”只说明过程更规整，不说明更接近赢。要判断强弱，必须在同一工具下重复多局。</p>
-        </article>
-        <article class="finding">
-          <h3>2. 没有 MCP 的 tool1，第一阶段反而最高（70.5）</h3>
-          <p>它的首个行动指令扣分最多（13.5），但其余项最多只扣 4.7 分——原生工具一次 pwsh 可以批量下发多条命令，动作连续；第二阶段 65.8 也不算差，主要扣在资金闲置 7 分、工厂空闲 4.5 分。</p>
-        </article>
-        <article class="finding">
-          <h3>3. tool2 是三局最低（61.6），MCP 并没有自动变快</h3>
-          <p>它的决策周期 20.0 秒为三者最慢，行动指令只有 58 条，偷袭损失扣分 11.59 为三者最高。工具总耗时 286 秒，是 tool1（125 秒）的 2.3 倍：把“观察 + 下令”打包成一次调用后，每一步都要等桥接返回，1x 实时里反而压缩了可用决策次数。</p>        </article>
-        <article class="finding">
-          <h3>4. tool3 的领先来自第二阶段（79.0）</h3>
-          <p>资金闲置 0 分、工厂空闲 0 分、偷袭损失 1.03 分，是它把资金持续转成建筑与部队的直接结果；代价是第一阶段只有 67.2——底层生产指令 7.46 条/分触发满额扣分（6/6），行动被拆成 884 次查询对 176 次行动。</p>
-        </article>
-        <article class="finding">
-          <h3>5. 不能把 +12.7 归因给“MCP 更好”</h3>
-          <p>tool3 与 tool2 的差别不只是接口：提示词增加了路径与暂停说明，并补上“游戏秒 / 收入单位”的口径，桥接摘要也加了 <code>/s 游戏秒</code> 后缀；同为无 MCP 的两局基线相差 4.7 分（67.67 与 62.98），而每臂只有 1 局，12.7 分的差距仍无法与提示词变化、局间波动分开。</p>
-        </article>
-      </div>
-    </section>
-
     <section id="current" class="section shell">
-      <div class="section-heading"><span class="section-index">02 / CURRENT STANDARD</span><span class="section-kicker">当前标准 · 可横向比较</span></div>
+      <div class="section-heading"><span class="section-index">01 / CURRENT STANDARD</span><span class="section-kicker">当前标准 · 可横向比较</span></div>
       <div class="results-heading">
         <h2>当前标准下的全部对局</h2>
-        <p>以下对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”。其中 2026-11-04 新增的对局只作单局记录：Fire Bridge (2p) 换了地图，Ice Island 的 push 局换了事件交付方式（L2 harness），火山 (8p) 的三局则是同队四智能体共控一个玩家、对手配置也与其他局不同，都不参与上面的三接口对比。</p>
+        <p>下列对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”，每局 18 个扣分项的明细在同一页的「逐局扣分明细」里，最后一列可以直接跳过去。</p>
       </div>
+      <p class="callout"><b>同图可比的三局：</b>同一模型、同一地图（Ice Island (2p)，对手 Hard，x2 收入）下，tool3 74.26 &gt; tool1 67.67 &gt; tool2 61.61。差距几乎都来自第二阶段（资源与工厂利用率），第一阶段 tool3 反而不如 tool1；每臂只有 1 局，提示词也不只差接口，所以这 12.7 分不能全部归因给 MCP。其余对局换了地图、对手或交付方式，只作单局记录。</p>
       <div class="table-wrap">
         <table class="data-table" id="current-table">
           <caption>按综合分排序；结局一列是游戏内结果，不参与计分。</caption>
         </table>
       </div>
+    </section>
+
+    <section id="deductions" class="section shell">
+      <div class="section-heading"><span class="section-index">02 / DEDUCTION BREAKDOWN</span><span class="section-kicker">每一局 · 每一项扣在哪</span></div>
+      <div class="results-heading">
+        <h2>逐局扣分明细</h2>
+        <p>每局两张表：第一阶段 12 项（开局、观察与决策节奏、生产），第二阶段 6 类事件（偷袭、绞肉、指令过期、建造者与工厂闲置、资金闲置）。「扣分」是实际扣分，达到该项上限标“封顶”；「本局证据」是该局触发扣分的原始事实，直接来自评分产物，与上面的综合分同源。</p>
+      </div>
+      <div id="match-details" class="match-details" aria-live="polite"></div>
+      <noscript><p class="callout">逐局明细由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
     </section>
 
     <section id="scoring" class="section shell scoring-section">
@@ -119,22 +89,8 @@
       <div id="micro-cases-list" class="micro-cases-list" aria-live="polite"></div>
     </section>
 
-    <section id="deductions" class="section shell">
-      <div class="section-heading"><span class="section-index">05 / DEDUCTION BREAKDOWN</span><span class="section-kicker">两个阶段 · 每一分扣在哪里</span></div>
-      <div class="results-heading">
-        <h2>逐项扣分</h2>
-        <p>两个阶段都是 100 分起扣：第一阶段 12 项、第二阶段按 6 类事件封顶。表内数字是实际扣分与该项上限；达到上限标“封顶”，原始累计超过上限时附“原始”。</p>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table" id="deduction-table">
-          <caption>三局对比组（同模型、同地图）；2026-11-03 起偷袭上限 35、单次上限 18、γ 3。</caption>
-        </table>
-      </div>
-      <div class="deduction-more" id="deduction-more"></div>
-    </section>
-
     <section id="legacy" class="section shell">
-      <div class="section-heading"><span class="section-index">06 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
+      <div class="section-heading"><span class="section-index">05 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
       <div class="results-heading">
         <h2>归档对局</h2>
         <p>这些对局的材料在 2026-11-02 至 03 的整备中归档为 <code>_old</code>：当时没有保留完整的伤害 / HP 证据，无法按当前口径复算第二阶段的偷袭与损失扣分。分数只能代表当时的材料，模型与工具归属按目录名记录，未逐局核验。</p>
@@ -147,7 +103,7 @@
     </section>
 
     <section id="gaps" class="section shell">
-      <div class="section-heading"><span class="section-index">07 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
+      <div class="section-heading"><span class="section-index">06 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
       <div class="results-heading">
         <h2>没有进入排名的材料</h2>
         <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。</p>
@@ -156,7 +112,7 @@
     </section>
 
     <section id="method" class="section shell">
-      <div class="section-heading"><span class="section-index">08 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
+      <div class="section-heading"><span class="section-index">07 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
       <div class="results-heading">
         <h2>分数是怎么来的</h2>
         <p>数据直接取自评分产物与 DSH 会话存档，页面不做二次换算。</p>

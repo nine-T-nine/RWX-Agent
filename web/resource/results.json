@@ -72,73 +72,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 13.5,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 39.34s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 39.34s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 47.87s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 4.7,
-            "cap": 8
+            "cap": 8,
+            "detail": "41 个 A→B 周期，去离群均值 17.51s（中位 14.78s / p90 30.78s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "41 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "0/41 次等待离群（0.0%，阈值 5.00s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "1/41 个决策周期离群（2.4%，阈值 41.80s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 1.3,
-            "cap": 15
+            "cap": 15,
+            "detail": "168 段相邻底层间隔：3–5s 17、5–12s 56、12–25s 4、>25s 4（≤3s 的 87 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 29 次，离群 1 次（3.5%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 49 次，离群 2 次（4.1%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0,
-            "cap": 6
+            "cap": 6,
+            "detail": "9.15 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 71 条 / 行动 90 条（比值 0.79）"
           }
         ]
       },
@@ -168,43 +180,57 @@
           "deduction": 34.215,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 154.076,
-              "capped": 20,
-              "cap": 20,
-              "items": 27
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 3
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 4.5,
-              "capped": 4.5,
-              "cap": 15,
-              "items": 30
-            },
-            {
               "family": "AMBUSH",
               "raw": 2.715,
               "capped": 2.715,
               "cap": 35,
-              "items": 8
+              "events": 8,
+              "detail": "8 次，累计加权冲击 22.0；最大一次扣 1.69 分（t=4:53，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 1
+              "events": 1,
+              "detail": "1 次，累计加权冲击 0.3；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 0,
+              "detail": "本局未出现该类事件"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 154.076,
+              "capped": 20,
+              "cap": 20,
+              "events": 27,
+              "detail": "25 段可计分（最长 2:58）；另有 2 段证据不足、不扣分（合计 4:35）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 4.5,
+              "capped": 4.5,
+              "cap": 15,
+              "events": 30,
+              "detail": "3 段可计分（最长 1:19）；另有 27 段证据不足、不扣分（合计 26:54）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 3,
+              "detail": "3 段资金闲置，其中 1 段实际扣分；最长 354s，峰值 14218 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Ice-Island-(2p)-20261103--00-28__dsh4.1_tool1_vsHard_小坦克"
     },
     {
       "id": "tool2",
@@ -248,73 +274,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 13.2,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 36.19s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 42.13s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 42.11s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 5.3,
-            "cap": 8
+            "cap": 8,
+            "detail": "35 个 A→B 周期，去离群均值 20.02s（中位 15.55s / p90 36.72s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "35 次 B→A 等待，去离群均值 0.01s（中位 0.02s / p90 0.02s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 0.8,
-            "cap": 10
+            "cap": 10,
+            "detail": "1/35 次等待离群（2.9%，阈值 5.02s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "0/35 个决策周期离群（0.0%，阈值 58.14s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 1.6,
-            "cap": 15
+            "cap": 15,
+            "detail": "124 段相邻底层间隔：3–5s 15、5–12s 43、12–25s 5、>25s 4（≤3s 的 57 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 2.3,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 262 次，离群 24 次（9.2%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 23 次，离群 0 次（0.0%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0.4,
-            "cap": 6
+            "cap": 6,
+            "detail": "7.98 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 298 条 / 行动 58 条（比值 5.14）"
           }
         ]
       },
@@ -344,43 +382,57 @@
           "deduction": 41.586,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 90.345,
-              "capped": 20,
-              "cap": 20,
-              "items": 14
-            },
-            {
               "family": "AMBUSH",
               "raw": 11.586,
               "capped": 11.586,
               "cap": 35,
-              "items": 4
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 4
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 3,
-              "capped": 3,
-              "cap": 15,
-              "items": 18
+              "events": 4,
+              "detail": "4 次，累计加权冲击 15.0；最大一次扣 11.18 分（t=7:54，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 1
+              "events": 1,
+              "detail": "1 次，累计加权冲击 3.0；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 0,
+              "detail": "本局未出现该类事件"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 90.345,
+              "capped": 20,
+              "cap": 20,
+              "events": 14,
+              "detail": "12 段可计分（最长 4:01）；另有 2 段证据不足、不扣分（合计 2:56）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3,
+              "capped": 3,
+              "cap": 15,
+              "events": 18,
+              "detail": "3 段可计分（最长 0:42）；另有 15 段证据不足、不扣分（合计 17:49）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 4,
+              "detail": "4 段资金闲置，其中 1 段实际扣分；最长 350s，峰值 12954 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Ice-Island-(2p)-20261103--07-22__dsh4.1_tool1_vsHard"
     },
     {
       "id": "tool3",
@@ -424,73 +476,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 12.8,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 30.34s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 30.34s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 2.9,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 17.41s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 3.1,
-            "cap": 8
+            "cap": 8,
+            "detail": "85 个 A→B 周期，去离群均值 12.78s（中位 10.08s / p90 25.47s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "85 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "0/85 次等待离群（0.0%，阈值 5.00s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 2.1,
-            "cap": 8
+            "cap": 8,
+            "detail": "3/85 个决策周期离群（3.5%，阈值 36.74s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.9,
-            "cap": 15
+            "cap": 15,
+            "detail": "352 段相邻底层间隔：3–5s 47、5–12s 95、12–25s 7、>25s 1（≤3s 的 202 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 798 次，离群 24 次（3.0%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 91 次，离群 0 次（0.0%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 6,
-            "cap": 6
+            "cap": 6,
+            "detail": "7.46 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 884 条 / 行动 176 条（比值 5.02）"
           }
         ]
       },
@@ -521,43 +585,57 @@
           "deduction": 21.027,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 246.514,
-              "capped": 20,
-              "cap": 20,
-              "items": 76
-            },
-            {
               "family": "AMBUSH",
               "raw": 1.027,
               "capped": 1.027,
               "cap": 35,
-              "items": 11
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "items": 31
+              "events": 11,
+              "detail": "11 次，累计加权冲击 22.6；最大一次扣 0.78 分（t=18:17，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 12
+              "events": 12,
+              "detail": "12 次，累计加权冲击 6.4；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 0,
+              "detail": "本局未出现该类事件"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 246.514,
+              "capped": 20,
+              "cap": 20,
+              "events": 76,
+              "detail": "41 段可计分（最长 3:01）；另有 35 段证据不足、不扣分（合计 47:21）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 31,
+              "detail": "31 段都缺「有活可干」的证据，按规则不扣（合计 37:30）"
             },
             {
               "family": "FUNDS",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 2
+              "events": 2,
+              "detail": "2 段资金闲置，其中 0 段实际扣分；最长 109s，峰值 7080 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Ice-Island-(2p)-20261103--09-29_dsh4.1_tool3_vsHard_重"
     },
     {
       "id": "native-2358",
@@ -601,73 +679,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 15,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 76.74s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 76.96s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 84.64s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 4.5,
-            "cap": 8
+            "cap": 8,
+            "detail": "40 个 A→B 周期，去离群均值 16.80s（中位 15.46s / p90 31.35s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 1.6,
-            "cap": 18
+            "cap": 18,
+            "detail": "40 次 B→A 等待，去离群均值 4.61s（中位 0.30s / p90 11.85s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 2.4,
-            "cap": 10
+            "cap": 10,
+            "detail": "2/40 次等待离群（5.0%，阈值 26.03s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 1.6,
-            "cap": 8
+            "cap": 8,
+            "detail": "3/40 个决策周期离群（7.5%，阈值 41.10s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.5,
-            "cap": 15
+            "cap": 15,
+            "detail": "457 段相邻底层间隔：3–5s 20、5–12s 41、12–25s 15、>25s 3（≤3s 的 378 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 40 次，离群 0 次（0.0%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 1.9,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 62 次，离群 11 次（17.7%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 6,
-            "cap": 6
+            "cap": 6,
+            "detail": "4.33 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 81 条 / 行动 102 条（比值 0.79）"
           }
         ]
       },
@@ -696,50 +786,57 @@
           "deduction": 32.693,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 169.693,
-              "capped": 20,
-              "cap": 20,
-              "items": 29
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 6
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 3.478,
-              "capped": 3.478,
-              "cap": 15,
-              "items": 18
-            },
-            {
-              "family": "STALE",
-              "raw": 2,
-              "capped": 2,
-              "cap": 15,
-              "items": 1
-            },
-            {
               "family": "AMBUSH",
               "raw": 0.215,
               "capped": 0.215,
               "cap": 35,
-              "items": 4
+              "events": 4,
+              "detail": "4 次，累计加权冲击 7.6；最大一次扣 0.20 分（t=5:37，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 8
+              "events": 8,
+              "detail": "8 次，累计加权冲击 13.2；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 2,
+              "capped": 2,
+              "cap": 15,
+              "events": 1,
+              "detail": "1 段过期指令，最大一段扣 2.00 分（t=8:14）；1 段缺「指令过期时长」证据，只按部分档计"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 169.693,
+              "capped": 20,
+              "cap": 20,
+              "events": 29,
+              "detail": "27 段可计分（最长 1:26）；另有 2 段证据不足、不扣分（合计 0:17）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3.478,
+              "capped": 3.478,
+              "cap": 15,
+              "events": 18,
+              "detail": "3 段可计分（最长 1:25）；另有 15 段证据不足、不扣分（合计 19:37）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 6,
+              "detail": "6 段资金闲置，其中 1 段实际扣分；最长 986s，峰值 30297 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Ice-Island-(2p)-20261102--23-58_dsh4.1highvsHard_坚守"
     },
     {
       "id": "firebridge-opencode",
@@ -783,73 +880,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 10.7,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 16.00s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 4,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 16.00s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 40.69s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 2.2,
-            "cap": 8
+            "cap": 8,
+            "detail": "47 个 A→B 周期，去离群均值 10.57s（中位 10.22s / p90 20.29s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 5,
-            "cap": 18
+            "cap": 18,
+            "detail": "47 次 B→A 等待，去离群均值 10.92s（中位 7.06s / p90 24.87s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 1.2,
-            "cap": 10
+            "cap": 10,
+            "detail": "1/47 次等待离群（2.1%，阈值 46.16s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 0.5,
-            "cap": 8
+            "cap": 8,
+            "detail": "3/47 个决策周期离群（6.4%，阈值 23.39s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.7,
-            "cap": 15
+            "cap": 15,
+            "detail": "445 段相邻底层间隔：3–5s 17、5–12s 94、12–25s 11、>25s 2（≤3s 的 321 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 52 次，离群 2 次（3.9%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 1.8,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 71 次，离群 11 次（15.5%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 6,
-            "cap": 6
+            "cap": 6,
+            "detail": "6.63 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 100 条 / 行动 118 条（比值 0.85）"
           }
         ]
       },
@@ -882,43 +991,57 @@
           "deduction": 22.223,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 67.481,
-              "capped": 20,
-              "cap": 20,
-              "items": 26
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 1.818,
-              "capped": 1.818,
-              "cap": 15,
-              "items": 24
-            },
-            {
-              "family": "FUNDS",
-              "raw": 0.349,
-              "capped": 0.349,
-              "cap": 20,
-              "items": 5
-            },
-            {
               "family": "AMBUSH",
               "raw": 0.056,
               "capped": 0.056,
               "cap": 35,
-              "items": 8
+              "events": 8,
+              "detail": "8 次，累计加权冲击 11.3；最大一次扣 0.02 分（t=6:32，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 1
+              "events": 1,
+              "detail": "1 次，累计加权冲击 3.0；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 0,
+              "detail": "本局未出现该类事件"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 67.481,
+              "capped": 20,
+              "cap": 20,
+              "events": 26,
+              "detail": "14 段可计分（最长 1:34）；另有 12 段证据不足、不扣分（合计 13:22）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.818,
+              "capped": 1.818,
+              "cap": 15,
+              "events": 24,
+              "detail": "2 段可计分（最长 0:41）；另有 22 段证据不足、不扣分（合计 21:24）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 0.349,
+              "capped": 0.349,
+              "cap": 20,
+              "events": 5,
+              "detail": "5 段资金闲置，其中 1 段实际扣分；最长 117s，峰值 6827 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Fire-Bridge-(2p)-20261104--00-12_deepseek4.1flash_vsHard_opencodev2"
     },
     {
       "id": "dsh-push",
@@ -962,73 +1085,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 14.4,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 52.40s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 97.31s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 62.14s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 5.5,
-            "cap": 8
+            "cap": 8,
+            "detail": "28 个 A→B 周期，去离群均值 20.77s（中位 21.74s / p90 36.14s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "28 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "0/28 次等待离群（0.0%，阈值 5.00s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 1.6,
-            "cap": 8
+            "cap": 8,
+            "detail": "2/28 个决策周期离群（7.1%，阈值 48.11s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 1.1,
-            "cap": 15
+            "cap": 15,
+            "detail": "144 段相邻底层间隔：3–5s 39、5–12s 54、12–25s 1、>25s 0（≤3s 的 50 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 2.7,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 101 次，离群 16 次（15.8%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 56 次，离群 0 次（0.0%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0,
-            "cap": 6
+            "cap": 6,
+            "detail": "8.23 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 130 条 / 行动 84 条（比值 1.55）"
           }
         ]
       },
@@ -1061,43 +1196,57 @@
           "deduction": 27.772,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 179.363,
-              "capped": 20,
-              "cap": 20,
-              "items": 45
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 2
-            },
-            {
               "family": "AMBUSH",
               "raw": 0.772,
               "capped": 0.772,
               "cap": 35,
-              "items": 8
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "items": 12
+              "events": 8,
+              "detail": "8 次，累计加权冲击 15.0；最大一次扣 0.51 分（t=5:05，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 5
+              "events": 5,
+              "detail": "5 次，累计加权冲击 0.0；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 0,
+              "detail": "本局未出现该类事件"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 179.363,
+              "capped": 20,
+              "cap": 20,
+              "events": 45,
+              "detail": "28 段可计分（最长 2:18）；另有 17 段证据不足、不扣分（合计 25:55）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 0,
+              "capped": 0,
+              "cap": 15,
+              "events": 12,
+              "detail": "12 段都缺「有活可干」的证据，按规则不扣（合计 14:35）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 2,
+              "detail": "2 段资金闲置，其中 1 段实际扣分；最长 141s，峰值 6925 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Ice-Island-(2p)-20261104--11-01_dsh4.1flash_push_vsHard_tool_push_message"
     },
     {
       "id": "team8p-pi-mail",
@@ -1141,73 +1290,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 14.3,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 50.18s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 50.18s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 50.18s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 1.9,
-            "cap": 8
+            "cap": 8,
+            "detail": "52 个 A→B 周期，去离群均值 9.66s（中位 8.25s / p90 22.98s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "52 次 B→A 等待，去离群均值 1.01s（中位 0.53s / p90 3.93s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 3.2,
-            "cap": 10
+            "cap": 10,
+            "detail": "4/52 次等待离群（7.7%，阈值 7.10s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 0.8,
-            "cap": 8
+            "cap": 8,
+            "detail": "1/52 个决策周期离群（1.9%，阈值 31.22s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.3,
-            "cap": 15
+            "cap": 15,
+            "detail": "350 段相邻底层间隔：3–5s 27、5–12s 26、12–25s 2、>25s 2（≤3s 的 293 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 2.2,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 191 次，离群 16 次（8.4%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 73 次，离群 2 次（2.7%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0,
-            "cap": 6
+            "cap": 6,
+            "detail": "8.18 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 244 条 / 行动 125 条（比值 1.95）"
           }
         ]
       },
@@ -1239,50 +1400,57 @@
           "deduction": 46.967,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 136.516,
-              "capped": 20,
-              "cap": 20,
-              "items": 37
-            },
-            {
               "family": "AMBUSH",
               "raw": 9.364,
               "capped": 9.364,
               "cap": 35,
-              "items": 8
-            },
-            {
-              "family": "STALE",
-              "raw": 9,
-              "capped": 9,
-              "cap": 15,
-              "items": 3
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 5
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 1.603,
-              "capped": 1.603,
-              "cap": 15,
-              "items": 13
+              "events": 8,
+              "detail": "8 次，累计加权冲击 23.8；最大一次扣 8.79 分（t=9:08，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 13
+              "events": 13,
+              "detail": "13 次，累计加权冲击 14.2；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 9,
+              "capped": 9,
+              "cap": 15,
+              "events": 3,
+              "detail": "3 段过期指令，最大一段扣 5.00 分（t=5:41）；2 段缺「指令过期时长」证据，只按部分档计"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 136.516,
+              "capped": 20,
+              "cap": 20,
+              "events": 37,
+              "detail": "22 段可计分（最长 1:34）；另有 15 段证据不足、不扣分（合计 14:37）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.603,
+              "capped": 1.603,
+              "cap": 15,
+              "events": 13,
+              "detail": "2 段可计分（最长 0:50）；另有 11 段证据不足、不扣分（合计 8:29）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 5,
+              "detail": "5 段资金闲置，其中 1 段实际扣分；最长 193s，峰值 8895 资金"
             }
           ]
         }
-      }
+      },
+      "match": "火山-(8p)-20261104--20-53_pi+deepseekv4.1flashx4vsVeryHard"
     },
     {
       "id": "team8p-pi-nomail",
@@ -1326,73 +1494,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 14,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 46.46s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 46.46s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 71.18s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 3.4,
-            "cap": 8
+            "cap": 8,
+            "detail": "46 个 A→B 周期，去离群均值 13.61s（中位 13.66s / p90 26.69s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "46 次 B→A 等待，去离群均值 0.91s（中位 0.02s / p90 5.86s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 4,
-            "cap": 10
+            "cap": 10,
+            "detail": "5/46 次等待离群（10.9%，阈值 5.84s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 1.3,
-            "cap": 8
+            "cap": 8,
+            "detail": "2/46 个决策周期离群（4.3%，阈值 36.33s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.2,
-            "cap": 15
+            "cap": 15,
+            "detail": "933 段相邻底层间隔：3–5s 21、5–12s 25、12–25s 9、>25s 1（≤3s 的 877 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 2.2,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 212 次，离群 18 次（8.5%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 0,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 122 次，离群 4 次（3.3%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0,
-            "cap": 6
+            "cap": 6,
+            "detail": "8.97 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 259 条 / 行动 168 条（比值 1.54）"
           }
         ]
       },
@@ -1424,50 +1604,57 @@
           "deduction": 30.707,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 105.796,
-              "capped": 20,
-              "cap": 20,
-              "items": 36
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 1
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 3.523,
-              "capped": 3.523,
-              "cap": 15,
-              "items": 25
-            },
-            {
               "family": "AMBUSH",
               "raw": 0.184,
               "capped": 0.184,
               "cap": 35,
-              "items": 8
+              "events": 8,
+              "detail": "8 次，累计加权冲击 14.4；最大一次扣 0.13 分（t=7:16，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 8
+              "events": 8,
+              "detail": "8 次，累计加权冲击 0.5；单次都没超过免扣区间"
             },
             {
               "family": "STALE",
               "raw": 0,
               "capped": 0,
               "cap": 15,
-              "items": 2
+              "events": 2,
+              "detail": "2 段过期指令，最大一段扣 0.00 分（t=1:25）；1 段缺「指令过期时长」证据，只按部分档计"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 105.796,
+              "capped": 20,
+              "cap": 20,
+              "events": 36,
+              "detail": "21 段可计分（最长 0:48）；另有 15 段证据不足、不扣分（合计 11:25）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 3.523,
+              "capped": 3.523,
+              "cap": 15,
+              "events": 25,
+              "detail": "3 段可计分（最长 1:11）；另有 22 段证据不足、不扣分（合计 15:02）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 1,
+              "detail": "1 段资金闲置，其中 1 段实际扣分；最长 176.5s，峰值 13871 资金"
             }
           ]
         }
-      }
+      },
+      "match": "火山-(8p)-20261104--21-15_Pi+deeepseekv4.1flashx4vsVeryHard_nomail"
     },
     {
       "id": "team8p-dsh-nomail",
@@ -1511,73 +1698,85 @@
             "id": "A1-first-order",
             "label": "首个行动指令",
             "points": 13.3,
-            "cap": 15
+            "cap": 15,
+            "detail": "首条行动指令 37.62s"
           },
           {
             "id": "A1-first-mining",
             "label": "首个采矿建造",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个采矿建筑 44.13s（20s 内不扣）"
           },
           {
             "id": "A1-first-builder",
             "label": "首个建造者生产",
             "points": 5,
-            "cap": 5
+            "cap": 5,
+            "detail": "首个建造者出厂 105.14s（30s 内不扣）"
           },
           {
             "id": "A2-decision-cycle",
             "label": "A→B 周期去离群均值",
             "points": 1.3,
-            "cap": 8
+            "cap": 8,
+            "detail": "61 个 A→B 周期，去离群均值 8.14s（中位 6.46s / p90 18.77s）"
           },
           {
             "id": "A2-wait-after-action",
             "label": "B→A 等待去离群均值",
             "points": 0,
-            "cap": 18
+            "cap": 18,
+            "detail": "61 次 B→A 等待，去离群均值 1.64s（中位 0.45s / p90 6.58s）"
           },
           {
             "id": "A2-wait-outliers",
             "label": "B→A 等待离群值",
             "points": 2.4,
-            "cap": 10
+            "cap": 10,
+            "detail": "3/61 次等待离群（4.9%，阈值 7.37s）"
           },
           {
             "id": "A2-decision-outliers",
             "label": "A→B 决策离群值",
             "points": 0.5,
-            "cap": 8
+            "cap": 8,
+            "detail": "1/61 个决策周期离群（1.6%，阈值 29.59s）"
           },
           {
             "id": "A4-native-cadence",
             "label": "相邻底层命令间隔",
             "points": 0.5,
-            "cap": 15
+            "cap": 15,
+            "detail": "296 段相邻底层间隔：3–5s 21、5–12s 37、12–25s 5、>25s 1（≤3s 的 232 段不扣分）"
           },
           {
             "id": "A5-AA",
             "label": "A→A 离群占比",
             "points": 2.2,
-            "cap": 8
+            "cap": 8,
+            "detail": "A→A 181 次，离群 14 次（7.7%）"
           },
           {
             "id": "A5-BB",
             "label": "B→B 离群占比",
             "points": 1.1,
-            "cap": 8
+            "cap": 8,
+            "detail": "B→B 94 次，离群 6 次（6.4%）"
           },
           {
             "id": "A4-production-rate",
             "label": "底层生产指令 / 分钟",
             "points": 0,
-            "cap": 6
+            "cap": 6,
+            "detail": "8.41 条底层生产指令 / 分钟（8 条/分以上不扣）"
           },
           {
             "id": "A5-query-action-ratio",
             "label": "A / B",
             "points": 0,
-            "cap": 10
+            "cap": 10,
+            "detail": "查询 243 条 / 行动 155 条（比值 1.57）"
           }
         ]
       },
@@ -1610,50 +1809,57 @@
           "deduction": 41.281,
           "families": [
             {
-              "family": "BUILDER_IDLE",
-              "raw": 75.907,
-              "capped": 20,
-              "cap": 20,
-              "items": 17
-            },
-            {
-              "family": "STALE",
-              "raw": 12,
-              "capped": 12,
-              "cap": 15,
-              "items": 5
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 20,
-              "items": 2
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 1.844,
-              "capped": 1.844,
-              "cap": 15,
-              "items": 34
-            },
-            {
               "family": "AMBUSH",
               "raw": 0.437,
               "capped": 0.437,
               "cap": 35,
-              "items": 10
+              "events": 10,
+              "detail": "10 次，累计加权冲击 16.4；最大一次扣 0.25 分（t=6:48，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
               "raw": 0,
               "capped": 0,
               "cap": 20,
-              "items": 5
+              "events": 5,
+              "detail": "5 次，累计加权冲击 5.8；单次都没超过免扣区间"
+            },
+            {
+              "family": "STALE",
+              "raw": 12,
+              "capped": 12,
+              "cap": 15,
+              "events": 5,
+              "detail": "5 段过期指令，最大一段扣 8.00 分（t=10:31）；4 段缺「指令过期时长」证据，只按部分档计"
+            },
+            {
+              "family": "BUILDER_IDLE",
+              "raw": 75.907,
+              "capped": 20,
+              "cap": 20,
+              "events": 17,
+              "detail": "15 段可计分（最长 1:37）；另有 2 段证据不足、不扣分（合计 0:20）"
+            },
+            {
+              "family": "FACTORY_IDLE",
+              "raw": 1.844,
+              "capped": 1.844,
+              "cap": 15,
+              "events": 34,
+              "detail": "3 段可计分（最长 0:25）；另有 31 段证据不足、不扣分（合计 20:12）"
+            },
+            {
+              "family": "FUNDS",
+              "raw": 7,
+              "capped": 7,
+              "cap": 20,
+              "events": 2,
+              "detail": "2 段资金闲置，其中 1 段实际扣分；最长 288s，峰值 13779 资金"
             }
           ]
         }
-      }
+      },
+      "match": "Volcano-(8p)-20261104--22-28_dsh+deepseekv4.1flashx4vsVeryHard_nomail"
     }
   ],
   "legacy": [

@@ -23,6 +23,20 @@ node evaluate/tools/match_materials.js --archive --apply  # 顺带把根目录�
 
 `meta.json` 记这一局的身份：系统版本（引擎版本 + git commit）、参与的模型与思考强度、工具情况、日期、地图配置、时长、胜负、关联会话、token 用量。能从材料读出来的自动填，读不出来留 `null` 并写来源；人工用 `--set key=value`（`model`/`provider`/`thinking`/`tool`/`session`/`tokens`/`outcome`/`note` 等短名字，或任意点号路径）或 `--meta <文件.json>` 补。
 
+## `results_details.js` — 把逐项扣分证据写进网页账本
+
+评测页要对每一局展开「第一阶段 12 项 + 第二阶段 6 类」的扣分明细，但 `web/resource/results.json` 在版本库里、`evaluate/output` 不进版本库，页面自己读不到评分产物。这个脚本做桥梁：
+
+```powershell
+node evaluate/tools/results_details.js           # 把证据写进 results.json
+node evaluate/tools/results_details.js --check   # 只比对，不写；有漂移时退出码 1
+```
+
+- 从 `stage_1/score.json` 的 `evidence` 生成第一阶段每项的「本局证据」（首个行动秒数、周期均值、离群数、底层间隔分布……）；从 `stage_2/score.json` 的逐事件明细生成第二阶段每类的说明（可计分/不可计分的闲置段数、偷袭加权冲击与最大一次、资金闲置时长与峰值……）。
+- 第二阶段 6 类固定顺序输出；某一局没有该类事件时补 `raw/capped = 0` 与「本局未出现该类事件」，页面才能逐局对齐。
+- 写回的是 `metrics.stage1Items[].detail` 与 `breakdown.stage2.families[]`（`raw/capped/cap/events/detail`）。分值以评分产物为准：账本分数与 `score.json` 对不上、或缺某一项时脚本直接报错不写，避免页面展示旧分。
+- 新对局要在脚本的 `DIRS`（`id` → `evaluate/output/<对局名>`）里补一行，或直接在账本条目里写 `match` 字段；历史上有两局目录名与工具编号相反（`…07-22__dsh4.1_tool1_vsHard` 实际是 tool2），映射表已按会话与录像核对过。
+
 ## `stage1_audit.js` — 批量复算全部 Stage1 报告
 
 口径或评分规则改动后，需要确认"现有报告复算出来的数字有没有变"。`evaluate_stage_1.js` 一次只处理一局，这个脚本按 `execution_summary.json` 遍历 `evaluate/output/`，单局失败不中断其余样本：

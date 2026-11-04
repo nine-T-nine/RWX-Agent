@@ -1,5 +1,4 @@
 /* Render the evaluation ledger from resource/results.json. */
-const nf = new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 2 });
 const fmt = (v, digits = 1) => (typeof v === "number" ? v.toFixed(digits) : "—");
 const fmtTotal = (v) => (typeof v === "number" ? v.toFixed(2) : "—");
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -33,59 +32,8 @@ function renderKpis(data) {
     .join("");
 }
 
-function renderToolCards(data) {
-  const host = document.querySelector("#tool-cards");
-  if (!host) return;
-  const trio = data.current.filter((m) => m.group === "trio");
-  host.innerHTML = trio
-    .map((m) => {
-      const s1 = m.metrics.stage1Items;
-      const pick = (id) => (s1.find((i) => i.id === id) || {}).points ?? 0;
-      return `<article class="tool-card tier-${tier(m.scores.total)}">
-        <header class="tool-card-head">
-          <span class="tool-tag">${esc(m.mcp ? "MCP" : "NO MCP")}</span>
-          ${badge(m.result)}
-        </header>
-        <h3>${esc(m.title)}</h3>
-        <p class="tool-card-tool">${esc(m.tool)}</p>
-        <div class="tool-score"><b>${fmtTotal(m.scores.total)}</b><span>综合分</span></div>
-        <dl class="tool-split">
-          <div><dt>第一阶段</dt><dd>${fmt(m.scores.stage1)}</dd></div>
-          <div><dt>第二阶段</dt><dd>${fmt(m.scores.stage2)}</dd></div>
-          <div><dt>决策周期</dt><dd>${fmt(m.metrics.decisionCycleSeconds)}s</dd></div>
-          <div><dt>生产速率扣分</dt><dd>${fmt(pick("A4-production-rate"))}/6</dd></div>
-        </dl>
-        <p class="tool-meta">${esc(m.date)} · ${esc(sessionShort(m.session))} · ${esc(m.result.detail)}</p>
-      </article>`;
-    })
-    .join("");
-}
-
-function renderToolMetrics(data) {
-  const table = document.querySelector("#tool-metrics");
-  if (!table) return;
-  const trio = data.current.filter((m) => m.group === "trio");
-  const rows = [
-    ["综合分 total-v1", (m) => `<b>${fmtTotal(m.scores.total)}</b>`],
-    ["第一阶段 stage1-v2", (m) => fmt(m.scores.stage1)],
-    ["第二阶段 stage2-v2", (m) => fmt(m.scores.stage2)],
-    ["有效窗口", (m) => duration(m.metrics.durationSeconds)],
-    ["结局", (m) => esc(m.result.label)],
-    ["低层命令数", (m) => nf.format(m.metrics.nativeCommands)],
-    ["查询 / 行动", (m) => `${m.metrics.queries} / ${m.metrics.actions}`],
-    ["决策周期（去离群均值）", (m) => `${fmt(m.metrics.decisionCycleSeconds)}s`],
-    ["首个行动指令", (m) => `${fmt(m.metrics.firstOrderSeconds)}s`],
-    ["生产指令 / 分钟", (m) => nf.format(m.metrics.productionPerMinute)],
-    ["底层命令归属缺失", (m) => `${m.metrics.attributionMissing} / ${m.metrics.nativeCommands}`],
-    ["DSH 会话步数", (m) => String(m.runtime.steps)],
-    ["工具总耗时", (m) => `${m.runtime.toolSeconds}s`],
-    ["输出 token", (m) => nf.format(m.runtime.outputTokens)],
-  ];
-  table.innerHTML = `<thead><tr><th scope="col">指标</th>${trio.map((m) => `<th scope="col">${esc(m.title.split("·")[0].trim())}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map(([label, cell]) => `<tr><th scope="row">${esc(label)}</th>${trio.map((m) => `<td>${cell(m)}</td>`).join("")}</tr>`).join("")}</tbody>`;
-}
-
-function renderCurrent(data) {  const table = document.querySelector("#current-table");
+function renderCurrent(data) {
+  const table = document.querySelector("#current-table");
   if (!table) return;
   const rows = data.current
     .slice()
@@ -97,55 +45,78 @@ function renderCurrent(data) {  const table = document.querySelector("#current-t
       <td>${esc(m.date)}<span class="cell-sub">${esc(sessionShort(m.session))}</span></td>
       <td>${badge(m.result)}<span class="cell-sub">${esc(m.result.detail)}</span></td>
       <td>${fmt(m.scores.stage1)} / ${fmt(m.scores.stage2)}</td>
+      <td><a class="row-link" href="#match-${esc(m.id)}" aria-label="查看 ${esc(m.title)} 的逐项扣分">明细</a></td>
     </tr>`)
     .join("");
-  table.innerHTML = `<thead><tr><th scope="col">综合分</th><th scope="col">工具</th><th scope="col">模型</th><th scope="col">对局</th><th scope="col">结局</th><th scope="col">第一 / 第二阶段</th></tr></thead><tbody>${rows}</tbody>`;
+  table.innerHTML = `<thead><tr><th scope="col">综合分</th><th scope="col">工具</th><th scope="col">模型</th><th scope="col">对局</th><th scope="col">结局</th><th scope="col">第一 / 第二阶段</th><th scope="col">明细</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 const FAMILY_LABEL = { AMBUSH: "偷袭", GRINDER: "绞肉机", STALE: "指令过期", BUILDER_IDLE: "建造者闲置", FACTORY_IDLE: "工厂闲置", FUNDS: "资金闲置" };
 
-function deductionCell(points, cap, raw) {
-  const hit = points >= cap - 1e-9 ? ' <span class="cap-hit">封顶</span>' : "";
-  const rawNote = typeof raw === "number" && raw > points + 1e-9 ? `原始 ${fmt(raw, 1)}` : "";
-  return `${fmt(points, 2)}${hit}<span class="cell-sub">/ ${cap}${rawNote ? " · " + rawNote : ""}</span>`;
+const capBadge = (points, cap) => (points >= cap - 1e-9 ? ' <span class="cap-hit">封顶</span>' : "");
+
+function stage1Row(item) {
+  return `<tr>
+    <th scope="row">${esc(item.label)}</th>
+    <td class="detail-points"><b>${fmt(item.points, 2)}</b>${capBadge(item.points, item.cap)}<span class="cell-sub">上限 ${fmt(item.cap, 0)}</span></td>
+    <td class="detail-evidence">${esc(item.detail || "—")}</td>
+  </tr>`;
 }
 
-function renderDeductions(data) {
-  const table = document.querySelector("#deduction-table");
-  const more = document.querySelector("#deduction-more");
-  if (!table) return;
-  const trio = data.current.filter((m) => m.group === "trio");
-  const stage1 = [];
-  const seen1 = new Set();
-  for (const m of trio) for (const item of m.metrics.stage1Items) if (!seen1.has(item.id)) { seen1.add(item.id); stage1.push(item); }
-  const stage2 = [];
-  const seen2 = new Set();
-  for (const m of trio) for (const family of m.breakdown.stage2.families) if (!seen2.has(family.family)) { seen2.add(family.family); stage2.push(family); }
-  const weight = (family) => Math.max(...trio.map((m) => (m.breakdown.stage2.families.find((x) => x.family === family.family) || { capped: 0 }).capped));
-  stage2.sort((a, b) => weight(b) - weight(a) || b.cap - a.cap);
-  const head = `<thead><tr><th scope="col">扣分项</th>${trio.map((m) => `<th scope="col">${esc(m.title.split("·")[0].trim())}</th>`).join("")}</tr></thead>`;
-  const rows1 = stage1.map((item) => `<tr><th scope="row">${esc(item.label)}</th>${trio.map((m) => {
-    const row = m.metrics.stage1Items.find((x) => x.id === item.id) || { points: 0, cap: item.cap };
-    return `<td>${deductionCell(row.points, row.cap)}</td>`;
-  }).join("")}</tr>`).join("");
-  const rows2 = stage2.map((family) => `<tr><th scope="row">${esc(FAMILY_LABEL[family.family] || family.family)}</th>${trio.map((m) => {
-    const row = m.breakdown.stage2.families.find((x) => x.family === family.family) || { capped: 0, cap: family.cap, raw: 0 };
-    return `<td>${deductionCell(row.capped, row.cap, row.raw)}</td>`;
-  }).join("")}</tr>`).join("");
-  table.innerHTML = `${head}<tbody>${rows1}
-    <tr class="sum-row"><th scope="row">第一阶段扣分合计</th>${trio.map((m) => `<td>${fmt(m.breakdown.stage1.deduction, 2)}</td>`).join("")}</tr>
-    ${rows2}
-    <tr class="sum-row"><th scope="row">第二阶段扣分合计</th>${trio.map((m) => `<td>${fmt(m.breakdown.stage2.deduction, 2)}</td>`).join("")}</tr>
-    <tr class="sum-row total-row"><th scope="row">最终得分</th>${trio.map((m) => `<td><b>${fmtTotal(m.scores.total)}</b></td>`).join("")}</tr></tbody>`;
-  if (more) {
-    more.innerHTML = data.current.filter((m) => m.group !== "trio").map((m) => `<details class="deduction-block">
-      <summary><b>${esc(m.title)}</b><span>${esc(m.date)} · ${esc(m.tool)}</span><i>${fmtTotal(m.scores.total)}</i></summary>
-      <div class="deduction-grid">
-        <div><h4>第一阶段 ${fmt(m.breakdown.stage1.score)} 分（扣 ${fmt(m.breakdown.stage1.deduction)}）</h4><ul>${m.metrics.stage1Items.map((i) => `<li><span>${esc(i.label)}</span><b>${fmt(i.points, 2)} / ${i.cap}</b></li>`).join("")}</ul></div>
-        <div><h4>第二阶段 ${fmt(m.breakdown.stage2.score)} 分（扣 ${fmt(m.breakdown.stage2.deduction)}）</h4><ul>${m.breakdown.stage2.families.map((f) => `<li><span>${esc(FAMILY_LABEL[f.family] || f.family)}</span><b>${fmt(f.capped, 2)} / ${f.cap}</b></li>`).join("")}</ul></div>
+function stage2Row(family) {
+  const raw = family.raw > family.capped + 1e-9 ? `原始 ${fmt(family.raw, 1)} · ` : "";
+  const events = family.events == null ? "" : ` · ${family.events} 段`;
+  return `<tr>
+    <th scope="row">${esc(FAMILY_LABEL[family.family] || family.family)}</th>
+    <td class="detail-points"><b>${fmt(family.capped, 2)}</b>${capBadge(family.capped, family.cap)}<span class="cell-sub">${raw}上限 ${fmt(family.cap, 0)}${events}</span></td>
+    <td class="detail-evidence">${esc(family.detail || "—")}</td>
+  </tr>`;
+}
+
+function renderMatchDetails(data) {
+  const host = document.querySelector("#match-details");
+  if (!host) return;
+  const matches = data.current.slice().sort((a, b) => b.scores.total - a.scores.total);
+  host.innerHTML = matches.map((m, index) => {
+    const notes = (m.notes || []).map((note) => `<li>${esc(note)}</li>`).join("");
+    const group = m.group === "trio" ? "同图对比组" : "单局记录";
+    return `<article class="match-detail" id="match-${esc(m.id)}">
+      <header class="match-head">
+        <span class="match-rank">${String(index + 1).padStart(2, "0")}</span>
+        <div class="match-head-copy">
+          <h3>${esc(m.title)}<span class="match-group">${group}</span></h3>
+          <p class="match-meta">${esc(m.date)} · ${esc(m.map)} · ${esc(m.opponent)} · ${esc(m.agent.model)}（推理强度 ${esc(m.agent.reasoning)}）· 会话 ${esc(sessionShort(m.session))}</p>
+          <p class="match-tool">${esc(m.tool)}${m.toolDetail ? ` — ${esc(m.toolDetail)}` : ""}</p>
+        </div>
+        <div class="match-score">
+          <b>${fmtTotal(m.scores.total)}</b>
+          <span>综合分</span>
+          <i>S1 ${fmt(m.scores.stage1)} · S2 ${fmt(m.scores.stage2)}</i>
+        </div>
+      </header>
+      <div class="match-stages">
+        <section class="match-stage">
+          <h4><span>第一阶段</span>12 项 · 扣 ${fmt(m.breakdown.stage1.deduction, 2)} → ${fmt(m.breakdown.stage1.score, 2)}</h4>
+          <div class="table-wrap detail-wrap">
+            <table class="detail-table">
+              <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
+              <tbody>${m.metrics.stage1Items.map(stage1Row).join("")}</tbody>
+            </table>
+          </div>
+        </section>
+        <section class="match-stage">
+          <h4><span>第二阶段</span>6 类 · 扣 ${fmt(m.breakdown.stage2.deduction, 2)} → ${fmt(m.breakdown.stage2.score, 2)}</h4>
+          <div class="table-wrap detail-wrap">
+            <table class="detail-table">
+              <thead><tr><th scope="col">扣分项</th><th scope="col">扣分</th><th scope="col">本局证据</th></tr></thead>
+              <tbody>${m.breakdown.stage2.families.map(stage2Row).join("")}</tbody>
+            </table>
+          </div>
+        </section>
       </div>
-    </details>`).join("");
-  }
+      ${notes ? `<ul class="match-notes">${notes}</ul>` : ""}
+    </article>`;
+  }).join("");
 }
 
 function renderLegacy(data) {  const table = document.querySelector("#legacy-table");
@@ -248,10 +219,8 @@ fetch(new URL("./resource/results.json", import.meta.url))
   })
   .then((data) => {
     renderKpis(data);
-    renderToolCards(data);
-    renderToolMetrics(data);
     renderCurrent(data);
-    renderDeductions(data);
+    renderMatchDetails(data);
     renderLegacy(data);
     renderGaps(data);
     renderMethod(data);
