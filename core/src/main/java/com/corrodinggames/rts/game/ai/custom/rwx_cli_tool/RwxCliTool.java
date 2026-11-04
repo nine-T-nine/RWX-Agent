@@ -18,8 +18,13 @@ public final class RwxCliTool implements AutoCloseable {
      * Clients are served on a small pool: a single long-running command (a 10-minute
      * {@code step}, a stalled socket) used to block the accept loop, so every other caller —
      * including the PowerShell terminal — waited behind it.
+     *
+     * <p>8 lets one match host several cooperating agents plus a human/monitor connection.
+     * More clients than threads are refused with {@code too many concurrent CLI clients}
+     * instead of queueing silently; the command stream itself is still serialised on the
+     * game thread, so raising this only buys headroom, not throughput.
      */
-    private static final int MAX_CLIENT_THREADS = 4;
+    private static final int MAX_CLIENT_THREADS = 8;
     /** Connection identity for the "one session, two consumers" note; 0 is never used. */
     private static final java.util.concurrent.atomic.AtomicLong CONNECTION_IDS =
             new java.util.concurrent.atomic.AtomicLong();
@@ -186,7 +191,8 @@ public final class RwxCliTool implements AutoCloseable {
                 // or leaking a socket nobody will ever read.
                 try (Socket rejected = client) {
                     rejected.getOutputStream().write(
-                            "error: too many concurrent CLI clients\n".getBytes(StandardCharsets.UTF_8));
+                            ("error: too many concurrent CLI clients (limit " + MAX_CLIENT_THREADS
+                                    + ")\n").getBytes(StandardCharsets.UTF_8));
                 } catch (IOException ignored) {
                     // The client went away before it could be told; nothing to do.
                 }

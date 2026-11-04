@@ -1,0 +1,1 @@
+# A2 -> A1：每 90-120 游戏秒最多追加一行，例如 [t=06:00] mix: c_tank=3, hoverTank=2, c_artillery=1

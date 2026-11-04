@@ -1,0 +1,37 @@
+# Headless 模型 overlay：只保留本评测用到的 provider 和模型。
+#
+#   dsh --profile headless --patch agent-tmp/team/provider.yml ...
+#
+# 需要 OPENCODE_API_KEY（见 multiply.md 第 2 步）。换模型时只改下面
+# `agent-default-model` 的 model / reasoningEffort，并在 models 里补一条。
+
+- id: llm-pi-ai
+  name: '@deepseek-ai/dsh-llm-pi-ai'
+  config:
+    providers:
+      opencode-go:
+        displayName: OpenCode Go
+        apiKeyEnv: OPENCODE_API_KEY
+        api: openai-completions
+        baseURL: https://opencode.ai/zen/go/v1
+        headers:
+          x-opencode-session: dsh-9524dbaa-88a4-48b2-bb2c-29efb9947098
+          x-opencode-client: dsh
+        models:
+          - id: deepseek-v4.1-flash
+            name: DeepSeek V4.1 Flash
+            contextWindow: 1000000
+            maxTokens: 384000
+            input:
+              - text
+              - image
+            reasoningEfforts:
+              low: low
+              high: high
+              max: max
+
+- id: agent-default-model
+  config:
+    provider: opencode-go
+    model: deepseek-v4.1-flash
+    reasoningEffort: high

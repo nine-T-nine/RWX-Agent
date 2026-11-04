@@ -1,0 +1,24 @@
+# Team overlay for agent A2 (front-line command).
+#
+# Same MCP bridge as ../rwx-dsh-bridge/mcp/patch.yml, but with an explicit
+# alert-delivery session so A1 and A2 do not share (and steal) one cursor.
+#
+#   dsh --profile headless --patch provider.yml --patch patch-a2.yml --json -
+
+- insert:
+    - id: mcp-rwx-bridge
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: rwx
+        transport: stdio
+        command: 'A:\miniconda\python.exe'
+        args:
+          - 'X:\game\rwx-dsh-bridge\mcp\rwx_bridge_mcp.py'
+          - '--port-file'
+          - 'X:\game\RWX\agent-operation\tmp\port'
+          - '--session'
+          - 'dsh-team-a2'
+        toolCallTimeoutMs: 60000
+
+    - id: agent-instructions
+      disabled: true
