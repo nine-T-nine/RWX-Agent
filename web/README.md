@@ -22,7 +22,7 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | 文件 | 内容 |
 | --- | --- |
 | `index.html` | 中文首页内容、导航、无脚本视频链接 |
-| `results.html` | 评测结果页：当前标准对局表、逐局扣分明细、评分规则、微操 CASE、归档账本与口径限制 |
+| `results.html` | 评测结果页：当前标准对局表、扣分明细矩阵（行=对局、列=扣分项，证据悬浮显示）、评分规则、微操 CASE、归档账本与口径限制 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
 | `app.js` | 首页录像切换、平台切换、复制命令和手机导航 |
 | `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染评测表格与逐局明细 |
