@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-04",
+  "generatedAt": "2026-11-05",
   "standard": {
     "total": "total-v1",
     "stage1": "stage1-v2",
@@ -10,21 +10,29 @@
       "stage2": 0.6
     },
     "summary": "总分 = 第一阶段 × 0.4 + 第二阶段 × 0.6，两项均为 0–100，越高越好；两阶段仍分开呈现，综合分只用于横向比较。",
-    "updatedAt": "2026-11-03",
+    "updatedAt": "2026-11-05",
     "parameters": {
       "ambush": {
-        "cap": 35,
+        "cap": 40,
         "singleMax": 18,
         "gamma": 3
       },
-      "note": "2026-11-03 起 AMBUSH 上限 35、单次上限 18、γ=3；此前发布的 AMBUSH 数字（30/15/1.5）作废。"
+      "caps": {
+        "AMBUSH": 40,
+        "GRINDER": 20,
+        "STALE": 15,
+        "BUILDER_IDLE": 25,
+        "FACTORY_IDLE": 20,
+        "FUNDS": 30
+      },
+      "note": "2026-11-05 起 Stage2 六类上限 40/20/15/25/20/30；AMBUSH 单次 18、γ=3。task119 曲线改为平移指数/对数后 9 局全部重算。"
     }
   },
   "overview": {
     "currentMatches": 9,
     "best": {
-      "id": "tool3",
-      "total": 74.264
+      "id": "firebridge-opencode",
+      "total": 84.726
     },
     "legacyMatches": 11,
     "insufficient": 1

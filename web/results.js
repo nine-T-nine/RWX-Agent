@@ -20,7 +20,8 @@ function renderKpis(data) {
   const host = document.querySelector("#results-kpis");
   if (!host) return;
   const scores = data.current.map((m) => m.scores.total);
-  const best = data.current.find((m) => m.id === data.overview.best.id);
+  // 最高分按当前账本现算：重跑后 overview.best 容易忘记同步，页面不该依赖它。
+  const best = data.current.reduce((top, m) => (m.scores.total > (top?.scores.total ?? -Infinity) ? m : top), null);
   const items = [
     [String(data.overview.currentMatches), "当前标准对局", "total-v1"],
     [scorePair(Math.max(...scores), 100, 2), "最高综合分", best ? best.title.split("·")[0].trim() : ""],
@@ -252,9 +253,13 @@ fetch(new URL("./resource/results.json", import.meta.url))
     renderGaps(data);
     renderMethod(data);
     if (standardLine) {
-      const params = data.standard.parameters?.ambush;
-      const ambush = params ? `；第二阶段偷袭上限 ${params.cap}、单次上限 ${params.singleMax}` : "";
-      standardLine.textContent = `${data.standard.total} = ${data.standard.stage1} × ${data.standard.weights.stage1} + ${data.standard.stage2} × ${data.standard.weights.stage2}${ambush}；更新于 ${data.generatedAt.slice(0, 10)}。`;
+      const caps = data.standard.parameters?.caps;
+      const ambush = data.standard.parameters?.ambush;
+      const capLine = caps
+        ? `；第二阶段各类上限 ${Object.entries(caps)
+          .map(([family, cap]) => `${STAGE2_SHORT[family] ?? family} ${cap}`).join(" / ")}`
+        : ambush ? `；第二阶段偷袭上限 ${ambush.cap}、单次上限 ${ambush.singleMax}` : "";
+      standardLine.textContent = `${data.standard.total} = ${data.standard.stage1} × ${data.standard.weights.stage1} + ${data.standard.stage2} × ${data.standard.weights.stage2}${capLine}；更新于 ${data.generatedAt.slice(0, 10)}。`;
     }
     document.documentElement.classList.add("results-ready");
   })
