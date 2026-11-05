@@ -53,9 +53,9 @@
         "atSeconds": 794.9
       },
       "scores": {
-        "total": 67.671,
+        "total": 64.671,
         "stage1": 70.5,
-        "stage2": 65.785
+        "stage2": 60.785
       },
       "metrics": {
         "nativeCommands": 169,
@@ -183,7 +183,7 @@
               "family": "AMBUSH",
               "raw": 2.715,
               "capped": 2.715,
-              "cap": 35,
+              "cap": 40,
               "events": 8,
               "detail": "8 次，累计加权冲击 22.0；最大一次扣 1.69 分（t=4:53，响应系数 1.00）"
             },
@@ -206,8 +206,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 154.076,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 27,
               "detail": "25 段可计分（最长 2:58）；另有 2 段证据不足、不扣分（合计 4:35）"
             },
@@ -215,7 +215,7 @@
               "family": "FACTORY_IDLE",
               "raw": 4.5,
               "capped": 4.5,
-              "cap": 15,
+              "cap": 20,
               "events": 30,
               "detail": "3 段可计分（最长 1:19）；另有 27 段证据不足、不扣分（合计 26:54）"
             },
@@ -223,7 +223,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 3,
               "detail": "3 段资金闲置，其中 1 段实际扣分；最长 354s，峰值 14218 资金"
             }
@@ -696,9 +696,9 @@
         "atSeconds": 1077.2
       },
       "scores": {
-        "total": 62.984,
+        "total": 59.984,
         "stage1": 56.5,
-        "stage2": 67.307
+        "stage2": 62.307
       },
       "metrics": {
         "nativeCommands": 458,
@@ -825,7 +825,7 @@
               "family": "AMBUSH",
               "raw": 0.215,
               "capped": 0.215,
-              "cap": 35,
+              "cap": 40,
               "events": 4,
               "detail": "4 次，累计加权冲击 7.6；最大一次扣 0.20 分（t=5:37，响应系数 1.00）"
             },
@@ -848,8 +848,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 169.693,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 29,
               "detail": "27 段可计分（最长 1:26）；另有 2 段证据不足、不扣分（合计 0:17）"
             },
@@ -857,7 +857,7 @@
               "family": "FACTORY_IDLE",
               "raw": 3.478,
               "capped": 3.478,
-              "cap": 15,
+              "cap": 20,
               "events": 18,
               "detail": "3 段可计分（最长 1:25）；另有 15 段证据不足、不扣分（合计 19:37）"
             },
@@ -865,7 +865,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 6,
               "detail": "6 段资金闲置，其中 1 段实际扣分；最长 986s，峰值 30297 资金"
             }
@@ -909,9 +909,9 @@
         "atSeconds": 1106.016
       },
       "scores": {
-        "total": 71.826,
+        "total": 68.826,
         "stage1": 62.9,
-        "stage2": 77.777
+        "stage2": 72.777
       },
       "metrics": {
         "nativeCommands": 446,
@@ -1042,7 +1042,7 @@
               "family": "AMBUSH",
               "raw": 0.056,
               "capped": 0.056,
-              "cap": 35,
+              "cap": 40,
               "events": 8,
               "detail": "8 次，累计加权冲击 11.3；最大一次扣 0.02 分（t=6:32，响应系数 1.00）"
             },
@@ -1065,8 +1065,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 67.481,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 26,
               "detail": "14 段可计分（最长 1:34）；另有 12 段证据不足、不扣分（合计 13:22）"
             },
@@ -1074,7 +1074,7 @@
               "family": "FACTORY_IDLE",
               "raw": 1.818,
               "capped": 1.818,
-              "cap": 15,
+              "cap": 20,
               "events": 24,
               "detail": "2 段可计分（最长 0:41）；另有 22 段证据不足、不扣分（合计 21:24）"
             },
@@ -1082,7 +1082,7 @@
               "family": "FUNDS",
               "raw": 0.349,
               "capped": 0.349,
-              "cap": 20,
+              "cap": 30,
               "events": 5,
               "detail": "5 段资金闲置，其中 1 段实际扣分；最长 117s，峰值 6827 资金"
             }
@@ -1126,9 +1126,9 @@
         "atSeconds": 670.848
       },
       "scores": {
-        "total": 69.217,
+        "total": 66.217,
         "stage1": 64.7,
-        "stage2": 72.228
+        "stage2": 67.228
       },
       "metrics": {
         "nativeCommands": 145,
@@ -1259,7 +1259,7 @@
               "family": "AMBUSH",
               "raw": 0.772,
               "capped": 0.772,
-              "cap": 35,
+              "cap": 40,
               "events": 8,
               "detail": "8 次，累计加权冲击 15.0；最大一次扣 0.51 分（t=5:05，响应系数 1.00）"
             },
@@ -1282,8 +1282,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 179.363,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 45,
               "detail": "28 段可计分（最长 2:18）；另有 17 段证据不足、不扣分（合计 25:55）"
             },
@@ -1291,7 +1291,7 @@
               "family": "FACTORY_IDLE",
               "raw": 0,
               "capped": 0,
-              "cap": 15,
+              "cap": 20,
               "events": 12,
               "detail": "12 段都缺「有活可干」的证据，按规则不扣（合计 14:35）"
             },
@@ -1299,7 +1299,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 2,
               "detail": "2 段资金闲置，其中 1 段实际扣分；最长 141s，峰值 6925 资金"
             }
@@ -1343,9 +1343,9 @@
         "atSeconds": 639.504
       },
       "scores": {
-        "total": 58.74,
+        "total": 55.74,
         "stage1": 67.3,
-        "stage2": 53.033
+        "stage2": 48.033
       },
       "metrics": {
         "nativeCommands": 351,
@@ -1475,7 +1475,7 @@
               "family": "AMBUSH",
               "raw": 9.364,
               "capped": 9.364,
-              "cap": 35,
+              "cap": 40,
               "events": 8,
               "detail": "8 次，累计加权冲击 23.8；最大一次扣 8.79 分（t=9:08，响应系数 1.00）"
             },
@@ -1498,8 +1498,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 136.516,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 37,
               "detail": "22 段可计分（最长 1:34）；另有 15 段证据不足、不扣分（合计 14:37）"
             },
@@ -1507,7 +1507,7 @@
               "family": "FACTORY_IDLE",
               "raw": 1.603,
               "capped": 1.603,
-              "cap": 15,
+              "cap": 20,
               "events": 13,
               "detail": "2 段可计分（最长 0:50）；另有 11 段证据不足、不扣分（合计 8:29）"
             },
@@ -1515,7 +1515,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 5,
               "detail": "5 段资金闲置，其中 1 段实际扣分；最长 193s，峰值 8895 资金"
             }
@@ -1559,9 +1559,9 @@
         "atSeconds": 768.928
       },
       "scores": {
-        "total": 67.536,
+        "total": 64.536,
         "stage1": 64.9,
-        "stage2": 69.293
+        "stage2": 64.293
       },
       "metrics": {
         "nativeCommands": 934,
@@ -1691,7 +1691,7 @@
               "family": "AMBUSH",
               "raw": 0.184,
               "capped": 0.184,
-              "cap": 35,
+              "cap": 40,
               "events": 8,
               "detail": "8 次，累计加权冲击 14.4；最大一次扣 0.13 分（t=7:16，响应系数 1.00）"
             },
@@ -1714,8 +1714,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 105.796,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 36,
               "detail": "21 段可计分（最长 0:48）；另有 15 段证据不足、不扣分（合计 11:25）"
             },
@@ -1723,7 +1723,7 @@
               "family": "FACTORY_IDLE",
               "raw": 3.523,
               "capped": 3.523,
-              "cap": 15,
+              "cap": 20,
               "events": 25,
               "detail": "3 段可计分（最长 1:11）；另有 22 段证据不足、不扣分（合计 15:02）"
             },
@@ -1731,7 +1731,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 1,
               "detail": "1 段资金闲置，其中 1 段实际扣分；最长 176.5s，峰值 13871 资金"
             }
@@ -1775,9 +1775,9 @@
         "atSeconds": 666.08
       },
       "scores": {
-        "total": 62.711,
+        "total": 59.711,
         "stage1": 68.7,
-        "stage2": 58.719
+        "stage2": 53.719
       },
       "metrics": {
         "nativeCommands": 297,
@@ -1908,7 +1908,7 @@
               "family": "AMBUSH",
               "raw": 0.437,
               "capped": 0.437,
-              "cap": 35,
+              "cap": 40,
               "events": 10,
               "detail": "10 次，累计加权冲击 16.4；最大一次扣 0.25 分（t=6:48，响应系数 1.00）"
             },
@@ -1931,8 +1931,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 75.907,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 17,
               "detail": "15 段可计分（最长 1:37）；另有 2 段证据不足、不扣分（合计 0:20）"
             },
@@ -1940,7 +1940,7 @@
               "family": "FACTORY_IDLE",
               "raw": 1.844,
               "capped": 1.844,
-              "cap": 15,
+              "cap": 20,
               "events": 34,
               "detail": "3 段可计分（最长 0:25）；另有 31 段证据不足、不扣分（合计 20:12）"
             },
@@ -1948,7 +1948,7 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 2,
               "detail": "2 段资金闲置，其中 1 段实际扣分；最长 288s，峰值 13779 资金"
             }
