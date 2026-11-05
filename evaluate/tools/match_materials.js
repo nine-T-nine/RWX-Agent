@@ -603,7 +603,7 @@ function buildMeta(entry, target, options = {}) {
       replay: replay ? {name: replay, originalName: original} : previous.materials?.replay ?? null,
       replayExport: exported ? path.relative(target, exported.file).replace(/\\/g, '/') : null,
       prepared: isDirectory(path.join(target, 'prepared')) ? 'prepared' : null,
-      stages: ['stage_1', 'stage_2'].filter(stage => isDirectory(path.join(target, stage))),
+      stages: ['stage_1', 'stage_2', 'stage_3'].filter(stage => isDirectory(path.join(target, stage))),
       score: isFile(path.join(target, 'score.json')) ? 'score.json' : null,
     },
     notes: previous.notes ?? [],

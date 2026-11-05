@@ -42,7 +42,9 @@ python evaluate/utils/evaluate_replay.py 'replays/<对局名>.replay' --team 0 -
 `engine/playback.json` 记录播放与输入校验，`replay/` 是自动解析的录像命令，`stage_2/` 是报告。
 `--commands` **必填**（脚本用它驱动第二轮）；`--dist` 可指定隔离构建，`--speed` 是原生 Replay 播放速度
 （默认 64，只改变回放耗时，采样仍用模拟时钟）。脚本不向 CLI 发送状态查询或游戏操作，Replay 结束后关闭独立进程，
-核对输入 SHA-256。
+核对输入 SHA-256。播放结束后脚本默认再用 [`tools/rebuild_telemetry.js`](tools/README.md) 把命令日志里的
+`command`/`result` 行和 native 归属合进播放证据：引擎重放只留"已接受"的命令，不补这一半会丢掉整类 STALE。
+原始播放文件保留为 `telemetry.engine.jsonl`，合并结果写成 `telemetry.jsonl`；`--no-rebuild` 只保留原始证据。
 
 已有引擎证据可以直接重复分析（同样必须带 commands 和 economy）：
 

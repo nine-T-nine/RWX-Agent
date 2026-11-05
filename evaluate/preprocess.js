@@ -96,12 +96,13 @@ const json = line => JSON.parse(line);
 async function scanTelemetry(file) {
   const readline = require('node:readline');
   const stat = {file, rows: 0, meta: null, end: null, lastFrameMs: null, lastMs: null, lastTick: null,
-    lastSeq: null, idleRows: 0, damageRows: 0, hpLossRows: 0, hpFieldRows: 0, nativeSources: {}};
+    lastSeq: null, idleRows: 0, damageRows: 0, hpLossRows: 0, hpFieldRows: 0,
+    stage3Meta: false, stage3Rows: 0, nativeSources: {}};
   if (!file || !fs.existsSync(file)) return stat;
   const stream = readline.createInterface({input: fs.createReadStream(file, 'utf8'), crlfDelay: Infinity});
   for await (const line of stream) {
     if (!line.startsWith('{"kind":"')) continue;
-    const kind = /^\{"kind":"([a-z_]+)"/.exec(line)?.[1];
+    const kind = /^\{"kind":"([a-z0-9_]+)"/.exec(line)?.[1];
     if (!kind) continue;
     stat.rows++;
     stat.lastMs = Number(/"timeMs":(\d+)/.exec(line)?.[1] ?? stat.lastMs);
@@ -110,6 +111,8 @@ async function scanTelemetry(file) {
     if (kind === 'meta') { try { stat.meta = json(line); } catch { /* keep scanning */ } }
     else if (kind === 'end') { try { stat.end = json(line); } catch { /* keep scanning */ } }
     else if (kind === 'frame') stat.lastFrameMs = stat.lastMs;
+    else if (kind === 'stage3_meta') { stat.stage3Meta = true; stat.stage3Rows++; }
+    else if (kind.startsWith('stage3_')) stat.stage3Rows++;
     else if (kind === 'idle') stat.idleRows++;
     else if (kind === 'damage') {
       stat.damageRows++;
@@ -131,7 +134,7 @@ function trimTelemetry(input, output, cutMs, end) {
     const stream = readline.createInterface({input: fs.createReadStream(input, 'utf8'), crlfDelay: Infinity});
     stream.on('line', line => {
       if (!line.startsWith('{"kind":"')) return;
-      const kind = /^\{"kind":"([a-z_]+)"/.exec(line)?.[1];
+      const kind = /^\{"kind":"([a-z0-9_]+)"/.exec(line)?.[1];
       if (kind === 'end') return;
       const timeMs = Number(/"timeMs":(\d+)/.exec(line)?.[1]);
       if (kind !== 'meta' && !(timeMs <= cutMs)) return;
@@ -287,6 +290,8 @@ async function preprocess(dir, options = {}) {
     damageRows: telemetry.damageRows,
     hpLossRows: telemetry.hpLossRows,
     hpFieldRows: telemetry.hpFieldRows,
+    stage3Meta: telemetry.stage3Meta,
+    stage3Rows: telemetry.stage3Rows,
     nativeSources: telemetry.nativeSources,
     missing: [],
   };

@@ -10,6 +10,9 @@ public abstract class UnitEventListener {
     /** Read-only occurrence notifications; implementations must not issue simulation commands. */
     public void damaged(BaseUnit unit, BaseUnit attacker) { }
     public void damaged(BaseUnit unit, BaseUnit attacker, float healthBefore) { damaged(unit, attacker); }
+    public void damaged(BaseUnit unit, BaseUnit attacker, float healthBefore, float shieldBefore) {
+        damaged(unit, attacker, healthBefore);
+    }
     public void removed(BaseUnit unit, BaseUnit attacker) { }
     public void info(BaseUnit unit, BaseUnit related, String phase) { }
 }

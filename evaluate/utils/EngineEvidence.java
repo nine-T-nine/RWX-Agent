@@ -31,6 +31,7 @@ public final class EngineEvidence extends UnitEventListener {
     private final PlayerTeam team;
     private final BufferedWriter output, economy;
     private final Path telemetryPath;
+    private final RwxStage3Evidence stage3;
     private final double radius;
     private final long regionHold;
     private final Map<Long, BaseUnit> monitored = new LinkedHashMap<>();
@@ -109,6 +110,7 @@ public final class EngineEvidence extends UnitEventListener {
                 "tierAlertLevel",com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxTier.active().alertLevel.id,
                 "tierSuggestions",com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxTier.active().suggestions,
                 "tierAgentMaySwitchAlerts",com.corrodinggames.rts.game.ai.custom.rwx_cli_tool.RwxTier.active().agentMaySwitchAlerts));
+        stage3=new RwxStage3Evidence(engine,team,radius,this::write);
         if(engine.replayEngine.j() && System.getProperty("rwx.evaluate.replaySpeed")!=null)
             engine.gameSpeed=Float.parseFloat(System.getProperty("rwx.evaluate.replaySpeed"));
         try {
@@ -155,7 +157,7 @@ public final class EngineEvidence extends UnitEventListener {
     }
     public static synchronized void close(String reason){
         EngineEvidence s=current;if(s==null)return;
-        try{s.flushIdles("EVIDENCE_END");s.write("end",data("reason",reason));s.output.flush();
+        try{s.stage3.close(reason);s.flushIdles("EVIDENCE_END");s.write("end",data("reason",reason));s.output.flush();
             if(s.economyColumn>0)s.economy.newLine();s.economy.close();s.output.close();
             trimTelemetry(s.telemetryPath);}
         catch(IOException error){System.err.println("Evaluation close failed: "+error);}
@@ -502,6 +504,7 @@ public final class EngineEvidence extends UnitEventListener {
             if(lastTime-a.created>=regionHold&&(friend||!enemy&&lastTime-a.hostile>=regionHold)){it.remove();signatures.remove(cacheKey);}
         }
         sample();write("frame",data());
+        stage3.frame();
     }
     private List<Map<String,Object>> nearby(float x,float y,long exclude){return nearby(x,y,exclude,false);}
     private List<Map<String,Object>> nearby(float x,float y,long exclude,boolean exact){
@@ -565,7 +568,14 @@ public final class EngineEvidence extends UnitEventListener {
     @Override public void damaged(BaseUnit victim,BaseUnit attacker,float healthBefore){
         recordDamage(victim,attacker,Math.max(0,Math.max(0,healthBefore)-Math.max(0,victim.currentHealth)));
     }
+    @Override public void damaged(BaseUnit victim,BaseUnit attacker,float healthBefore,float shieldBefore){
+        recordDamage(victim,attacker,Math.max(0,Math.max(0,healthBefore)-Math.max(0,victim.currentHealth)),
+                Math.max(0,Math.max(0,shieldBefore)-Math.max(0,victim.shield)));
+    }
     private void recordDamage(BaseUnit victim,BaseUnit attacker,Float hpLoss){
+        recordDamage(victim,attacker,hpLoss,null);
+    }
+    private void recordDamage(BaseUnit victim,BaseUnit attacker,Float hpLoss,Float shieldLoss){
         if(closed||!eligible(victim)||!eligible(attacker))return;
         try{
             // Keep sampling both sides briefly after a hit; the old Long.MAX_VALUE never expired and made
@@ -573,12 +583,16 @@ public final class EngineEvidence extends UnitEventListener {
             long until=engine.gameTimeMillis+POSITION_SAMPLE_MS;
             watched.put(victim.objectId,until);watched.put(attacker.objectId,until);
             // The damage row already embeds both snapshots, so no extra unit rows are forced here.
-            write("damage",data("victim",combatSnapshot(victim),"attacker",combatSnapshot(attacker),"hpLoss",hpLoss));
+            write("damage",data("victim",combatSnapshot(victim),"attacker",combatSnapshot(attacker),"hpLoss",hpLoss,
+                    "shieldLoss",shieldLoss));
+            if(hpLoss!=null&&shieldLoss!=null)stage3.damage(victim,attacker,
+                    Math.max(0,victim.currentHealth)+hpLoss,Math.max(0,victim.shield)+shieldLoss);
         }catch(IOException|RuntimeException e){fail(e);}
     }
     @Override public void removed(BaseUnit unit,BaseUnit killer){
         if(closed||!eligible(unit)||!removed.add(unit.objectId))return;
         try{
+            stage3.removed(unit,killer);
             Map<String,Object> dead=snapshot(unit,false);dead.put("alive",false);
             List<Map<String,Object>> near=unit.team==team?nearby(unit.posX,unit.posY,unit.objectId,true):List.of();
             deathTimes.put(unit.objectId,(long)engine.gameTimeMillis);deathSequences.put(unit.objectId,sequence+1);

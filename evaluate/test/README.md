@@ -1,13 +1,13 @@
 # 评估回归测试
 
-这里集中第一轮、第二轮与Replay解析器的回归测试。测试验证统计、评分、检测规则和数据读取正确性，不对真实 Agent 样本下结论，也不是对局结束后必须跑的评估步骤。两轮实际使用流程见[总README](../README.md)。
+这里集中三个阶段与Replay解析器的回归测试。测试验证统计、评分、检测规则和数据读取正确性，不对真实 Agent 样本下结论，也不是对局结束后必须跑的评估步骤。实际使用流程见[总README](../README.md)。
 
 ## 运行
 
 从仓库根目录执行，无需启动游戏，无需npm/pip依赖：
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js evaluate/test/test-paths.js evaluate/test/test-match-materials.js
+node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-stage3.js evaluate/test/test-stage3-baseline.js evaluate/test/test-stage3-details.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js evaluate/test/test-paths.js evaluate/test/test-match-materials.js evaluate/test/test-rebuild-telemetry.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -20,6 +20,9 @@ node --test evaluate/test/test-low-attribution.js
 node --test evaluate/test/test-events.js
 node --test evaluate/test/test-stage2-fixes.js
 node --test evaluate/test/test-score.js evaluate/test/test-score-evidence.js
+node --test evaluate/test/test-stage3.js
+node --test evaluate/test/test-stage3-baseline.js
+node --test evaluate/test/test-stage3-details.js
 node --test evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
 node --test evaluate/test/test-paths.js evaluate/test/test-match-materials.js
 python -m unittest discover -s evaluate/test -p 'test_*.py'
@@ -36,13 +39,17 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 | `test-stage2-fixes.js` | 第二轮回归：偷袭响应按空间关系而非 `kind` 判定、未来/同 tick 应用结果不提前计入、端口日志命令先于同刻记录注入、FEED 合并重算状态、工厂 task 与真实产出证明、严格10秒上界、`--commands`/`--economy` 必需性及经济序列核对、B-81 已死亡 builder 经 `--builder` 进入 STALE_COMMAND、拒绝请求分类/查询分离/与 STALE_COMMAND 去重、重复与已恢复重试的过滤、`actionable` 可扣分视图（timing/未证明/对象续用）、完整/截断/缺失结束标记 | 构造内存遥测；小报告写 `agent-tmp/` 临时目录并清理 |
 | `test-score.js` | 两阶段通用曲线原坐标计算、HP 损失和响应系数、过期时长分档、空闲独立曲线、资金平滑/折减/分段、分类封顶和覆盖配置、CLI 报告一致性 | 内存对象；临时报告写 `agent-tmp/` 并清理 |
 | `test-score-evidence.js` | B 端点整批工作连续可行性；区间中途缺钱/单位上限/动作不可用；建造落点与维修目标；HP 聚合、生效顺序与过期时间证据去重；空闲段的原生命令触碰排除与工厂"别处在排产"排除（指挥中心不计、类工厂按更宽集合） | 内存遥测；不启动引擎 |
+| `test-stage3.js` | 第三阶段缓冲门槛、截断排除、危险区漏斗、HP/护盾/警告/时长/造价公式、时长夹逼、绞肉机按首死亡锚点合并与 S0 provisional 标记 | 合成遥测与内存事件，不启动引擎 |
+| `test-stage3-baseline.js` | 第三阶段 `S0` 标定：只用证据完整且重放未分叉的局取 `S` 中位数、分叉局只列不进、空族保留占位值不除零、标定报告的中位数对应 `1-e^-1` 上限、缺报告不按 0 分、冻结 `S0` 给新批次打分（不重算中位数、来源记进 `calibration`）、聚合表与排除原因 | 合成 `stage_3/` 与 `resim/playback.json`，写系统临时目录并清理 |
+| `test-stage3-details.js` | 第三阶段逐条明细：`s`→份额按族扣分比例摊、`N`/`E`/`H`/`L`/`W`/`w`/`Tf` 各列、事件时间与单位、绞肉机合并事件与排除原因、分叉局标「排除」但仍列记录、没有 `stage_3` 的局跳过 | 合成 `stage_3/` 与 `resim/playback.json`，写系统临时目录并清理 |
 | `test-preprocess.js` | 结尾窗口判定（投降/退出/正常结束/截断/进程中止的优先级与取最早）、裁剪后 telemetry/commands/economy/replay 的一致性、合成 end 行与证据覆盖标注、材料收敛后的命令日志位置、`preprocess.json` 只留一份 | 合成小样本写系统临时目录 |
 | `test-paths.js` | 对局路径唯一入口：两种布局（散着/已收敛）都解析到同一个工作区、`prepared/` 输入不拼出第二层目录、`--out` 仍可改向、对局名清洗保留 `--` 与括号、共享/归档目录（`_archive`、`*_old`、`micro`）不算对局 | 临时目录 |
 | `test-match-materials.js` | 材料收敛：命令日志与引擎证据被移动而不是复制、外层重复副本被删除、回放改名成 `<对局名>.replay`、只留一份 `preprocess.json`、`meta.json` 的自动字段与人工覆盖、重复运行无副作用、`_old`/`micro` 不碰、只有回放的局不建目录、内容冲突只报告、`--archive` 把 `*_old` 收进 `_archive/` 且默认不动归档 | 临时目录，不碰真实 `evaluate/output/` |
+| `test-rebuild-telemetry.js` | 回放-only 材料重建：收据日志补 `command`/`result` 行、refs 带收据时刻的死亡时间、`frames` 压缩行展开、replay ordinal → native `source=agent`/`commandId` 归属、未命中 replay 的请求记为推断拒绝（`inferred:true`）而不是静默接受、晚于回放 `end` 的收据行被丢弃（不把游戏时钟写成倒走） | 合成 commands/Replay/telemetry，写系统临时目录并清理 |
 | `test-score-match.js` | 综合分 `0.4/0.6` 权重、版本门（旧版本默认拒算、显式放行后标记）、预处理否决时综合分为空 | 临时目录写两阶段 score.json |
 | `test_replay.py` | 按引擎写侧布局合成二进制，覆盖UTF/gzip、命令各字段、JSONL导出、文本过滤、截断/损坏容错、strict模式；对仓库录像检查布局无漂移、元数据与时间一致 | 合成Replay和输出放临时目录；只读仓库 `replays/*.replay`，真实样本较多时用时更长 |
 
-Node 用例覆盖两轮统计、评分、事件检测、预处理、路径解析与材料收敛；完整数量以实际输出为准。Python 既有基线为27项。样本要求：
+Node 用例覆盖三阶段统计、评分、事件检测、预处理、路径解析与材料收敛；完整数量以实际输出为准。Python 既有基线为27项。样本要求：
 
 - GPT映射回归依赖 `evaluate/output/` 中的对应原始commands与解析JSONL；目录不存在时skip，具体样本缺失时用例提前返回，因此不能仅凭总通过数认定真实GPT样本已验证。合成用例独立运行。
 - Python真实Replay回归在 `replays/` 不存在时skip；目录存在时要求至少一份样本，并对当前完整样本集设置命令总量和元数据断言。精简样本集可能不满足这些断言。

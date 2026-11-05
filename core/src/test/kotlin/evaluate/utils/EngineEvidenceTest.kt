@@ -119,6 +119,19 @@ class EngineEvidenceTest {
         } finally { unregister(victim); unregister(attacker) }
     }
 
+    @Test fun `damage hook carries actual shield loss into telemetry`() = withEvidence { _, team, tmp ->
+        val victim = register(team, 983); val attacker = register(team, 984)
+        try {
+            victim.maxHealth = 100f; victim.currentHealth = 100f
+            victim.unitEnergyMax = 50f; victim.shield = 50f; victim.energy = 0f
+            victim.applyDamage(attacker, 20f, null)
+            val damage = rows(tmp).single { it["kind"]!!.jsonPrimitive.content == "damage" }
+            assertEquals(0.0, damage["hpLoss"]!!.jsonPrimitive.double)
+            assertEquals(20.0, damage["shieldLoss"]!!.jsonPrimitive.double)
+            assertEquals(30f, victim.shield)
+        } finally { unregister(victim); unregister(attacker) }
+    }
+
     @Test fun `initial builder snapshot may read the transactional registry without stopping collection`() = withEvidence { engine, team, tmp ->
         EngineEvidence.close("new_fixture")
         val previous = Files.list(tmp).use { it.toList().toSet() }

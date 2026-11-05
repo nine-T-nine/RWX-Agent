@@ -8,7 +8,7 @@
 
 维护者自用的启动开关（沙盒大厅直达、指定界面、自动开局等）见 [`extra.md`](extra.md)，不面向被测 Agent。
 
-> 第一轮、第二轮评估所需材料、采集与分析逻辑、判定规则和评分公式分别集中在 [`STAGE1_SCORING.md`](STAGE1_SCORING.md) 与 [`STAGE2_SCORING.md`](STAGE2_SCORING.md)。本 README 不重复这些底层细节。
+> 三个阶段所需材料、采集与分析逻辑、判定规则和评分公式分别集中在 [`STAGE1_SCORING.md`](STAGE1_SCORING.md)、[`STAGE2_SCORING.md`](STAGE2_SCORING.md) 与 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。本 README 不重复这些底层细节。
 
 ## 选择完整对局场景
 
@@ -134,7 +134,7 @@ evaluate/output/
     events-live/<对局名>/          telemetry.jsonl + economy.log（`--evaluate` 采集）
     replay/                        Replay 解析产物（summary/txt/jsonl）
     prepared/                      预处理裁剪后的输入 + preprocess.json（评分只吃这一份）
-    stage_1/ stage_2/              两轮报告
+    stage_1/ stage_2/ stage_3/     三阶段报告
     score.json score.txt           综合分
   micro/                           微操评测，自己一套清理规则
 replays/<对局名>.replay
@@ -152,7 +152,7 @@ node evaluate/tools/match_materials.js --archive --apply # 顺带把根目录的
 
 它**移动而不是复制**：`evaluate/output/commands-*.txt` 和 `evaluate/output/events-live/*` 就地搬进对局目录；对局目录里已有同一份材料时删掉外面那份；回放改名成 `<对局名>.replay`。默认 dry-run，内容不一致时只报冲突，不替人挑一份删掉；`micro/` 与 `_archive/` 一律不碰，`--archive` 才移动 `*_old`。可以反复运行，第二次不会再有动作，只会刷新 `meta.json`。
 
-材料齐了之后每次评估结束都跑一次（在预处理之前；评分之后再跑一次，`materials` 里就会列出已经生成的 `stage_1/`、`stage_2/` 与 `score.json`）：
+材料齐了之后每次评估结束都跑一次（在预处理之前；评分之后再跑一次，`materials` 里就会列出已经生成的 `stage_1/`、`stage_2/`、`stage_3/` 与 `score.json`）：
 
 ```powershell
 node evaluate/tools/match_materials.js --apply
@@ -193,15 +193,19 @@ node evaluate/evaluate_stage_1.js "$m/prepared/commands-<对局名>.txt" "$m/pre
 node evaluate/evaluate_stage_2.js "$m/prepared/telemetry.jsonl" `
   --commands "$m/prepared/commands-<对局名>.txt" --economy "$m/prepared/economy.log" `
   --replay "$m/prepared/replay.jsonl" --out "$m/stage_2"
-node evaluate/score_stage_2.js "$m/stage_2"                         # 4 第二轮评分
-node evaluate/score_match.js "$m"                                   # 5 综合得分
-node evaluate/tools/match_materials.js --apply "$m"                 # 6 刷新 meta.json
+node evaluate/evaluate_stage_3.js "$m/prepared/telemetry.jsonl" --out "$m/stage_3"
+node evaluate/score_stage_2.js "$m/stage_2"                         # 4 第二阶段评分
+node evaluate/score_stage_3.js "$m/stage_3"                         # 5 第三阶段评分（S0 标定前为 provisional）
+node evaluate/score_match.js "$m"                                   # 6 现行公榜综合得分（仍只合成第一、二阶段）
+node evaluate/tools/match_materials.js --apply "$m"                 # 7 刷新 meta.json
 ```
 
-- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，两轮都只吃裁剪后的输入。记录只保留这一份，不再往对局根目录复制第二份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。
+- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，三个阶段都只吃裁剪后的输入。记录只保留这一份，不再往对局根目录复制第二份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。
 - 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，综合分留空。
-- 综合得分 `stage1*0.4 + stage2*0.6`，写在对局目录的 `score.json`。它只接受当前版本（`stage1-v2` / `stage2-v2`）；旧版本报告默认拒算，确需复算加 `--allow-stale`。
-- 两轮报告仍各自独立，综合分只用于横向比较；旧版本材料一律以 `_old` 后缀归档，不参与排名。
+- 现行公榜综合得分 `stage1*0.4 + stage2*0.6`，写在对局目录的 `score.json`。它只接受当前版本（`stage1-v2` / `stage2-v2`）；旧版本报告默认拒算，确需复算加 `--allow-stale`。
+- 第三阶段独立写 `stage_3/score.json`。设计尚未给综合权重，且两项 `S0` 仍待基线标定，所以不会被 `score_match.js` 静默混入公榜。
+- 归档局（`_archive/*_old`）录制时没有第三阶段行：用同一份回放加速重放补（`evaluate_replay.py --out <临时目录>`，把 `engine/match-*/telemetry.jsonl` 与 `economy.log` 放进 `<局>/resim/`，再跑 `evaluate_stage_3.js` + `score_stage_3.js`），原有 `stage_1/`、`stage_2/` 不动；窗口止于 `replay_end`、分叉与未完成回放的限制见 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。跑完用 `node evaluate/tools/stage3_baseline.js --write` 求 `S0` 中位数，各局多出 `stage_3/score.calibrated.json`。
+- 三阶段报告各自独立；旧版本材料一律以 `_old` 后缀归档，不参与排名。
 
 ## 管理员开局核对
 
@@ -218,6 +222,7 @@ rwx-game-replay-status
 
 - [第一轮：实时性材料、映射与评分规则](STAGE1_SCORING.md)
 - [第二轮：证据采集、事件判定与评分规则](STAGE2_SCORING.md)
+- [第三阶段：延迟严重程度、危险区与标定规则](STAGE3_SCORING.md)
 
 ## 结果发布
 

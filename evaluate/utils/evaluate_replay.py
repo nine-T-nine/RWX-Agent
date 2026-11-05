@@ -1,4 +1,4 @@
-"""Replay a real engine session, then run the second-round event evaluator (no CLI polling)."""
+"""Replay a real engine session, then rebuild the Stage-2 and Stage-3 event reports."""
 from __future__ import annotations
 import argparse
 import hashlib
@@ -37,6 +37,10 @@ def main() -> None:
     parser.add_argument("--timeout", type=int, default=600)
     parser.add_argument("--commands", type=Path, required=True)
     parser.add_argument("--jsonl", type=Path, help="Replay命令JSONL，省略时自动解析到对局replay目录")
+    parser.add_argument("--no-rebuild", action="store_true",
+                        help="保留播放原始 telemetry；默认会用命令日志重建 command/result 行")
+    parser.add_argument("--skip-stage2", action="store_true",
+                        help="只重建证据并生成第三阶段事件，不跑第二阶段（补第三阶段材料时用）")
     parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     replay = args.replay.resolve()
@@ -85,20 +89,39 @@ def main() -> None:
     node = shutil.which("node")
     if node is None:
         raise RuntimeError("Node.js is required")
-    command = [node, str(ROOT / "evaluate/evaluate_stage_2.js"), str(evidence), "--out", str(out / "stage_2"),
-               "--economy", str(evidence.parent / "economy.log")]
-    if args.commands:
-        command += ["--commands", str(args.commands.resolve()), "--replay", str(args.jsonl.resolve())]
-    if args.config:
-        command += ["--config", str(args.config.resolve())]
-    subprocess.run(command, cwd=ROOT, check=True)
+    rebuilt = False
+    if not args.no_rebuild:
+        # The engine replay only records commands that were already accepted, so the receipt-shaped
+        # half of a live capture (command/result rows, native attribution) has to be joined back from
+        # the original command log. The raw playback file is kept next to the merged one.
+        merged = evidence.parent / "telemetry.rebuilt.jsonl"
+        build_command = [node, str(ROOT / "evaluate/tools/rebuild_telemetry.js"),
+                         "--telemetry", str(evidence), "--commands", str(args.commands.resolve()),
+                         "--replay", str(args.jsonl.resolve()), "--out", str(merged),
+                         "--team", str(args.team)]
+        subprocess.run(build_command, cwd=ROOT, check=True,
+                       creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+        raw = evidence.parent / "telemetry.engine.jsonl"
+        evidence.rename(raw)
+        merged.rename(evidence)
+        rebuilt = True
+    if not args.skip_stage2:
+        command = [node, str(ROOT / "evaluate/evaluate_stage_2.js"), str(evidence), "--out", str(out / "stage_2"),
+                   "--economy", str(evidence.parent / "economy.log")]
+        if args.commands:
+            command += ["--commands", str(args.commands.resolve()), "--replay", str(args.jsonl.resolve())]
+        if args.config:
+            command += ["--config", str(args.config.resolve())]
+        subprocess.run(command, cwd=ROOT, check=True)
+    subprocess.run([node, str(ROOT / "evaluate/evaluate_stage_3.js"), str(evidence),
+                    "--out", str(out / "stage_3")], cwd=ROOT, check=True)
     after = digest(replay)
     if before != after:
         raise RuntimeError("Replay input changed during evaluation")
     playback = (engine_dir / "playback.log").read_text(encoding="utf-8", errors="replace")
     verification = {"replay": replay.name, "sha256": after, "unchanged": True,
                     "checksumWarnings": playback.count("checksums don't match"),
-                    "evidence": str(evidence.relative_to(out))}
+                    "evidence": str(evidence.relative_to(out)), "rebuilt": rebuilt}
     (engine_dir / "playback.json").write_text(json.dumps(verification, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(verification, ensure_ascii=False))
 

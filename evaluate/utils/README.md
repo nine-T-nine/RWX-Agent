@@ -1,12 +1,12 @@
 # 评估采集与 Replay 工具
 
-两轮目标、原始产物与完整运行顺序见[总 README](../README.md)，本文件集中说明工具接口、Replay格式及端口录制。所有命令从仓库根目录执行。
+三阶段目标、原始产物与完整运行顺序见[总 README](../README.md)，本文件集中说明工具接口、Replay格式及端口录制。所有命令从仓库根目录执行。
 
 | 工具 | 职责 |
 |---|---|
 | `replay.py`、`__init__.py` | 离线解析Replay，输出summary/TXT/JSONL，提供Python API |
-| `evaluate_replay.py` | 启动Java25 Headless真实重放、核验Replay、运行第二轮分析；必须传入同局commands |
-| `paths.js` | 对局路径的唯一入口：由对局目录/命令日志/裸名字解析出工作区，定位 `stage_1/`、`stage_2/` 与 `replays/<对局名>.replay`，并给出收敛后的规范文件名 |
+| `evaluate_replay.py` | 启动Java25 Headless真实重放、核验Replay、用命令日志重建 command/result 与原生归属，再生成第二、三阶段事件报告；必须传入同局commands |
+| `paths.js` | 对局路径的唯一入口：由对局目录/命令日志/裸名字解析出工作区，定位各 `stage_N/` 与 `replays/<对局名>.replay`，并给出收敛后的规范文件名 |
 | `CommandRecorder.java` | 在线记录CLI收包，只生成一份commands TXT；随core打包 |
 | `EngineEvidence.java` | 引擎内采集任务/队列/伤害/死亡/经济和命令关联；随core打包 |
 

@@ -1,6 +1,6 @@
 # 辅助工具
 
-这几个脚本不属于两轮评估流程本身：它们整理评测产物、批量复算、核对引擎口径或复盘 Agent 会话，按需手动运行。两轮评估的正式入口见[总 README](../README.md)。
+这几个脚本不属于三阶段评估流程本身：它们整理评测产物、批量复算、核对引擎口径或复盘 Agent 会话，按需手动运行。正式入口见[总 README](../README.md)。
 
 ## `match_materials.js` — 一局只留一个目录，并记录 `meta.json`
 
@@ -22,6 +22,55 @@ node evaluate/tools/match_materials.js --archive --apply  # 顺带把根目录�
 - 可以反复运行：第二次只剩刷新 `meta.json`。
 
 `meta.json` 记这一局的身份：系统版本（引擎版本 + git commit）、参与的模型与思考强度、工具情况、日期、地图配置、时长、胜负、关联会话、token 用量。能从材料读出来的自动填，读不出来留 `null` 并写来源；人工用 `--set key=value`（`model`/`provider`/`thinking`/`tool`/`session`/`tokens`/`outcome`/`note` 等短名字，或任意点号路径）或 `--meta <文件.json>` 补。
+
+## `rebuild_telemetry.js` — 把回放播放证据补成 live 形状
+
+`evaluate_replay.py` 默认会调用它。引擎重放只写"引擎实际接受了什么"；live telemetry 还有一半来自 CLI：每条请求的 `command` 收据、`result` 判决、native 行的 `source`/`commandId`。被拒请求不进 replay，所以这一半必须用同局命令日志补回来。
+
+```powershell
+node evaluate/tools/rebuild_telemetry.js --telemetry <播放telemetry> --commands <commands.txt> --replay <replay.jsonl> --out <merged.jsonl> [--started-at <iso>]
+```
+
+- 输入三份：播放 telemetry、命令收据日志、`replay.py` 解析出的 JSONL；输出一棵按游戏时钟排序、重排 `seq` 的 telemetry。
+- 插入 `command`/`result` 行（refs 带收据时刻的死亡时间），把与收据对上的 replay 命令的 native 行标成 `source=agent`/`commandId`；AI 那侧标 `engine`，没有收据的自动化保持 `replay_unknown`。
+- 判决分两档：命中 replay 的请求 `accepted=true`；收据时刻点名的对象**全部**已死/失踪的请求按引擎口径写 `STALE_OBJECT`（可证实）；其余未命中 replay 的操作请求写 `accepted=false` + `OTHER` + `inferred:true`（引擎没执行它，但收据日志没有回执，原因不可还原）；只有 JSONL 字段不足等真正未知的情况才留 `accepted=null`。
+- 压缩的 `frames` 行先展开成逐帧再插入，避免把一段压缩运行拆开。
+- 原始播放文件由 `evaluate_replay.py` 保留为 `telemetry.engine.jsonl`，合并结果写成 `telemetry.jsonl`，下游 `preprocess.js` / `evaluate_stage_2.js` / `evaluate_stage_3.js` 直接读取合并结果。
+- 收据日志里晚于回放 `end` 的请求（对局结束后继续轮询、退出）会被丢掉并计入 `meta.rebuilt.droppedAfterEnd`：那时已经没有引擎状态可判定，`preprocess` 本来也会把这段尾巴裁掉；不丢会让游戏时钟倒走、第二阶段直接拒读。
+
+## `stage3_baseline.js` — 求第三阶段 `S0` 并写标定后的报告
+
+两项饱和公式（偷袭、建筑炮击）的 `S0` 只能用基线 `S` 的中位数。这个脚本扫描已经算好的 `<局>/stage_3/`，重算并汇总：
+
+```powershell
+node evaluate/tools/stage3_baseline.js                    # 读 evaluate/output/_archive，只打印
+node evaluate/tools/stage3_baseline.js --write            # 顺带写各局 score.calibrated.json/.txt
+node evaluate/tools/stage3_baseline.js --match "<甲>" --match "<乙>" --out agent-tmp/x.json
+node evaluate/tools/stage3_baseline.js --s0 evaluate/output/_archive/_stage3-baseline.json `
+  --match "evaluate/output/<甲>" ... --out evaluate/output/_stage3-standard.json --write
+```
+
+- 只统计 `summary.complete=true` 且 `resim/playback.json.checksumWarnings=0` 的局；证据不全、重放分叉的局单独列出并写明原因，不参与中位数。
+- 某一族整批没有记录时保留占位 `S0=1` 并标 `fallback`，不会除以 0。
+- 聚合结果（各局 `S`、`N` 直方图、类型占比、危险区漏斗、标定后扣分与总分）写到 `--out` 的 JSON 和同名 `.md`，默认在 `_archive/` 下。
+- 标定后的报告仍写 `provisional:true` + `s0Source:"archive-median"`：归档语料模型/提示词不统一，只能当工作标定。
+- `--s0 <已有基线.json>` 冻结一组 S0（可直接传另一份 `_stage3-baseline.json`），给新一批局打分时不再重新标定；此时 `s0Source="fixed-baseline"`、`baseline.source` 记录来源，分数仍 `provisional`。
+- `--kind <名字>` 只改聚合里的 `baseline.kind/source` 标签（如 `standard-corpus`），`--title` 改报告标题。
+
+## `stage3_details.js` — 把第三阶段每一条记录的扣分明细摊开
+
+`stage3_baseline.js` 回答“每局多少分”，这个脚本回答“这些分是哪几条记录产生的”：读各局 `stage_3/score.calibrated.json`（没有就退回 `score.json`）与 `events.jsonl`，逐条列出 `L`/`W`/`w`/`Tf`/`s`、事件时间、单位/建筑类型、`N`、`E`/`H`，并把族扣分按 `s` 比例摊到每条（“份额”）。
+
+```powershell
+node evaluate/tools/stage3_details.js                       # 写 evaluate/output/_archive/_stage3-detail.md
+node evaluate/tools/stage3_details.js --note "说明"         # 报告头部追加一条说明
+node evaluate/tools/stage3_details.js --match "<甲>" --out agent-tmp/x.md
+```
+
+- 份额只是饱和函数的比例归因，不能当可加分数：`扣分 = P_max·(1−e^(−S/S0))` 是非线性的。
+- 绞肉机列出合并后的事件（区、首死亡、权重和、`age`、`B`、`L`）与每条被排除的建造者死亡原因。
+- 重放分叉（`resim/playback.json.checksumWarnings>0`）的局照样列，但表头标「排除」并写明不一致条数。
+- 没有 `stage_3` 的局直接跳过，不占位。
 
 ## `results_details.js` — 把逐项扣分证据写进网页账本
 
