@@ -238,7 +238,7 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--00-28__dsh4.1_tool1_vsHard_小坦克",
+      "match": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
       "displayName": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
       "configuration": {
         "map": "Ice Island (2p)",
@@ -452,7 +452,7 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--07-22__dsh4.1_tool1_vsHard",
+      "match": "Ice Island (2p) DSH MCPtool2 vs Hard",
       "displayName": "Ice Island (2p) DSH MCPtool2 vs Hard",
       "configuration": {
         "map": "Ice Island (2p)",
@@ -667,7 +667,7 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--09-29_dsh4.1_tool3_vsHard_重",
+      "match": "Ice Island (2p) DSH MCPtool3 vs Hard",
       "displayName": "Ice Island (2p) DSH MCPtool3 vs Hard",
       "configuration": {
         "map": "Ice Island (2p)",
@@ -880,7 +880,7 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261102--23-58_dsh4.1highvsHard_坚守",
+      "match": "Ice Island (2p) DSH 无tool基线",
       "displayName": "Ice Island (2p) DSH 无tool基线",
       "configuration": {
         "map": "Ice Island (2p)",
@@ -1097,7 +1097,7 @@
           ]
         }
       },
-      "match": "Fire-Bridge-(2p)-20261104--00-12_deepseek4.1flash_vsHard_opencodev2",
+      "match": "Fire Bridge (2p) opencode vs Hard",
       "displayName": "Fire Bridge (2p) opencode vs Hard",
       "configuration": {
         "map": "Fire Bridge (2p) ",
@@ -1314,7 +1314,7 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261104--11-01_dsh4.1flash_push_vsHard_tool_push_message",
+      "match": "Ice Island (2p) DSH push_tool vs Hard",
       "displayName": "Ice Island (2p) DSH push_tool vs Hard",
       "configuration": {
         "map": "Ice Island (2p)",
@@ -1530,7 +1530,7 @@
           ]
         }
       },
-      "match": "火山-(8p)-20261104--20-53_pi+deepseekv4.1flashx4vsVeryHard",
+      "match": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
       "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
       "configuration": {
         "map": "火山 (8p)",
@@ -1746,7 +1746,7 @@
           ]
         }
       },
-      "match": "火山-(8p)-20261104--21-15_Pi+deeepseekv4.1flashx4vsVeryHard_nomail",
+      "match": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
       "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
       "configuration": {
         "map": "火山 (8p)",
@@ -1963,7 +1963,7 @@
           ]
         }
       },
-      "match": "Volcano-(8p)-20261104--22-28_dsh+deepseekv4.1flashx4vsVeryHard_nomail",
+      "match": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
       "displayName": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
       "configuration": {
         "map": "Volcano (8p)",
