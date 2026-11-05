@@ -144,6 +144,18 @@ test('a failed high-level order still excludes the targeted builder',()=>{
   assert.equal(e.highLevelTouched.length,1);
   assert.equal(e.scoreable,false);
 });
+test('an accepted high-level order naming the builder is already exclusion evidence',()=>{
+  const row={...factory(),roles:['builder'],closeReason:'BUILD',
+    closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},
+    actions:{buildTurret:{kind:'build',type:'turret',cost:1000}},
+    feasibility:{complete:true,fromMs:0,toMs:60000,minFunds:5000,minCap:0,actions:{buildTurret:1000}}};
+  const events=[],s=new Session({schema:1,team:0,timeMs:0,X:160},[],{},e=>events.push(e));
+  const command={id:'accepted-build',timeMs:30000,seq:1,source:'agent',name:'rwx-game-order-build',
+    builders:[7],units:[],args:['--builder','7'],accepted:true,applications:[]};
+  s.consume({kind:'command',timeMs:30000,seq:1},command);s.consume(row);
+  assert.equal(events[0].status,'EXCLUDED');assert.equal(events[0].reason,'high_level_order_during_gap');
+  assert.equal(events[0].highLevelTouched.length,1);
+});
 test('a factory idle pair is dropped when any real factory was producing elsewhere',()=>{
   const land=(id,extra={})=>({id,type:'landFactory',factory:true,building:true,mobile:false,...extra});
   const units=[land(7),land(9),{id:3,type:'commandCenter',factory:true,building:true,mobile:false},

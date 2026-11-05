@@ -516,6 +516,9 @@ class IdleAssetDetector extends Detector {
     // engine later rejected it. Native rows only exist for accepted/executed requests, so they
     // cannot account for failed build/move orders. Keep only explicitly resolved ids: selectors
     // such as `all-army` do not prove that this particular builder was targeted.
+    // A high-level action that explicitly names this builder is itself evidence that the Agent
+    // considered the builder during the interval. Native rows are retained as an independent
+    // corroborating source, but no later application/result is required for this rule.
     if(directB(command)){
       const ids=[...(command.units||[]),...(command.builders||[])].map(Number).filter(Number.isFinite);
       for(const id of new Set(ids)){

@@ -228,13 +228,15 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
 **先于预筛选的排除规则**：`[A,B)` 内出现过任何**原生命令**涉及该资产 id，这一段直接 `EXCLUDED`
-（`reason=native_order_during_gap`），不进预筛选也不扣分。对建造者，另外只要高层行动指令已经明确点名该 id，
-即使请求最终失败、没有原生执行行，也直接 `EXCLUDED`（`reason=high_level_order_during_gap`）；这是为了不把“已经下令但引擎拒绝”误判成完全没操作。
-高层判据只读已解析的 `units`/`builders` id，`--units all-army` 之类的未解析选择器不证明这一个建造者被点名。计入的来源是 `agent`/`pending`/`keep`/`auto`：
+（`reason=native_order_during_gap`），不进预筛选也不扣分。对建造者，另外只要**高层行动指令自己明确点名**该 id，
+这一段就直接 `EXCLUDED`（`reason=high_level_order_during_gap`），不再要求等到底层执行行或应用结果——
+请求成功还是被拒都一样：点了名就说明 Agent 在这段时间里考虑过这个建造者。
+高层判据只读已解析的 `units`/`builders` id，`--units all-army` 之类的未解析选择器不证明这一个建造者被点名，
+回放推导出来的执行单位也不会反向扩展成高层目标。计入的来源是 `agent`/`pending`/`keep`/`auto`：
 keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，算它碰过；`engine`（自动维修及一切引擎自发命令）
 与 `replay_unknown`（回放期间写出的命令）不算。被拒请求不产生原生命令行，天然不计入。
 窗口是半开的 `[fromMs,toMs)`：关闭该区间的命令自己的原生命令行落在 `toMs`，不会把它结束的这段区间排除掉。
-排除事件仍保留 `durationMs` 与 `nativeTouched`，供审计。
+排除事件仍保留 `durationMs`、`nativeTouched` 与 `highLevelTouched`，供审计。
 
 **工厂空闲的额外排除（只对 E）**：`[fromMs,toMs)` 内只要有任意一条**真实工厂**的原生命令（来源同样只认
 `agent`/`pending`/`keep`/`auto`，不必是这条工厂自己），这段即 `EXCLUDED`，`reason=factory_production_elsewhere`，

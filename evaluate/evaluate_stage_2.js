@@ -94,7 +94,10 @@ function legacyCommands(index,commandsFile,replayFile) {
       applications.push({nativeId:native.nativeId,timeMs:after.timeMs,seq:after.seq,applied:after.results?.some(r=>r.applied===true)??null,
         results:after.results||[],replayLine:line});
     }
-    const builder=Number(h.args.builder),units=[...new Set([...explicit,...(Number.isInteger(builder)?[builder]:[]),...Object.keys(match?.operationsByUnit||{}).map(Number)])];
+    // Only explicit high-level selections are attribution evidence here. Replay-derived
+    // operationsByUnit belongs to the native execution matcher and must not broaden a high-level
+    // order to every unit that happened to execute around the same time.
+    const builder=Number(h.args.builder),units=[...new Set([...explicit,...(Number.isInteger(builder)?[builder]:[])])];
     return {id:`legacy-${h.line}`,seq:h.line,timeMs:Math.round(h.time*1000),timeUncertaintyMs:h.timeUncertainty*1000,
       source:'agent',name:h.name,raw:h.command,args:h.args,units,refs:[],applications,legacy:true,
       x:h.args.x==null?null:Number(h.args.x),y:h.args.y==null?null:Number(h.args.y),
