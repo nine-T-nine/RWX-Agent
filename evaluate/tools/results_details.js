@@ -25,7 +25,7 @@ const OUTPUT = path.join(ROOT, 'evaluate/output');
 
 /** results.json 的 `id` → 对局目录。新对局加进账本时在这里补一行，再跑本脚本。 */
 const DIRS = {
-  tool1: 'Ice Island (2p) DSH MCPtool1__use_fail vs Hard',
+  tool1: 'Ice Island (2p) DSH MCPtool1_use_fail vs Hard',
   tool2: 'Ice Island (2p) DSH MCPtool2 vs Hard',
   tool3: 'Ice Island (2p) DSH MCPtool3 vs Hard',
   'native-2358': 'Ice Island (2p) DSH 无tool基线',
