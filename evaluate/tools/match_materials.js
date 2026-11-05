@@ -581,6 +581,10 @@ function buildMeta(entry, target, options = {}) {
     },
     models: previous.models ?? [],
     tools: previous.tools ?? {profile: null, detail: null},
+    // 保留人工补充的评估索引字段；重复收敛材料不能把它们丢掉。
+    display_name: previous.display_name ?? null,
+    primarySession: previous.primarySession ?? null,
+    evaluation: previous.evaluation ?? null,
     map: {
       name: evidence?.map ?? previous.map?.name ?? null,
       file: exported?.mapFile ?? previous.map?.file ?? null,

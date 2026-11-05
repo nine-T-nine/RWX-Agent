@@ -293,12 +293,12 @@ node evaluate/score_stage_2.js "evaluate/output/<对局名>/stage_2"
 
 | 族 | 上限 | 单次上限 | 响应窗口 T | 死区 I0 | 满额 Ifull | γ | 人类 |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `AMBUSH` 偷袭 | 35 | 18 | 30 s | 1 | 12 | 3 | ⚠️ |
+| `AMBUSH` 偷袭 | 40 | 18 | 30 s | 1 | 12 | 3 | ⚠️ |
 | `GRINDER` 绞肉机 | 20 | 15 | 45 s | 3 | 18 | 1.5 | ❌ |
 | `STALE` 过期指令 | 15 | 逐条 `K` | — | — | — | — | ❌ |
-| `BUILDER_IDLE` 空闲建造者 | 20 | 8 | — | — | — | — | ❌ |
-| `FACTORY_IDLE` 空闲工厂 | 15 | 5 | — | — | — | — | ❌ |
-| `FUNDS` 资金空余 | 20 | 7 | — | — | — | — | ⚠️ |
+| `BUILDER_IDLE` 空闲建造者 | 25 | 8 | — | — | — | — | ❌ |
+| `FACTORY_IDLE` 空闲工厂 | 20 | 5 | — | — | — | — | ❌ |
+| `FUNDS` 资金空余 | 30 | 7 | — | — | — | — | ⚠️ |
 
 ### 5.2 A/B 实际 HP 损失与响应
 
@@ -342,12 +342,12 @@ AMBUSH 权重为单位 `1/2/3`、建筑 `2/4`；GRINDER 单位 `3/2/1`，草稿�
 
 | 类别 | c | 类别上限 | `f(d)`，d 为游戏秒 |
 |---|---:|---:|---|
-| `BUILDER_IDLE` | 8 | 20 | `[0,8]` 自然指数 `0→0.3`；`(8,25]` 线性 `0.3→0.75`；`(25,60]` 自然对数 `0.75→1`；`>60` 为 1 |
-| `FACTORY_IDLE` | 5 | 15 | `≤10` 为 0；`(10,30]` 线性 `0→0.3`；`(30,120]` 自然指数 `0.3→1`；`>120` 为 1 |
+| `BUILDER_IDLE` | 8 | 25 | `[0,8]` 自然指数 `0→0.3`；`(8,25]` 线性 `0.3→0.75`；`(25,60]` 自然对数 `0.75→1`；`>60` 为 1 |
+| `FACTORY_IDLE` | 5 | 20 | `≤10` 为 0；`(10,30]` 线性 `0→0.3`；`(30,120]` 自然指数 `0.3→1`；`>120` 为 1 |
 
 ### 5.5 F 资金空余
 
-上限 20，单区间 `7·f(d)`。对每秒资金做**居中 3 秒中值平滑**，边缘取可用样本的中位数。
+上限 30，单区间 `7·f(d)`。对每秒资金做**居中 3 秒中值平滑**，边缘取可用样本的中位数。
 阈值 `theta = K × 近30秒平均收入率`，默认 **K=30 秒**，不足 30 秒时使用已有样本。资金首次达到 theta 且 `>0` 时
 启动区间；`D` 按经过的游戏秒累计。
 
@@ -370,7 +370,7 @@ AMBUSH 权重为单位 `1/2/3`、建筑 `2/4`；GRINDER 单位 `3/2/1`，草稿�
 ```json
 {
   "weights": {"AMBUSH_SINGLE_MAX": 18, "GRINDER_SINGLE_MAX": 15, "BUILDER_IDLE_SINGLE_MAX": 8, "FACTORY_IDLE_SINGLE_MAX": 5, "FUNDS_SINGLE_MAX": 7},
-  "caps": {"AMBUSH": 35, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 20, "FACTORY_IDLE": 15, "FUNDS": 20},
+  "caps": {"AMBUSH": 40, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 25, "FACTORY_IDLE": 20, "FUNDS": 30},
   "ambush": {"responseSeconds": 30, "deadZone": 1, "fullImpact": 12, "gamma": 3},
   "grinder": {"responseSeconds": 45, "deadZone": 3, "fullImpact": 18, "gamma": 1.5},
   "hp": {"unitLow": 500, "unitMedium": 1500, "buildingLow": 2000},

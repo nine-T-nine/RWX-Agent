@@ -44,7 +44,7 @@ test('ambush dead zone, convex severity, effective response and category cap',()
   assert.equal(deduction(ambush({scoreable:false})).points,0);
   assert.equal(deduction(ambush({status:'UNCERTAIN'})).points,0);
   const score=scoreEvents([ambush({id:'a'}),ambush({id:'b'}),ambush({id:'c'})]);
-  assert.equal(score.breakdown[0].raw,54);assert.equal(score.deduction,35);assert.equal(score.total,65);
+  assert.equal(score.breakdown[0].raw,54);assert.equal(score.deduction,40);assert.equal(score.total,60);
 });
 test('grinder reverses unit weights and uses its own dead zone and response time',()=>{
   const row=extra=>event('GRINDER',{impactComplete:true,hpLosses:[loss(300,1800)],...extra});
@@ -79,7 +79,7 @@ test('idle curves have separate caps and score unproven endpoint work',()=>{
   assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'UNCERTAIN'})).points,5);
   assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'EXPLAINED'})).points,0);
   assert.equal(deduction(idle('FACTORY_IDLE',900,{status:'EXCLUDED'})).points,0);
-  assert.equal(scoreEvents(Array.from({length:8},(_,i)=>idle('FACTORY_IDLE',900,{id:String(i)}))).deduction,15);
+  assert.equal(scoreEvents(Array.from({length:8},(_,i)=>idle('FACTORY_IDLE',900,{id:String(i)}))).deduction,20);
 });
 test('funds intervals use elapsed time, median smoothing and the 15/120 second curve',()=>{
   assert.equal(fundsEvents(economy(121))[0].durationSeconds,120);
@@ -105,7 +105,7 @@ test('full releases and falling below threshold split funds intervals',()=>{
 test('caps, config and unknown or missing evidence remain auditable',()=>{
   const score=scoreEvents([ambush(),event('UNKNOWN')],{weights:{AMBUSH_SINGLE_MAX:7},caps:{AMBUSH:5}});
   assert.equal(score.breakdown[0].raw,7);assert.equal(score.deduction,5);
-  assert.equal(DEFAULTS.weights.AMBUSH_SINGLE_MAX,18);assert.equal(DEFAULTS.caps.AMBUSH,35);
+  assert.equal(DEFAULTS.weights.AMBUSH_SINGLE_MAX,18);assert.equal(DEFAULTS.caps.AMBUSH,40);
   assert.equal(score.excluded.UNKNOWN,1);assert.equal(score.excluded.FUNDS_EVIDENCE_MISSING,1);
   assert.throws(()=>scoreEvents([],{ambush:{fullImpact:1}}));
 });

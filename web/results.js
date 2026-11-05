@@ -1,6 +1,7 @@
 /* Render the evaluation ledger from resource/results.json. */
 const fmt = (v, digits = 1) => (typeof v === "number" ? v.toFixed(digits) : "—");
 const fmtTotal = (v) => (typeof v === "number" ? v.toFixed(2) : "—");
+const scorePair = (v, cap = 100, digits = 1) => (typeof v === "number" ? `${v.toFixed(digits)}/${cap}` : "—");
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const duration = (seconds) => {
   if (typeof seconds !== "number") return "—";
@@ -22,8 +23,8 @@ function renderKpis(data) {
   const best = data.current.find((m) => m.id === data.overview.best.id);
   const items = [
     [String(data.overview.currentMatches), "当前标准对局", "total-v1"],
-    [fmtTotal(Math.max(...scores)), "最高综合分", best ? best.title.split("·")[0].trim() : ""],
-    [fmtTotal(scores.reduce((a, b) => a + b, 0) / scores.length), "当前标准均分",
+    [scorePair(Math.max(...scores), 100, 2), "最高综合分", best ? best.title.split("·")[0].trim() : ""],
+    [scorePair(scores.reduce((a, b) => a + b, 0) / scores.length, 100, 2), "当前标准均分",
       `${data.overview.currentMatches} 局`],
     [String(data.overview.legacyMatches), "历史归档对局", "仅作参考"],
   ];
@@ -39,16 +40,17 @@ function renderCurrent(data) {
     .slice()
     .sort((a, b) => b.scores.total - a.scores.total)
     .map((m) => `<tr>
-      <td><span class="tier-dot tier-${tier(m.scores.total)}"></span><b>${fmtTotal(m.scores.total)}</b></td>
+      <td><span class="tier-dot tier-${tier(m.scores.total)}"></span><b>${scorePair(m.scores.total, 100, 2)}</b></td>
       <td><b>${esc(m.title)}</b><span class="cell-sub">${esc(m.tool)}</span></td>
       <td>${esc(m.agent.model)}<span class="cell-sub">推理强度 ${esc(m.agent.reasoning)} · ${esc(m.agent.provider)}</span></td>
+      <td><b>${esc(m.configuration?.map || m.map)}</b><span class="cell-sub">${esc(m.configuration?.ai || m.opponent)}</span><span class="cell-sub">有效 ${duration(m.configuration?.durationSeconds ?? m.metrics?.durationSeconds)} · 游戏 ${duration(m.configuration?.gameSeconds)}</span></td>
       <td>${esc(m.date)}<span class="cell-sub">${esc(sessionShort(m.session))}</span></td>
       <td>${badge(m.result)}<span class="cell-sub">${esc(m.result.detail)}</span></td>
-      <td>${fmt(m.scores.stage1)} / ${fmt(m.scores.stage2)}</td>
+      <td>${scorePair(m.scores.stage1)} / ${scorePair(m.scores.stage2)}</td>
       <td><a class="row-link" href="#match-${esc(m.id)}" aria-label="查看 ${esc(m.title)} 的逐项扣分">明细</a></td>
     </tr>`)
     .join("");
-  table.innerHTML = `<thead><tr><th scope="col">综合分</th><th scope="col">工具</th><th scope="col">模型</th><th scope="col">对局</th><th scope="col">结局</th><th scope="col">第一 / 第二阶段</th><th scope="col">明细</th></tr></thead><tbody>${rows}</tbody>`;
+  table.innerHTML = `<thead><tr><th scope="col">综合分</th><th scope="col">对局显示名 / 工具</th><th scope="col">模型</th><th scope="col">地图配置</th><th scope="col">对局</th><th scope="col">结局</th><th scope="col">第一 / 第二阶段</th><th scope="col">明细</th></tr></thead><tbody>${rows}</tbody>`;
 }
 
 const FAMILY_LABEL = { AMBUSH: "偷袭", GRINDER: "绞肉机", STALE: "指令过期", BUILDER_IDLE: "建造者闲置", FACTORY_IDLE: "工厂闲置", FUNDS: "资金闲置" };
@@ -79,7 +81,7 @@ const STAGE2_SHORT = {
 
 function matrixCell(points, cap, tip) {
   const hit = points > 0 && points >= cap - 1e-9;
-  const text = points > 0 ? fmt(points, 2) : "·";
+  const text = `${fmt(points, 2)}/${cap}`;
   return `<td class="matrix-cell${points > 0 ? " is-hit" : ""}${hit ? " is-capped" : ""}" title="${esc(tip)}">${text}</td>`;
 }
 
@@ -125,12 +127,12 @@ function renderMatrix(data) {
       <th scope="row" class="match-col">
         <span class="matrix-rank">${String(index + 1).padStart(2, "0")}</span>
         <span class="matrix-title">${esc(m.title)}</span>
-        <span class="matrix-sub">${esc(m.date)} · ${esc(m.map)}</span>
+        <span class="matrix-sub">${esc(m.date)} · ${esc(m.configuration?.map || m.map)} · ${esc(m.configuration?.ai || m.opponent)} · ${duration(m.configuration?.durationSeconds ?? m.metrics?.durationSeconds)}</span>
       </th>
       ${cells1}${cells2}
-      <td class="matrix-total">${fmt(m.breakdown.stage1.deduction, 1)}</td>
-      <td class="matrix-total">${fmt(m.breakdown.stage2.deduction, 1)}</td>
-      <td class="matrix-grand">${fmtTotal(m.scores.total)}</td>
+      <td class="matrix-total">${scorePair(m.breakdown.stage1.deduction, 100, 1)}</td>
+      <td class="matrix-total">${scorePair(m.breakdown.stage2.deduction, 100, 1)}</td>
+      <td class="matrix-grand">${scorePair(m.scores.total, 100, 2)}</td>
     </tr>`;
   }).join("");
 

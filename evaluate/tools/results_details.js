@@ -25,15 +25,15 @@ const OUTPUT = path.join(ROOT, 'evaluate/output');
 
 /** results.json 的 `id` → 对局目录。新对局加进账本时在这里补一行，再跑本脚本。 */
 const DIRS = {
-  tool1: 'Ice-Island-(2p)-20261103--00-28__dsh4.1_tool1_vsHard_小坦克',
-  tool2: 'Ice-Island-(2p)-20261103--07-22__dsh4.1_tool1_vsHard',
-  tool3: 'Ice-Island-(2p)-20261103--09-29_dsh4.1_tool3_vsHard_重',
-  'native-2358': 'Ice-Island-(2p)-20261102--23-58_dsh4.1highvsHard_坚守',
-  'firebridge-opencode': 'Fire-Bridge-(2p)-20261104--00-12_deepseek4.1flash_vsHard_opencodev2',
-  'dsh-push': 'Ice-Island-(2p)-20261104--11-01_dsh4.1flash_push_vsHard_tool_push_message',
-  'team8p-pi-mail': '火山-(8p)-20261104--20-53_pi+deepseekv4.1flashx4vsVeryHard',
-  'team8p-pi-nomail': '火山-(8p)-20261104--21-15_Pi+deeepseekv4.1flashx4vsVeryHard_nomail',
-  'team8p-dsh-nomail': 'Volcano-(8p)-20261104--22-28_dsh+deepseekv4.1flashx4vsVeryHard_nomail',
+  tool1: 'Ice Island (2p) DSH MCPtool1__use_fail vs Hard',
+  tool2: 'Ice Island (2p) DSH MCPtool2 vs Hard',
+  tool3: 'Ice Island (2p) DSH MCPtool3 vs Hard',
+  'native-2358': 'Ice Island (2p) DSH 无tool基线',
+  'firebridge-opencode': 'Fire Bridge (2p) opencode vs Hard',
+  'dsh-push': 'Ice Island (2p) DSH push_tool vs Hard',
+  'team8p-pi-mail': '火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信',
+  'team8p-pi-nomail': '火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信',
+  'team8p-dsh-nomail': '火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信',
 };
 
 const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
@@ -121,8 +121,8 @@ function stage2Detail(family, score) {
 
 /** 第二阶段 6 类事件的展示顺序与上限；某一局没有该类事件时补 0，页面才能逐项对齐。 */
 const FAMILIES = [
-  ['AMBUSH', 35], ['GRINDER', 20], ['STALE', 15],
-  ['BUILDER_IDLE', 20], ['FACTORY_IDLE', 15], ['FUNDS', 20],
+  ['AMBUSH', 40], ['GRINDER', 20], ['STALE', 15],
+  ['BUILDER_IDLE', 25], ['FACTORY_IDLE', 20], ['FUNDS', 30],
 ];
 
 function detailsFor(match) {
@@ -162,7 +162,7 @@ function main(argv) {
   const problems = [];
   let changed = 0;
   for (const entry of ledger.current) {
-    const dir = entry.match ?? DIRS[entry.id];
+    const dir = DIRS[entry.id] ?? entry.match;
     if (!dir) { problems.push(`${entry.id}: 没有对局目录映射`); continue; }
     const base = path.join(OUTPUT, dir);
     if (!fs.existsSync(path.join(base, 'stage_1/score.json'))) {
@@ -189,7 +189,6 @@ function main(argv) {
     entry.breakdown.stage2.families = details.stage2;
     if (beforeStage1 !== JSON.stringify(entry.metrics.stage1Items)) changed++;
     if (beforeStage2 !== JSON.stringify(entry.breakdown.stage2.families)) changed++;
-    entry.match = dir;
   }
 
   if (problems.length) {

@@ -32,7 +32,7 @@
   "current": [
     {
       "id": "tool1",
-      "title": "tool1 · 原始 DSH 工具",
+      "title": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
       "tool": "pwsh + RWX CLI",
       "toolDetail": "MCP 桥接未注册，全部指令经 pwsh 批量执行 rwx-* 命令（81 次调用）",
       "mcp": false,
@@ -230,11 +230,23 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--00-28__dsh4.1_tool1_vsHard_小坦克"
+      "match": "Ice-Island-(2p)-20261103--00-28__dsh4.1_tool1_vsHard_小坦克",
+      "displayName": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
+      "configuration": {
+        "map": "Ice Island (2p)",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 786.928,
+        "gameSeconds": 801.1,
+        "ending": "normal",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "tool2",
-      "title": "tool2 · MCP 桥接第二版",
+      "title": "Ice Island (2p) DSH MCPtool2 vs Hard",
       "tool": "mcp__rwx__*（rwx_step 为主）",
       "toolDetail": "64 次 rwx_step / 5 次 rwx_query / 3 次 rwx_status，仅 14 次 pwsh 用于开局与收尾",
       "mcp": true,
@@ -255,9 +267,9 @@
         "atSeconds": 735.6
       },
       "scores": {
-        "total": 61.608,
+        "total": 58.608,
         "stage1": 66.4,
-        "stage2": 58.414
+        "stage2": 53.414
       },
       "metrics": {
         "nativeCommands": 125,
@@ -385,7 +397,7 @@
               "family": "AMBUSH",
               "raw": 11.586,
               "capped": 11.586,
-              "cap": 35,
+              "cap": 40,
               "events": 4,
               "detail": "4 次，累计加权冲击 15.0；最大一次扣 11.18 分（t=7:54，响应系数 1.00）"
             },
@@ -408,8 +420,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 90.345,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 14,
               "detail": "12 段可计分（最长 4:01）；另有 2 段证据不足、不扣分（合计 2:56）"
             },
@@ -417,7 +429,7 @@
               "family": "FACTORY_IDLE",
               "raw": 3,
               "capped": 3,
-              "cap": 15,
+              "cap": 20,
               "events": 18,
               "detail": "3 段可计分（最长 0:42）；另有 15 段证据不足、不扣分（合计 17:49）"
             },
@@ -425,18 +437,30 @@
               "family": "FUNDS",
               "raw": 7,
               "capped": 7,
-              "cap": 20,
+              "cap": 30,
               "events": 4,
               "detail": "4 段资金闲置，其中 1 段实际扣分；最长 350s，峰值 12954 资金"
             }
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--07-22__dsh4.1_tool1_vsHard"
+      "match": "Ice-Island-(2p)-20261103--07-22__dsh4.1_tool1_vsHard",
+      "displayName": "Ice Island (2p) DSH MCPtool2 vs Hard",
+      "configuration": {
+        "map": "Ice Island (2p)",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 729.728,
+        "gameSeconds": 741.7,
+        "ending": "normal",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "tool3",
-      "title": "tool3 · MCP 桥接第三版",
+      "title": "Ice Island (2p) DSH MCPtool3 vs Hard",
       "tool": "mcp__rwx__*（rwx_step 为主）",
       "toolDetail": "117 次 rwx_step / 13 次 rwx_query / 2 次 rwx_status，仅 3 次 pwsh",
       "mcp": true,
@@ -457,9 +481,9 @@
         "atSeconds": 1197.6
       },
       "scores": {
-        "total": 74.264,
+        "total": 71.264,
         "stage1": 67.2,
-        "stage2": 78.973
+        "stage2": 73.973
       },
       "metrics": {
         "nativeCommands": 353,
@@ -588,7 +612,7 @@
               "family": "AMBUSH",
               "raw": 1.027,
               "capped": 1.027,
-              "cap": 35,
+              "cap": 40,
               "events": 11,
               "detail": "11 次，累计加权冲击 22.6；最大一次扣 0.78 分（t=18:17，响应系数 1.00）"
             },
@@ -611,8 +635,8 @@
             {
               "family": "BUILDER_IDLE",
               "raw": 246.514,
-              "capped": 20,
-              "cap": 20,
+              "capped": 25,
+              "cap": 25,
               "events": 76,
               "detail": "41 段可计分（最长 3:01）；另有 35 段证据不足、不扣分（合计 47:21）"
             },
@@ -620,7 +644,7 @@
               "family": "FACTORY_IDLE",
               "raw": 0,
               "capped": 0,
-              "cap": 15,
+              "cap": 20,
               "events": 31,
               "detail": "31 段都缺「有活可干」的证据，按规则不扣（合计 37:30）"
             },
@@ -628,18 +652,30 @@
               "family": "FUNDS",
               "raw": 0,
               "capped": 0,
-              "cap": 20,
+              "cap": 30,
               "events": 2,
               "detail": "2 段资金闲置，其中 0 段实际扣分；最长 109s，峰值 7080 资金"
             }
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261103--09-29_dsh4.1_tool3_vsHard_重"
+      "match": "Ice-Island-(2p)-20261103--09-29_dsh4.1_tool3_vsHard_重",
+      "displayName": "Ice Island (2p) DSH MCPtool3 vs Hard",
+      "configuration": {
+        "map": "Ice Island (2p)",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 1197.632,
+        "gameSeconds": 1227.5,
+        "ending": "surrender",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "native-2358",
-      "title": "基线 · 无 MCP（更早一局）",
+      "title": "Ice Island (2p) DSH 无tool基线",
       "tool": "pwsh + RWX CLI",
       "toolDetail": "109 次 pwsh 批量调用，MCP 尚未接入",
       "mcp": false,
@@ -836,11 +872,23 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261102--23-58_dsh4.1highvsHard_坚守"
+      "match": "Ice-Island-(2p)-20261102--23-58_dsh4.1highvsHard_坚守",
+      "displayName": "Ice Island (2p) DSH 无tool基线",
+      "configuration": {
+        "map": "Ice Island (2p)",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 1070.816,
+        "gameSeconds": 1080.7,
+        "ending": "normal",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "firebridge-opencode",
-      "title": "Fire Bridge · opencode CLI",
+      "title": "Fire Bridge (2p) opencode vs Hard",
       "tool": "pwsh + RWX CLI",
       "toolDetail": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册",
       "mcp": false,
@@ -1041,11 +1089,23 @@
           ]
         }
       },
-      "match": "Fire-Bridge-(2p)-20261104--00-12_deepseek4.1flash_vsHard_opencodev2"
+      "match": "Fire-Bridge-(2p)-20261104--00-12_deepseek4.1flash_vsHard_opencodev2",
+      "displayName": "Fire Bridge (2p) opencode vs Hard",
+      "configuration": {
+        "map": "Fire Bridge (2p) ",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 1106.016,
+        "gameSeconds": 1193.3,
+        "ending": "normal",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "dsh-push",
-      "title": "Ice Island · push 注入（L2）",
+      "title": "Ice Island (2p) DSH push_tool vs Hard",
       "tool": "mcp__rwx__*（rwx_step 为主）+ 推送插件",
       "toolDetail": "51 次 rwx_step / 7 次 rwx_query / 1 次 rwx_status / 1 次 rwx_observe；30 条 [RWX-PUSH] 注入",
       "mcp": true,
@@ -1246,11 +1306,23 @@
           ]
         }
       },
-      "match": "Ice-Island-(2p)-20261104--11-01_dsh4.1flash_push_vsHard_tool_push_message"
+      "match": "Ice-Island-(2p)-20261104--11-01_dsh4.1flash_push_vsHard_tool_push_message",
+      "displayName": "Ice Island (2p) DSH push_tool vs Hard",
+      "configuration": {
+        "map": "Ice Island (2p)",
+        "ai": "AI - Hard · x2 收入",
+        "durationSeconds": 670.848,
+        "gameSeconds": 724.4,
+        "ending": "surrender",
+        "teams": [
+          "0=Player",
+          "1=AI - Hard"
+        ]
+      }
     },
     {
       "id": "team8p-pi-mail",
-      "title": "Pi 四会话 · 同队开工（邮件）",
+      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
       "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
       "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不经 --session，警报游标共享；协作靠 agent-tmp/mail.md 信箱（本局启用 mail）",
       "mcp": false,
@@ -1450,11 +1522,23 @@
           ]
         }
       },
-      "match": "火山-(8p)-20261104--20-53_pi+deepseekv4.1flashx4vsVeryHard"
+      "match": "火山-(8p)-20261104--20-53_pi+deepseekv4.1flashx4vsVeryHard",
+      "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
+      "configuration": {
+        "map": "火山 (8p)",
+        "ai": "AI - Very Hard · x2 收入",
+        "durationSeconds": 639.504,
+        "gameSeconds": 649.8,
+        "ending": "normal",
+        "teams": [
+          "4=Player",
+          "5=AI - Very Hard"
+        ]
+      }
     },
     {
       "id": "team8p-pi-nomail",
-      "title": "Pi 四会话 · 同队开工（无邮件）",
+      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
       "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
       "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；部分调用带 --session pi / op-c；本局关闭 mail.md 信箱（nomail）",
       "mcp": false,
@@ -1654,11 +1738,23 @@
           ]
         }
       },
-      "match": "火山-(8p)-20261104--21-15_Pi+deeepseekv4.1flashx4vsVeryHard_nomail"
+      "match": "火山-(8p)-20261104--21-15_Pi+deeepseekv4.1flashx4vsVeryHard_nomail",
+      "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
+      "configuration": {
+        "map": "火山 (8p)",
+        "ai": "AI - Very Hard · x2 收入",
+        "durationSeconds": 768.928,
+        "gameSeconds": 790.2,
+        "ending": "surrender",
+        "teams": [
+          "4=Player",
+          "5=AI - Very Hard"
+        ]
+      }
     },
     {
       "id": "team8p-dsh-nomail",
-      "title": "DSH 四会话 · 同队开工（无邮件）",
+      "title": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
       "tool": "DSH 4 会话（pwsh 调 rwx-cli.py，无 MCP）",
       "toolDetail": "四个 DSH 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不带 --session，全部指令经 pwsh 批量执行 rwx-* 命令；本局关闭 mail 信箱（nomail）",
       "mcp": false,
@@ -1859,7 +1955,20 @@
           ]
         }
       },
-      "match": "Volcano-(8p)-20261104--22-28_dsh+deepseekv4.1flashx4vsVeryHard_nomail"
+      "match": "Volcano-(8p)-20261104--22-28_dsh+deepseekv4.1flashx4vsVeryHard_nomail",
+      "displayName": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
+      "configuration": {
+        "map": "Volcano (8p)",
+        "ai": "AI - Hard ×2 · x2 收入",
+        "durationSeconds": 666.08,
+        "gameSeconds": 681.6,
+        "ending": "normal",
+        "teams": [
+          "4=Player",
+          "5=AI - Hard",
+          "7=AI - Hard"
+        ]
+      }
     }
   ],
   "legacy": [

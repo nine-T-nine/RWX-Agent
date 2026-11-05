@@ -71,7 +71,9 @@ agent-tmp/
 **/__pycache__/
 mods/*
 logs/*
+
 evaluate/output/*
+
 
 # JVM 构建产物兜底：编译输出与 Kotlin 元数据不入库
 *.class

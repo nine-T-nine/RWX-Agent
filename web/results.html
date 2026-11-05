@@ -46,10 +46,10 @@
         <h2>当前标准下的全部对局</h2>
         <p>下列对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”；每局 18 个扣分项在下面的「扣分明细总表」里横向展开，最后一列可以直接跳到该局那一行。</p>
       </div>
-      <p class="callout"><b>同图可比的三局：</b>同一模型、同一地图（Ice Island (2p)，对手 Hard，x2 收入）下，tool3 74.26 &gt; tool1 67.67 &gt; tool2 61.61。差距几乎都来自第二阶段（资源与工厂利用率），第一阶段 tool3 反而不如 tool1；每臂只有 1 局，提示词也不只差接口，所以这 12.7 分不能全部归因给 MCP。其余对局换了地图、对手或交付方式，只作单局记录。</p>
+      <p class="callout"><b>同图可比的三局：</b>同一模型、同一地图（Ice Island (2p)，对手 Hard，x2 收入）下，MCPtool3 71.26 &gt; MCPtool1（无 MCP）67.67 &gt; MCPtool2 58.61。差距主要来自第二阶段（资源与工厂利用率）；每臂只有 1 局，提示词也不只差接口，所以分差不能全部归因给 MCP。其余对局换了地图、对手或交付方式，只作单局记录。</p>
       <div class="table-wrap">
         <table class="data-table" id="current-table">
-          <caption>按综合分排序；结局一列是游戏内结果，不参与计分。</caption>
+          <caption>按综合分排序；分数采用“得分/满分”格式；地图配置列展示地图、AI 难度、经济倍率与有效时长；结局一列是游戏内结果，不参与计分。</caption>
         </table>
       </div>
     </section>
@@ -58,7 +58,7 @@
       <div class="section-heading"><span class="section-index">02 / DEDUCTION MATRIX</span><span class="section-kicker">横向比较 · 悬浮看证据</span></div>
       <div class="results-heading">
         <h2>扣分明细总表</h2>
-        <p>一张表看全部对局：每一行是一局，左侧固定列是对局标识，右侧 18 列依次是第一阶段 12 项与第二阶段 6 类。格子里只写扣分，<b>鼠标悬浮</b>才显示该项在本局的证据、上限与原始值；深色底表示达到该项上限，0 记作 ·。表下方的「合计」给出两阶段扣分与综合分。</p>
+        <p>一张表看全部对局：每一行是一局，左侧固定列是对局标识，右侧 18 列依次是第一阶段 12 项与第二阶段 6 类。格子采用“扣分/上限”格式，<b>鼠标悬浮</b>可看该项在本局的证据与原始值；深色底表示达到该项上限。表下方的「合计」同样显示扣分/上限与综合分。</p>
       </div>
       <div class="matrix-wrap" id="match-matrix" aria-live="polite"></div>
       <noscript><p class="callout">扣分明细由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
