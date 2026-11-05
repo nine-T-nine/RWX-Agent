@@ -100,7 +100,11 @@ function legacyCommands(index,commandsFile,replayFile) {
       x:h.args.x==null?null:Number(h.args.x),y:h.args.y==null?null:Number(h.args.y),
       targetId:h.args.target==null?null:Number(h.args.target),accepted:null,matchStatus:match?.status??null};
   }).sort((a,b)=>a.timeMs-b.timeMs||a.seq-b.seq);
-  index.meta.commandCoverage={start:commands[0]?.timeMs??Infinity,end:commands.at(-1)?.timeMs??-Infinity};
+  // The receipt log is the complete command source for the evaluated run.  Its first/last
+  // timestamps describe the observed span only; absence of a row outside that span means that
+  // no command was issued, not that command evidence is missing.
+  index.meta.commandCoverage={start:0,end:Infinity,
+    observedStart:commands[0]?.timeMs??null,observedEnd:commands.at(-1)?.timeMs??null,complete:true};
   index.meta.legacyCommands=path.resolve(commandsFile);
   index.meta.commandCoverage.end+=commands.at(-1)?.timeUncertaintyMs||0;
   return commands;

@@ -3,7 +3,7 @@
 The curves mirror `evaluate/scoring-curves.js` exactly (same endpoint interpolation and the
 same output clamp), so a micro score reads the same way as the full-match Stage1/Stage2 scores:
 
-* `exp`/`log` keep the natural shape between both endpoints in the original x coordinates;
+* `exp`/`log` are solved in the translated forms `y=exp(x-a)+b` and `y=log(x-a)+b` through both endpoints;
 * `quadratic` takes the given `a` and solves `b`/`c` from the two endpoints, then clamps the
   result into `[min(y0,y1), max(y0,y1)]`;
 * x outside the segment is clamped to the endpoint value (so "below lo" means y0, "above hi"
@@ -34,12 +34,23 @@ def curve(x, lo, hi, y0, y1, kind="linear", a=0.0):
         return min(max(y0, y1), max(min(y0, y1), raw))
     value = lo + (hi - lo) * u
     if kind == "exp":
-        v = (math.exp(value - hi) - math.exp(lo - hi)) / (-math.expm1(lo - hi))
-    elif kind == "log":
-        v = math.log(value / lo) / math.log(hi / lo)
-    else:
-        v = u
-    return y0 + (y1 - y0) * v
+        # Solve both endpoints for y = exp(x-a) + b.
+        delta = y1 - y0
+        q = math.exp(hi - lo)
+        exp_lo = delta / (q - 1.0)
+        shift = lo - math.log(exp_lo)
+        offset = y0 - exp_lo
+        return math.exp(value - shift) + offset
+    if kind == "log":
+        # Solve both endpoints for y = log(x-a) + b; the segment must stay in x > a.
+        delta = y1 - y0
+        if not (delta > 0.0 and lo > 0.0 and hi > lo):
+            return y0 + (y1 - y0) * u
+        ratio = math.exp(delta)
+        shift = (ratio * lo - hi) / (ratio - 1.0)
+        offset = y0 - math.log(lo - shift)
+        return math.log(value - shift) + offset
+    return y0 + (y1 - y0) * u
 
 
 def piecewise(x, segments, missing=0.0):

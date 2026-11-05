@@ -552,14 +552,13 @@ function idleCase(coverageEnd,fromMs=5000,toMs=60000) {
   session.now=toMs;session.finish();
   return events.find(e=>e.type==='FACTORY_IDLE');
 }
-test('a covered prefix keeps its diagnostics and scores the covered duration',()=>{
-  // The Agent process exits before the engine does, so the command log stops at 20 s while the
-  // factory stays idle to 60 s. Only the covered prefix is scored; the rest is reported as observed.
+test('an evidence-ended idle segment is excluded rather than scored as an unknown prefix',()=>{
+  // The command log is complete: its last command timestamp is not a coverage boundary. An idle
+  // segment flushed by evidence end is therefore excluded instead of being charged on a prefix.
   const e=idleCase(20_000);
-  assert.ok(e);assert.equal(e.status,'UNCERTAIN');assert.equal(e.t_end,20_000);
-  assert.equal(e.durationMs,15_000);assert.equal(e.observedDurationMs,55_000);
-  assert.equal(e.durationIsLowerBound,true);assert.equal(e.scoreable,true);
-  assert.ok(deduction(e).points>0);
-  // A log that ends before the idle even starts still produces the pair, with no covered prefix.
-  assert.equal(idleCase(1_000).status,'UNCERTAIN');
+  assert.ok(e);assert.equal(e.status,'EXCLUDED');assert.equal(e.reason,'evidence_ended_with_idle');
+  assert.equal(e.t_end,60_000);assert.equal(e.durationMs,55_000);
+  assert.equal(e.observedDurationMs,55_000);assert.equal(e.durationIsLowerBound,false);
+  assert.equal(e.scoreable,false);assert.equal(deduction(e).points,0);
+  assert.equal(idleCase(1_000).reason,'evidence_ended_with_idle');
 });

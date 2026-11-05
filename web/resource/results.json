@@ -53,9 +53,9 @@
         "atSeconds": 794.9
       },
       "scores": {
-        "total": 64.671,
+        "total": 79.931,
         "stage1": 70.5,
-        "stage2": 60.785
+        "stage2": 86.219
       },
       "metrics": {
         "nativeCommands": 169,
@@ -205,19 +205,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 154.076,
-              "capped": 25,
+              "raw": 2.566,
+              "capped": 2.566,
               "cap": 25,
               "events": 27,
-              "detail": "25 段可计分（最长 2:58）；另有 2 段证据不足、不扣分（合计 4:35）"
+              "detail": "1 段可计分（最长 0:09）；另有 26 段证据不足、不扣分（合计 23:49）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 4.5,
-              "capped": 4.5,
+              "raw": 1.5,
+              "capped": 1.5,
               "cap": 20,
               "events": 30,
-              "detail": "3 段可计分（最长 1:19）；另有 27 段证据不足、不扣分（合计 26:54）"
+              "detail": "1 段可计分（最长 0:30）；另有 29 段证据不足、不扣分（合计 29:01）"
             },
             {
               "family": "FUNDS",
@@ -267,9 +267,9 @@
         "atSeconds": 735.6
       },
       "scores": {
-        "total": 58.608,
+        "total": 74.934,
         "stage1": 66.4,
-        "stage2": 53.414
+        "stage2": 80.623
       },
       "metrics": {
         "nativeCommands": 125,
@@ -395,11 +395,11 @@
           "families": [
             {
               "family": "AMBUSH",
-              "raw": 11.586,
-              "capped": 11.586,
+              "raw": 11.669,
+              "capped": 11.669,
               "cap": 40,
               "events": 4,
-              "detail": "4 次，累计加权冲击 15.0；最大一次扣 11.18 分（t=7:54，响应系数 1.00）"
+              "detail": "4 次，累计加权冲击 17.8；最大一次扣 11.18 分（t=7:54，响应系数 1.00）"
             },
             {
               "family": "GRINDER",
@@ -419,19 +419,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 90.345,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 14,
-              "detail": "12 段可计分（最长 4:01）；另有 2 段证据不足、不扣分（合计 2:56）"
+              "detail": "14 段都缺「有活可干」的证据，按规则不扣（合计 18:47）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 3,
-              "capped": 3,
+              "raw": 0.708,
+              "capped": 0.708,
               "cap": 20,
               "events": 18,
-              "detail": "3 段可计分（最长 0:42）；另有 15 段证据不足、不扣分（合计 17:49）"
+              "detail": "1 段可计分（最长 0:19）；另有 17 段证据不足、不扣分（合计 19:13）"
             },
             {
               "family": "FUNDS",
@@ -481,9 +481,9 @@
         "atSeconds": 1197.6
       },
       "scores": {
-        "total": 71.264,
+        "total": 84.6,
         "stage1": 67.2,
-        "stage2": 73.973
+        "stage2": 96.2
       },
       "metrics": {
         "nativeCommands": 353,
@@ -634,11 +634,11 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 246.514,
-              "capped": 25,
+              "raw": 2.773,
+              "capped": 2.773,
               "cap": 25,
               "events": 76,
-              "detail": "41 段可计分（最长 3:01）；另有 35 段证据不足、不扣分（合计 47:21）"
+              "detail": "1 段可计分（最长 0:10）；另有 75 段证据不足、不扣分（合计 81:41）"
             },
             {
               "family": "FACTORY_IDLE",
@@ -696,9 +696,9 @@
         "atSeconds": 1077.2
       },
       "scores": {
-        "total": 59.984,
+        "total": 76.784,
         "stage1": 56.5,
-        "stage2": 62.307
+        "stage2": 90.307
       },
       "metrics": {
         "nativeCommands": 458,
@@ -847,19 +847,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 169.693,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 29,
-              "detail": "27 段可计分（最长 1:26）；另有 2 段证据不足、不扣分（合计 0:17）"
+              "detail": "29 段都缺「有活可干」的证据，按规则不扣（合计 18:15）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 3.478,
-              "capped": 3.478,
+              "raw": 0.478,
+              "capped": 0.478,
               "cap": 20,
               "events": 18,
-              "detail": "3 段可计分（最长 1:25）；另有 15 段证据不足、不扣分（合计 19:37）"
+              "detail": "1 段可计分（最长 0:16）；另有 17 段证据不足、不扣分（合计 21:32）"
             },
             {
               "family": "FUNDS",
@@ -909,9 +909,9 @@
         "atSeconds": 1106.016
       },
       "scores": {
-        "total": 68.826,
+        "total": 84.726,
         "stage1": 62.9,
-        "stage2": 72.777
+        "stage2": 99.277
       },
       "metrics": {
         "nativeCommands": 446,
@@ -1064,19 +1064,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 67.481,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 26,
-              "detail": "14 段可计分（最长 1:34）；另有 12 段证据不足、不扣分（合计 13:22）"
+              "detail": "26 段都缺「有活可干」的证据，按规则不扣（合计 21:23）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 1.818,
-              "capped": 1.818,
+              "raw": 0.318,
+              "capped": 0.318,
               "cap": 20,
               "events": 24,
-              "detail": "2 段可计分（最长 0:41）；另有 22 段证据不足、不扣分（合计 21:24）"
+              "detail": "1 段可计分（最长 0:14）；另有 23 段证据不足、不扣分（合计 22:05）"
             },
             {
               "family": "FUNDS",
@@ -1126,9 +1126,9 @@
         "atSeconds": 670.848
       },
       "scores": {
-        "total": 66.217,
+        "total": 81.217,
         "stage1": 64.7,
-        "stage2": 67.228
+        "stage2": 92.228
       },
       "metrics": {
         "nativeCommands": 145,
@@ -1281,11 +1281,11 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 179.363,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 45,
-              "detail": "28 段可计分（最长 2:18）；另有 17 段证据不足、不扣分（合计 25:55）"
+              "detail": "45 段都缺「有活可干」的证据，按规则不扣（合计 47:25）"
             },
             {
               "family": "FACTORY_IDLE",
@@ -1343,9 +1343,9 @@
         "atSeconds": 639.504
       },
       "scores": {
-        "total": 55.74,
+        "total": 71.64,
         "stage1": 67.3,
-        "stage2": 48.033
+        "stage2": 74.533
       },
       "metrics": {
         "nativeCommands": 351,
@@ -1497,19 +1497,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 136.516,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 37,
-              "detail": "22 段可计分（最长 1:34）；另有 15 段证据不足、不扣分（合计 14:37）"
+              "detail": "37 段都缺「有活可干」的证据，按规则不扣（合计 28:47）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 1.603,
-              "capped": 1.603,
+              "raw": 0.103,
+              "capped": 0.103,
               "cap": 20,
               "events": 13,
-              "detail": "2 段可计分（最长 0:50）；另有 11 段证据不足、不扣分（合计 8:29）"
+              "detail": "1 段可计分（最长 0:11）；另有 12 段证据不足、不扣分（合计 9:20）"
             },
             {
               "family": "FUNDS",
@@ -1559,9 +1559,9 @@
         "atSeconds": 768.928
       },
       "scores": {
-        "total": 64.536,
+        "total": 81.65,
         "stage1": 64.9,
-        "stage2": 64.293
+        "stage2": 92.816
       },
       "metrics": {
         "nativeCommands": 934,
@@ -1713,19 +1713,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 105.796,
-              "capped": 25,
+              "raw": 0,
+              "capped": 0,
               "cap": 25,
               "events": 36,
-              "detail": "21 段可计分（最长 0:48）；另有 15 段证据不足、不扣分（合计 11:25）"
+              "detail": "36 段都缺「有活可干」的证据，按规则不扣（合计 19:56）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 3.523,
-              "capped": 3.523,
+              "raw": 0,
+              "capped": 0,
               "cap": 20,
               "events": 25,
-              "detail": "3 段可计分（最长 1:11）；另有 22 段证据不足、不扣分（合计 15:02）"
+              "detail": "25 段都缺「有活可干」的证据，按规则不扣（合计 17:11）"
             },
             {
               "family": "FUNDS",
@@ -1775,9 +1775,9 @@
         "atSeconds": 666.08
       },
       "scores": {
-        "total": 59.711,
+        "total": 72.856,
         "stage1": 68.7,
-        "stage2": 53.719
+        "stage2": 75.627
       },
       "metrics": {
         "nativeCommands": 297,
@@ -1930,19 +1930,19 @@
             },
             {
               "family": "BUILDER_IDLE",
-              "raw": 75.907,
-              "capped": 25,
+              "raw": 4.936,
+              "capped": 4.936,
               "cap": 25,
               "events": 17,
-              "detail": "15 段可计分（最长 1:37）；另有 2 段证据不足、不扣分（合计 0:20）"
+              "detail": "2 段可计分（最长 0:14）；另有 15 段证据不足、不扣分（合计 6:36）"
             },
             {
               "family": "FACTORY_IDLE",
-              "raw": 1.844,
-              "capped": 1.844,
+              "raw": 0,
+              "capped": 0,
               "cap": 20,
               "events": 34,
-              "detail": "3 段可计分（最长 0:25）；另有 31 段证据不足、不扣分（合计 20:12）"
+              "detail": "34 段都缺「有活可干」的证据，按规则不扣（合计 21:07）"
             },
             {
               "family": "FUNDS",

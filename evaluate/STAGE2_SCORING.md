@@ -228,8 +228,9 @@ status：命令覆盖不全 → `UNCERTAIN`；知情 → `EXPLAINED`（知道还
 已证明由自动化/待发队列下发或在区间前安排的工作为 `EXPLAINED`。
 
 **先于预筛选的排除规则**：`[A,B)` 内出现过任何**原生命令**涉及该资产 id，这一段直接 `EXCLUDED`
-（`reason=native_order_during_gap`），不进预筛选也不扣分。判据只读原生命令行的 `units`（已解析的单位 id），
-不读高层请求，因此 `--units all-army` 之类的选择器不需要额外解释。计入的来源是 `agent`/`pending`/`keep`/`auto`：
+（`reason=native_order_during_gap`），不进预筛选也不扣分。对建造者，另外只要高层行动指令已经明确点名该 id，
+即使请求最终失败、没有原生执行行，也直接 `EXCLUDED`（`reason=high_level_order_during_gap`）；这是为了不把“已经下令但引擎拒绝”误判成完全没操作。
+高层判据只读已解析的 `units`/`builders` id，`--units all-army` 之类的未解析选择器不证明这一个建造者被点名。计入的来源是 `agent`/`pending`/`keep`/`auto`：
 keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，算它碰过；`engine`（自动维修及一切引擎自发命令）
 与 `replay_unknown`（回放期间写出的命令）不算。被拒请求不产生原生命令行，天然不计入。
 窗口是半开的 `[fromMs,toMs)`：关闭该区间的命令自己的原生命令行落在 `toMs`，不会把它结束的这段区间排除掉。
@@ -240,17 +241,19 @@ keep-set 补产与 `AiAutomate` 都是 Agent 自己的配置在替它执行，�
 命中明细写进 `factoryProduction`。真实工厂指 `factory=true` 的**建筑**；**指挥中心的 id 不参与匹配**——
 它只负责补产建造者，算进来会让整局的工厂空闲全部免责。类工厂单位（鹦鹉螺号、航空母舰、飞行堡垒这类
 `factory=true` 且可移动的单位）的空闲段用更宽的集合：真实工厂 id 或类工厂 id 任一命中都排除。
-建造者空闲仍只按它自己那个 id 的原生命令判断。
+建造者空闲的高层补充判据只针对建造者；工厂仍只按原生命令生产活动判断。
 
 **其余边界**：
 
 - 采集器维护交集与最小值，即使单位任务未变化也每 tick 检查，不额外逐 tick 写完整动作菜单。
 - 当前采集器**尚不生成任意建造落点的全区间证明**；建造落点仅在 B 合法不能替代历史证明，因此这类建造空闲记为
   `continuous_placement_unavailable` 的 `UNCERTAIN`，**照常按 D 曲线计分**——只有 `valid:false` 的落点证明才会降为 `EXPLAINED`。
-- 死亡、证据结束或纯移动关闭的区间同样计分（按已覆盖时长）。历史日志只有两端资金时也按 `UNCERTAIN` 计分。
-- 命令日志早于 B 结束时仍输出已覆盖前缀的 `durationMs`，完整观测时长写 `observedDurationMs`，
-  并设 `durationIsLowerBound=true`；此时 `reason=endpoint_outside_command_coverage`，**按已覆盖前缀的时长计分**。
-  完整覆盖且有 `keep-set` 规则时为 `EXPLAINED`。
+- 因死亡、移动或其他非 BUILD/REPAIR 任务关闭的建造者区间，没有可核验的建造端点，直接 `EXCLUDED`
+  （`reason=no_build_or_repair_endpoint`）；证据结束时仍未结束的空闲段也直接 `EXCLUDED`
+  （`reason=evidence_ended_with_idle`），不把残局/证据尾部当成 Agent 闲置扣分。
+- 命令日志是完整的 Agent 指令源：首条/末条命令的时间戳只是日志中实际有命令的范围，不是命令证据覆盖边界。
+  因而区间内没有命令就表示该区间没有命令，不再生成 `CLI_command_coverage_unavailable` 或
+  `endpoint_outside_command_coverage`。
 - `DETECTED` 与 `UNCERTAIN` 的工厂/建造者都计分，`idleScoreBuilders` 默认 true，可显式关闭。
 - `tier`（<10s / 10–60s / ≥60s）只作描述，不再阻止短建造者区间按曲线计分。
 - `agentState` 的 `SILENT/OBSERVING/BUSY_ELSEWHERE` 只说明当时在做什么，不改变判定。

@@ -12,7 +12,8 @@ const economy=(n,funds=5000)=>Array.from({length:n},(_,second)=>({second,funds,i
 test('natural functions and quadratics use original x coordinates and interpolate endpoints',()=>{
   assert.equal(curve(8,0,8,0,.3,'exp'),.3);
   assert.ok(Math.abs(curve(4,0,8,0,.3,'exp')-.3*(Math.exp(4)-1)/(Math.exp(8)-1))<1e-12);
-  assert.ok(Math.abs(curve(40,25,60,.75,1,'log')-(.75+.25*Math.log(40/25)/Math.log(60/25)))<1e-12);
+  const logA=(Math.exp(.25)*25-60)/(Math.exp(.25)-1),logB=.75-Math.log(25-logA);
+  assert.ok(Math.abs(curve(40,25,60,.75,1,'log')-(Math.log(40-logA)+logB))<1e-12);
   // y=-2x²+15.25x+6, clipped to the deduction cap. The specified a causes an interior maximum.
   assert.equal(curve(0,0,8,6,0,'quadratic',-2),6);
   assert.equal(curve(4,0,8,6,0,'quadratic',-2),6);
@@ -66,7 +67,7 @@ test('stale commands charge each known age once with strict age bands and type w
 });
 test('idle curves have separate caps and score unproven endpoint work',()=>{
   const idle=(type,seconds,extra={})=>event(type,{durationMs:seconds*1000,feasibility:{throughout:true},...extra});
-  assert.equal(deduction(idle('BUILDER_IDLE',8)).points,2.4);
+  assert.ok(Math.abs(deduction(idle('BUILDER_IDLE',8)).points-2.4)<1e-12);
   assert.equal(deduction(idle('BUILDER_IDLE',25)).points,6);
   assert.equal(deduction(idle('BUILDER_IDLE',60)).points,8);
   assert.equal(deduction(idle('FACTORY_IDLE',10)).points,0);

@@ -450,7 +450,7 @@ const TOUCH_SOURCES=new Set(['agent','pending','keep','auto']);
  * no interpretation here.</p>
  */
 class IdleAssetDetector extends Detector {
-  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();this.touched=new Map();this.activity=[];}
+  constructor(s){super(s);this.keep=new Map();this.endpoints=new Map();this.touched=new Map();this.highLevelTouched=new Map();this.activity=[];}
   /**
    * Class of a unit id seen in a native row. `factory` is a building that produces units, `factory_like`
    * is a mobile producer (carrier / nautilus / flying fortress). The command centre is its own class so
@@ -512,6 +512,18 @@ class IdleAssetDetector extends Detector {
   }
   command(command){
     const name=String(command.name||'');
+    // A high-level action is evidence that the Agent tried to use the asset even when the
+    // engine later rejected it. Native rows only exist for accepted/executed requests, so they
+    // cannot account for failed build/move orders. Keep only explicitly resolved ids: selectors
+    // such as `all-army` do not prove that this particular builder was targeted.
+    if(directB(command)){
+      const ids=[...(command.units||[]),...(command.builders||[])].map(Number).filter(Number.isFinite);
+      for(const id of new Set(ids)){
+        const at={timeMs:command.timeMs,timeUncertaintyMs:command.timeUncertaintyMs||0,
+          operation:operation(command),commandId:command.id,source:command.source,accepted:command.accepted??null};
+        const list=this.highLevelTouched.get(id);if(list)list.push(at);else this.highLevelTouched.set(id,[at]);
+      }
+    }
     if(name==='rwx-game-keep-set'){
       const unit=Number(argsObject(command).unit);
       if(Number.isInteger(unit))this.keep.set(unit,{timeMs:command.timeMs,action:argsObject(command).action??null});
@@ -536,17 +548,17 @@ class IdleAssetDetector extends Detector {
     const ref=factory&&row.closeAction?{action:row.closeAction,...row.actions?.[row.closeAction],source:'endpoint'}
       :row.closeTask?{...row.closeTask,source:'endpoint'}:null;
     const durationMs=Number(row.durationMs??(Number(row.toMs)-Number(row.fromMs)));
-    // The command log can end before the telemetry does (the Agent process exited, quota ran out).
-    // Retain covered duration for diagnostics. The score still requires B inside command coverage.
-    const coverageEnd=this.s.commandCoverage?.end??-Infinity;
-    const coveredTo=Math.min(Number(row.toMs),coverageEnd);
-    const coverage=coveredTo>=Number(row.fromMs)&&this.s.covers(row.fromMs,coveredTo);
-    const judgedEnd=coverage?coveredTo:Number(row.toMs);
-    const judgedMs=coverage?coveredTo-Number(row.fromMs):durationMs;
+    // The supplied command log is complete: its first/last timestamps are not an evidence
+    // boundary. A missing command in any interval therefore means no command was issued there.
+    const coverage=true;
+    const judgedEnd=Number(row.toMs);
+    const judgedMs=durationMs;
     // Half-open window: the order that closed the pair has its own native row at toMs and must not
     // exclude the pair it ends. A touch is positive evidence on its own, so it outranks coverage.
     const touched=(this.touched.get(Number(row.unitId))||[])
       .filter(at=>at.timeMs>=Number(row.fromMs)&&at.timeMs<judgedEnd);
+    const highLevelTouched=(this.highLevelTouched.get(Number(row.unitId))||[])
+      .filter(at=>at.timeMs+(at.timeUncertaintyMs||0)>=Number(row.fromMs)&&at.timeMs<judgedEnd);
     // Production ordered on another factory excuses this factory: the Agent was producing, just not
     // here. The rule is factory-only and deliberately wider than the touch rule above.
     const production=factory?this.factoryActivity(row,Number(row.fromMs),judgedEnd):[];
@@ -557,9 +569,10 @@ class IdleAssetDetector extends Detector {
     const tier=judgedMs>=this.c.T_IDLE_LONG?'STALL':judgedMs>=this.c.T_IDLE_SHORT?'LONG':'SHORT';
     let status,reason;
     if(touched.length){status='EXCLUDED';reason='native_order_during_gap';}
+    else if(highLevelTouched.length){status='EXCLUDED';reason='high_level_order_during_gap';}
     else if(production.length){status='EXCLUDED';reason='factory_production_elsewhere';}
-    else if(!coverage){status='UNCERTAIN';reason='CLI_command_coverage_unavailable';}
-    else if(judgedEnd<Number(row.toMs)){status='UNCERTAIN';reason='endpoint_outside_command_coverage';}
+    else if(row.closeReason==='EVIDENCE_END'){status='EXCLUDED';reason='evidence_ended_with_idle';}
+    else if(builder&&!['BUILD','REPAIR'].includes(row.closeReason)){status='EXCLUDED';reason='no_build_or_repair_endpoint';}
     else if(keepActive){status='EXPLAINED';reason='automation_configured';}
     else if(native&&(['keep','pending','auto','engine'].includes(native.source)||native.commandTimeMs<row.fromMs&&native.commandTimeMs!=null)){
       status='EXPLAINED';reason='automation_or_prearranged_order';}
@@ -575,11 +588,12 @@ class IdleAssetDetector extends Detector {
       closeAction:row.closeAction??null,tier,
       startFunds:row.startFunds??null,endFunds:row.endFunds??null,startCap:row.startCap??null,
       referenceAction:ref,affordableStart,affordableEnd,feasibility,endpointMs:row.toMs,nativeTouched:touched,
+      highLevelTouched,
       factoryProduction:production.length?production:null,
       agentState:agent.state,agentStateEvidence:agent.evidence,
       keepRule:keepActive?this.keep.get(Number(row.unitId)):null,
       status,reason,strict:false,scoreable,visibility:'HIGH',
-      durationIsLowerBound:row.closeReason==='EVIDENCE_END'||judgedMs<durationMs});
+      durationIsLowerBound:false});
     this.diagnose(reason);
     this.emit(event,judgedEnd);
   }

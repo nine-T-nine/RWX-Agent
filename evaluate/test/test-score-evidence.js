@@ -37,12 +37,12 @@ test('split native packets use the whole requested batch and shared budgets rema
   assert.equal(run(false).reason,'endpoint_batch_not_affordable_throughout');
   assert.equal(run(true).reason,'shared_endpoint_budget_unavailable');
 });
-test('a missing endpoint is unscored only when it was disproved, not when it is merely unknown',()=>{
+test('an evidence-ended missing endpoint is excluded from scoring',()=>{
   const row=factory();row.closeReason='EVIDENCE_END';row.closeQueue=[];
   const e=idle(row);
-  assert.equal(e.status,'UNCERTAIN');assert.equal(e.reason,'endpoint_production_unavailable');
-  assert.equal(e.scoreable,true);assert.ok(deduction(e).points>0);
-  assert.equal(idle(factory(),{commandCoverage:{start:0,end:30000}}).reason,'endpoint_outside_command_coverage');
+  assert.equal(e.status,'EXCLUDED');assert.equal(e.reason,'evidence_ended_with_idle');
+  assert.equal(e.scoreable,false);assert.equal(deduction(e).points,0);
+  assert.equal(idle(factory(),{commandCoverage:{start:0,end:30000}}).status,'DETECTED');
 });
 test('builder placement no longer gates the score, only a proven refusal does',()=>{
   const row={...factory(),roles:['builder'],closeReason:'BUILD',closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},
@@ -127,6 +127,22 @@ test('the touch window is half-open and bound to the idle asset',()=>{
   assert.equal(idleWith(builder,[]).status,'UNCERTAIN');
   assert.equal(idleWith(builder,[{timeMs:30000,source:'agent'}]).status,'EXCLUDED');
   assert.equal(idleWith(builder,[{timeMs:30000,source:'engine'}]).status,'UNCERTAIN');
+});
+test('a failed high-level order still excludes the targeted builder',()=>{
+  const row={...factory(),roles:['builder'],closeReason:'BUILD',
+    closeTask:{type:'build',buildType:'turret',x:10,y:20,count:1},
+    actions:{buildTurret:{kind:'build',type:'turret',cost:1000}},
+    feasibility:{complete:true,fromMs:0,toMs:60000,minFunds:5000,minCap:0,actions:{buildTurret:1000}}};
+  const events=[],s=new Session({schema:1,team:0,timeMs:0,X:160},[],{},e=>events.push(e));
+  const command={id:'failed-build',timeMs:30000,seq:1,source:'agent',name:'rwx-game-order-build',
+    builders:[7],units:[],args:['--builder','7'],accepted:false,applications:[]};
+  s.consume({kind:'command',timeMs:30000,seq:1},command);
+  s.consume(row);
+  const e=events[0];
+  assert.equal(e.status,'EXCLUDED');
+  assert.equal(e.reason,'high_level_order_during_gap');
+  assert.equal(e.highLevelTouched.length,1);
+  assert.equal(e.scoreable,false);
 });
 test('a factory idle pair is dropped when any real factory was producing elsewhere',()=>{
   const land=(id,extra={})=>({id,type:'landFactory',factory:true,building:true,mobile:false,...extra});
