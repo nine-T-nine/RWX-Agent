@@ -9,6 +9,7 @@ const {economySeconds} = require('./score_stage_2');
 
 const CONFIG = loadConfig();
 const VERSION = CONFIG.stage3.version;
+const CALIBRATION = current('stage3.calibration', CONFIG);
 const configured = current('stage3.parameters', CONFIG);
 const DEFAULTS = Object.freeze({
   alpha: configured.shared.alpha, beta: configured.shared.beta,
@@ -105,10 +106,10 @@ function scoreEvents(events, summary, overrides = {}, economy = null) {
 
   const breakdown = [ambush, barrage, grinder, funds], deduction = breakdown.reduce((n, f) => n + f.deduction, 0);
   return {schema: 2, version: VERSION, baseline: 100, parameters: p,
-    calibration: {provisional: true, s0Source: 'duration-filtered-median', baseline: {source: 'old_v1.1 >15min faithful corpus',
-      matches: 5, minDurationExclusiveSeconds: 900, outcomes: {defeat: 5},
-      ambushS0: p.ambush.S0, barrageS0: p.barrage.S0},
-      reasons: ['S0 uses only five >15min matches and all are defeats',
+    calibration: {provisional: true, s0Source: 'duration-filtered-median',
+      baseline: {...CALIBRATION, ambushS0: p.ambush.S0, barrageS0: p.barrage.S0},
+      reasons: [`S0 uses only ${CALIBRATION.matches} >15min faithful matches from ${CALIBRATION.source || 'the archive'}` +
+        (CALIBRATION.outcomes?.defeat === CALIBRATION.matches ? '; all are defeats' : ''),
         'funds lambda/spend floor/shrinkage are provisional']},
     evidenceComplete: Boolean(economy) && summary?.complete !== false,
     durationSeconds: round(G), deduction: round(deduction), total: round(Math.max(0, 100 - deduction)),

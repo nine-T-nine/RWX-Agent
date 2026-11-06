@@ -1,7 +1,10 @@
 {
   "schema": 2,
-  "generatedAt": "2026-11-06T05:43:54.863Z",
-  "archive": "old_v1.1",
+  "generatedAt": "2026-11-06T06:25:28.389Z",
+  "archives": [
+    "old_v1.0",
+    "old_v1.1"
+  ],
   "standard": {
     "version": "total-v2",
     "formula": "stage3 × k + stage1-v2 × (1-k)",
@@ -12,9 +15,12 @@
     "tuningPool": {
       "policy": {
         "minDurationExclusiveSeconds": 900,
+        "archives": [
+          "old_v1.1"
+        ],
         "requireCompleteEvidence": true,
         "requireFaithfulReplay": true,
-        "description": "后续参数调优只使用评分窗口严格大于 15 分钟、证据完整且重放无分叉的对局；胜负只记录，不作为硬筛选。"
+        "description": "本轮参数调优只用 old_v1.1（2026-11-06 退役的那一批）里评分窗口严格大于 15 分钟、证据完整且重放无分叉的对局；old_v1.0 的早期材料不参与本轮调参，胜负只记录、不作为硬筛选。"
       },
       "matches": [
         {
@@ -39,13 +45,6 @@
           "barrageS": 20.338
         },
         {
-          "match": "Ice-Island-(2p)-20261101--21-51_Pi+Kimi3.1provsHard_延迟2_old",
-          "durationSeconds": 1049.296,
-          "outcome": "defeat",
-          "ambushS": 12.126,
-          "barrageS": 17.832
-        },
-        {
           "match": "岩浆岛4p opencode_qwen3.8flash vs Hard",
           "durationSeconds": 1936.656,
           "outcome": "defeat",
@@ -53,8 +52,65 @@
           "barrageS": 3.617
         }
       ],
-      "ambushS0Median": 17.678,
-      "barrageS0Median": 12.122
+      "ambushS0Median": 21.0855,
+      "barrageS0Median": 10.5085
+    }
+  },
+  "v1": {
+    "version": "total-v1",
+    "formula": "stage1-v1 × 0.4 + stage2 × 0.6",
+    "weights": {
+      "stage1": 0.4,
+      "stage2": 0.6
+    },
+    "frozen": true,
+    "frozenAt": "2026-11-06",
+    "note": "v1 已冻结：2026-11-06 之后只维护 v2。这里只保留旧材料能复算出的分数，缺任一阶段就留空；不计均分、不进排名，也不再作为调参依据。",
+    "counts": {
+      "scored": 17,
+      "missing": 0
+    },
+    "stage1": {
+      "label": "第一阶段 v1",
+      "caps": [
+        15,
+        5,
+        5,
+        8,
+        18,
+        10,
+        8,
+        15,
+        8,
+        8,
+        6,
+        10
+      ],
+      "names": [
+        "首个行动指令",
+        "首个采矿建造",
+        "首个建造者生产",
+        "A→B 周期去离群均值",
+        "B→A 等待去离群均值",
+        "B→A 等待离群值",
+        "A→B 决策离群值",
+        "相邻底层命令间隔",
+        "A→A 离群占比",
+        "B→B 离群占比",
+        "底层生产指令 / 分钟",
+        "A/B 比值"
+      ]
+    },
+    "stage2": {
+      "label": "第二阶段 v2",
+      "caps": {
+        "AMBUSH": 40,
+        "GRINDER": 20,
+        "STALE": 15,
+        "BUILDER_IDLE": 25,
+        "FACTORY_IDLE": 20,
+        "FUNDS": 30
+      }
     }
   },
   "overview": {
@@ -62,17 +118,21 @@
     "wins": 1,
     "defeats": 16,
     "ignored": 5,
-    "average": 33.746,
+    "archives": {
+      "old_v1.0": 7,
+      "old_v1.1": 10
+    },
+    "average": 34.204,
     "best": {
       "id": "303d91e51874",
       "title": "Ice Island (2p) 11-01 18:51 Pi + Claude Opus 5.5 + DSH vs Hard",
-      "totalV2": 69.519
+      "totalV2": 69.217
     }
   },
   "matches": [
     {
       "id": "303d91e51874",
-      "archive": "old_v1.1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 11-01 18:51 Pi + Claude Opus 5.5 + DSH vs Hard",
       "date": "2026-11-01 18:51",
       "map": "Ice Island (2p)",
@@ -129,22 +189,23 @@
         }
       ],
       "scores": {
-        "totalV2": 69.519,
+        "totalV2": 69.217,
         "stage1V2": 48.08,
-        "stage3": 83.811,
+        "stage3": 83.308,
         "stage1V1": 73,
-        "stage2": 69.174
+        "stage2": 69.174,
+        "totalV1": 70.704
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 4.558,
+            "deduction": 3.851,
             "cap": 50,
             "records": 1
           },
           "STAGE3_BARRAGE": {
-            "deduction": 8.826,
+            "deduction": 10.036,
             "cap": 50,
             "records": 4
           },
@@ -167,7 +228,7 @@
     },
     {
       "id": "6ff1ab3c1183",
-      "archive": "old_v1.1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 11-01 19:50 Pi + DeepSeek（掺水路由）",
       "date": "2026-11-01 19:50",
       "map": "Ice Island (2p)",
@@ -198,22 +259,23 @@
         }
       ],
       "scores": {
-        "totalV2": 59.443,
+        "totalV2": 60.903,
         "stage1V2": 44.32,
-        "stage3": 69.525,
+        "stage3": 71.959,
         "stage1V1": 65.4,
-        "stage2": 65
+        "stage2": 65,
+        "totalV1": 65.16
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 20.02,
+            "deduction": 17.436,
             "cap": 50,
             "records": 16
           },
           "STAGE3_BARRAGE": {
-            "deduction": 0.988,
+            "deduction": 1.138,
             "cap": 50,
             "records": 1
           },
@@ -232,77 +294,6 @@
       "evidenceSource": "faithful-resim",
       "notes": [
         "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
-      ]
-    },
-    {
-      "id": "19dc4d824ca1",
-      "archive": "old_v1.1",
-      "title": "Fire Bridge (2p) opencode vs Hard",
-      "date": "2026-11-04T00:14:13.116145800+08:00",
-      "map": "Fire Bridge (2p) ",
-      "opponent": "1=AI - Hard",
-      "duration": {
-        "scoreSeconds": 1104.24,
-        "gameSeconds": 1193.3
-      },
-      "result": {
-        "outcome": "defeat",
-        "label": "战败",
-        "atSeconds": 1104.24,
-        "detail": "18:24 主基地被摧毁，18:28 投降"
-      },
-      "pairs": [
-        {
-          "count": 1,
-          "agent": {
-            "provider": "opencode-go",
-            "model": "deepseek-v4.1-flash",
-            "reasoning": "high"
-          },
-          "tool": {
-            "name": "pwsh + RWX CLI",
-            "version": null,
-            "extra": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册"
-          }
-        }
-      ],
-      "scores": {
-        "totalV2": 37.198,
-        "stage1V2": 43.7,
-        "stage3": 32.864,
-        "stage1V1": 62.9,
-        "stage2": 99.277
-      },
-      "stage3": {
-        "version": "stage3-score-v2",
-        "deductions": {
-          "STAGE3_AMBUSH": {
-            "deduction": 31.598,
-            "cap": 50,
-            "records": 56
-          },
-          "STAGE3_BARRAGE": {
-            "deduction": 25.996,
-            "cap": 50,
-            "records": 13
-          },
-          "STAGE3_GRINDER": {
-            "deduction": 0,
-            "cap": 20,
-            "records": 0
-          },
-          "STAGE3_FUNDS": {
-            "deduction": 9.542,
-            "cap": 30,
-            "records": 5
-          }
-        }
-      },
-      "evidenceSource": "faithful-resim",
-      "notes": [
-        "Fire Bridge (2p) 首局：地图与之前四局（Ice Island (2p)）不同，分数不能直接横比。",
-        "MCP 桥接未注册，135 次 shell 批量调用；工具形态与 tool1 / native-2358 同类。",
-        "满扣项：Stage1 底层生产 6.63 条/分钟（0/6）；Stage2 建造者空闲原始 67.48 封顶 20。"
       ]
     },
     {
@@ -338,22 +329,23 @@
         }
       ],
       "scores": {
-        "totalV2": 36.993,
+        "totalV2": 37.637,
         "stage1V2": 14.9,
-        "stage3": 51.721,
+        "stage3": 52.795,
         "stage1V1": 51.1,
-        "stage2": 91.906
+        "stage2": 91.906,
+        "totalV1": 75.584
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 25.596,
+            "deduction": 22.596,
             "cap": 50,
             "records": 17
           },
           "STAGE3_BARRAGE": {
-            "deduction": 15.683,
+            "deduction": 17.609,
             "cap": 50,
             "records": 7
           },
@@ -376,8 +368,80 @@
       ]
     },
     {
-      "id": "63e0808e4cb1",
+      "id": "19dc4d824ca1",
       "archive": "old_v1.1",
+      "title": "Fire Bridge (2p) opencode vs Hard",
+      "date": "2026-11-04T00:14:13.116145800+08:00",
+      "map": "Fire Bridge (2p) ",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 1104.24,
+        "gameSeconds": 1193.3
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 1104.24,
+        "detail": "18:24 主基地被摧毁，18:28 投降"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "pwsh + RWX CLI",
+            "version": null,
+            "extra": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 37.6,
+        "stage1V2": 43.7,
+        "stage3": 33.533,
+        "stage1V1": 62.9,
+        "stage2": 99.277,
+        "totalV1": 84.726
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 28.372,
+            "cap": 50,
+            "records": 56
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 28.553,
+            "cap": 50,
+            "records": 13
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 9.542,
+            "cap": 30,
+            "records": 5
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "Fire Bridge (2p) 首局：地图与之前四局（Ice Island (2p)）不同，分数不能直接横比。",
+        "MCP 桥接未注册，135 次 shell 批量调用；工具形态与 tool1 / native-2358 同类。",
+        "满扣项：Stage1 底层生产 6.63 条/分钟（0/6）；Stage2 建造者空闲原始 67.48 封顶 20。"
+      ]
+    },
+    {
+      "id": "63e0808e4cb1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 11-01 21:31 Pi + Kimi K3.1 Pro（延迟）",
       "date": "2026-11-01 21:31",
       "map": "Ice Island (2p)",
@@ -408,22 +472,23 @@
         }
       ],
       "scores": {
-        "totalV2": 36.904,
+        "totalV2": 36.853,
         "stage1V2": 30.8,
-        "stage3": 40.974,
+        "stage3": 40.889,
         "stage1V1": 55.7,
-        "stage2": 60.474
+        "stage2": 60.474,
+        "totalV1": 58.564
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 19.518,
+            "deduction": 16.98,
             "cap": 50,
             "records": 17
           },
           "STAGE3_BARRAGE": {
-            "deduction": 29.948,
+            "deduction": 32.571,
             "cap": 50,
             "records": 7
           },
@@ -436,75 +501,6 @@
             "deduction": 9.56,
             "cap": 30,
             "records": 3
-          }
-        }
-      },
-      "evidenceSource": "faithful-resim",
-      "notes": [
-        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
-      ]
-    },
-    {
-      "id": "9ae69224f413",
-      "archive": "old_v1.1",
-      "title": "Ice Island (2p) 11-01 19:16 Pi + DeepSeek 4.1",
-      "date": "2026-11-01 19:16",
-      "map": "Ice Island (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "duration": {
-        "scoreSeconds": 767.808,
-        "gameSeconds": null
-      },
-      "result": {
-        "outcome": "defeat",
-        "label": "主动投降",
-        "atSeconds": 767.808,
-        "detail": "12:48 主动投降"
-      },
-      "pairs": [
-        {
-          "count": 1,
-          "agent": {
-            "provider": "unknown",
-            "model": "Pi + DeepSeek 4.1",
-            "reasoning": "unknown"
-          },
-          "tool": {
-            "name": "RWX CLI（历史原始工具）",
-            "version": null,
-            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
-          }
-        }
-      ],
-      "scores": {
-        "totalV2": 34.688,
-        "stage1V2": 40.34,
-        "stage3": 30.92,
-        "stage1V1": 66.4,
-        "stage2": 71.999
-      },
-      "stage3": {
-        "version": "stage3-score-v2",
-        "deductions": {
-          "STAGE3_AMBUSH": {
-            "deduction": 43.507,
-            "cap": 50,
-            "records": 59
-          },
-          "STAGE3_BARRAGE": {
-            "deduction": 22.519,
-            "cap": 50,
-            "records": 14
-          },
-          "STAGE3_GRINDER": {
-            "deduction": 0,
-            "cap": 20,
-            "records": 0
-          },
-          "STAGE3_FUNDS": {
-            "deduction": 3.054,
-            "cap": 30,
-            "records": 5
           }
         }
       },
@@ -546,22 +542,23 @@
         }
       ],
       "scores": {
-        "totalV2": 34.448,
+        "totalV2": 35.051,
         "stage1V2": 46.72,
-        "stage3": 26.267,
+        "stage3": 27.271,
         "stage1V1": 68.7,
-        "stage2": 75.627
+        "stage2": 75.627,
+        "totalV1": 72.856
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 24.466,
+            "deduction": 21.536,
             "cap": 50,
             "records": 20
           },
           "STAGE3_BARRAGE": {
-            "deduction": 42.267,
+            "deduction": 44.193,
             "cap": 50,
             "records": 17
           },
@@ -587,8 +584,78 @@
       ]
     },
     {
+      "id": "9ae69224f413",
+      "archive": "old_v1.0",
+      "title": "Ice Island (2p) 11-01 19:16 Pi + DeepSeek 4.1",
+      "date": "2026-11-01 19:16",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 767.808,
+        "gameSeconds": null
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "atSeconds": 767.808,
+        "detail": "12:48 主动投降"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi + DeepSeek 4.1",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 34.762,
+        "stage1V2": 40.34,
+        "stage3": 31.044,
+        "stage1V1": 66.4,
+        "stage2": 71.999,
+        "totalV1": 69.759
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 40.97,
+            "cap": 50,
+            "records": 59
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 24.932,
+            "cap": 50,
+            "records": 14
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 3.054,
+            "cap": 30,
+            "records": 5
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
+    },
+    {
       "id": "5ebd2a0c039e",
-      "archive": "old_v1.1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 10-29 20:40 DeepSeek 4.1 vs Hard",
       "date": "2026-10-29 20:40",
       "map": "Ice Island (2p)",
@@ -619,22 +686,23 @@
         }
       ],
       "scores": {
-        "totalV2": 33.228,
+        "totalV2": 33.608,
         "stage1V2": 37.7,
-        "stage3": 30.246,
+        "stage3": 30.88,
         "stage1V1": 54.5,
-        "stage2": 93
+        "stage2": 93,
+        "totalV1": 77.6
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 22.227,
+            "deduction": 19.458,
             "cap": 50,
             "records": 22
           },
           "STAGE3_BARRAGE": {
-            "deduction": 40.527,
+            "deduction": 42.662,
             "cap": 50,
             "records": 20
           },
@@ -688,22 +756,23 @@
         }
       ],
       "scores": {
-        "totalV2": 31.806,
+        "totalV2": 32.119,
         "stage1V2": 48.26,
-        "stage3": 20.836,
+        "stage3": 21.359,
         "stage1V1": 67.2,
-        "stage2": 96.2
+        "stage2": 96.2,
+        "totalV1": 84.6
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 37.49,
+            "deduction": 34.35,
             "cap": 50,
             "records": 66
           },
           "STAGE3_BARRAGE": {
-            "deduction": 31.606,
+            "deduction": 34.223,
             "cap": 50,
             "records": 20
           },
@@ -759,22 +828,23 @@
         }
       ],
       "scores": {
-        "totalV2": 30.112,
+        "totalV2": 30.482,
         "stage1V2": 34.76,
-        "stage3": 27.013,
+        "stage3": 27.63,
         "stage1V1": 64.7,
-        "stage2": 92.228
+        "stage2": 92.228,
+        "totalV1": 81.217
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 34.267,
+            "deduction": 31.034,
             "cap": 50,
             "records": 21
           },
           "STAGE3_BARRAGE": {
-            "deduction": 31.72,
+            "deduction": 34.336,
             "cap": 50,
             "records": 12
           },
@@ -830,22 +900,23 @@
         }
       ],
       "scores": {
-        "totalV2": 29.409,
+        "totalV2": 29.612,
         "stage1V2": 22.48,
-        "stage3": 34.029,
+        "stage3": 34.367,
         "stage1V1": 46.3,
-        "stage2": 54.27
+        "stage2": 54.27,
+        "totalV1": 51.082
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 46.072,
+            "deduction": 44.074,
             "cap": 50,
             "records": 109
           },
           "STAGE3_BARRAGE": {
-            "deduction": 12.899,
+            "deduction": 14.559,
             "cap": 50,
             "records": 6
           },
@@ -900,22 +971,23 @@
         }
       ],
       "scores": {
-        "totalV2": 27.693,
+        "totalV2": 28.507,
         "stage1V2": 40.9,
-        "stage3": 18.889,
+        "stage3": 20.245,
         "stage1V1": 64.9,
-        "stage2": 92.816
+        "stage2": 92.816,
+        "totalV1": 81.65
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 31.224,
+            "deduction": 28.003,
             "cap": 50,
             "records": 22
           },
           "STAGE3_BARRAGE": {
-            "deduction": 42.706,
+            "deduction": 44.571,
             "cap": 50,
             "records": 24
           },
@@ -972,22 +1044,23 @@
         }
       ],
       "scores": {
-        "totalV2": 25.392,
+        "totalV2": 26.057,
         "stage1V2": 32.56,
-        "stage3": 20.614,
+        "stage3": 21.721,
         "stage1V1": 56.5,
-        "stage2": 90.307
+        "stage2": 90.307,
+        "totalV1": 76.784
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 31.607,
+            "deduction": 28.38,
             "cap": 50,
             "records": 22
           },
           "STAGE3_BARRAGE": {
-            "deduction": 40.661,
+            "deduction": 42.781,
             "cap": 50,
             "records": 32
           },
@@ -1010,7 +1083,7 @@
     },
     {
       "id": "0f5eeb3c1431",
-      "archive": "old_v1.1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 10-30 01:39 DSH 1.0.17 vs Hard",
       "date": "2026-10-30 01:39",
       "map": "Ice Island (2p)",
@@ -1041,22 +1114,23 @@
         }
       ],
       "scores": {
-        "totalV2": 25.04,
+        "totalV2": 25.579,
         "stage1V2": 36.74,
-        "stage3": 17.24,
+        "stage3": 18.138,
         "stage1V1": 53.1,
-        "stage2": 92
+        "stage2": 92,
+        "totalV1": 76.44
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 36.696,
+            "deduction": 33.522,
             "cap": 50,
             "records": 21
           },
           "STAGE3_BARRAGE": {
-            "deduction": 39.064,
+            "deduction": 41.34,
             "cap": 50,
             "records": 17
           },
@@ -1110,22 +1184,23 @@
         }
       ],
       "scores": {
-        "totalV2": 22.172,
+        "totalV2": 22.547,
         "stage1V2": 34.92,
-        "stage3": 13.674,
+        "stage3": 14.298,
         "stage1V1": 66.4,
-        "stage2": 80.623
+        "stage2": 80.623,
+        "totalV1": 74.934
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 38.977,
+            "deduction": 35.925,
             "cap": 50,
             "records": 44
           },
           "STAGE3_BARRAGE": {
-            "deduction": 37,
+            "deduction": 39.428,
             "cap": 50,
             "records": 14
           },
@@ -1149,7 +1224,7 @@
     },
     {
       "id": "9fd0f0c39a2f",
-      "archive": "old_v1.1",
+      "archive": "old_v1.0",
       "title": "Ice Island (2p) 11-01 21:51 Pi + Kimi K3.1 Pro（延迟2）",
       "date": "2026-11-01 21:51",
       "map": "Ice Island (2p)",
@@ -1180,22 +1255,23 @@
         }
       ],
       "scores": {
-        "totalV2": 20.664,
+        "totalV2": 21.043,
         "stage1V2": 17.84,
-        "stage3": 22.547,
+        "stage3": 23.178,
         "stage1V1": 53.6,
-        "stage2": 51
+        "stage2": 51,
+        "totalV1": 52.04
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 24.819,
+            "deduction": 21.867,
             "cap": 50,
             "records": 32
           },
           "STAGE3_BARRAGE": {
-            "deduction": 38.516,
+            "deduction": 40.837,
             "cap": 50,
             "records": 19
           },
@@ -1249,22 +1325,23 @@
         }
       ],
       "scores": {
-        "totalV2": 18.968,
+        "totalV2": 19.89,
         "stage1V2": 43.12,
-        "stage3": 2.867,
+        "stage3": 4.404,
         "stage1V1": 67.3,
-        "stage2": 74.533
+        "stage2": 74.533,
+        "totalV1": 71.64
       },
       "stage3": {
         "version": "stage3-score-v2",
         "deductions": {
           "STAGE3_AMBUSH": {
-            "deduction": 42.848,
+            "deduction": 40.207,
             "cap": 50,
             "records": 31
           },
           "STAGE3_BARRAGE": {
-            "deduction": 46.792,
+            "deduction": 47.896,
             "cap": 50,
             "records": 27
           },
@@ -1292,33 +1369,33 @@
   "ignored": [
     {
       "title": "4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
-      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
+      "relativePath": "_archive/old_v1.0/4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
       "reason": "replay_desync:475",
       "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
     },
     {
       "title": "4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
-      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
+      "relativePath": "_archive/old_v1.0/4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
       "reason": "replay_desync:2820",
       "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
     },
     {
       "title": "4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
-      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
+      "relativePath": "_archive/old_v1.0/4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
       "reason": "replay_desync:973",
       "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
+    },
+    {
+      "title": "Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
+      "relativePath": "_archive/old_v1.0/Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
+      "reason": "commands_or_economy_missing",
+      "note": "缺少命令日志或经济日志，无法建立评分窗口"
     },
     {
       "title": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
       "relativePath": "_archive/old_v1.1/Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
       "reason": "replay_desync:4",
       "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
-    },
-    {
-      "title": "Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
-      "relativePath": "_archive/old_v1.1/Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
-      "reason": "commands_or_economy_missing",
-      "note": "缺少命令日志或经济日志，无法建立评分窗口"
     }
   ],
   "method": {

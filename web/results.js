@@ -1,4 +1,4 @@
-/* Render the old_v1.1 evaluation archive from resource/results.json. */
+/* Render the v2 ledger (current) and the frozen v1 snapshot from resource/results.json. */
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 const fmt = (v, digits = 2) => typeof v === "number" ? v.toFixed(digits) : "—";
 const score = (v, digits = 2) => typeof v === "number" ? `${v.toFixed(digits)}/100` : "—";
@@ -6,7 +6,7 @@ const duration = (seconds) => {
   if (typeof seconds !== "number") return "—";
   const s = Math.round(seconds); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
-const tier = (total) => total >= 60 ? "high" : total >= 35 ? "mid" : "low";
+const tier = (total) => typeof total === "number" ? (total >= 60 ? "high" : total >= 35 ? "mid" : "low") : "low";
 const FAMILY = {STAGE3_AMBUSH:"偷袭延迟",STAGE3_BARRAGE:"偷家延迟",STAGE3_GRINDER:"危险区建造者",STAGE3_FUNDS:"资金空余"};
 
 function badge(result) {
@@ -22,14 +22,18 @@ function pairs(rows) {
       (pair.tool.extra ? `<span class="cell-sub">extra: ${esc(pair.tool.extra)}</span>` : "") + `</div>`;
   }).join("");
 }
+const agents = (rows) => rows.map((pair) => `${pair.agent.model}${pair.count > 1 ? ` ×${pair.count}` : ""}`).join(" + ");
 
 function renderKpis(data) {
-  const items = [[data.overview.matches,"old_v1.1 对局","全部归档"],
+  const split = Object.entries(data.overview.archives || {})
+    .sort(([a], [b]) => a.localeCompare(b)).map(([label, count]) => `${label} ${count}`).join(" · ");
+  const items = [[data.overview.matches,"归档对局",split || "—"],
     [score(data.overview.best.totalV2),"最高 total-v2",data.overview.best.title],
     [score(data.overview.average),"归档均分",`${data.overview.matches} 局`],
     [`${data.overview.wins} / ${data.overview.defeats}`,"胜 / 负","每局明确标注"]];
   document.querySelector("#results-kpis").innerHTML = items.map(([value,label,hint]) =>
     `<div class="kpi"><b>${esc(value)}</b><span>${esc(label)}</span><i>${esc(hint)}</i></div>`).join("");
+  document.querySelector("#archive-split").textContent = split;
 }
 function renderMatches(data) {
   const rows = data.matches.map((m) => `<tr>
@@ -39,9 +43,41 @@ function renderMatches(data) {
     <td><b>${esc(m.map)}</b><span class="cell-sub">${esc(m.opponent)}</span></td>
     <td><b>${duration(m.duration.scoreSeconds)}</b><span class="cell-sub">评分窗口${m.duration.gameSeconds ? ` · 游戏 ${duration(m.duration.gameSeconds)}` : ""}</span></td>
     <td>${badge(m.result)}<span class="cell-sub">${esc(m.result.detail)}</span></td>
-    <td>${score(m.scores.stage1V2,1)} / ${score(m.scores.stage3,1)}<span class="cell-sub">旧 S1/S2 ${fmt(m.scores.stage1V1,1)} / ${fmt(m.scores.stage2,1)}</span></td>
+    <td>${score(m.scores.stage1V2,1)}<span class="cell-sub">Stage3 ${score(m.scores.stage3,1)}</span></td>
   </tr>`).join("");
-  document.querySelector("#current-table").innerHTML = `<thead><tr><th>total-v2</th><th>对局 / 归档</th><th>Agent ↔ 工具</th><th>地图 / 对手</th><th>时长</th><th>胜负</th><th>S1-v2 / S3</th></tr></thead><tbody>${rows}</tbody>`;
+  document.querySelector("#current-table").innerHTML = `<thead><tr><th>total-v2</th><th>对局 / 归档</th><th>Agent ↔ 工具</th><th>地图 / 对手</th><th>时长</th><th>胜负</th><th>S1-v2</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function renderV1(data) {
+  const v1 = data.v1, rows = [...data.matches].sort((a, b) =>
+    (b.scores.totalV1 ?? -1) - (a.scores.totalV1 ?? -1) || b.scores.totalV2 - a.scores.totalV2);
+  document.querySelector("#v1-note").textContent =
+    `${v1.note} 可复算 ${v1.counts.scored} 局，缺材料 ${v1.counts.missing} 局。`;
+  document.querySelector("#v1-table").innerHTML = `<thead><tr><th>total-v1</th><th>对局 / 归档</th><th>Agent</th><th>时长</th><th>胜负</th><th>S1-v1 / S2</th></tr></thead><tbody>${rows.map((m) => {
+    const has = typeof m.scores.totalV1 === "number";
+    return `<tr>
+      <td><span class="tier-dot tier-${tier(m.scores.totalV1)}"></span><b>${has ? fmt(m.scores.totalV1) : "未复算"}</b></td>
+      <td><b>${esc(m.title)}</b><span class="cell-sub">${esc(m.archive)}</span></td>
+      <td>${esc(agents(m.pairs))}</td>
+      <td>${duration(m.duration.scoreSeconds)}</td>
+      <td>${badge(m.result)}</td>
+      <td>${has ? `${fmt(m.scores.stage1V1,1)} / ${fmt(m.scores.stage2,1)}` : '<span class="cell-sub">缺 stage_1 或 stage_2 报告</span>'}</td>
+    </tr>`;
+  }).join("")}</tbody>`;
+}
+function renderV1Rules(data) {
+  const v1 = data.v1, capRows = v1.stage1.caps.map((cap, index) =>
+    `<tr><th>${esc(v1.stage1.names[index] ?? `第 ${index + 1} 项`)}</th><td><b>${cap}</b></td></tr>`).join("");
+  const families = Object.entries(v1.stage2.caps).map(([name, cap]) =>
+    `<tr><th>${esc(name)}</th><td><b>${cap}</b></td></tr>`).join("");
+  document.querySelector("#v1-rules-body").innerHTML =
+    `<article class="scoring-stage"><header class="scoring-stage-head"><div><span>V1 / ${esc(v1.stage1.label)}</span><h3>第一阶段 12 项</h3></div>` +
+    `<p>版本 ${esc(v1.version)}，权重 ${v1.weights.stage1}；2026-11-06 冻结。</p></header>` +
+    `<div class="table-wrap scoring-table-wrap"><table class="data-table scoring-table"><thead><tr><th>扣分项</th><th>上限</th></tr></thead>` +
+    `<tbody>${capRows}</tbody></table></div></article>` +
+    `<article class="scoring-stage"><header class="scoring-stage-head"><div><span>V1 / ${esc(v1.stage2.label)}</span><h3>第二阶段 6 类</h3></div>` +
+    `<p>权重 ${v1.weights.stage2}；类别内先累加再按上限封顶。</p></header>` +
+    `<div class="table-wrap scoring-table-wrap"><table class="data-table scoring-table"><thead><tr><th>类别</th><th>上限</th></tr></thead>` +
+    `<tbody>${families}</tbody></table></div></article>`;
 }
 function matrixCell(row, family) {
   const item = row.stage3.deductions[family];
@@ -74,12 +110,41 @@ function renderScoring(data) {
   document.querySelector("#micro-cases-list").innerHTML = data.microCases.map((item)=>`<article class="micro-case" id="${esc(item.id)}"><div class="case-overview"><figure class="case-figure"><img src="${esc(item.image)}" alt="${esc(item.imageAlt)}" width="1536" height="864" loading="lazy"><figcaption>${esc(item.imageCaption)}</figcaption></figure><div class="case-copy"><span class="case-label">${esc(item.label)} / ${esc(item.version)}</span><h3>${esc(item.title)}</h3><p>${esc(item.environment)}</p></div></div>${scoringTable(item.items,`${item.label} 扣分项`)}</article>`).join("");
 }
 
+/* --- version switch ------------------------------------------------------------------------- */
+function selectVersion(version) {
+  document.querySelectorAll("[data-version-tab]").forEach((tab) => {
+    const on = tab.dataset.versionTab === version;
+    tab.classList.toggle("is-active", on);
+    tab.setAttribute("aria-selected", String(on));
+  });
+  document.querySelectorAll("[data-version-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.versionPanel !== version;
+  });
+}
+function revealHash() {
+  const id = decodeURIComponent(location.hash.replace(/^#/, ""));
+  const target = id ? document.getElementById(id) : null;
+  if (!target) return;
+  const panel = target.closest("[data-version-panel]");
+  if (!panel) return;
+  selectVersion(panel.dataset.versionPanel);
+  requestAnimationFrame(() => target.scrollIntoView({block: "start"}));
+}
+document.querySelectorAll("[data-version-tab]").forEach((tab) => tab.addEventListener("click", () => {
+  selectVersion(tab.dataset.versionTab);
+  history.replaceState(null, "", tab.dataset.versionTab === "v1" ? "#v1-table-section" : "#current");
+}));
+window.addEventListener("hashchange", revealHash);
+
 const menuToggle = document.querySelector(".menu-toggle"), navigation = document.querySelector("#primary-nav");
 if (menuToggle && navigation) menuToggle.addEventListener("click",()=>{const open=menuToggle.getAttribute("aria-expanded")!=="true";menuToggle.setAttribute("aria-expanded",String(open));navigation.classList.toggle("open",open);});
 
 fetch(new URL("./resource/results.json", import.meta.url)).then(r=>{if(!r.ok)throw Error();return r.json();}).then((data)=>{
-  renderKpis(data); renderMatches(data); renderMatrix(data); renderIgnored(data); renderMethod(data);
-  document.querySelector("#standard-line").textContent = `total-v2 = stage3 × ${data.standard.k} + stage1-v2 × ${1-data.standard.k}；参数状态 provisional。`;
+  renderKpis(data); renderMatches(data); renderMatrix(data); renderV1(data); renderV1Rules(data);
+  renderIgnored(data); renderMethod(data); revealHash();
+  document.querySelector("#standard-line").textContent =
+    `total-v2 = stage3 × ${data.standard.k} + stage1-v2 × ${1 - data.standard.k}；参数状态 provisional。` +
+    ` v1（${data.v1.formula}）已冻结，不再更新。`;
   document.querySelector("#last-updated").textContent = `最后更新：${new Date(data.generatedAt).toLocaleString("zh-CN",{timeZone:"Asia/Shanghai",hour12:false})}`;
   document.documentElement.classList.add("results-ready");
 }).catch(()=>document.querySelectorAll(".data-pending").forEach((el)=>{el.hidden=false;el.textContent="数据未加载，请通过 HTTP 服务打开页面。";}));

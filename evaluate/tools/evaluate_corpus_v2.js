@@ -8,7 +8,7 @@ const {main: scoreStage1} = require('../score_stage_1_v2');
 const {evaluateStage3} = require('../evaluate_stage_3');
 const {main: scoreStage3} = require('../score_stage_3');
 const {main: scoreTotal} = require('../score_match_v2');
-const {loadConfig} = require('../config');
+const {loadConfig, archiveLabelFor} = require('../config');
 
 const OUTPUT = path.resolve(__dirname, '..', 'output');
 const CONFIG = loadConfig();
@@ -83,8 +83,9 @@ async function evaluateMatch(match) {
     '--cut-ms', String(window.ms)]);
   scoreTotal(['node', 'score_match_v2.js', match]);
   const metaFile = path.join(match, 'meta.json'), meta = fs.existsSync(metaFile) ? read(metaFile) : null;
-  const result = {schema: 1, archive: CONFIG.policy.archiveLabel, match: path.basename(match),
-    relativePath: path.relative(OUTPUT, match).replace(/\\/g, '/'), evidenceSource: selected.source,
+  const relativePath = path.relative(OUTPUT, match).replace(/\\/g, '/');
+  const result = {schema: 1, archive: archiveLabelFor(relativePath, CONFIG), match: path.basename(match),
+    relativePath, evidenceSource: selected.source,
     scoreWindowSeconds: Number((window.ms / 1000).toFixed(3)), ending: window.kind,
     result: {...outcome(window.kind, meta), atSeconds: Number((window.ms / 1000).toFixed(3))},
     scores: {stage1v2: read(path.join(match, 'stage_1_v2', 'score.json')).score,
@@ -106,7 +107,12 @@ async function main(argv = process.argv) {
     catch (error) { ignored.push({match: path.basename(match), relativePath: path.relative(OUTPUT, match).replace(/\\/g, '/'), reason: error.message});
       console.error(`IGNORE ${path.basename(match)}: ${error.message}`); }
   }
-  const tuningRows = results.filter(row => row.scoreWindowSeconds > CONFIG.policy.tuningPool.minDurationExclusiveSeconds)
+  // This round only tunes on the batch just retired (`old_v1.1`); the older `old_v1.0` material is
+  // scored for the archive table but must not move any parameter.
+  const tuningArchives = CONFIG.policy.tuningPool.archives || [];
+  const tuningRows = results.filter(row =>
+    row.scoreWindowSeconds > CONFIG.policy.tuningPool.minDurationExclusiveSeconds &&
+    (!tuningArchives.length || tuningArchives.includes(row.archive)))
     .map(row => { const score = read(path.join(OUTPUT, row.relativePath, 'stage_3', 'score.json'));
       return {match: row.match, durationSeconds: row.scoreWindowSeconds, outcome: row.result.outcome,
         ambushS: score.breakdown.find(item => item.family === 'STAGE3_AMBUSH').S,
@@ -114,7 +120,7 @@ async function main(argv = process.argv) {
   const median = (rows, key) => { const values = rows.map(row => row[key]).sort((a, b) => a - b), n = values.length;
     return n ? (n % 2 ? values[n >> 1] : (values[n / 2 - 1] + values[n / 2]) / 2) : null; };
   const summary = {schema: 1, version: 'corpus-v2', generatedAt: new Date().toISOString(),
-    archive: CONFIG.policy.archiveLabel, evaluated: results, ignored,
+    archives: [...new Set(results.map(row => row.archive))], evaluated: results, ignored,
     tuningPool: {policy: CONFIG.policy.tuningPool, matches: tuningRows,
       ambushS0Median: median(tuningRows, 'ambushS'), barrageS0Median: median(tuningRows, 'barrageS')}};
   fs.writeFileSync(path.join(OUTPUT, '_v2-summary.json'), JSON.stringify(summary, null, 2) + '\n');

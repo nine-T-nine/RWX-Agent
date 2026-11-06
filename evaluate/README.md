@@ -127,7 +127,9 @@ rwx-battleroom-start --record 从 tick 0 开局，然后执行 rwx-game-replay-s
 
 ```text
 evaluate/output/
-  _archive/old_v1.1/              全部旧材料（2026-11-06 统一归档），不参与新榜
+  _archive/
+    old_v1.1/                     2026-11-06 退役的那一批（此前在根目录，按 v1.1 口径评过）
+    old_v1.0/                     更早就已归档的早期材料（`*_old`），只作历史对照，不参与本轮调参
   <对局名>/
     meta.json                     对局身份：系统版本、模型、工具、思考强度、地图、时长、胜负、会话、token
     commands-<对局名>.txt          原始命令日志（CLI 录制）
@@ -144,7 +146,7 @@ evaluate/output/
 replays/<对局名>.replay
 ```
 
-根目录只放**当前**对局，列表一眼能看出哪些是最近在评的。`*_old` 归档与 2026-11-06 统一归档的 11 局都在 `_archive/old_v1.1/` 里，内部结构就是当年那份材料：`stage_1/`、`stage_2/`、`replay/`、`events-live/`（或 `engine/`），早期扁平布局的 stage1-v1 产物在 `flat/`（含 `flat/events/` 的原始回放证据）；录制时没有第三阶段行的局另有 `resim/`。
+根目录只放**当前**对局，列表一眼能看出哪些是最近在评的。归档分两层：`_archive/old_v1.1/` 是 2026-11-06 从根目录退役的 11 局，`_archive/old_v1.0/` 是更早就已经在 `_archive/` 里的 11 局（目录名带 `_old`）。两者内部结构就是当年那份材料：`stage_1/`、`stage_2/`、`replay/`、`events-live/`（或 `engine/`），早期扁平布局的 stage1-v1 产物在 `flat/`（含 `flat/events/` 的原始回放证据）；录制时没有第三阶段行的局另有 `resim/`。标签只看目录归属，由 `config.js` 的 `archiveLabelFor()` 解析。
 
 整理用 [`tools/match_materials.js`](tools/README.md)：
 
@@ -214,10 +216,11 @@ node evaluate/tools/build_web_results_v2.js                  # 汇总进网页�
 - **参数只有一个账本**：[`config.json`](config.json) 按 `total` / `stage1` / `stage2` / `stage3` 分组，每个参数写 `description`、`initial`、`current`，未定的标 `"status": "provisional"`。代码通过 [`config.js`](config.js) 读 `current`，所以改参数只改这个文件；`initial` 保留设计初值，便于回看"当前值是怎么偏离的"。改完必须重跑受影响的阶段，报告里的 `parameters` 会记下当次快照。新增参数时同时补 `description`/`initial`/`current`，`test-score-v2.js` 会检查每个旋钮都齐全。
 - 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`defeat`/`victory`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，评分只吃这一份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。`defeat` 指我方指挥中心被摧毁：团队局里盟友还会继续打，但那一刻之后的命令、回放帧和遥测一律不进窗口；`victory` 指敌方指挥中心全灭。裁剪同时作用于 commands、telemetry、economy 与 `replay.jsonl` 四份材料。
 - 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，总分留空。
-- 现行公榜总分 `total-v2 = stage3 × 0.6 + stage1-v2 × 0.4`，写在对局目录的 `score_v2.json`。它只接受当前版本（`stage1-score-v2` / `stage3-score-v2`），版本不符直接拒算。旧 `score_match.js`（`0.4/0.6` 合成旧两阶段）保留给 `old_v1.1` 对照，不再出新分。
+- 现行公榜总分 `total-v2 = stage3 × 0.6 + stage1-v2 × 0.4`，写在对局目录的 `score_v2.json`。它只接受当前版本（`stage1-score-v2` / `stage3-score-v2`），版本不符直接拒算。旧 `score_match.js`（`0.4/0.6` 合成旧两阶段）保留给 v1 历史对照，不再出新分；页面上的 v1 分数已冻结，只由 `optionalLegacy` 复算。
 - 旧 `stage_1` / `stage_2` 报告在材料允许时仍可复算，作为 `evaluation_v2.json` 的 `optionalLegacy` 列，不参与 `total-v2`。
-- 归档局（`_archive/old_v1.1/*`）录制时没有第三阶段行：用同一份回放加速重放补 `resim/`，再跑 `evaluate_stage_3.js` + `score_stage_3.js`；原有的 `stage_1/`、`stage_2/` 不动。窗口止于 `replay_end`、分叉与未完成回放的限制见 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。分叉局（`checksumWarnings > 0`）与材料缺失局直接忽略，不猜分。
-- 三阶段报告各自独立；旧版本材料一律在 `_archive/old_v1.1/` 归档，不参与排名。
+- 归档局（`_archive/old_v1.0/*` 与 `_archive/old_v1.1/*`）录制时没有第三阶段行：用同一份回放加速重放补 `resim/`，再跑 `evaluate_stage_3.js` + `score_stage_3.js`；原有的 `stage_1/`、`stage_2/` 不动。窗口止于 `replay_end`、分叉与未完成回放的限制见 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。分叉局（`checksumWarnings > 0`）与材料缺失局直接忽略，不猜分。
+- **本轮调参只看 `old_v1.1`**：`config.json` 的 `policy.tuningPool.archives` 限定调参语料，`old_v1.0` 只进归档表；评分窗口必须严格大于 15 分钟。改完参数要重跑整批，因为 `S0` 与阈值都冻结在 `config.json` 里。
+- 三阶段报告各自独立；旧版本材料一律归档，不参与排名。
 
 ## 管理员开局核对
 
@@ -240,6 +243,6 @@ rwx-game-replay-status
 
 ## 结果发布
 
-对外展示的评测账本在 [`web/results.html`](../web/results.html)，数据来自 [`web/resource/results.json`](../web/resource/results.json)：`old_v1.1` 归档里 17 局可忠实还原的对局按 `total-v2` 排名，每局给出评分时长、胜负、模型 + 工具配对与四项 Stage3 扣分；材料不足或重放分叉的 5 局单列"未进入排名"。每一局的同一份身份信息也写在对局目录的 `meta.json` 里，筛选与复盘都以它为准。
+对外展示的评测账本在 [`web/results.html`](../web/results.html)，数据来自 [`web/resource/results.json`](../web/resource/results.json)：页面分 **v2**（当前标准，17 局按 `total-v2` 排名，给出评分时长、胜负、模型 + 工具配对与四项 Stage3 扣分）和 **v1**（冻结的历史分数，`stage1-v1 × 0.4 + stage2 × 0.6`）两个版本面板；材料不足或重放分叉的 5 局单列"未进入排名"。每一局的同一份身份信息也写在对局目录的 `meta.json` 里，筛选与复盘都以它为准。
 
 `evaluate/output/` 不进版本库，因此公开页面只保留结论与关键指标；更新步骤（含 `check_site.py` 校验）见 [`web/README.md`](../web/README.md#更新评测结果)。同一批对局比较工具体系时，需保证模型、地图、对手、经济倍率一致，并按工具各跑多局，避免用单局差值下结论。

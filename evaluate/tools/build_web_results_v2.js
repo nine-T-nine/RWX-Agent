@@ -4,6 +4,9 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const {loadConfig, current} = require('../config');
+
+const CONFIG = loadConfig();
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUTPUT = path.join(ROOT, 'evaluate', 'output');
@@ -70,15 +73,18 @@ const matches = summary.evaluated.map(row => {
     deduction: item.deduction, cap: item.cap, records: item.items.length,
   }]));
   const result = row.result;
+  const legacy = row.optionalLegacy || {};
+  const totalV1 = Number.isFinite(legacy.stage1v1) && Number.isFinite(legacy.stage2)
+    ? Number((legacy.stage1v1 * .4 + legacy.stage2 * .6).toFixed(3)) : null;
   return {
-    id: id(row.match), archive: summary.archive, title: meta?.display_name || old?.title || row.match,
+    id: id(row.match), archive: row.archive, title: meta?.display_name || old?.title || row.match,
     date: meta?.timing?.startedAt || meta?.date || old.date,
     map: meta?.map?.name || 'Ice Island (2p)', opponent: meta ? opponent(meta) : 'AI - Hard · x2 收入',
     duration: {scoreSeconds: row.scoreWindowSeconds, gameSeconds: meta?.timing?.gameSeconds ?? null},
     result: {...result, detail: meta?.result?.detail || `${clock(result.atSeconds)} ${result.label}`},
     pairs: meta ? currentPairs(meta) : archivePairs(row.match),
     scores: {totalV2: row.scores.totalV2, stage1V2: row.scores.stage1v2, stage3: row.scores.stage3,
-      stage1V1: row.optionalLegacy.stage1v1, stage2: row.optionalLegacy.stage2},
+      stage1V1: legacy.stage1v1 ?? null, stage2: legacy.stage2 ?? null, totalV1},
     stage3: {version: stage3.version, deductions},
     evidenceSource: row.evidenceSource,
     notes: meta?.notes || ['历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。'],
@@ -97,14 +103,34 @@ const ignored = summary.ignored.map(row => {
   return {title: row.match, relativePath: row.relativePath, reason: row.reason,
     note: key ? IGNORED_REASON[key] : '材料不满足评估门槛'};
 });
+
+// v1 is a frozen snapshot: the page still shows it, but nothing is recomputed or tuned from it any more.
+const V1 = {
+  version: 'total-v1',
+  formula: 'stage1-v1 × 0.4 + stage2 × 0.6',
+  weights: {stage1: .4, stage2: .6},
+  frozen: true, frozenAt: '2026-11-06',
+  note: 'v1 已冻结：2026-11-06 之后只维护 v2。这里只保留旧材料能复算出的分数，缺任一阶段就留空；'
+    + '不计均分、不进排名，也不再作为调参依据。',
+  counts: {scored: matches.filter(match => match.scores.totalV1 != null).length,
+    missing: matches.filter(match => match.scores.totalV1 == null).length},
+  stage1: {label: '第一阶段 v1', caps: [15, 5, 5, 8, 18, 10, 8, 15, 8, 8, 6, 10],
+    names: ['首个行动指令', '首个采矿建造', '首个建造者生产', 'A→B 周期去离群均值',
+      'B→A 等待去离群均值', 'B→A 等待离群值', 'A→B 决策离群值', '相邻底层命令间隔',
+      'A→A 离群占比', 'B→B 离群占比', '底层生产指令 / 分钟', 'A/B 比值']},
+  stage2: {label: '第二阶段 v2', caps: current('stage2.v2.parameters.caps', CONFIG)},
+};
 const results = {
-  schema: 2, generatedAt: new Date().toISOString(), archive: summary.archive,
+  schema: 2, generatedAt: new Date().toISOString(), archives: summary.archives,
   standard: {version: 'total-v2', formula: 'stage3 × k + stage1-v2 × (1-k)', k: .6,
     stage1: 'stage1-score-v2', stage3: 'stage3-score-v2', provisional: true,
     tuningPool: summary.tuningPool},
+  v1: V1,
   overview: {matches: matches.length, wins: matches.filter(match => match.result.outcome === 'win').length,
     defeats: matches.filter(match => match.result.outcome === 'defeat').length,
     ignored: ignored.length,
+    archives: Object.fromEntries(summary.archives.map(label =>
+      [label, matches.filter(match => match.archive === label).length])),
     average: Number((totals.reduce((a, b) => a + b, 0) / totals.length).toFixed(3)),
     best: {id: best.id, title: best.title, totalV2: best.scores.totalV2}},
   matches, ignored,
@@ -118,5 +144,6 @@ const results = {
   },
 };
 fs.writeFileSync(WEB, JSON.stringify(results, null, 2) + '\n');
-console.log(`Wrote ${WEB}: ${matches.length} matches, ${results.overview.wins} win, ` +
+console.log(`Wrote ${WEB}: ${matches.length} matches (${summary.archives.map(label =>
+  `${label} ${results.overview.archives[label]}`).join(', ')}), ${results.overview.wins} win, ` +
   `${results.overview.defeats} defeats, ${ignored.length} ignored`);

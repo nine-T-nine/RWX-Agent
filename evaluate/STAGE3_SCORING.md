@@ -64,7 +64,7 @@ node evaluate/score_stage_3.js "$m/stage_3" --cut-ms <评分窗口 ms>
 
 ## 归档局的加速重放（resim）
 
-`evaluate/output/_archive/old_v1.1/` 里的局录制时还没采集第三阶段证据，只能重放补：
+`evaluate/output/_archive/<old_v1.0|old_v1.1>/` 里录制时还没采集第三阶段证据的局，只能重放补：
 
 ```powershell
 $m = "evaluate/output/_archive/old_v1.1/<对局名>"
@@ -93,7 +93,8 @@ node evaluate/tools/stage3_baseline.js --write --out evaluate/output/_archive/_s
 - 某一族整批 0 条记录时保留 `config.json` 里的 `S0`（不重置成 1，也不除以 0），报告会注明"该族无记录，沿用 config.json 的 S0"。
 - `--write` 写 `<局>/stage_3/score.calibrated.json` 与 `.txt`；聚合写到 `--out` 的 JSON 和同名 `.md`。
 - 给新一批局打分而不再重新标定时，把已有聚合冻结进去：`node evaluate/tools/stage3_baseline.js --s0 <已有聚合.json> --out <新的聚合> --write`，此时记 `s0Source:"fixed-baseline"`。
-- 当前 v2 的 `S0` 来自 **17 局归档语料里评分窗口 >15min 的 5 局**（偷袭 17.678 / 炮击 12.122），这 5 局全部战败。样本量小、胜负偏置明显，所以 `config.json` 里仍是 `provisional`；补充胜利长局后再重标定。
+- 本轮 `S0` 只用 **`old_v1.1`（2026-11-06 退役的那一批）里评分窗口 >15min 的 4 局**（Fire Bridge、MCPtool3、无tool基线、岩浆岛 qwen），偷袭 **21.086** / 炮击 **10.509**；4 局全部战败。`old_v1.0` 的早期材料照常评分、进归档表，但**不参与本轮标定**。样本量小、胜负偏置明显，所以 `config.json` 里仍是 `provisional`；补充胜利长局后再重标定。
+- 换 `S0` 时同步改 `config.json` 的 `stage3.parameters.ambush.S0` / `barrage.S0` 与 `stage3.calibration`（样本数、来源、胜负分布），报告的 `calibration.baseline` 直接读后者。
 - 归档 `_archive/_stage3-baseline.json`（task125 的 7 局：9.642 / 12.155）与 task126 的 9 局自身中位数（17.831 / 19.419）是另外两套语料，不能与本批混用；用哪套 `S0` 要在比较前说清楚。
 
 ## 给新一批局打分
@@ -109,7 +110,8 @@ node evaluate/tools/evaluate_corpus_v2.js --match "<对局目录>"
 
 ## 已知限制
 
-- `S0` 只有 5 局且全败；`W_min`、`N_sat`、`G_ref` 等仍是设计先验，没有参考池冻结。
+- `S0` 只有 `old_v1.1` 的 4 局且全败；`W_min`、`N_sat`、`G_ref` 等仍是设计先验，没有参考池冻结。
 - 资金 v2 的 `λ`、动态 `spendFloor`（设计里的 `κ·收入率`）与向先验收缩公式未定，当前用显式先验并标 provisional。
 - 危险区在基地内可能因我方造价过高建不起来（设计已知局限 1）；建造者是第一个死的人时不计分（宁漏勿错）。
 - 4P 归档局重放会分叉，只有 2P 的归档局能进 v2 总分。
+- 页面上的 `old_v1.0` / `old_v1.1` 只是归档批次标签（按目录），不影响分数口径；`old_v1.0` 不参与本轮调参。

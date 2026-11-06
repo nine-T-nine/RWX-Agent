@@ -74,7 +74,7 @@ node evaluate/tools/stage3_details.js --match "<甲>" --out agent-tmp/x.md
 
 ## `evaluate_corpus_v2.js` — 整批跑 v2 总分（含归档局）
 
-一次扫完 `evaluate/output` 全树（含 `_archive/old_v1.1`），逐局算 `stage1-score-v2` + `stage3-score-v2` + `total-v2`：
+一次扫完 `evaluate/output` 全树（含 `_archive/old_v1.0` 与 `_archive/old_v1.1`），逐局算 `stage1-score-v2` + `stage3-score-v2` + `total-v2`：
 
 ```powershell
 node evaluate/tools/evaluate_corpus_v2.js                     # 全部可评估的局
@@ -82,7 +82,9 @@ node evaluate/tools/evaluate_corpus_v2.js --match "<对局目录>"  # 只跑一�
 ```
 
 - **证据选择**：`prepared/telemetry.jsonl` 里有 `stage3_meta` 就直接用 live；否则要求 `resim/telemetry.jsonl` 存在且 `resim/playback.json.checksumWarnings === 0`，否则该局记入忽略（`replay_desync:<N>` / `commands_or_economy_missing` / `stage3_evidence_unavailable`），不猜分。
-- 每局写 `evaluation_v2.json`（评分窗口、结局/战败投降、`evidenceSource`、两个阶段的分数、可选的旧 `stage1v1`/`stage2` 对照），并把全部结论、忽略原因和 **>15min 调参池**的 `S` 中位数汇总到 `evaluate/output/_v2-summary.json`。
+- 每局写 `evaluation_v2.json`（评分窗口、结局/战败投降、`evidenceSource`、两个阶段的分数、可选的旧 `stage1v1`/`stage2` 对照），并把握全部结论、忽略原因和 **>15min 调参池**的 `S` 中位数汇总到 `evaluate/output/_v2-summary.json`。
+- 调参池只取 `config.json` 的 `policy.tuningPool.archives`（本轮为 `old_v1.1`）里、评分窗口严格大于 15 分钟的局；`old_v1.0` 照常评分但不进池。
+- 每局的 `archive` 取自目录：`_archive/<标签>/…` 用该标签，其余算当前批次（`old_v1.1`），所以 `old_v1.0` / `old_v1.1` 不需要在代码里写死名单。
 - 结局由 `preprocess.js` 的 `planWindow` 判定（投降/退出/我方指挥中心被毁/敌方全灭/正常结束，取最早），所以同一局在 v2 里的窗口与旧 `stage_2` 的窗口可能不同。
 - 它只重算评分，不重跑 `preprocess.js`；窗口 ms 直接传给两个评分器（`--cut-ms`），所以 `prepared/` 与 `resim/` 必须已经是当前版本的产物。
 

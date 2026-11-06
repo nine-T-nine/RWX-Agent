@@ -3,13 +3,14 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const {current, loadConfig} = require('./config');
+const {current, loadConfig, archiveLabelFor} = require('./config');
 
 const CONFIG = loadConfig();
 const VERSION = CONFIG.total.v2.version;
 const K = current('total.v2.parameters.k', CONFIG);
 const STAGE1_VERSION = CONFIG.stage1.v2.version;
 const STAGE3_VERSION = CONFIG.stage3.version;
+const OUTPUT = path.join(__dirname, 'output');
 const round = (value, digits = 3) => Number(value.toFixed(digits));
 
 function read(file) {
@@ -38,7 +39,8 @@ function main(argv) {
   if (stage3.version !== STAGE3_VERSION) throw Error(`Stage3 version ${stage3.version} != ${STAGE3_VERSION}`);
   if (!stage1.eligible || !Number.isFinite(stage1.score)) throw Error('Stage1-v2 is not eligible');
   if (!stage3.evidenceComplete || !Number.isFinite(stage3.total)) throw Error('Stage3 evidence is incomplete');
-  const score = {schema: 1, version: VERSION, archive: CONFIG.policy.archiveLabel, k: K,
+  const score = {schema: 1, version: VERSION,
+    archive: archiveLabelFor(path.relative(OUTPUT, dir).replace(/\\/g, '/'), CONFIG), k: K,
     components: {
       stage1v2: {version: stage1.version, value: stage1.score, weight: round(1 - K), source: 'stage_1_v2/score.json'},
       stage3: {version: stage3.version, value: stage3.total, weight: K, source: 'stage_3/score.json'},

@@ -128,3 +128,10 @@
 .micro-case>.scoring-table-wrap{margin-top:28px}
 @media(max-width:880px){.score-formula-strip{grid-template-columns:1fr}.scoring-stage-head,.case-overview{grid-template-columns:1fr}.case-overview{gap:27px}.case-figure{max-width:680px}.scoring-stage-head{gap:14px}.micro-cases-list{gap:58px}}
 @media(max-width:600px){.scoring-section{padding-bottom:52px}.micro-cases-section{padding-top:52px}.score-formula-strip span{font-size:10px;padding:14px 15px}.scoring-stages{gap:44px;margin-top:37px}.scoring-stage-head h3{font-size:22px}.scoring-stage-head p,.case-copy>p{font-size:13px}.scoring-table{min-width:900px}.scoring-table th,.scoring-table td{padding:15px 16px}.scoring-table tbody th{font-size:15px}.scoring-table td{font-size:13.5px}.case-figure{box-shadow:5px 6px 0 #100b17}.case-score-rule{align-items:flex-start;flex-direction:column;gap:5px}.micro-cases-list{gap:50px}}
+.version-tabs{display:inline-flex;gap:1px;margin-top:30px;border:1px solid var(--line);background:var(--line)}
+.version-tab{appearance:none;border:0;background:#150e19;color:#9b8da5;font:11px var(--mono);letter-spacing:.06em;padding:12px 20px;cursor:pointer}
+.version-tab:hover{color:#d8c8e2}
+.version-tab.is-active{background:#241a3a;color:#f4ecff;box-shadow:inset 0 -2px 0 var(--accent)}
+.version-tab:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+.version-panel[hidden]{display:none}
+@media(max-width:600px){.version-tabs{display:flex;margin-top:24px}.version-tab{flex:1;padding:11px 10px;font-size:10px}}

@@ -55,7 +55,7 @@ def check_ledger():
     for item in matches:
         for key in ('title', 'archive', 'date', 'result', 'scores', 'pairs', 'duration', 'stage3'):
             assert key in item, f'{item["id"]}: missing {key}'
-        assert item['archive'] == 'old_v1.1'
+        assert item['archive'] in {'old_v1.0', 'old_v1.1'}
         assert item['duration']['scoreSeconds'] > 0
         assert item['result']['outcome'] in {'win', 'defeat', 'draw', 'unknown'}
         assert item['pairs']
@@ -75,6 +75,19 @@ def check_ledger():
         assert item['title'] and item['reason'] and item['note'] and item['relativePath']
         assert item['title'] not in titles, 'a match cannot be both ranked and ignored'
     assert data['method']['limits'], 'known limits must be recorded'
+    # Two scoring systems live on the page: v2 (current, maintained) and v1 (frozen snapshot).
+    v1 = data['v1']
+    assert v1['version'] == 'total-v1' and v1['frozen'] is True
+    assert v1['weights'] == {'stage1': 0.4, 'stage2': 0.6}
+    assert len(v1['stage1']['caps']) == len(v1['stage1']['names']) == 12
+    assert set(v1['stage2']['caps']) == {'AMBUSH', 'GRINDER', 'STALE', 'BUILDER_IDLE', 'FACTORY_IDLE', 'FUNDS'}
+    scored = [item for item in matches if item['scores']['totalV1'] is not None]
+    assert len(scored) == v1['counts']['scored']
+    for item in scored:
+        expected = item['scores']['stage1V1'] * 0.4 + item['scores']['stage2'] * 0.6
+        assert abs(item['scores']['totalV1'] - expected) < 0.01, item['id'] + ': total-v1 does not match weighted stages'
+    archives = data['overview']['archives']
+    assert sum(archives.values()) == len(matches)
     return data
 
 
@@ -137,7 +150,8 @@ if __name__ == '__main__':
         deployed.extend(p for p in (WEB / 'resource' / folder).rglob('*') if p.is_file())
     total = sum(path.stat().st_size for path in deployed)
     assert total < 1_000_000_000, 'Site exceeds GitHub Pages size limit'
-    print(f'PASS: {len(recordings)} recordings, {ledger["overview"]["matches"]} old_v1.1 matches, '
+    print(f'PASS: {len(recordings)} recordings, {ledger["overview"]["matches"]} matches, '
+          f'{ledger["v1"]["counts"]["scored"]} with v1 scores, '
           f'{len(scoring["microCases"])} micro cases, '
           f'{len(deployed)} deployable files, '
           f'{total / 1024 / 1024:.1f} MiB; local links, video checksums and ledger scores valid.')
