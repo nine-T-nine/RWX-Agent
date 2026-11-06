@@ -22,13 +22,13 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 | 文件 | 内容 |
 | --- | --- |
 | `index.html` | 中文首页内容、导航、无脚本视频链接 |
-| `results.html` | 评测结果页：当前标准对局表、扣分明细矩阵（行=对局、列=扣分项，证据悬浮显示）、评分规则、微操 CASE、归档账本与口径限制 |
+| `results.html` | 评测结果页：`old_v1.1` 归档总表（时长 / 胜负 / Agent↔工具）、四项 Stage3 扣分矩阵、`total-v2` 评分规则、微操 CASE、未进入排名的材料与口径限制 |
 | `styles.css` | 桌面、平板、手机布局与减少动画适配 |
 | `app.js` | 首页录像切换、平台切换、复制命令和手机导航 |
-| `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染评测表格与逐局明细 |
+| `results.js` | 读取 `resource/results.json` 与 `resource/scoring.json` 渲染总表、扣分矩阵、评分规则与材料缺口 |
 | `resource/matches.json` | 四场录像的名称、说明、时长及 SHA-256 |
-| `resource/results.json` | 全部对局的分数、模型 + 工具 + 推理强度、结局、逐项扣分证据与备注 |
-| `resource/scoring.json` | 完整对局与四个微操 CASE 的扣分项、上限、公式、说明和环境图索引 |
+| `resource/results.json` | schema 2：`old_v1.1` 全部可评估对局的 `total-v2`、模型 + 工具 + 推理强度、时长、胜负、四项 Stage3 扣分与忽略原因 |
+| `resource/scoring.json` | 完整对局（Stage1-v2 / Stage2 / Stage3 四项）与四个微操 CASE 的扣分项、上限、公式、说明和环境图索引 |
 | `resource/cases/` | 四个微操 CASE 的固定 task + seed 真实窗口截图（WebP） |
 | `resource/matches/` | 已提交的 H.264/AAC 网页录像，完整时长、1080p/60fps |
 | `resource/posters/` | 从原录像提取的 WebP 封面 |
@@ -37,13 +37,13 @@ python -m http.server 4173 --bind 127.0.0.1 --directory web
 
 ## 更新评测结果
 
-评测结果来自仓库的评分产物（`evaluate/output/<对局>/score.json`，不纳入版本库）。更新流程：
+评测结果来自仓库的评分产物（`evaluate/output/<对局>/evaluation_v2.json`、`score_v2.json`、`stage_3/score.json`，都不纳入版本库）。更新流程：
 
-1. 按 `evaluate/README.md` 跑完评分，确认 `score.json` 的 `version` 为当前标准。
-2. 把对局的综合分、两阶段分、模型 + 工具 + 推理强度、结局与会话 id 写进 `resource/results.json`。模型、工具、推理强度、会话与 token 这些身份信息以对局目录的 `meta.json` 为准（`evaluate/tools/match_materials.js` 生成并维护），页面只做展示。
-3. 跑 `node evaluate/tools/results_details.js`：它按 `id → evaluate/output/<对局>` 的映射读取 `stage_1/score.json` 与 `stage_2/score.json`，把每一项扣分的本局证据写进 `metrics.stage1Items[].detail`、`breakdown.stage2.families[].detail` 与 `events`（第二阶段没出现的类别补 0 行），同时核对两阶段分与账本是否一致。新对局要在该脚本的 `DIRS` 里补一行映射，或在账本条目里直接写 `match` 字段。
-4. 若对局无法关联或材料不足，写入 `insufficient` 而不是补分；归档对局只进 `legacy`。
-5. 运行 `python web/tools/check_site.py`：它会校验页面链接、录像校验和，以及每条记录的加权分与阶段分是否一致。
+1. 按 `evaluate/README.md` 跑完 v2 评分（或直接 `node evaluate/tools/evaluate_corpus_v2.js` 整批跑），确认阶段版本为 `stage1-score-v2` / `stage3-score-v2`。
+2. 跑 `node evaluate/tools/build_web_results_v2.js`：它读 `evaluate/output/_v2-summary.json` 与各局 `meta.json`，写 `resource/results.json`（页面不做二次换算，`total-v2` 一致性由 `check_site.py` 校验）。模型、工具、推理强度、会话这些身份信息以对局目录 `meta.json` 为准（`evaluate/tools/match_materials.js` 生成并维护），多 Agent 局按 `pairs` 一对一列出，工具改造写在 `extra`。
+3. 归档语料缺结构化 `meta.json` 的，在 `build_web_results_v2.js` 顶部的 `ARCHIVE` 表补日期与参与模型；材料不足或重放分叉的局由脚本写进 `ignored`，页面单列"未进入排名"，不要手工补分。
+4. Stage3 四项的上限/公式由 `resource/scoring.json` 提供：`node web/tools/build_scoring_v2.js` 从评分产物与 `evaluate/config.json` 重新生成它。
+5. 运行 `python web/tools/check_site.py`：校验页面链接、录像校验和、每条记录的 `total-v2` 与两阶段加权、四项 Stage3 是否齐全、`pairs` 字段与 `ignored` 结构。
 
 `check_site.py` 不读取 `evaluate/`（该目录不进版本库），因此分数一致性以 `results.json` 内部为准。
 

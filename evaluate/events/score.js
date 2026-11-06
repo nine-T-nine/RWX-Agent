@@ -120,7 +120,7 @@ function fundsEvents(samples,config=DEFAULTS.funds){
       open.fallStart=null;
       if(s>Math.max(config.spendFloor,config.spendShare*M)){
         const share=s/M;open.spends.push({second:i,amount:s,share});
-        if(share>.8){close(i);continue;}
+        if(share>(config.releaseShare??.8)){close(i);continue;}
         open.D*=share<=.5?config.rho1:config.rho2;
       }
     }

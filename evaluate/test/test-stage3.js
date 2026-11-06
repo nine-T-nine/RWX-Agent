@@ -53,8 +53,9 @@ test('stage3 scoring saturates two loss families and anchor-merges grinder death
   assert.equal(score.breakdown[1].S,1);
   assert.equal(score.breakdown[2].items.length,2); // 45.001s is outside the first 5s anchor window.
   assert.equal(score.breakdown[2].items[0].weight,11);
-  assert.equal(score.breakdown[2].items[0].points,8);
-  assert.equal(score.breakdown[2].items[1].points,.8);
+  assert.equal(score.breakdown[2].items[0].points,DEFAULTS.grinder.SingleMax);
+  assert.equal(score.breakdown[2].items[1].points,DEFAULTS.grinder.SingleMax*.1);
+  assert.equal(score.breakdown[2].cap,DEFAULTS.grinder.Cap);
   assert.equal(score.calibration.provisional,true);
   assert.ok(score.total>=0&&score.total<=100);
 });

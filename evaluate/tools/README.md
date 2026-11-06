@@ -51,7 +51,7 @@ node evaluate/tools/stage3_baseline.js --s0 evaluate/output/_archive/_stage3-bas
 ```
 
 - 只统计 `summary.complete=true` 且 `resim/playback.json.checksumWarnings=0` 的局；证据不全、重放分叉的局单独列出并写明原因，不参与中位数。
-- 某一族整批没有记录时保留占位 `S0=1` 并标 `fallback`，不会除以 0。
+- 某一族整批没有记录时保留 `config.json` 里的 `S0`（不重置成 1，也不除以 0），报告写“该族无记录，沿用 config.json 的 S0”。
 - 聚合结果（各局 `S`、`N` 直方图、类型占比、危险区漏斗、标定后扣分与总分）写到 `--out` 的 JSON 和同名 `.md`，默认在 `_archive/` 下。
 - 标定后的报告仍写 `provisional:true` + `s0Source:"archive-median"`：归档语料模型/提示词不统一，只能当工作标定。
 - `--s0 <已有基线.json>` 冻结一组 S0（可直接传另一份 `_stage3-baseline.json`），给新一批局打分时不再重新标定；此时 `s0Source="fixed-baseline"`、`baseline.source` 记录来源，分数仍 `provisional`。
@@ -72,9 +72,39 @@ node evaluate/tools/stage3_details.js --match "<甲>" --out agent-tmp/x.md
 - 重放分叉（`resim/playback.json.checksumWarnings>0`）的局照样列，但表头标「排除」并写明不一致条数。
 - 没有 `stage_3` 的局直接跳过，不占位。
 
-## `results_details.js` — 把逐项扣分证据写进网页账本
+## `evaluate_corpus_v2.js` — 整批跑 v2 总分（含归档局）
+
+一次扫完 `evaluate/output` 全树（含 `_archive/old_v1.1`），逐局算 `stage1-score-v2` + `stage3-score-v2` + `total-v2`：
+
+```powershell
+node evaluate/tools/evaluate_corpus_v2.js                     # 全部可评估的局
+node evaluate/tools/evaluate_corpus_v2.js --match "<对局目录>"  # 只跑一局
+```
+
+- **证据选择**：`prepared/telemetry.jsonl` 里有 `stage3_meta` 就直接用 live；否则要求 `resim/telemetry.jsonl` 存在且 `resim/playback.json.checksumWarnings === 0`，否则该局记入忽略（`replay_desync:<N>` / `commands_or_economy_missing` / `stage3_evidence_unavailable`），不猜分。
+- 每局写 `evaluation_v2.json`（评分窗口、结局/战败投降、`evidenceSource`、两个阶段的分数、可选的旧 `stage1v1`/`stage2` 对照），并把全部结论、忽略原因和 **>15min 调参池**的 `S` 中位数汇总到 `evaluate/output/_v2-summary.json`。
+- 结局由 `preprocess.js` 的 `planWindow` 判定（投降/退出/我方指挥中心被毁/敌方全灭/正常结束，取最早），所以同一局在 v2 里的窗口与旧 `stage_2` 的窗口可能不同。
+- 它只重算评分，不重跑 `preprocess.js`；窗口 ms 直接传给两个评分器（`--cut-ms`），所以 `prepared/` 与 `resim/` 必须已经是当前版本的产物。
+
+## `build_web_results_v2.js` — 把 v2 汇总写进网页账本
+
+`_v2-summary.json` 与 `evaluate/output/` 都不进版本库，页面读不到。这个脚本把结论写成 `web/resource/results.json`（schema 2）：
+
+```powershell
+node evaluate/tools/build_web_results_v2.js
+python web/tools/check_site.py
+```
+
+- 每局一条：`title`（`meta.display_name` 优先）、`pairs`（模型 × 数量 × 工具，工具改造放 `extra`）、`duration`（评分窗口 + 游戏秒）、`result`（胜负/投降）、`scores`（`totalV2`/`stage1V2`/`stage3` 与可选的旧分）、`stage3.deductions`（四项扣分与上限）。
+- 归档语料没有结构化 `meta.json` 的，用脚本顶部的 `ARCHIVE` 表补日期与参与模型；缺的字段写 `unknown`，不猜 provider/推理强度。
+- 忽略的局单列进 `ignored`（原因 + 相对路径），页面上是"未进入排名"。
+- `check_site.py` 会校验 `total-v2` 与两阶段加权一致、四项 Stage3 齐全、`pairs` 字段完整。
+
+## `results_details.js` — 把逐项扣分证据写进网页账本（old_v1.1 旧账本）
 
 评测页要对每一局展开「第一阶段 12 项 + 第二阶段 6 类」的扣分明细，但 `web/resource/results.json` 在版本库里、`evaluate/output` 不进版本库，页面自己读不到评分产物。这个脚本做桥梁：
+
+> 2026-11-06 起评测页改用 `total-v2` 账本（schema 2），不再有 `stage1Items`；本脚本只用于复现 `old_v1.1` 之前的旧账本，新流程请用 `build_web_results_v2.js`。
 
 ```powershell
 node evaluate/tools/results_details.js           # 把证据写进 results.json

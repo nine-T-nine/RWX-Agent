@@ -7,7 +7,7 @@
 从仓库根目录执行，无需启动游戏，无需npm/pip依赖：
 
 ```powershell
-node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-stage3.js evaluate/test/test-stage3-baseline.js evaluate/test/test-stage3-details.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js evaluate/test/test-paths.js evaluate/test/test-match-materials.js evaluate/test/test-rebuild-telemetry.js
+node --test evaluate/test/test-evaluate.js evaluate/test/test-stage1-metrics.js evaluate/test/test-low-attribution.js evaluate/test/test-events.js evaluate/test/test-stage2-fixes.js evaluate/test/test-score.js evaluate/test/test-score-evidence.js evaluate/test/test-stage3.js evaluate/test/test-stage3-baseline.js evaluate/test/test-stage3-details.js evaluate/test/test-preprocess.js evaluate/test/test-score-match.js evaluate/test/test-score-v2.js evaluate/test/test-paths.js evaluate/test/test-match-materials.js evaluate/test/test-rebuild-telemetry.js
 python -W error::ResourceWarning evaluate/test/test_replay.py
 ```
 
@@ -24,6 +24,7 @@ node --test evaluate/test/test-stage3.js
 node --test evaluate/test/test-stage3-baseline.js
 node --test evaluate/test/test-stage3-details.js
 node --test evaluate/test/test-preprocess.js evaluate/test/test-score-match.js
+node --test evaluate/test/test-score-v2.js
 node --test evaluate/test/test-paths.js evaluate/test/test-match-materials.js
 python -m unittest discover -s evaluate/test -p 'test_*.py'
 ```
@@ -47,6 +48,7 @@ python -m unittest discover -s evaluate/test -p 'test_*.py'
 | `test-match-materials.js` | 材料收敛：命令日志与引擎证据被移动而不是复制、外层重复副本被删除、回放改名成 `<对局名>.replay`、只留一份 `preprocess.json`、`meta.json` 的自动字段与人工覆盖、重复运行无副作用、`_old`/`micro` 不碰、只有回放的局不建目录、内容冲突只报告、`--archive` 把 `*_old` 收进 `_archive/` 且默认不动归档 | 临时目录，不碰真实 `evaluate/output/` |
 | `test-rebuild-telemetry.js` | 回放-only 材料重建：收据日志补 `command`/`result` 行、refs 带收据时刻的死亡时间、`frames` 压缩行展开、replay ordinal → native `source=agent`/`commandId` 归属、未命中 replay 的请求记为推断拒绝（`inferred:true`）而不是静默接受、晚于回放 `end` 的收据行被丢弃（不把游戏时钟写成倒走） | 合成 commands/Replay/telemetry，写系统临时目录并清理 |
 | `test-score-match.js` | 综合分 `0.4/0.6` 权重、版本门（旧版本默认拒算、显式放行后标记）、预处理否决时综合分为空 | 临时目录写两阶段 score.json |
+| `test-score-v2.js` | 中央参数账本（每个旋钮都有说明/初值/当前值、模块版本取自 `config.json`）、Stage1-v2 六个特征与三类权重、少样本收缩、无 A 饱和、日活跃度闸门、Stage3 资金 v2 的囤积区间与 `releaseShare`、缺经济证据不按 0 分、`total-v2` 加权与版本门 | 内存命令/经济序列 + 临时目录写 `stage_1_v2`/`stage_3` 报告 |
 | `test_replay.py` | 按引擎写侧布局合成二进制，覆盖UTF/gzip、命令各字段、JSONL导出、文本过滤、截断/损坏容错、strict模式；对仓库录像检查布局无漂移、元数据与时间一致 | 合成Replay和输出放临时目录；只读仓库 `replays/*.replay`，真实样本较多时用时更长 |
 
 Node 用例覆盖三阶段统计、评分、事件检测、预处理、路径解析与材料收敛；完整数量以实际输出为准。Python 既有基线为27项。样本要求：

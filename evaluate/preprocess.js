@@ -61,12 +61,16 @@ function scanCommands(file) {
 }
 
 /** Decide where the scoreable window ends. Pure, so it can be unit-tested. */
-function planWindow({commands, end, lastFrameMs}) {
+function planWindow({commands, end, lastFrameMs, defeatMs, victoryMs}) {
   const candidates = [];
   if (commands.surrenderMs != null) candidates.push({ms: commands.surrenderMs, kind: 'surrender',
     reason: 'agent_surrendered'});
   if (commands.exitMs != null) candidates.push({ms: commands.exitMs, kind: 'agent_exit',
     reason: 'agent_left_the_match'});
+  // Losing our command center ends *our* scoreable play. In a team game the capture may keep going
+  // for the ally, so cut here even when `match_result` or the replay ends much later.
+  if (Number.isFinite(defeatMs)) candidates.push({ms: defeatMs, kind: 'defeat', reason: 'team_eliminated'});
+  if (Number.isFinite(victoryMs)) candidates.push({ms: victoryMs, kind: 'victory', reason: 'enemy_eliminated'});
   if (end) {
     const kind = end.reason === 'process_exit' ? 'aborted'
       : end.reason === 'truncated_after_interference' ? 'truncated'
@@ -97,9 +101,15 @@ async function scanTelemetry(file) {
   const readline = require('node:readline');
   const stat = {file, rows: 0, meta: null, end: null, lastFrameMs: null, lastMs: null, lastTick: null,
     lastSeq: null, idleRows: 0, damageRows: 0, hpLossRows: 0, hpFieldRows: 0,
-    stage3Meta: false, stage3Rows: 0, nativeSources: {}};
+    stage3Meta: false, stage3Rows: 0, nativeSources: {}, defeatMs: null, victoryMs: null};
   if (!file || !fs.existsSync(file)) return stat;
   const stream = readline.createInterface({input: fs.createReadStream(file, 'utf8'), crlfDelay: Infinity});
+  // Our side is out once its last command center dies. In a team game the match keeps running for
+  // the ally, so this moment is its own window cap (see planWindow).
+  const selfCommandCenters = new Set();
+  const enemyCommandCenters = new Set();
+  let sawSelfCommandCenter = false;
+  let sawEnemyCommandCenter = false;
   for await (const line of stream) {
     if (!line.startsWith('{"kind":"')) continue;
     const kind = /^\{"kind":"([a-z0-9_]+)"/.exec(line)?.[1];
@@ -121,6 +131,26 @@ async function scanTelemetry(file) {
     } else if (kind === 'native') {
       const source = /"source":"([a-z_]+)"/.exec(line)?.[1] ?? 'none';
       stat.nativeSources[source] = (stat.nativeSources[source] || 0) + 1;
+    } else if (kind === 'unit' || kind === 'death') {
+      // Only our own command centers matter here, and they are rare rows: parse just those.
+      if ((line.includes('"side":"self"') || line.includes('"side":"enemy"')) && line.includes('"commandCenter"')) {
+        try {
+          const row = json(line), unit = row.unit;
+          if (unit && Number.isInteger(unit.id)) {
+            const own = unit.side === 'self', set = own ? selfCommandCenters : enemyCommandCenters;
+            if (unit.alive === false) {
+              set.delete(unit.id);
+              if (own && sawSelfCommandCenter && set.size === 0 && stat.defeatMs == null)
+                stat.defeatMs = Number(row.timeMs);
+              if (!own && sawEnemyCommandCenter && set.size === 0 && stat.victoryMs == null)
+                stat.victoryMs = Number(row.timeMs);
+            } else {
+              set.add(unit.id);
+              if (own) sawSelfCommandCenter = true; else sawEnemyCommandCenter = true;
+            }
+          }
+        } catch { /* keep scanning */ }
+      }
     }
   }
   return stat;
@@ -184,7 +214,12 @@ function trimReplay(input, output, cutMs) {
   const kept = [];
   for (const line of lines) {
     if (!line.trim()) continue;
-    const timeMs = Number(/"game_time_ms":(\d+)/.exec(line)?.[1] ?? NaN);
+    // The exported JSONL is pretty-printed with a space after the colon (`"game_time_ms": 688`);
+    // the old pattern required the compact form, so nothing was ever trimmed. Accept both, and
+    // fall back to `time_s` when a row only carries the float clock.
+    const raw = /"game_time_ms"\s*:\s*(\d+)/.exec(line)?.[1];
+    const seconds = /"time_s"\s*:\s*([\d.]+)/.exec(line)?.[1];
+    const timeMs = raw != null ? Number(raw) : (seconds != null ? Number(seconds) * 1000 : NaN);
     if (Number.isFinite(timeMs) && timeMs > cutMs) continue;
     kept.push(line);
   }
@@ -265,7 +300,8 @@ async function preprocess(dir, options = {}) {
   const commands = scanCommands(inputs.commands);
   const telemetry = await scanTelemetry(inputs.telemetry);
   const end = telemetry.end || (commands.stop ? {timeMs: commands.lastMs, reason: 'command_log_truncated'} : null);
-  const window = planWindow({commands, end, lastFrameMs: telemetry.lastFrameMs});
+  const window = planWindow({commands, end, lastFrameMs: telemetry.lastFrameMs,
+    defeatMs: telemetry.defeatMs, victoryMs: telemetry.victoryMs});
   const cutMs = Math.round(window.ms ?? 0);
   // Everything the capture recorded after the last scoreable instant: shutdown tails, post-victory
   // polling, the teammate AI still fighting after a surrender.
@@ -310,7 +346,9 @@ async function preprocess(dir, options = {}) {
     inputs, prepared: out,
     ending: {kind: window.kind, reason: window.reason,
       endReason: telemetry.end?.reason ?? null, commandStop: commands.stop?.content ?? null,
-      surrenderMs: commands.surrenderMs, exitMs: commands.exitMs, lastCommandMs: commands.lastMs},
+      surrenderMs: commands.surrenderMs, exitMs: commands.exitMs, defeatMs: telemetry.defeatMs,
+      victoryMs: telemetry.victoryMs,
+      lastCommandMs: commands.lastMs},
     window: {startMs: 0, endMs: cutMs, trimmedMs,
       trailingAfterEndMs: Math.max(0, Math.round((commands.lastMs ?? 0) - (telemetry.end?.timeMs ?? 0)))},
     evidence,
@@ -348,4 +386,5 @@ async function main(argv) {
 if (require.main === module) {
   main(process.argv).catch(error => { console.error(error.message); process.exitCode = 1; });
 }
-module.exports = {preprocess, planWindow, scanCommands, trimCommands, trimEconomy, VERSION};
+module.exports = {preprocess, planWindow, scanCommands, scanTelemetry, trimCommands, trimTelemetry,
+  trimReplay, trimEconomy, discover, commandLog, VERSION};

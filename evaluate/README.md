@@ -127,20 +127,24 @@ rwx-battleroom-start --record 从 tick 0 开局，然后执行 rwx-game-replay-s
 
 ```text
 evaluate/output/
-  _archive/                        旧材料（`*_old`），原样保留、不参与评分
+  _archive/old_v1.1/              全部旧材料（2026-11-06 统一归档），不参与新榜
   <对局名>/
     meta.json                     对局身份：系统版本、模型、工具、思考强度、地图、时长、胜负、会话、token
     commands-<对局名>.txt          原始命令日志（CLI 录制）
     events-live/<对局名>/          telemetry.jsonl + economy.log（`--evaluate` 采集）
     replay/                        Replay 解析产物（summary/txt/jsonl）
+    resim/                         归档局的重放证据（telemetry.jsonl / economy.log / playback.json）
     prepared/                      预处理裁剪后的输入 + preprocess.json（评分只吃这一份）
-    stage_1/ stage_2/ stage_3/     三阶段报告
-    score.json score.txt           综合分
+    stage_1_v2/ stage_3/           v2 主分：节奏分与四项严重度
+    stage_1/ stage_2/              旧两阶段报告，能复算时作可选对照
+    score_v2.json score_v2.txt     total-v2 = stage3 × 0.6 + stage1-v2 × 0.4
+    evaluation_v2.json             本局的时长、结局、证据来源与忽略原因摘要
+    score.json score.txt           旧 total-v1（0.4/0.6，只合成旧两阶段）
   micro/                           微操评测，自己一套清理规则
 replays/<对局名>.replay
 ```
 
-根目录只放**当前**对局，列表一眼能看出哪些是最近在评的。`*_old` 归档保持原有目录名躺在 `_archive/` 里，内部结构就是当年那份材料：`stage_1/`、`stage_2/`、`replay/`、`events-live/`（或 `engine/`），早期扁平布局的 stage1-v1 产物在 `flat/`（含 `flat/events/` 的原始回放证据）。
+根目录只放**当前**对局，列表一眼能看出哪些是最近在评的。`*_old` 归档与 2026-11-06 统一归档的 11 局都在 `_archive/old_v1.1/` 里，内部结构就是当年那份材料：`stage_1/`、`stage_2/`、`replay/`、`events-live/`（或 `engine/`），早期扁平布局的 stage1-v1 产物在 `flat/`（含 `flat/events/` 的原始回放证据）；录制时没有第三阶段行的局另有 `resim/`。
 
 整理用 [`tools/match_materials.js`](tools/README.md)：
 
@@ -187,25 +191,33 @@ node evaluate/tools/match_materials.js --apply --match "<对局名>" `
 $m = "evaluate/output/<对局名>"
 node evaluate/tools/match_materials.js --apply      # 0 收敛材料、改回放名、写 meta.json
 python evaluate/utils/replay.py "replays/<对局名>.replay" --commands "$m/commands-<对局名>.txt"
-                                                                    # 0.5 解析回放 → <对局名>/replay/
-node evaluate/preprocess.js "$m"                                    # 1 结尾分类 + 裁窗口
-node evaluate/evaluate_stage_1.js "$m/prepared/commands-<对局名>.txt" "$m/prepared/replay.jsonl"
-node evaluate/evaluate_stage_2.js "$m/prepared/telemetry.jsonl" `
-  --commands "$m/prepared/commands-<对局名>.txt" --economy "$m/prepared/economy.log" `
-  --replay "$m/prepared/replay.jsonl" --out "$m/stage_2"
+                                                    # 0.5 解析回放 → <对局名>/replay/
+node evaluate/preprocess.js "$m"                    # 1 结尾分类 + 裁窗口，写出窗口 ms
+node evaluate/score_stage_1_v2.js "$m" --cut-ms <窗口 ms>       # 2 第一阶段 v2（节奏分）
 node evaluate/evaluate_stage_3.js "$m/prepared/telemetry.jsonl" --out "$m/stage_3"
-node evaluate/score_stage_2.js "$m/stage_2"                         # 4 第二阶段评分
-node evaluate/score_stage_3.js "$m/stage_3"                         # 5 第三阶段评分（S0 标定前为 provisional）
-node evaluate/score_match.js "$m"                                   # 6 现行公榜综合得分（仍只合成第一、二阶段）
-node evaluate/tools/match_materials.js --apply "$m"                 # 7 刷新 meta.json
+node evaluate/score_stage_3.js "$m/stage_3" --economy "$m/prepared/economy.log" --cut-ms <窗口 ms>
+                                                    # 3 第三阶段四项（含资金 v2）
+node evaluate/score_match_v2.js "$m"                # 4 total-v2 = stage3×0.6 + stage1-v2×0.4
+node evaluate/tools/match_materials.js --apply "$m" # 5 刷新 meta.json
 ```
 
-- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，三个阶段都只吃裁剪后的输入。记录只保留这一份，不再往对局根目录复制第二份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。
-- 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，综合分留空。
-- 现行公榜综合得分 `stage1*0.4 + stage2*0.6`，写在对局目录的 `score.json`。它只接受当前版本（`stage1-v2` / `stage2-v2`）；旧版本报告默认拒算，确需复算加 `--allow-stale`。
-- 第三阶段独立写 `stage_3/score.json`。设计尚未给综合权重，且两项 `S0` 仍待基线标定，所以不会被 `score_match.js` 静默混入公榜。
-- 归档局（`_archive/*_old`）录制时没有第三阶段行：用同一份回放加速重放补（`evaluate_replay.py --out <临时目录>`，把 `engine/match-*/telemetry.jsonl` 与 `economy.log` 放进 `<局>/resim/`，再跑 `evaluate_stage_3.js` + `score_stage_3.js`），原有 `stage_1/`、`stage_2/` 不动；窗口止于 `replay_end`、分叉与未完成回放的限制见 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。跑完用 `node evaluate/tools/stage3_baseline.js --write` 求 `S0` 中位数，各局多出 `stage_3/score.calibrated.json`。
-- 三阶段报告各自独立；旧版本材料一律以 `_old` 后缀归档，不参与排名。
+整批（含归档局）不要逐局手敲，用：
+
+```powershell
+node evaluate/tools/evaluate_corpus_v2.js                    # 扫 evaluate/output 全树
+node evaluate/tools/evaluate_corpus_v2.js --match "<对局目录>"
+node evaluate/tools/build_web_results_v2.js                  # 汇总进网页账本
+```
+
+它按"live 有 `stage3_meta` 就用 live，否则要求 resim 零分叉"选证据，逐局写 `evaluation_v2.json`，并把结论和忽略原因汇总到 `evaluate/output/_v2-summary.json`（`evaluate/output/` 不进版本库）。
+
+- **参数只有一个账本**：[`config.json`](config.json) 按 `total` / `stage1` / `stage2` / `stage3` 分组，每个参数写 `description`、`initial`、`current`，未定的标 `"status": "provisional"`。代码通过 [`config.js`](config.js) 读 `current`，所以改参数只改这个文件；`initial` 保留设计初值，便于回看"当前值是怎么偏离的"。改完必须重跑受影响的阶段，报告里的 `parameters` 会记下当次快照。新增参数时同时补 `description`/`initial`/`current`，`test-score-v2.js` 会检查每个旋钮都齐全。
+- 预处理把窗口裁到最后一个有效时点，并在 `prepared/preprocess.json` 写出：`ending`（`normal`/`defeat`/`victory`/`surrender`/`agent_exit`/`truncated`/`aborted`）、`window`（`endMs`/`trimmedMs`/`trailingAfterEndMs`）、`evidence`（`idleRows`/`hpLossRows`/`missing`）。裁剪后的材料在同一目录的 `prepared/` 下，评分只吃这一份。预处理只收 `replay/*.jsonl`：先解析回放再预处理，否则 `inputs.replay` 是 `null`、`prepared/` 里没有 `replay.jsonl`。`defeat` 指我方指挥中心被摧毁：团队局里盟友还会继续打，但那一刻之后的命令、回放帧和遥测一律不进窗口；`victory` 指敌方指挥中心全灭。裁剪同时作用于 commands、telemetry、economy 与 `replay.jsonl` 四份材料。
+- 窗口不足 120s、窗口内没有命令或没有经济日志时，`preprocess.json` 标 `scoreEligible=false`，总分留空。
+- 现行公榜总分 `total-v2 = stage3 × 0.6 + stage1-v2 × 0.4`，写在对局目录的 `score_v2.json`。它只接受当前版本（`stage1-score-v2` / `stage3-score-v2`），版本不符直接拒算。旧 `score_match.js`（`0.4/0.6` 合成旧两阶段）保留给 `old_v1.1` 对照，不再出新分。
+- 旧 `stage_1` / `stage_2` 报告在材料允许时仍可复算，作为 `evaluation_v2.json` 的 `optionalLegacy` 列，不参与 `total-v2`。
+- 归档局（`_archive/old_v1.1/*`）录制时没有第三阶段行：用同一份回放加速重放补 `resim/`，再跑 `evaluate_stage_3.js` + `score_stage_3.js`；原有的 `stage_1/`、`stage_2/` 不动。窗口止于 `replay_end`、分叉与未完成回放的限制见 [`STAGE3_SCORING.md`](STAGE3_SCORING.md)。分叉局（`checksumWarnings > 0`）与材料缺失局直接忽略，不猜分。
+- 三阶段报告各自独立；旧版本材料一律在 `_archive/old_v1.1/` 归档，不参与排名。
 
 ## 管理员开局核对
 
@@ -220,12 +232,14 @@ rwx-game-replay-status
 
 启动日志还应显示所选 `tier`，并确保与评测分组一致。评估材料的具体要求、处理流程和判读方式见：
 
-- [第一轮：实时性材料、映射与评分规则](STAGE1_SCORING.md)
-- [第二轮：证据采集、事件判定与评分规则](STAGE2_SCORING.md)
-- [第三阶段：延迟严重程度、危险区与标定规则](STAGE3_SCORING.md)
+- [第一轮：实时性材料、映射与评分规则](STAGE1_SCORING.md)（旧 12 项，归档对照）
+- [第一轮 v2：交互节奏、空窗与活跃度闸门](STAGE1_V2_SCORING.md)
+- [第二轮：证据采集、事件判定与评分规则](STAGE2_SCORING.md)（`stage2-v2`，v2 总分不再使用）
+- [第三阶段：四项严重度、资金 v2 与标定规则](STAGE3_SCORING.md)
+- [中央参数账本](config.json)：Stage1-3 全部参数（说明/初值/当前值）
 
 ## 结果发布
 
-对外展示的评测账本在 [`web/results.html`](../web/results.html)，数据来自 [`web/resource/results.json`](../web/resource/results.json)：当前标准对局、归档 `_old` 对局与“材料不足不计分”分开记录，每条注明模型、工具与推理强度。每一局的同一份身份信息也写在对局目录的 `meta.json` 里，筛选与复盘都以它为准。
+对外展示的评测账本在 [`web/results.html`](../web/results.html)，数据来自 [`web/resource/results.json`](../web/resource/results.json)：`old_v1.1` 归档里 17 局可忠实还原的对局按 `total-v2` 排名，每局给出评分时长、胜负、模型 + 工具配对与四项 Stage3 扣分；材料不足或重放分叉的 5 局单列"未进入排名"。每一局的同一份身份信息也写在对局目录的 `meta.json` 里，筛选与复盘都以它为准。
 
 `evaluate/output/` 不进版本库，因此公开页面只保留结论与关键指标；更新步骤（含 `check_site.py` 校验）见 [`web/README.md`](../web/README.md#更新评测结果)。同一批对局比较工具体系时，需保证模型、地图、对手、经济倍率一致，并按工具各跑多局，避免用单局差值下结论。

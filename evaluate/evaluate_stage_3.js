@@ -83,7 +83,12 @@ function compile(rows){
 }
 
 async function evaluateStage3(file,options={}){
-  const all=[];for await(const row of records(file))all.push(row);
+  const all=[];for await(const row of records(file)){
+    if(Number.isFinite(options.cutMs)&&row.kind!=='meta'&&Number(row.timeMs)>options.cutMs)continue;
+    if(Number.isFinite(options.cutMs)&&row.kind==='end')continue;
+    all.push(row);
+  }
+  if(Number.isFinite(options.cutMs))all.push({kind:'end',timeMs:options.cutMs,reason:'preprocess_cut'});
   const result=compile(all),input=path.resolve(file),parent=path.dirname(input);
   const out=path.resolve(options.out||(path.basename(parent)==='prepared'
     ?path.join(path.dirname(parent),'stage_3'):path.join(parent,'stage_3')));
@@ -100,7 +105,8 @@ async function evaluateStage3(file,options={}){
 if(require.main===module){
   const args=process.argv.slice(2),file=args.shift(),options={};
   if(!file){console.error('Usage: node evaluate/evaluate_stage_3.js <telemetry.jsonl> [--out directory]');process.exitCode=1;}
-  else{while(args.length){const flag=args.shift();if(flag==='--out')options.out=args.shift();else throw Error(`Unknown option ${flag}`);}
+  else{while(args.length){const flag=args.shift();if(flag==='--out')options.out=args.shift();
+    else if(flag==='--cut-ms')options.cutMs=Number(args.shift());else throw Error(`Unknown option ${flag}`);}
     evaluateStage3(file,options).then(r=>console.log(JSON.stringify(r.summary,null,2)))
       .catch(error=>{console.error(error.message);process.exitCode=1;});}
 }

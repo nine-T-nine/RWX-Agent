@@ -1,2155 +1,1340 @@
 {
-  "schema": 1,
-  "generatedAt": "2026-11-05",
+  "schema": 2,
+  "generatedAt": "2026-11-06T05:43:54.863Z",
+  "archive": "old_v1.1",
   "standard": {
-    "total": "total-v1",
-    "stage1": "stage1-v2",
-    "stage2": "stage2-v2",
-    "weights": {
-      "stage1": 0.4,
-      "stage2": 0.6
-    },
-    "summary": "总分 = 第一阶段 × 0.4 + 第二阶段 × 0.6，两项均为 0–100，越高越好；两阶段仍分开呈现，综合分只用于横向比较。",
-    "updatedAt": "2026-11-05",
-    "parameters": {
-      "ambush": {
-        "cap": 40,
-        "singleMax": 18,
-        "gamma": 3
+    "version": "total-v2",
+    "formula": "stage3 × k + stage1-v2 × (1-k)",
+    "k": 0.6,
+    "stage1": "stage1-score-v2",
+    "stage3": "stage3-score-v2",
+    "provisional": true,
+    "tuningPool": {
+      "policy": {
+        "minDurationExclusiveSeconds": 900,
+        "requireCompleteEvidence": true,
+        "requireFaithfulReplay": true,
+        "description": "后续参数调优只使用评分窗口严格大于 15 分钟、证据完整且重放无分叉的对局；胜负只记录，不作为硬筛选。"
       },
-      "caps": {
-        "AMBUSH": 40,
-        "GRINDER": 20,
-        "STALE": 15,
-        "BUILDER_IDLE": 25,
-        "FACTORY_IDLE": 20,
-        "FUNDS": 30
-      },
-      "note": "2026-11-05 起 Stage2 六类上限 40/20/15/25/20/30；AMBUSH 单次 18、γ=3。task119 曲线改为平移指数/对数后 9 局全部重算。"
+      "matches": [
+        {
+          "match": "Fire Bridge (2p) opencode vs Hard",
+          "durationSeconds": 1104.24,
+          "outcome": "defeat",
+          "ambushS": 17.671,
+          "barrageS": 8.895
+        },
+        {
+          "match": "Ice Island (2p) DSH MCPtool3 vs Hard",
+          "durationSeconds": 1183.328,
+          "outcome": "defeat",
+          "ambushS": 24.493,
+          "barrageS": 12.122
+        },
+        {
+          "match": "Ice Island (2p) DSH 无tool基线",
+          "durationSeconds": 1058.048,
+          "outcome": "defeat",
+          "ambushS": 17.678,
+          "barrageS": 20.338
+        },
+        {
+          "match": "Ice-Island-(2p)-20261101--21-51_Pi+Kimi3.1provsHard_延迟2_old",
+          "durationSeconds": 1049.296,
+          "outcome": "defeat",
+          "ambushS": 12.126,
+          "barrageS": 17.832
+        },
+        {
+          "match": "岩浆岛4p opencode_qwen3.8flash vs Hard",
+          "durationSeconds": 1936.656,
+          "outcome": "defeat",
+          "ambushS": 44.969,
+          "barrageS": 3.617
+        }
+      ],
+      "ambushS0Median": 17.678,
+      "barrageS0Median": 12.122
     }
   },
   "overview": {
-    "currentMatches": 9,
+    "matches": 17,
+    "wins": 1,
+    "defeats": 16,
+    "ignored": 5,
+    "average": 33.746,
     "best": {
-      "id": "firebridge-opencode",
-      "total": 84.726
-    },
-    "legacyMatches": 11,
-    "insufficient": 1
+      "id": "303d91e51874",
+      "title": "Ice Island (2p) 11-01 18:51 Pi + Claude Opus 5.5 + DSH vs Hard",
+      "totalV2": 69.519
+    }
   },
-  "current": [
+  "matches": [
     {
-      "id": "tool1",
-      "title": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
-      "tool": "pwsh + RWX CLI",
-      "toolDetail": "MCP 桥接未注册，全部指令经 pwsh 批量执行 rwx-* 命令（81 次调用）",
-      "mcp": false,
-      "group": "trio",
-      "date": "2026-11-03 00:29",
+      "id": "303d91e51874",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 11-01 18:51 Pi + Claude Opus 5.5 + DSH vs Hard",
+      "date": "2026-11-01 18:51",
       "map": "Ice Island (2p)",
       "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
+      "duration": {
+        "scoreSeconds": 372.656,
+        "gameSeconds": null
       },
-      "session": "session-28a38d0e-4f19-47fd-8a92-f85e284ba666",
+      "result": {
+        "outcome": "win",
+        "label": "胜利",
+        "atSeconds": 372.656,
+        "detail": "6:13 胜利"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        },
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Claude Opus 5.5",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        },
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "DSH",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 69.519,
+        "stage1V2": 48.08,
+        "stage3": 83.811,
+        "stage1V1": 73,
+        "stage2": 69.174
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 4.558,
+            "cap": 50,
+            "records": 1
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 8.826,
+            "cap": 50,
+            "records": 4
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 2.805,
+            "cap": 30,
+            "records": 2
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
+    },
+    {
+      "id": "6ff1ab3c1183",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 11-01 19:50 Pi + DeepSeek（掺水路由）",
+      "date": "2026-11-01 19:50",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 795.008,
+        "gameSeconds": null
+      },
       "result": {
         "outcome": "defeat",
         "label": "主动投降",
-        "detail": "主基地被摧毁后 13:15 投降",
-        "atSeconds": 794.9
+        "atSeconds": 795.008,
+        "detail": "13:15 主动投降"
       },
-      "scores": {
-        "total": 79.931,
-        "stage1": 70.5,
-        "stage2": 86.219
-      },
-      "metrics": {
-        "nativeCommands": 169,
-        "queries": 71,
-        "actions": 90,
-        "otherCommands": 55,
-        "decisionCycleSeconds": 17.514,
-        "productionPerMinute": 9.1517,
-        "firstOrderSeconds": 39.344,
-        "attributionMissing": 63,
-        "durationSeconds": 786.736,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 13.5,
-            "cap": 15,
-            "detail": "首条行动指令 39.34s"
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi + DeepSeek（掺水路由）",
+            "reasoning": "unknown"
           },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 39.34s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 47.87s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 4.7,
-            "cap": 8,
-            "detail": "41 个 A→B 周期，去离群均值 17.51s（中位 14.78s / p90 30.78s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "41 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 0,
-            "cap": 10,
-            "detail": "0/41 次等待离群（0.0%，阈值 5.00s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 0,
-            "cap": 8,
-            "detail": "1/41 个决策周期离群（2.4%，阈值 41.80s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 1.3,
-            "cap": 15,
-            "detail": "168 段相邻底层间隔：3–5s 17、5–12s 56、12–25s 4、>25s 4（≤3s 的 87 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "A→A 29 次，离群 1 次（3.5%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 49 次，离群 2 次（4.1%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0,
-            "cap": 6,
-            "detail": "9.15 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 71 条 / 行动 90 条（比值 0.79）"
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
           }
-        ]
-      },
-      "runtime": {
-        "steps": 87,
-        "toolSeconds": 125,
-        "llmSeconds": 938,
-        "outputTokens": 59897
-      },
-      "evidence": {
-        "damageRows": 3134,
-        "hpLossRows": 3134,
-        "complete": true
-      },
-      "notes": [
-        "提示词已要求使用 mcp__rwx__*，但当时桥接未注册，实际退化为原生 shell 工具，因此作为“无 MCP”基线。",
-        "底层命令归属缺失 63/169（37%），会压低第一阶段的生产速率项（本局该项 0/6）。"
+        }
       ],
-      "breakdown": {
-        "stage1": {
-          "score": 70.5,
-          "deduction": 29.5,
-          "start": 100
-        },
-        "stage2": {
-          "score": 86.219,
-          "deduction": 13.781,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 2.715,
-              "capped": 2.715,
-              "cap": 40,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 22.0；最大一次扣 1.69 分（t=4:53，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 1,
-              "detail": "1 次，累计加权冲击 0.3；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 0,
-              "detail": "本局未出现该类事件"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 2.566,
-              "capped": 2.566,
-              "cap": 25,
-              "events": 27,
-              "detail": "1 段可计分（最长 0:09）；另有 26 段证据不足、不扣分（合计 23:49）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 1.5,
-              "capped": 1.5,
-              "cap": 20,
-              "events": 30,
-              "detail": "1 段可计分（最长 0:30）；另有 29 段证据不足、不扣分（合计 29:01）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 3,
-              "detail": "3 段资金闲置，其中 1 段实际扣分；最长 354s，峰值 14218 资金"
-            }
-          ]
+      "scores": {
+        "totalV2": 59.443,
+        "stage1V2": 44.32,
+        "stage3": 69.525,
+        "stage1V1": 65.4,
+        "stage2": 65
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 20.02,
+            "cap": 50,
+            "records": 16
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 0.988,
+            "cap": 50,
+            "records": 1
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 9.467,
+            "cap": 30,
+            "records": 9
+          }
         }
       },
-      "match": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
-      "displayName": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
-      "configuration": {
-        "map": "Ice Island (2p)",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 786.928,
-        "gameSeconds": 801.1,
-        "ending": "normal",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
-    },
-    {
-      "id": "tool2",
-      "title": "Ice Island (2p) DSH MCPtool2 vs Hard",
-      "tool": "mcp__rwx__*（rwx_step 为主）",
-      "toolDetail": "64 次 rwx_step / 5 次 rwx_query / 3 次 rwx_status，仅 14 次 pwsh 用于开局与收尾",
-      "mcp": true,
-      "group": "trio",
-      "date": "2026-11-03 07:22",
-      "map": "Ice Island (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
-      },
-      "session": "session-bf167b70-4046-4cac-b35e-d3c11222042b",
-      "result": {
-        "outcome": "defeat",
-        "label": "被击败",
-        "detail": "约 12:22 主基地被摧毁",
-        "atSeconds": 735.6
-      },
-      "scores": {
-        "total": 74.934,
-        "stage1": 66.4,
-        "stage2": 80.623
-      },
-      "metrics": {
-        "nativeCommands": 125,
-        "queries": 298,
-        "actions": 58,
-        "otherCommands": 7,
-        "decisionCycleSeconds": 20.022,
-        "productionPerMinute": 7.9778,
-        "firstOrderSeconds": 36.192,
-        "attributionMissing": 41,
-        "durationSeconds": 714.48,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 13.2,
-            "cap": 15,
-            "detail": "首条行动指令 36.19s"
-          },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 42.13s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 42.11s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 5.3,
-            "cap": 8,
-            "detail": "35 个 A→B 周期，去离群均值 20.02s（中位 15.55s / p90 36.72s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "35 次 B→A 等待，去离群均值 0.01s（中位 0.02s / p90 0.02s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 0.8,
-            "cap": 10,
-            "detail": "1/35 次等待离群（2.9%，阈值 5.02s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 0,
-            "cap": 8,
-            "detail": "0/35 个决策周期离群（0.0%，阈值 58.14s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 1.6,
-            "cap": 15,
-            "detail": "124 段相邻底层间隔：3–5s 15、5–12s 43、12–25s 5、>25s 4（≤3s 的 57 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 2.3,
-            "cap": 8,
-            "detail": "A→A 262 次，离群 24 次（9.2%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 23 次，离群 0 次（0.0%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0.4,
-            "cap": 6,
-            "detail": "7.98 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 298 条 / 行动 58 条（比值 5.14）"
-          }
-        ]
-      },
-      "runtime": {
-        "steps": 94,
-        "toolSeconds": 286,
-        "llmSeconds": 855,
-        "outputTokens": 44200
-      },
-      "evidence": {
-        "damageRows": 2051,
-        "hpLossRows": 2051,
-        "complete": true
-      },
+      "evidenceSource": "faithful-resim",
       "notes": [
-        "目录名误写成 tool1，但录像名为 dsh4.1_tool2_vsHard，且 MCP 调用日志一致，已按 tool2 归档。",
-        "同为 MCP + 同一模型，综合分反而低于无 MCP 的 tool1，说明接口形态本身不构成分数优势。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 66.4,
-          "deduction": 33.6,
-          "start": 100
-        },
-        "stage2": {
-          "score": 80.623,
-          "deduction": 19.377,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 11.669,
-              "capped": 11.669,
-              "cap": 40,
-              "events": 4,
-              "detail": "4 次，累计加权冲击 17.8；最大一次扣 11.18 分（t=7:54，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 1,
-              "detail": "1 次，累计加权冲击 3.0；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 0,
-              "detail": "本局未出现该类事件"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 14,
-              "detail": "14 段都缺「有活可干」的证据，按规则不扣（合计 18:47）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0.708,
-              "capped": 0.708,
-              "cap": 20,
-              "events": 18,
-              "detail": "1 段可计分（最长 0:19）；另有 17 段证据不足、不扣分（合计 19:13）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 4,
-              "detail": "4 段资金闲置，其中 1 段实际扣分；最长 350s，峰值 12954 资金"
-            }
-          ]
-        }
-      },
-      "match": "Ice Island (2p) DSH MCPtool2 vs Hard",
-      "displayName": "Ice Island (2p) DSH MCPtool2 vs Hard",
-      "configuration": {
-        "map": "Ice Island (2p)",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 729.728,
-        "gameSeconds": 741.7,
-        "ending": "normal",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
     },
     {
-      "id": "tool3",
-      "title": "Ice Island (2p) DSH MCPtool3 vs Hard",
-      "tool": "mcp__rwx__*（rwx_step 为主）",
-      "toolDetail": "117 次 rwx_step / 13 次 rwx_query / 2 次 rwx_status，仅 3 次 pwsh",
-      "mcp": true,
-      "group": "trio",
-      "date": "2026-11-03 09:29",
-      "map": "Ice Island (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
-      },
-      "session": "session-c716b0ab-15a9-4cda-8b14-40ace28a13dc",
-      "result": {
-        "outcome": "defeat",
-        "label": "主动投降",
-        "detail": "基地被打崩后 19:57 投降",
-        "atSeconds": 1197.6
-      },
-      "scores": {
-        "total": 84.6,
-        "stage1": 67.2,
-        "stage2": 96.2
-      },
-      "metrics": {
-        "nativeCommands": 353,
-        "queries": 884,
-        "actions": 176,
-        "otherCommands": 16,
-        "decisionCycleSeconds": 12.785,
-        "productionPerMinute": 7.4647,
-        "firstOrderSeconds": 30.336,
-        "attributionMissing": 204,
-        "durationSeconds": 1197.632,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 12.8,
-            "cap": 15,
-            "detail": "首条行动指令 30.34s"
-          },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 30.34s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 2.9,
-            "cap": 5,
-            "detail": "首个建造者出厂 17.41s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 3.1,
-            "cap": 8,
-            "detail": "85 个 A→B 周期，去离群均值 12.78s（中位 10.08s / p90 25.47s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "85 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 0,
-            "cap": 10,
-            "detail": "0/85 次等待离群（0.0%，阈值 5.00s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 2.1,
-            "cap": 8,
-            "detail": "3/85 个决策周期离群（3.5%，阈值 36.74s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.9,
-            "cap": 15,
-            "detail": "352 段相邻底层间隔：3–5s 47、5–12s 95、12–25s 7、>25s 1（≤3s 的 202 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "A→A 798 次，离群 24 次（3.0%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 91 次，离群 0 次（0.0%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 6,
-            "cap": 6,
-            "detail": "7.46 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 884 条 / 行动 176 条（比值 5.02）"
-          }
-        ]
-      },
-      "runtime": {
-        "steps": 141,
-        "toolSeconds": 420,
-        "llmSeconds": 1090,
-        "outputTokens": 69901
-      },
-      "evidence": {
-        "damageRows": 4533,
-        "hpLossRows": 4533,
-        "complete": true
-      },
-      "notes": [
-        "三局中综合分最高，但仍是败局；相对 tool2 的差异主要来自提示词与收入单位标注，而非新增的游戏操作能力。",
-        "底层命令归属缺失 204/353（58%），是全组最高，说明“更多命令”并不等于“更多可归因的有效操作”。",
-        "单局样本；对手、地图、经济倍率固定，没有重复对局，无法据此判定工具版本带来稳定提升。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 67.2,
-          "deduction": 32.8,
-          "start": 100
-        },
-        "stage2": {
-          "score": 96.2,
-          "deduction": 3.8,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 1.027,
-              "capped": 1.027,
-              "cap": 40,
-              "events": 11,
-              "detail": "11 次，累计加权冲击 22.6；最大一次扣 0.78 分（t=18:17，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 12,
-              "detail": "12 次，累计加权冲击 6.4；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 0,
-              "detail": "本局未出现该类事件"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 2.773,
-              "capped": 2.773,
-              "cap": 25,
-              "events": 76,
-              "detail": "1 段可计分（最长 0:10）；另有 75 段证据不足、不扣分（合计 81:41）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 31,
-              "detail": "31 段都缺「有活可干」的证据，按规则不扣（合计 37:30）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 0,
-              "capped": 0,
-              "cap": 30,
-              "events": 2,
-              "detail": "2 段资金闲置，其中 0 段实际扣分；最长 109s，峰值 7080 资金"
-            }
-          ]
-        }
-      },
-      "match": "Ice Island (2p) DSH MCPtool3 vs Hard",
-      "displayName": "Ice Island (2p) DSH MCPtool3 vs Hard",
-      "configuration": {
-        "map": "Ice Island (2p)",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 1197.632,
-        "gameSeconds": 1227.5,
-        "ending": "surrender",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
-    },
-    {
-      "id": "native-2358",
-      "title": "Ice Island (2p) DSH 无tool基线",
-      "tool": "pwsh + RWX CLI",
-      "toolDetail": "109 次 pwsh 批量调用，MCP 尚未接入",
-      "mcp": false,
-      "group": "extra",
-      "date": "2026-11-02 23:58",
-      "map": "Ice Island (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
-      },
-      "session": "session-d7132417-0f53-4b70-a4d8-b376ed9a839d",
-      "result": {
-        "outcome": "defeat",
-        "label": "被击败",
-        "detail": "约 18:01 被全歼",
-        "atSeconds": 1077.2
-      },
-      "scores": {
-        "total": 76.784,
-        "stage1": 56.5,
-        "stage2": 90.307
-      },
-      "metrics": {
-        "nativeCommands": 458,
-        "queries": 81,
-        "actions": 102,
-        "otherCommands": 185,
-        "decisionCycleSeconds": 16.798,
-        "productionPerMinute": 4.3322,
-        "firstOrderSeconds": 76.736,
-        "attributionMissing": 417,
-        "durationSeconds": 1066.432,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 15,
-            "cap": 15,
-            "detail": "首条行动指令 76.74s"
-          },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 76.96s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 84.64s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 4.5,
-            "cap": 8,
-            "detail": "40 个 A→B 周期，去离群均值 16.80s（中位 15.46s / p90 31.35s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 1.6,
-            "cap": 18,
-            "detail": "40 次 B→A 等待，去离群均值 4.61s（中位 0.30s / p90 11.85s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 2.4,
-            "cap": 10,
-            "detail": "2/40 次等待离群（5.0%，阈值 26.03s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 1.6,
-            "cap": 8,
-            "detail": "3/40 个决策周期离群（7.5%，阈值 41.10s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.5,
-            "cap": 15,
-            "detail": "457 段相邻底层间隔：3–5s 20、5–12s 41、12–25s 15、>25s 3（≤3s 的 378 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "A→A 40 次，离群 0 次（0.0%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 1.9,
-            "cap": 8,
-            "detail": "B→B 62 次，离群 11 次（17.7%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 6,
-            "cap": 6,
-            "detail": "4.33 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 81 条 / 行动 102 条（比值 0.79）"
-          }
-        ]
-      },
-      "runtime": {
-        "steps": 127,
-        "toolSeconds": 218,
-        "llmSeconds": 1188,
-        "outputTokens": 61403
-      },
-      "evidence": {
-        "damageRows": 2974,
-        "hpLossRows": 2974,
-        "complete": true
-      },
-      "notes": [
-        "与 tool1 同为无 MCP 基线，用于观察同工具、同模型下的局间波动：62.9 与 61.9（相差 1.0）。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 56.5,
-          "deduction": 43.5,
-          "start": 100
-        },
-        "stage2": {
-          "score": 90.307,
-          "deduction": 9.693,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 0.215,
-              "capped": 0.215,
-              "cap": 40,
-              "events": 4,
-              "detail": "4 次，累计加权冲击 7.6；最大一次扣 0.20 分（t=5:37，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 13.2；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 2,
-              "capped": 2,
-              "cap": 15,
-              "events": 1,
-              "detail": "1 段过期指令，最大一段扣 2.00 分（t=8:14）；1 段缺「指令过期时长」证据，只按部分档计"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 29,
-              "detail": "29 段都缺「有活可干」的证据，按规则不扣（合计 18:15）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0.478,
-              "capped": 0.478,
-              "cap": 20,
-              "events": 18,
-              "detail": "1 段可计分（最长 0:16）；另有 17 段证据不足、不扣分（合计 21:32）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 6,
-              "detail": "6 段资金闲置，其中 1 段实际扣分；最长 986s，峰值 30297 资金"
-            }
-          ]
-        }
-      },
-      "match": "Ice Island (2p) DSH 无tool基线",
-      "displayName": "Ice Island (2p) DSH 无tool基线",
-      "configuration": {
-        "map": "Ice Island (2p)",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 1070.816,
-        "gameSeconds": 1080.7,
-        "ending": "normal",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
-    },
-    {
-      "id": "firebridge-opencode",
+      "id": "19dc4d824ca1",
+      "archive": "old_v1.1",
       "title": "Fire Bridge (2p) opencode vs Hard",
-      "tool": "pwsh + RWX CLI",
-      "toolDetail": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册",
-      "mcp": false,
-      "group": "extra",
-      "date": "2026-11-04 00:12",
-      "map": "Fire Bridge (2p)",
-      "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
+      "date": "2026-11-04T00:14:13.116145800+08:00",
+      "map": "Fire Bridge (2p) ",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 1104.24,
+        "gameSeconds": 1193.3
       },
-      "session": "ses_e5dd17036ffeHnTNEmEtxzL5Za",
       "result": {
         "outcome": "defeat",
-        "label": "主动投降",
-        "detail": "18:24 主基地被摧毁，18:28 投降",
-        "atSeconds": 1106.016
+        "label": "战败",
+        "atSeconds": 1104.24,
+        "detail": "18:24 主基地被摧毁，18:28 投降"
       },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "pwsh + RWX CLI",
+            "version": null,
+            "extra": "opencode 会话里 135 次 shell 批量调用 rwx-* 命令，MCP 桥接未注册"
+          }
+        }
+      ],
       "scores": {
-        "total": 84.726,
-        "stage1": 62.9,
+        "totalV2": 37.198,
+        "stage1V2": 43.7,
+        "stage3": 32.864,
+        "stage1V1": 62.9,
         "stage2": 99.277
       },
-      "metrics": {
-        "nativeCommands": 446,
-        "queries": 100,
-        "actions": 118,
-        "otherCommands": 220,
-        "decisionCycleSeconds": 10.5716,
-        "productionPerMinute": 6.6275,
-        "firstOrderSeconds": 16,
-        "attributionMissing": 371,
-        "durationSeconds": 1104.496,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 10.7,
-            "cap": 15,
-            "detail": "首条行动指令 16.00s"
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 31.598,
+            "cap": 50,
+            "records": 56
           },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 4,
-            "cap": 5,
-            "detail": "首个采矿建筑 16.00s（20s 内不扣）"
+          "STAGE3_BARRAGE": {
+            "deduction": 25.996,
+            "cap": 50,
+            "records": 13
           },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 40.69s（30s 内不扣）"
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
           },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 2.2,
-            "cap": 8,
-            "detail": "47 个 A→B 周期，去离群均值 10.57s（中位 10.22s / p90 20.29s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 5,
-            "cap": 18,
-            "detail": "47 次 B→A 等待，去离群均值 10.92s（中位 7.06s / p90 24.87s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 1.2,
-            "cap": 10,
-            "detail": "1/47 次等待离群（2.1%，阈值 46.16s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 0.5,
-            "cap": 8,
-            "detail": "3/47 个决策周期离群（6.4%，阈值 23.39s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.7,
-            "cap": 15,
-            "detail": "445 段相邻底层间隔：3–5s 17、5–12s 94、12–25s 11、>25s 2（≤3s 的 321 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "A→A 52 次，离群 2 次（3.9%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 1.8,
-            "cap": 8,
-            "detail": "B→B 71 次，离群 11 次（15.5%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 6,
-            "cap": 6,
-            "detail": "6.63 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 100 条 / 行动 118 条（比值 0.85）"
+          "STAGE3_FUNDS": {
+            "deduction": 9.542,
+            "cap": 30,
+            "records": 5
           }
-        ]
+        }
       },
-      "runtime": {
-        "steps": null,
-        "toolCalls": 135,
-        "toolSeconds": null,
-        "llmSeconds": null,
-        "outputTokens": 17054,
-        "note": "opencode 会话：135 次 shell 调用；步数与工具/模型耗时未按 DSH 同口径拆分。"
-      },
-      "evidence": {
-        "damageRows": 4032,
-        "hpLossRows": 4032,
-        "complete": true
-      },
+      "evidenceSource": "faithful-resim",
       "notes": [
         "Fire Bridge (2p) 首局：地图与之前四局（Ice Island (2p)）不同，分数不能直接横比。",
         "MCP 桥接未注册，135 次 shell 批量调用；工具形态与 tool1 / native-2358 同类。",
         "满扣项：Stage1 底层生产 6.63 条/分钟（0/6）；Stage2 建造者空闲原始 67.48 封顶 20。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 62.9,
-          "deduction": 37.1,
-          "start": 100
-        },
-        "stage2": {
-          "score": 99.277,
-          "deduction": 0.723,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 0.056,
-              "capped": 0.056,
-              "cap": 40,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 11.3；最大一次扣 0.02 分（t=6:32，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 1,
-              "detail": "1 次，累计加权冲击 3.0；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 0,
-              "detail": "本局未出现该类事件"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 26,
-              "detail": "26 段都缺「有活可干」的证据，按规则不扣（合计 21:23）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0.318,
-              "capped": 0.318,
-              "cap": 20,
-              "events": 24,
-              "detail": "1 段可计分（最长 0:14）；另有 23 段证据不足、不扣分（合计 22:05）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 0.349,
-              "capped": 0.349,
-              "cap": 30,
-              "events": 5,
-              "detail": "5 段资金闲置，其中 1 段实际扣分；最长 117s，峰值 6827 资金"
-            }
-          ]
-        }
-      },
-      "match": "Fire Bridge (2p) opencode vs Hard",
-      "displayName": "Fire Bridge (2p) opencode vs Hard",
-      "configuration": {
-        "map": "Fire Bridge (2p) ",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 1106.016,
-        "gameSeconds": 1193.3,
-        "ending": "normal",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
+      ]
     },
     {
-      "id": "dsh-push",
-      "title": "Ice Island (2p) DSH push_tool vs Hard",
-      "tool": "mcp__rwx__*（rwx_step 为主）+ 推送插件",
-      "toolDetail": "51 次 rwx_step / 7 次 rwx_query / 1 次 rwx_status / 1 次 rwx_observe；30 条 [RWX-PUSH] 注入",
-      "mcp": true,
-      "group": "extra",
-      "date": "2026-11-04 11:01",
+      "id": "8b23fb603d67",
+      "archive": "old_v1.1",
+      "title": "岩浆岛4p codex_deepseek4.1flash vs Hard",
+      "date": "2026-11-06T07:36:09.609410400+08:00",
+      "map": "岩浆岛4p",
+      "opponent": "1=AI - Hard · 2=AI - Hard · 3=AI - Hard",
+      "duration": {
+        "scoreSeconds": 788.992,
+        "gameSeconds": 818.6
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "atSeconds": 788.992,
+        "detail": "789.0s 主动投降"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "codex",
+            "model": "deepseek4.1flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "codex CLI + rwx-* shell 命令",
+            "version": null,
+            "extra": null
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 36.993,
+        "stage1V2": 14.9,
+        "stage3": 51.721,
+        "stage1V1": 51.1,
+        "stage2": 91.906
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 25.596,
+            "cap": 50,
+            "records": 17
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 15.683,
+            "cap": 50,
+            "records": 7
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 1
+          }
+        }
+      },
+      "evidenceSource": "live",
+      "notes": [
+        "4P 岩浆岛，t0 单人队（Codex，模型 deepseek4.1flash high），对手是 3 个 Hard AI。",
+        "三轮（S0=当前标准语料 17.831/19.419）：Stage1 51.1 / Stage2 91.906 / Stage3 56.903；现行综合 75.584。窗口止于投降 789.0s。"
+      ]
+    },
+    {
+      "id": "63e0808e4cb1",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 11-01 21:31 Pi + Kimi K3.1 Pro（延迟）",
+      "date": "2026-11-01 21:31",
       "map": "Ice Island (2p)",
       "opponent": "AI - Hard · x2 收入",
-      "agent": {
-        "provider": "dsh",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
+      "duration": {
+        "scoreSeconds": 594.08,
+        "gameSeconds": null
       },
-      "session": "session-376f34c0-8868-40ea-9616-e9bbe71df60b",
-      "result": {
-        "outcome": "defeat",
-        "label": "主动投降",
-        "detail": "11:10 只剩 1 坦克 + 1 工厂、收入 0，主动投降",
-        "atSeconds": 670.848
-      },
-      "scores": {
-        "total": 81.217,
-        "stage1": 64.7,
-        "stage2": 92.228
-      },
-      "metrics": {
-        "nativeCommands": 145,
-        "queries": 130,
-        "actions": 84,
-        "otherCommands": 4,
-        "decisionCycleSeconds": 20.7692,
-        "productionPerMinute": 8.2284,
-        "firstOrderSeconds": 52.4,
-        "attributionMissing": 53,
-        "durationSeconds": 670.848,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 14.4,
-            "cap": 15,
-            "detail": "首条行动指令 52.40s"
-          },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 97.31s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 62.14s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 5.5,
-            "cap": 8,
-            "detail": "28 个 A→B 周期，去离群均值 20.77s（中位 21.74s / p90 36.14s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "28 次 B→A 等待，去离群均值 0.01s（中位 0.00s / p90 0.02s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 0,
-            "cap": 10,
-            "detail": "0/28 次等待离群（0.0%，阈值 5.00s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 1.6,
-            "cap": 8,
-            "detail": "2/28 个决策周期离群（7.1%，阈值 48.11s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 1.1,
-            "cap": 15,
-            "detail": "144 段相邻底层间隔：3–5s 39、5–12s 54、12–25s 1、>25s 0（≤3s 的 50 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 2.7,
-            "cap": 8,
-            "detail": "A→A 101 次，离群 16 次（15.8%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 56 次，离群 0 次（0.0%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0,
-            "cap": 6,
-            "detail": "8.23 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 130 条 / 行动 84 条（比值 1.55）"
-          }
-        ]
-      },
-      "runtime": {
-        "steps": 69,
-        "toolCalls": 73,
-        "toolSeconds": null,
-        "llmSeconds": null,
-        "outputTokens": 44419,
-        "note": "DSH 会话：69 步、73 次工具调用；工具与模型耗时未拆分。"
-      },
-      "evidence": {
-        "damageRows": 2305,
-        "hpLossRows": 2305,
-        "complete": true
-      },
-      "notes": [
-        "push（L2 harness）首局：MCP 负责命令，DSH 插件把损失 / 击毁 / 新单位推给 Agent；按 push/README §8 不与纯 MCP 局混榜。",
-        "注入延迟实测：30 条 [RWX-PUSH] 全部等当前工具调用返回后才交付，事件→动作 p50 29.8s；全程只有 2 个 turn，Agent 从未 idle。",
-        "满扣项：Stage1 首个行动 52.4s、底层生产 8.23 条/分钟（0/6）；Stage2 建造者空闲原始 179.36 顶满 20。"
-      ],
-      "breakdown": {
-        "stage1": {
-          "score": 64.7,
-          "deduction": 35.3,
-          "start": 100
-        },
-        "stage2": {
-          "score": 92.228,
-          "deduction": 7.772,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 0.772,
-              "capped": 0.772,
-              "cap": 40,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 15.0；最大一次扣 0.51 分（t=5:05，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 5,
-              "detail": "5 次，累计加权冲击 0.0；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 0,
-              "detail": "本局未出现该类事件"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 45,
-              "detail": "45 段都缺「有活可干」的证据，按规则不扣（合计 47:25）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 12,
-              "detail": "12 段都缺「有活可干」的证据，按规则不扣（合计 14:35）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 2,
-              "detail": "2 段资金闲置，其中 1 段实际扣分；最长 141s，峰值 6925 资金"
-            }
-          ]
-        }
-      },
-      "match": "Ice Island (2p) DSH push_tool vs Hard",
-      "displayName": "Ice Island (2p) DSH push_tool vs Hard",
-      "configuration": {
-        "map": "Ice Island (2p)",
-        "ai": "AI - Hard · x2 收入",
-        "durationSeconds": 670.848,
-        "gameSeconds": 724.4,
-        "ending": "surrender",
-        "teams": [
-          "0=Player",
-          "1=AI - Hard"
-        ]
-      }
-    },
-    {
-      "id": "team8p-pi-mail",
-      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
-      "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
-      "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不经 --session，警报游标共享；协作靠 agent-tmp/mail.md 信箱（本局启用 mail）",
-      "mcp": false,
-      "group": "extra",
-      "date": "2026-11-04 20:53",
-      "map": "火山 (8p)",
-      "opponent": "AI - Very Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
-      },
-      "session": "session-01a1a69a-1927-77ed-8388-593c007bcd8e",
       "result": {
         "outcome": "defeat",
         "label": "战败",
-        "detail": "t≈10:39 我方主基地（commandCenter #66）被摧毁",
-        "atSeconds": 639.504
+        "atSeconds": 594.08,
+        "detail": "9:54 战败"
       },
-      "scores": {
-        "total": 71.64,
-        "stage1": 67.3,
-        "stage2": 74.533
-      },
-      "metrics": {
-        "nativeCommands": 351,
-        "queries": 244,
-        "actions": 125,
-        "otherCommands": 24,
-        "decisionCycleSeconds": 9.6587,
-        "productionPerMinute": 8.1802,
-        "firstOrderSeconds": 50.176,
-        "attributionMissing": 19,
-        "durationSeconds": 639.504,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 14.3,
-            "cap": 15,
-            "detail": "首条行动指令 50.18s"
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi + Kimi K3.1 Pro",
+            "reasoning": "unknown"
           },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 50.18s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 50.18s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 1.9,
-            "cap": 8,
-            "detail": "52 个 A→B 周期，去离群均值 9.66s（中位 8.25s / p90 22.98s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "52 次 B→A 等待，去离群均值 1.01s（中位 0.53s / p90 3.93s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 3.2,
-            "cap": 10,
-            "detail": "4/52 次等待离群（7.7%，阈值 7.10s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 0.8,
-            "cap": 8,
-            "detail": "1/52 个决策周期离群（1.9%，阈值 31.22s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.3,
-            "cap": 15,
-            "detail": "350 段相邻底层间隔：3–5s 27、5–12s 26、12–25s 2、>25s 2（≤3s 的 293 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 2.2,
-            "cap": 8,
-            "detail": "A→A 191 次，离群 16 次（8.4%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 73 次，离群 2 次（2.7%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0,
-            "cap": 6,
-            "detail": "8.18 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 244 条 / 行动 125 条（比值 1.95）"
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
           }
-        ]
-      },
-      "runtime": {
-        "steps": 389,
-        "toolSeconds": 0,
-        "llmSeconds": 2921,
-        "outputTokens": 167836
-      },
-      "evidence": {
-        "damageRows": 2457,
-        "hpLossRows": 2457,
-        "complete": true
-      },
-      "notes": [
-        "同队四智能体（1 发起 + 3 加入）共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2。",
-        "结局：t≈10:39 我方主基地被摧毁，战败；有效窗口 639.5s，回放完整。",
-        "Stage2 BUILDER_IDLE 原始 136.5 顶满 20；AMBUSH 9.364（末段 t≈9:08 一次损失）、STALE 9（部分事件缺过期证据）。",
-        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+        }
       ],
-      "breakdown": {
-        "stage1": {
-          "score": 67.3,
-          "deduction": 32.7,
-          "start": 100
-        },
-        "stage2": {
-          "score": 74.533,
-          "deduction": 25.467,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 9.364,
-              "capped": 9.364,
-              "cap": 40,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 23.8；最大一次扣 8.79 分（t=9:08，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 13,
-              "detail": "13 次，累计加权冲击 14.2；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 9,
-              "capped": 9,
-              "cap": 15,
-              "events": 3,
-              "detail": "3 段过期指令，最大一段扣 5.00 分（t=5:41）；2 段缺「指令过期时长」证据，只按部分档计"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 37,
-              "detail": "37 段都缺「有活可干」的证据，按规则不扣（合计 28:47）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0.103,
-              "capped": 0.103,
-              "cap": 20,
-              "events": 13,
-              "detail": "1 段可计分（最长 0:11）；另有 12 段证据不足、不扣分（合计 9:20）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 5,
-              "detail": "5 段资金闲置，其中 1 段实际扣分；最长 193s，峰值 8895 资金"
-            }
-          ]
+      "scores": {
+        "totalV2": 36.904,
+        "stage1V2": 30.8,
+        "stage3": 40.974,
+        "stage1V1": 55.7,
+        "stage2": 60.474
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 19.518,
+            "cap": 50,
+            "records": 17
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 29.948,
+            "cap": 50,
+            "records": 7
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 9.56,
+            "cap": 30,
+            "records": 3
+          }
         }
       },
-      "match": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
-      "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
-      "configuration": {
-        "map": "火山 (8p)",
-        "ai": "AI - Very Hard · x2 收入",
-        "durationSeconds": 639.504,
-        "gameSeconds": 649.8,
-        "ending": "normal",
-        "teams": [
-          "4=Player",
-          "5=AI - Very Hard"
-        ]
-      }
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
     },
     {
-      "id": "team8p-pi-nomail",
-      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
-      "tool": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
-      "toolDetail": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；部分调用带 --session pi / op-c；本局关闭 mail.md 信箱（nomail）",
-      "mcp": false,
-      "group": "extra",
-      "date": "2026-11-04 21:15",
-      "map": "火山 (8p)",
-      "opponent": "AI - Very Hard · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
+      "id": "9ae69224f413",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 11-01 19:16 Pi + DeepSeek 4.1",
+      "date": "2026-11-01 19:16",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 767.808,
+        "gameSeconds": null
       },
-      "session": "session-01a1a6b1-5e61-7392-94ed-d2156ebfc475",
       "result": {
         "outcome": "defeat",
         "label": "主动投降",
-        "detail": "t≈12:49 主动投降",
-        "atSeconds": 768.928
+        "atSeconds": 767.808,
+        "detail": "12:48 主动投降"
       },
-      "scores": {
-        "total": 81.65,
-        "stage1": 64.9,
-        "stage2": 92.816
-      },
-      "metrics": {
-        "nativeCommands": 934,
-        "queries": 259,
-        "actions": 168,
-        "otherCommands": 47,
-        "decisionCycleSeconds": 13.6065,
-        "productionPerMinute": 8.9735,
-        "firstOrderSeconds": 46.464,
-        "attributionMissing": 17,
-        "durationSeconds": 768.928,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 14,
-            "cap": 15,
-            "detail": "首条行动指令 46.46s"
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi + DeepSeek 4.1",
+            "reasoning": "unknown"
           },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 46.46s（20s 内不扣）"
-          },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 71.18s（30s 内不扣）"
-          },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 3.4,
-            "cap": 8,
-            "detail": "46 个 A→B 周期，去离群均值 13.61s（中位 13.66s / p90 26.69s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "46 次 B→A 等待，去离群均值 0.91s（中位 0.02s / p90 5.86s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 4,
-            "cap": 10,
-            "detail": "5/46 次等待离群（10.9%，阈值 5.84s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 1.3,
-            "cap": 8,
-            "detail": "2/46 个决策周期离群（4.3%，阈值 36.33s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.2,
-            "cap": 15,
-            "detail": "933 段相邻底层间隔：3–5s 21、5–12s 25、12–25s 9、>25s 1（≤3s 的 877 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 2.2,
-            "cap": 8,
-            "detail": "A→A 212 次，离群 18 次（8.5%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 0,
-            "cap": 8,
-            "detail": "B→B 122 次，离群 4 次（3.3%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0,
-            "cap": 6,
-            "detail": "8.97 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 259 条 / 行动 168 条（比值 1.54）"
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
           }
-        ]
-      },
-      "runtime": {
-        "steps": 308,
-        "toolSeconds": 0,
-        "llmSeconds": 2332,
-        "outputTokens": 177767
-      },
-      "evidence": {
-        "damageRows": 3812,
-        "hpLossRows": 3812,
-        "complete": true
-      },
-      "notes": [
-        "同队四智能体共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2；相比 20:53 那局关闭了 mail 协作。",
-        "结局：t≈12:49 主动投降，战败；有效窗口 768.9s，回放完整。",
-        "Stage2 主要扣分：BUILDER_IDLE 原始 105.8 顶满 20、FUNDS 7、FACTORY_IDLE 3.523；AMBUSH 仅 0.184、STALE 0。",
-        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+        }
       ],
-      "breakdown": {
-        "stage1": {
-          "score": 64.9,
-          "deduction": 35.1,
-          "start": 100
-        },
-        "stage2": {
-          "score": 92.816,
-          "deduction": 7.184,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 0.184,
-              "capped": 0.184,
-              "cap": 40,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 14.4；最大一次扣 0.13 分（t=7:16，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 8,
-              "detail": "8 次，累计加权冲击 0.5；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 15,
-              "events": 2,
-              "detail": "2 段过期指令，最大一段扣 0.00 分（t=1:25）；1 段缺「指令过期时长」证据，只按部分档计"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 25,
-              "events": 36,
-              "detail": "36 段都缺「有活可干」的证据，按规则不扣（合计 19:56）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 25,
-              "detail": "25 段都缺「有活可干」的证据，按规则不扣（合计 17:11）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 1,
-              "detail": "1 段资金闲置，其中 1 段实际扣分；最长 176.5s，峰值 13871 资金"
-            }
-          ]
+      "scores": {
+        "totalV2": 34.688,
+        "stage1V2": 40.34,
+        "stage3": 30.92,
+        "stage1V1": 66.4,
+        "stage2": 71.999
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 43.507,
+            "cap": 50,
+            "records": 59
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 22.519,
+            "cap": 50,
+            "records": 14
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 3.054,
+            "cap": 30,
+            "records": 5
+          }
         }
       },
-      "match": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
-      "displayName": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
-      "configuration": {
-        "map": "火山 (8p)",
-        "ai": "AI - Very Hard · x2 收入",
-        "durationSeconds": 768.928,
-        "gameSeconds": 790.2,
-        "ending": "surrender",
-        "teams": [
-          "4=Player",
-          "5=AI - Very Hard"
-        ]
-      }
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
     },
     {
-      "id": "team8p-dsh-nomail",
+      "id": "0f005a67e222",
+      "archive": "old_v1.1",
       "title": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
-      "tool": "DSH 4 会话（pwsh 调 rwx-cli.py，无 MCP）",
-      "toolDetail": "四个 DSH 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不带 --session，全部指令经 pwsh 批量执行 rwx-* 命令；本局关闭 mail 信箱（nomail）",
-      "mcp": false,
-      "group": "extra",
-      "date": "2026-11-04 22:28",
-      "map": "火山 (8p)",
-      "opponent": "AI - Hard ×2 · x2 收入",
-      "agent": {
-        "provider": "opencode-go",
-        "model": "deepseek-v4.1-flash",
-        "reasoning": "high"
+      "date": "2026-11-04T22:30:04.013598100+08:00",
+      "map": "Volcano (8p)",
+      "opponent": "5=AI - Hard · 7=AI - Hard",
+      "duration": {
+        "scoreSeconds": 659.904,
+        "gameSeconds": 681.6
       },
-      "session": "session-5786f3b0-71f3-4f8a-bd77-cc45f9b26834",
       "result": {
         "outcome": "defeat",
         "label": "战败",
-        "detail": "t≈11:00 我方主基地（commandCenter #66）被摧毁",
-        "atSeconds": 666.08
+        "atSeconds": 659.904,
+        "detail": "t≈11:00 我方主基地（commandCenter #66）被摧毁"
       },
+      "pairs": [
+        {
+          "count": 4,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "DSH 4 会话（pwsh 调 rwx-cli.py，无 MCP）",
+            "version": null,
+            "extra": "四个 DSH 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不带 --session，全部指令经 pwsh 批量执行 rwx-* 命令；本局关闭 mail 信箱（nomail）"
+          }
+        }
+      ],
       "scores": {
-        "total": 72.856,
-        "stage1": 68.7,
+        "totalV2": 34.448,
+        "stage1V2": 46.72,
+        "stage3": 26.267,
+        "stage1V1": 68.7,
         "stage2": 75.627
       },
-      "metrics": {
-        "nativeCommands": 297,
-        "queries": 243,
-        "actions": 155,
-        "otherCommands": 37,
-        "decisionCycleSeconds": 8.1384,
-        "productionPerMinute": 8.4105,
-        "firstOrderSeconds": 37.616,
-        "attributionMissing": 31,
-        "durationSeconds": 666.08,
-        "stage1Items": [
-          {
-            "id": "A1-first-order",
-            "label": "首个行动指令",
-            "points": 13.3,
-            "cap": 15,
-            "detail": "首条行动指令 37.62s"
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 24.466,
+            "cap": 50,
+            "records": 20
           },
-          {
-            "id": "A1-first-mining",
-            "label": "首个采矿建造",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个采矿建筑 44.13s（20s 内不扣）"
+          "STAGE3_BARRAGE": {
+            "deduction": 42.267,
+            "cap": 50,
+            "records": 17
           },
-          {
-            "id": "A1-first-builder",
-            "label": "首个建造者生产",
-            "points": 5,
-            "cap": 5,
-            "detail": "首个建造者出厂 105.14s（30s 内不扣）"
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
           },
-          {
-            "id": "A2-decision-cycle",
-            "label": "A→B 周期去离群均值",
-            "points": 1.3,
-            "cap": 8,
-            "detail": "61 个 A→B 周期，去离群均值 8.14s（中位 6.46s / p90 18.77s）"
-          },
-          {
-            "id": "A2-wait-after-action",
-            "label": "B→A 等待去离群均值",
-            "points": 0,
-            "cap": 18,
-            "detail": "61 次 B→A 等待，去离群均值 1.64s（中位 0.45s / p90 6.58s）"
-          },
-          {
-            "id": "A2-wait-outliers",
-            "label": "B→A 等待离群值",
-            "points": 2.4,
-            "cap": 10,
-            "detail": "3/61 次等待离群（4.9%，阈值 7.37s）"
-          },
-          {
-            "id": "A2-decision-outliers",
-            "label": "A→B 决策离群值",
-            "points": 0.5,
-            "cap": 8,
-            "detail": "1/61 个决策周期离群（1.6%，阈值 29.59s）"
-          },
-          {
-            "id": "A4-native-cadence",
-            "label": "相邻底层命令间隔",
-            "points": 0.5,
-            "cap": 15,
-            "detail": "296 段相邻底层间隔：3–5s 21、5–12s 37、12–25s 5、>25s 1（≤3s 的 232 段不扣分）"
-          },
-          {
-            "id": "A5-AA",
-            "label": "A→A 离群占比",
-            "points": 2.2,
-            "cap": 8,
-            "detail": "A→A 181 次，离群 14 次（7.7%）"
-          },
-          {
-            "id": "A5-BB",
-            "label": "B→B 离群占比",
-            "points": 1.1,
-            "cap": 8,
-            "detail": "B→B 94 次，离群 6 次（6.4%）"
-          },
-          {
-            "id": "A4-production-rate",
-            "label": "底层生产指令 / 分钟",
-            "points": 0,
-            "cap": 6,
-            "detail": "8.41 条底层生产指令 / 分钟（8 条/分以上不扣）"
-          },
-          {
-            "id": "A5-query-action-ratio",
-            "label": "A / B",
-            "points": 0,
-            "cap": 10,
-            "detail": "查询 243 条 / 行动 155 条（比值 1.57）"
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 1
           }
-        ]
+        }
       },
-      "runtime": {
-        "steps": 272,
-        "toolSeconds": 0,
-        "llmSeconds": 2847,
-        "outputTokens": 183155
-      },
-      "evidence": {
-        "damageRows": 2748,
-        "hpLossRows": 2748,
-        "complete": true
-      },
+      "evidenceSource": "faithful-resim",
       "notes": [
         "同队四智能体共控一个玩家：火山 (8p) 地图 1v2，对手为两个 AI - Hard（出生点 6/8），x2 收入，档位 2。",
         "结局：t≈11:00 我方主基地被摧毁，战败；有效窗口 666.1s，回放完整。",
         "Stage2 主要扣分：BUILDER_IDLE 原始 75.9 顶满 20、STALE 12（五段指令过期）、FUNDS 7；AMBUSH 仅 0.437。",
         "对手为两个 Hard 而非 Very Hard，与 20:53 / 21:15 两局不是同一对手配置，分数不可直接横比。",
         "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ]
+    },
+    {
+      "id": "5ebd2a0c039e",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 10-29 20:40 DeepSeek 4.1 vs Hard",
+      "date": "2026-10-29 20:40",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 823.536,
+        "gameSeconds": null
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 823.536,
+        "detail": "13:44 战败"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "DeepSeek 4.1",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        }
       ],
-      "breakdown": {
-        "stage1": {
-          "score": 68.7,
-          "deduction": 31.3,
-          "start": 100
-        },
-        "stage2": {
-          "score": 75.627,
-          "deduction": 24.373,
-          "families": [
-            {
-              "family": "AMBUSH",
-              "raw": 0.437,
-              "capped": 0.437,
-              "cap": 40,
-              "events": 10,
-              "detail": "10 次，累计加权冲击 16.4；最大一次扣 0.25 分（t=6:48，响应系数 1.00）"
-            },
-            {
-              "family": "GRINDER",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 5,
-              "detail": "5 次，累计加权冲击 5.8；单次都没超过免扣区间"
-            },
-            {
-              "family": "STALE",
-              "raw": 12,
-              "capped": 12,
-              "cap": 15,
-              "events": 5,
-              "detail": "5 段过期指令，最大一段扣 8.00 分（t=10:31）；4 段缺「指令过期时长」证据，只按部分档计"
-            },
-            {
-              "family": "BUILDER_IDLE",
-              "raw": 4.936,
-              "capped": 4.936,
-              "cap": 25,
-              "events": 17,
-              "detail": "2 段可计分（最长 0:14）；另有 15 段证据不足、不扣分（合计 6:36）"
-            },
-            {
-              "family": "FACTORY_IDLE",
-              "raw": 0,
-              "capped": 0,
-              "cap": 20,
-              "events": 34,
-              "detail": "34 段都缺「有活可干」的证据，按规则不扣（合计 21:07）"
-            },
-            {
-              "family": "FUNDS",
-              "raw": 7,
-              "capped": 7,
-              "cap": 30,
-              "events": 2,
-              "detail": "2 段资金闲置，其中 1 段实际扣分；最长 288s，峰值 13779 资金"
-            }
-          ]
+      "scores": {
+        "totalV2": 33.228,
+        "stage1V2": 37.7,
+        "stage3": 30.246,
+        "stage1V1": 54.5,
+        "stage2": 93
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 22.227,
+            "cap": 50,
+            "records": 22
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 40.527,
+            "cap": 50,
+            "records": 20
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 11
+          }
         }
       },
-      "match": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
-      "displayName": "火山 (8p) dsh_deepseekx4vsVeryHard_不可以互相通信",
-      "configuration": {
-        "map": "Volcano (8p)",
-        "ai": "AI - Hard ×2 · x2 收入",
-        "durationSeconds": 666.08,
-        "gameSeconds": 681.6,
-        "ending": "normal",
-        "teams": [
-          "4=Player",
-          "5=AI - Hard",
-          "7=AI - Hard"
-        ]
-      }
-    }
-  ],
-  "legacy": [
-    {
-      "id": "4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
-      "date": "2026-10-27",
-      "model": "GPT（型号未记录）",
-      "tool": "原始工具",
-      "note": "未完成对局",
-      "scores": {
-        "stage1": 83.8,
-        "stage2": 100
-      }
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
     },
     {
-      "id": "4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
-      "date": "2026-10-27",
-      "model": "Claude（型号未记录）",
-      "tool": "原始工具",
-      "note": "只打了约一半",
+      "id": "ddf336ddff0f",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) DSH MCPtool3 vs Hard",
+      "date": "2026-11-03T09:32:06.896676100+08:00",
+      "map": "Ice Island (2p)",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 1183.328,
+        "gameSeconds": 1227.5
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 1183.328,
+        "detail": "基地被打崩后 19:57 投降"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "mcp__rwx__*（rwx_step 为主）",
+            "version": null,
+            "extra": "117 次 rwx_step / 13 次 rwx_query / 2 次 rwx_status，仅 3 次 pwsh"
+          }
+        }
+      ],
       "scores": {
-        "stage1": 50.5,
-        "stage2": 86
-      }
+        "totalV2": 31.806,
+        "stage1V2": 48.26,
+        "stage3": 20.836,
+        "stage1V1": 67.2,
+        "stage2": 96.2
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 37.49,
+            "cap": 50,
+            "records": 66
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 31.606,
+            "cap": 50,
+            "records": 20
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 10.068,
+            "cap": 30,
+            "records": 2
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "三局中综合分最高，但仍是败局；相对 tool2 的差异主要来自提示词与收入单位标注，而非新增的游戏操作能力。",
+        "底层命令归属缺失 204/353（58%），是全组最高，说明“更多命令”并不等于“更多可归因的有效操作”。",
+        "单局样本；对手、地图、经济倍率固定，没有重复对局，无法据此判定工具版本带来稳定提升。"
+      ]
     },
     {
-      "id": "4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
-      "date": "2026-10-27",
-      "model": "Claude（型号未记录）",
-      "tool": "原始工具",
-      "note": "投降结束",
+      "id": "e782219f450f",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) DSH push_tool vs Hard",
+      "date": "2026-11-04T11:03:51.613795100+08:00",
+      "map": "Ice Island (2p)",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 650.464,
+        "gameSeconds": 724.4
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 650.464,
+        "detail": "11:10 只剩 1 坦克 + 1 工厂、收入 0，主动投降"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "mcp__rwx__*（rwx_step 为主）+ 推送插件",
+            "version": null,
+            "extra": "51 次 rwx_step / 7 次 rwx_query / 1 次 rwx_status / 1 次 rwx_observe；30 条 [RWX-PUSH] 注入"
+          }
+        }
+      ],
       "scores": {
-        "stage1": 65.7,
-        "stage2": 100
-      }
+        "totalV2": 30.112,
+        "stage1V2": 34.76,
+        "stage3": 27.013,
+        "stage1V1": 64.7,
+        "stage2": 92.228
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 34.267,
+            "cap": 50,
+            "records": 21
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 31.72,
+            "cap": 50,
+            "records": 12
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 2
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "push（L2 harness）首局：MCP 负责命令，DSH 插件把损失 / 击毁 / 新单位推给 Agent；按 push/README §8 不与纯 MCP 局混榜。",
+        "注入延迟实测：30 条 [RWX-PUSH] 全部等当前工具调用返回后才交付，事件→动作 p50 29.8s；全程只有 2 个 turn，Agent 从未 idle。",
+        "满扣项：Stage1 首个行动 52.4s、底层生产 8.23 条/分钟（0/6）；Stage2 建造者空闲原始 179.36 顶满 20。"
+      ]
     },
     {
-      "id": "Ice-Island-(2p)-20261029--20-40_deepseek4.1vsHard_old",
-      "date": "2026-10-29 20:40",
-      "model": "DeepSeek 4.1",
-      "tool": "原始工具",
-      "note": "旧材料归档",
+      "id": "2024a431fa19",
+      "archive": "old_v1.1",
+      "title": "岩浆岛4p opencode_qwen3.8flash vs Hard",
+      "date": "2026-11-06T00:16:19.118239900+08:00",
+      "map": "岩浆岛4p",
+      "opponent": "0=AI - Hard · 1=AI - Hard · 3=AI - Hard",
+      "duration": {
+        "scoreSeconds": 1936.656,
+        "gameSeconds": 2021.7
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 1936.656,
+        "detail": "1936.7s 主基地被摧毁，对局在 1942.6s 结束"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "qwen3.8flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "opencode + rwx-* shell 命令",
+            "version": null,
+            "extra": null
+          }
+        }
+      ],
       "scores": {
-        "stage1": 54.5,
-        "stage2": 93
-      }
+        "totalV2": 29.409,
+        "stage1V2": 22.48,
+        "stage3": 34.029,
+        "stage1V1": 46.3,
+        "stage2": 54.27
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 46.072,
+            "cap": 50,
+            "records": 109
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 12.899,
+            "cap": 50,
+            "records": 6
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 1
+          }
+        }
+      },
+      "evidenceSource": "live",
+      "notes": [
+        "4P 岩浆岛，t2 单人队（PI=opencode，模型 qwen3.8flash high），对手是 3 个 Hard AI。",
+        "三轮（S0=当前标准语料 17.831/19.419）：Stage1 46.3 / Stage2 54.27 / Stage3 34.622；现行综合 51.082。窗口止于我方阵亡 1936.7s（盟友之后的行不计）。"
+      ]
     },
     {
-      "id": "Ice-Island-(2p)-20261030--01-39_dsh1017vsHard_old",
+      "id": "7c5d8803bd22",
+      "archive": "old_v1.1",
+      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_不可以互相通信",
+      "date": "2026-11-04T21:19:30.220350+08:00",
+      "map": "火山 (8p)",
+      "opponent": "5=AI - Very Hard",
+      "duration": {
+        "scoreSeconds": 768.928,
+        "gameSeconds": 790.2
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "主动投降",
+        "atSeconds": 768.928,
+        "detail": "t≈12:49 主动投降"
+      },
+      "pairs": [
+        {
+          "count": 4,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
+            "version": null,
+            "extra": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；部分调用带 --session pi / op-c；本局关闭 mail.md 信箱（nomail）"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 27.693,
+        "stage1V2": 40.9,
+        "stage3": 18.889,
+        "stage1V1": 64.9,
+        "stage2": 92.816
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 31.224,
+            "cap": 50,
+            "records": 22
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 42.706,
+            "cap": 50,
+            "records": 24
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0.181,
+            "cap": 20,
+            "records": 1
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 1
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "同队四智能体共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2；相比 20:53 那局关闭了 mail 协作。",
+        "结局：t≈12:49 主动投降，战败；有效窗口 768.9s，回放完整。",
+        "Stage2 主要扣分：BUILDER_IDLE 原始 105.8 顶满 20、FUNDS 7、FACTORY_IDLE 3.523；AMBUSH 仅 0.184、STALE 0。",
+        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ]
+    },
+    {
+      "id": "1a01ba2b4a37",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) DSH 无tool基线",
+      "date": "2026-11-03T00:00:15.764711200+08:00",
+      "map": "Ice Island (2p)",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 1058.048,
+        "gameSeconds": 1080.7
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 1058.048,
+        "detail": "约 18:01 被全歼"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "pwsh + RWX CLI",
+            "version": null,
+            "extra": "109 次 pwsh 批量调用，MCP 尚未接入"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 25.392,
+        "stage1V2": 32.56,
+        "stage3": 20.614,
+        "stage1V1": 56.5,
+        "stage2": 90.307
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 31.607,
+            "cap": 50,
+            "records": 22
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 40.661,
+            "cap": 50,
+            "records": 32
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7.118,
+            "cap": 30,
+            "records": 6
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "与 tool1 同为无 MCP 基线，用于观察同工具、同模型下的局间波动：62.9 与 61.9（相差 1.0）。"
+      ]
+    },
+    {
+      "id": "0f5eeb3c1431",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 10-30 01:39 DSH 1.0.17 vs Hard",
       "date": "2026-10-30 01:39",
-      "model": "DSH 1.0.17",
-      "tool": "原始工具",
-      "note": "旧材料归档",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 622.976,
+        "gameSeconds": null
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 622.976,
+        "detail": "10:23 战败"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "DSH 1.0.17（底层模型未记录）",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        }
+      ],
       "scores": {
-        "stage1": 53.1,
+        "totalV2": 25.04,
+        "stage1V2": 36.74,
+        "stage3": 17.24,
+        "stage1V1": 53.1,
         "stage2": 92
-      }
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 36.696,
+            "cap": 50,
+            "records": 21
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 39.064,
+            "cap": 50,
+            "records": 17
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7,
+            "cap": 30,
+            "records": 1
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
     },
     {
-      "id": "Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
-      "date": "2026-11-01 16:43",
-      "model": "GPT-5.6 Sol",
-      "tool": "原始工具",
-      "note": "未完赛",
+      "id": "efc073230233",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) DSH MCPtool2 vs Hard",
+      "date": "2026-11-03T07:23:28.918306900+08:00",
+      "map": "Ice Island (2p)",
+      "opponent": "1=AI - Hard",
+      "duration": {
+        "scoreSeconds": 715.312,
+        "gameSeconds": 741.7
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 715.312,
+        "detail": "约 12:22 主基地被摧毁"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "mcp__rwx__*（rwx_step 为主）",
+            "version": null,
+            "extra": "64 次 rwx_step / 5 次 rwx_query / 3 次 rwx_status，仅 14 次 pwsh 用于开局与收尾"
+          }
+        }
+      ],
       "scores": {
-        "stage1": 64.7,
-        "stage2": 65
-      }
+        "totalV2": 22.172,
+        "stage1V2": 34.92,
+        "stage3": 13.674,
+        "stage1V1": 66.4,
+        "stage2": 80.623
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 38.977,
+            "cap": 50,
+            "records": 44
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 37,
+            "cap": 50,
+            "records": 14
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 10.349,
+            "cap": 30,
+            "records": 3
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "目录名误写成 tool1，但录像名为 dsh4.1_tool2_vsHard，且 MCP 调用日志一致，已按 tool2 归档。",
+        "同为 MCP + 同一模型，综合分反而低于无 MCP 的 tool1，说明接口形态本身不构成分数优势。"
+      ]
     },
     {
-      "id": "Ice-Island-(2p)-20261101--18-51_Pi+claudeOpus5.5+dshvsHard_old",
-      "date": "2026-11-01 18:51",
-      "model": "Pi + Claude Opus 5.5 + DSH",
-      "tool": "原始工具",
-      "note": "旧材料归档",
-      "scores": {
-        "stage1": 73,
-        "stage2": 69.174
-      }
-    },
-    {
-      "id": "Ice-Island-(2p)-20261101--19-16_Pi+deepseek4.1_old",
-      "date": "2026-11-01 19:16",
-      "model": "Pi + DeepSeek 4.1",
-      "tool": "原始工具",
-      "note": "旧材料归档",
-      "scores": {
-        "stage1": 66.4,
-        "stage2": 71.999
-      }
-    },
-    {
-      "id": "Ice-Island-(2p)-20261101--19-50_Pi=deepseek掺水_old",
-      "date": "2026-11-01 19:50",
-      "model": "Pi + DeepSeek（掺水）",
-      "tool": "原始工具",
-      "note": "旧材料归档",
-      "scores": {
-        "stage1": 65.4,
-        "stage2": 65
-      }
-    },
-    {
-      "id": "Ice-Island-(2p)-20261101--21-31_Pi+Kimi3.1provsHard_延迟_old",
-      "date": "2026-11-01 21:31",
-      "model": "Pi + Kimi 3.1 Pro",
-      "tool": "原始工具",
-      "note": "延迟显著",
-      "scores": {
-        "stage1": 55.7,
-        "stage2": 60.474
-      }
-    },
-    {
-      "id": "Ice-Island-(2p)-20261101--21-51_Pi+Kimi3.1provsHard_延迟2_old",
+      "id": "9fd0f0c39a2f",
+      "archive": "old_v1.1",
+      "title": "Ice Island (2p) 11-01 21:51 Pi + Kimi K3.1 Pro（延迟2）",
       "date": "2026-11-01 21:51",
-      "model": "Pi + Kimi 3.1 Pro",
-      "tool": "原始工具",
-      "note": "延迟显著",
+      "map": "Ice Island (2p)",
+      "opponent": "AI - Hard · x2 收入",
+      "duration": {
+        "scoreSeconds": 1049.296,
+        "gameSeconds": null
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 1049.296,
+        "detail": "17:29 战败"
+      },
+      "pairs": [
+        {
+          "count": 1,
+          "agent": {
+            "provider": "unknown",
+            "model": "Pi + Kimi K3.1 Pro",
+            "reasoning": "unknown"
+          },
+          "tool": {
+            "name": "RWX CLI（历史原始工具）",
+            "version": null,
+            "extra": "历史材料未结构化记录精确工具版本、provider 与推理强度。"
+          }
+        }
+      ],
       "scores": {
-        "stage1": 53.6,
+        "totalV2": 20.664,
+        "stage1V2": 17.84,
+        "stage3": 22.547,
+        "stage1V1": 53.6,
         "stage2": 51
-      }
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 24.819,
+            "cap": 50,
+            "records": 32
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 38.516,
+            "cap": 50,
+            "records": 19
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 14.118,
+            "cap": 30,
+            "records": 8
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "历史材料已用忠实 resim 还原；未记录的模型/工具字段保持 unknown。"
+      ]
+    },
+    {
+      "id": "be475d61b33b",
+      "archive": "old_v1.1",
+      "title": "火山 (8p) Pi_deepseekx4vsVeryHard_可以互相通信",
+      "date": "2026-11-04T20:55:11.984333100+08:00",
+      "map": "火山 (8p)",
+      "opponent": "5=AI - Very Hard",
+      "duration": {
+        "scoreSeconds": 639.456,
+        "gameSeconds": 649.8
+      },
+      "result": {
+        "outcome": "defeat",
+        "label": "战败",
+        "atSeconds": 639.456,
+        "detail": "t≈10:39 我方主基地（commandCenter #66）被摧毁"
+      },
+      "pairs": [
+        {
+          "count": 4,
+          "agent": {
+            "provider": "opencode-go",
+            "model": "deepseek-v4.1-flash",
+            "reasoning": "high"
+          },
+          "tool": {
+            "name": "pi 4 会话（bash 调 rwx-cli.py，无 MCP）",
+            "version": null,
+            "extra": "四个 pi 会话共用同一玩家（team 4）与同一 CLI 端口文件；命令不经 --session，警报游标共享；协作靠 agent-tmp/mail.md 信箱（本局启用 mail）"
+          }
+        }
+      ],
+      "scores": {
+        "totalV2": 18.968,
+        "stage1V2": 43.12,
+        "stage3": 2.867,
+        "stage1V1": 67.3,
+        "stage2": 74.533
+      },
+      "stage3": {
+        "version": "stage3-score-v2",
+        "deductions": {
+          "STAGE3_AMBUSH": {
+            "deduction": 42.848,
+            "cap": 50,
+            "records": 31
+          },
+          "STAGE3_BARRAGE": {
+            "deduction": 46.792,
+            "cap": 50,
+            "records": 27
+          },
+          "STAGE3_GRINDER": {
+            "deduction": 0,
+            "cap": 20,
+            "records": 0
+          },
+          "STAGE3_FUNDS": {
+            "deduction": 7.493,
+            "cap": 30,
+            "records": 5
+          }
+        }
+      },
+      "evidenceSource": "faithful-resim",
+      "notes": [
+        "同队四智能体（1 发起 + 3 加入）共控一个玩家：火山 (8p) 地图 1v1，对手 AI - Very Hard，x2 收入，档位 2。",
+        "结局：t≈10:39 我方主基地被摧毁，战败；有效窗口 639.5s，回放完整。",
+        "Stage2 BUILDER_IDLE 原始 136.5 顶满 20；AMBUSH 9.364（末段 t≈9:08 一次损失）、STALE 9（部分事件缺过期证据）。",
+        "本局为同队多智能体单局记录，不与三接口对比榜混排。"
+      ]
     }
   ],
-  "insufficient": [
+  "ignored": [
     {
-      "id": "ff76adff",
-      "title": "session-ff76adff · 桥接未注册",
-      "date": "2026-11-03 01:13",
-      "detail": "会话读到评测说明后确认没有 mcp__rwx__* 工具，按规则停止，没有开局，因此没有任何对局材料。",
-      "impact": "不计分；它证明了“桥接未注册时 Agent 会中止”，不能当作一局失败的战绩。"
+      "title": "4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
+      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--4798272460998017466_gpt_未完_old",
+      "reason": "replay_desync:475",
+      "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
     },
     {
-      "id": "commands-only",
-      "title": "3 份 commands-*_analysis_old",
-      "date": "2026-10-27",
-      "detail": "只有命令日志，没有回放与遥测，无法重建战场与资源曲线。",
-      "impact": "不计分。"
+      "title": "4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
+      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--5613052610805639813_claudevsVeryHard_1_一半_old",
+      "reason": "replay_desync:2820",
+      "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
     },
     {
-      "id": "local-replay",
-      "title": "[local]_Ice_Island_(2p)_[v1.15]_old",
-      "date": "2026-11-01",
-      "detail": "仅保留原始回放，没有评分产物。",
-      "impact": "不计分。"
+      "title": "4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
+      "relativePath": "_archive/old_v1.1/4P绿洲湖畔byConfetti-20261027--9568037334084955616_claudevsVeryHard_2_投降_old",
+      "reason": "replay_desync:973",
+      "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
     },
     {
-      "id": "mcp-early",
-      "title": "MCP 首次可用（01:34 局，材料已删除）",
-      "date": "2026-11-03 01:34",
-      "detail": "该局只有实时遥测与回放解析产物：没有原始命令日志，回放是未完成录制（缺 end/meta 块）。按用户要求连同 evaluate/output 下的材料一并删除。",
-      "impact": "不计分；原综合分 67.432 作废，标准对局从 5 局减为 4 局。"
+      "title": "Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
+      "relativePath": "_archive/old_v1.1/Ice Island (2p) DSH MCPtool1_use_fail vs Hard",
+      "reason": "replay_desync:4",
+      "note": "重放与录制分叉（校验不一致条数见原因后缀），材料只能算出一部分，不猜分"
+    },
+    {
+      "title": "Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
+      "relativePath": "_archive/old_v1.1/Ice-Island-(2p)-20261101--16-43_gpt5.6solvsHard未完_old",
+      "reason": "commands_or_economy_missing",
+      "note": "缺少命令日志或经济日志，无法建立评分窗口"
     }
   ],
   "method": {
     "sources": [
-      "evaluate/output/<对局>/score.json（total-v1 综合分）",
-      "evaluate/output/<对局>/stage_1/score.json、stage_2/score.json",
-      "evaluate/output/<对局>/meta.json（系统版本、模型、工具、思考强度、地图、时长、胜负、会话与 token）",
-      "evaluate/output/<对局>/replay/*.summary.txt（地图、时长、命令量）",
-      "evaluate/output/<对局>/events-live/<对局>/（实时遥测，已按对局名归档）",
-      "DSH 会话存档（模型、推理强度、工具调用与对局结局）"
+      "stage_1_v2/score.json",
+      "stage_3/score.json（含资金 v2）",
+      "score_v2.json",
+      "meta.json / evaluation_v2.json",
+      "忠实 resim 的 playback.json 校验",
+      "evaluate/config.json 参数快照"
     ],
     "limits": [
-      "每个工具版本只有 1 局，局间方差与工具差异无法分离；同工具的两局基线相差 1.0 分。",
-      "地图、对手、经济倍率固定为 Ice Island (2p) / Hard / x2，结论不能外推到其它地图或难度。",
-      "底层命令归属缺失 33%–58%，会直接影响第一阶段的生产速率项。",
-      "tool2 与 tool3 的提示词并非只差工具：tool3 增加了路径说明、暂停说明与“游戏秒/收入单位”标注，桥接摘要也同步加了单位后缀。",
-      "三局结局都是失败，分数差异不能解读为“更会赢”。",
-      "2026-11-04 新增的两局不在三接口对比组里：Fire Bridge (2p) 换了地图；Ice Island 的 push 局把事件交付改成推送（L2 harness）。两局各 1 场，分数只与同图同工具的局可比。",
-      "2026-11-04 两局的 runtime 只保留 DSH 步数 / 工具调用数与 output token；工具与模型耗时未按旧局同口径拆分。",
-      "2026-11-04 新增的三局火山 (8p) 是同队四智能体共控一个玩家：两局对手为 1 个 Very Hard（其中一局关掉邮件协作），一局为 2 个 Hard；与 2p 三接口对比组不是同一对手配置，只作单局记录。"
+      "Stage1-v2 的阈值、lambda 与活跃度闸门仍为 provisional。",
+      "Stage3 S0 仅来自 5 局 >15min 忠实对局，且全部是战败；后续应补充胜利长局。",
+      "资金 v2 的 lambda、动态 spend floor 与向先验收缩公式在设计中未定，当前使用 config.json 的显式先验。",
+      "4P 归档局重放会分叉、1 局回放未完成，均只记录材料、不进入本表；胜负不进入公式。"
     ]
   }
 }

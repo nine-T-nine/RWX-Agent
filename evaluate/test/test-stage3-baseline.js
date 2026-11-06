@@ -63,7 +63,7 @@ test('S0 comes from the median S of the faithful matches only', () => {
   const expected = result.included.map(row => row.families.ambush.S).sort((a, b) => a - b)[1];
   assert.equal(result.ambushS0, expected);
   assert.equal(result.barrageMedian, null, 'no barrage events means no barrage evidence');
-  assert.equal(result.barrageS0, DEFAULTS.barrage.S0, 'an empty family keeps the placeholder instead of dividing by zero');
+  assert.equal(result.barrageS0, DEFAULTS.barrage.S0, 'an empty family keeps the configured baseline instead of dividing by zero');
 
   // The calibrated total uses the median S0: the middle match sits at 1-e^-1 of the cap.
   const middle = result.scored.find(row => row.families.ambush.S === expected);
@@ -109,8 +109,8 @@ test('a frozen S0 scores a new batch without recomputing a median', () => {
   assert.equal(scored.calibration.excluded, false);
   assert.deepEqual([scored.calibration.baseline.matches, scored.calibration.baseline.source],
     [7, 'archive-corpus']);
-  // S = 0.1 at S0 = 2 is 60*(1-e^-0.05) ≈ 2.926, not the saturated 37.9 of the median rule.
-  assert.ok(Math.abs(result.scored[0].calibrated.ambush - 60 * (1 - Math.exp(-0.05))) < 1e-2);
+  // S = 0.1 at S0 = 2 sits on the cap from config.json: cap*(1-e^-0.05), not the saturated median rule.
+  assert.ok(Math.abs(result.scored[0].calibrated.ambush - DEFAULTS.ambush.PMax * (1 - Math.exp(-0.05))) < 1e-2);
   fs.rmSync(root, {recursive: true, force: true});
 });
 
@@ -123,7 +123,9 @@ test('the markdown table lists every match and the excluded reason', () => {
   const rows = collect({root});
   const result = calibrate(rows);
   const text = markdown(result, {generatedAt: '2026-11-05T00:00:00.000Z'});
-  assert.match(text, /S0 标定：STAGE3_AMBUSH = 0\.2，STAGE3_BARRAGE = 1（该族无记录，沿用占位值）/);
+  assert.ok(text.includes(`STAGE3_AMBUSH = 0.2，STAGE3_BARRAGE = ${DEFAULTS.barrage.S0}`),
+    'a family with no records keeps the configured S0');
+  assert.match(text, /该族无记录，沿用 config\.json 的 S0/);
   assert.match(text, /match-0 \| 计入 \| 600 \|/);
   assert.match(text, /match-desync \| 排除:replay_desync:12 \|/);
   assert.match(text, /未进入标定[\s\S]*match-desync: replay_desync:12/);

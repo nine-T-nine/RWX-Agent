@@ -9,6 +9,12 @@ test('the scoreable window stops at surrender, exit, match end or the log trunca
   const commands = {lastMs: 200000, surrenderMs: 150000, exitMs: 190000, stop: null};
   const end = {timeMs: 200000, reason: 'match_result'};
   assert.deepEqual([planWindow({commands, end}).ms, planWindow({commands, end}).kind], [150000, 'surrender']);
+  // Losing our command center beats a later match end: the ally's remaining play is not ours.
+  const lost = planWindow({commands: {lastMs: 190000, surrenderMs: null, exitMs: null, stop: null},
+    end: {timeMs: 200000, reason: 'match_result'}, defeatMs: 130000});
+  assert.deepEqual([lost.ms, lost.kind, lost.reason], [130000, 'defeat', 'team_eliminated']);
+  // ...but it never extends past a surrender that came first.
+  assert.equal(planWindow({commands, end, defeatMs: 180000}).kind, 'surrender');
   // An exit without surrender ends the Agent's own play just the same.
   const leaving = {...commands, surrenderMs: null};
   assert.equal(planWindow({commands: leaving, end}).kind, 'agent_exit');
@@ -27,13 +33,20 @@ test('the scoreable window stops at surrender, exit, match end or the log trunca
   assert.deepEqual([orphan.ms, orphan.kind], [90000, 'aborted']);
 });
 
-function workspace({surrenderMs = 150000, endMs = 200000, reason = 'match_result', hpLoss = false} = {}) {
+function workspace({surrenderMs = 150000, endMs = 200000, reason = 'match_result', hpLoss = false,
+  defeatMs = null} = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rwx-preprocess-'));
   const match = path.join(root, 'match-a');
   const live = path.join(match, 'events-live', 'match-001-team0');
   fs.mkdirSync(live, {recursive: true});
   fs.mkdirSync(path.join(match, 'replay'), {recursive: true});
   const lines = [JSON.stringify({kind: 'meta', schema: 1, team: 0, X: 160, timeMs: 0})];
+  if (defeatMs != null) {
+    lines.push(JSON.stringify({kind: 'unit', timeMs: 0, tick: 0, seq: 2, unit: {id: 99,
+      type: 'commandCenter', side: 'self', alive: true, building: true, complete: true}}));
+    lines.push(JSON.stringify({kind: 'death', timeMs: defeatMs, tick: defeatMs / 16, seq: 900,
+      unit: {id: 99, type: 'commandCenter', side: 'self', alive: false, building: true}}));
+  }
   const economy = [];
   for (let second = 0; second <= endMs / 1000; second++) {
     const timeMs = second * 1000;
@@ -59,8 +72,11 @@ function workspace({surrenderMs = 150000, endMs = 200000, reason = 'match_result
   if (surrenderMs != null) commands.push(`[0${Math.floor(surrenderMs / 60000)}:${String((surrenderMs % 60000) / 1000).padStart(2, '0')}:000]`
     + '<name=Player;player=0;faction=A(0);role=player;match=1><rwx-game-surrender\\t>');
   fs.writeFileSync(path.join(root, 'commands-match-a.txt'), commands.join('\n') + '\n');
+  // `replay.py` writes the exported JSONL with a space after each colon; the fixture keeps that
+  // shape so the replay trimmer is exercised against the real format.
   fs.writeFileSync(path.join(match, 'replay', 'r.jsonl'),
-    [{game_time_ms: 1000}, {game_time_ms: 150000}, {game_time_ms: 190000}].map(r => JSON.stringify(r)).join('\n') + '\n');
+    [1000, 150000, 190000].map(ms => `{"tick": ${ms / 16}, "game_time_ms": ${ms}, "time_s": ${ms / 1000}}`)
+      .join('\n') + '\n');
   return {root, match};
 }
 
@@ -84,9 +100,26 @@ test('preprocessing cuts a surrendered match and the trimmed inputs still line u
   // The surrender command itself is still in the window; later polling is not.
   const commands = fs.readFileSync(path.join(match, 'prepared', 'commands-match-a.txt'), 'utf8');
   assert.match(commands, /rwx-game-surrender/);
+  // The parsed replay is trimmed too: the 190s row would be ally/AI play after our window.
+  const replay = fs.readFileSync(path.join(match, 'prepared', 'replay.jsonl'), 'utf8').trim().split('\n');
+  assert.deepEqual(replay.map(line => JSON.parse(line).game_time_ms), [1000, 150000]);
   // Evidence coverage is recorded, not guessed.
   assert.equal(result.evidence.idleRows, 50);
   assert.deepEqual(result.evidence.missing, ['hp_loss']);
+});
+
+test('losing our command center ends the window even when the match runs on for the ally', async () => {
+  const {match} = workspace({surrenderMs: null, endMs: 200000, reason: 'match_result', defeatMs: 120000});
+  const result = await preprocess(match);
+  assert.deepEqual([result.ending.kind, result.ending.reason, result.ending.defeatMs],
+    ['defeat', 'team_eliminated', 120000]);
+  assert.equal(result.window.endMs, 120000);
+  assert.equal(result.window.trimmedMs, 80000);
+  const telemetry = fs.readFileSync(path.join(match, 'prepared', 'telemetry.jsonl'), 'utf8').trim().split('\n');
+  assert.ok(telemetry.every(line => Number(JSON.parse(line).timeMs) <= 120000), 'our defeat caps every row');
+  assert.equal(JSON.parse(telemetry.at(-1)).cutKind, 'defeat');
+  const replay = fs.readFileSync(path.join(match, 'prepared', 'replay.jsonl'), 'utf8').trim().split('\n');
+  assert.deepEqual(replay.map(line => JSON.parse(line).game_time_ms), [1000]);
 });
 
 test('a finished match keeps its own end row and only drops trailing polling', async () => {

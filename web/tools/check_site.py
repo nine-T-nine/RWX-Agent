@@ -43,32 +43,37 @@ def parse(name):
 
 def check_ledger():
     data = json.loads((WEB / 'resource/results.json').read_text(encoding='utf-8'))
-    assert data['schema'] == 1
+    assert data['schema'] == 2
     standard = data['standard']
-    assert standard['total'] and standard['stage1'] and standard['stage2']
-    weights = standard['weights']
-    current = data['current']
-    assert len(current) == data['overview']['currentMatches'] >= 3
-    assert len({item['id'] for item in current}) == len(current)
-    ids = {item['id'] for item in current}
+    assert standard['version'] == 'total-v2'
+    assert 0 <= standard['k'] <= 1
+    matches = data['matches']
+    assert len(matches) == data['overview']['matches'] >= 1
+    assert len({item['id'] for item in matches}) == len(matches)
+    ids = {item['id'] for item in matches}
     assert data['overview']['best']['id'] in ids
-    for item in current:
-        for key in ('title', 'tool', 'date', 'result', 'scores', 'metrics', 'runtime', 'session'):
+    for item in matches:
+        for key in ('title', 'archive', 'date', 'result', 'scores', 'pairs', 'duration', 'stage3'):
             assert key in item, f'{item["id"]}: missing {key}'
-        assert item['agent']['model'], item['id'] + ': model is required'
-        assert item['agent']['reasoning'], item['id'] + ': reasoning effort is required'
-        assert item['tool'], item['id'] + ': tool is required'
+        assert item['archive'] == 'old_v1.1'
+        assert item['duration']['scoreSeconds'] > 0
+        assert item['result']['outcome'] in {'win', 'defeat', 'draw', 'unknown'}
+        assert item['pairs']
+        for pair in item['pairs']:
+            assert pair['agent']['model'] and pair['agent']['provider'] and pair['agent']['reasoning']
+            assert pair['tool']['name'] and 'extra' in pair['tool']
         scores = item['scores']
-        expected = scores['stage1'] * weights['stage1'] + scores['stage2'] * weights['stage2']
-        assert abs(scores['total'] - expected) < 0.05, item['id'] + ': total does not match weighted stages'
-        assert 0 <= scores['total'] <= 100
-    legacy = data['legacy']
-    assert len(legacy) == data['overview']['legacyMatches'] >= 1
-    for item in legacy:
-        assert item['model'] and item['tool'] and item['note']
-        assert 0 <= item['scores']['stage1'] <= 100
-        assert 0 <= item['scores']['stage2'] <= 100
-    assert data['insufficient'], 'material gaps must be recorded'
+        expected = scores['stage3'] * standard['k'] + scores['stage1V2'] * (1 - standard['k'])
+        assert abs(scores['totalV2'] - expected) < 0.01, item['id'] + ': total-v2 does not match weighted stages'
+        for name in ('totalV2', 'stage1V2', 'stage3'):
+            assert 0 <= scores[name] <= 100
+        assert set(item['stage3']['deductions']) == {'STAGE3_AMBUSH', 'STAGE3_BARRAGE', 'STAGE3_GRINDER', 'STAGE3_FUNDS'}
+    ignored = data['ignored']
+    assert len(ignored) == data['overview']['ignored'] >= 1, 'material gaps must be recorded'
+    titles = {item['title'] for item in matches}
+    for item in ignored:
+        assert item['title'] and item['reason'] and item['note'] and item['relativePath']
+        assert item['title'] not in titles, 'a match cannot be both ranked and ignored'
     assert data['method']['limits'], 'known limits must be recorded'
     return data
 
@@ -77,9 +82,10 @@ def check_scoring():
     data = json.loads((WEB / 'resource/scoring.json').read_text(encoding='utf-8'))
     assert data['schema'] == 1
     stages = data['fullMatch']['stages']
-    assert [stage['id'] for stage in stages] == ['stage1', 'stage2']
-    assert len(stages[0]['items']) == 12, 'Stage 1 must list all 12 deduction items'
+    assert [stage['id'] for stage in stages] == ['stage1', 'stage2', 'stage3']
+    assert len(stages[0]['items']) == 3, 'Stage 1-v2 must list all 3 scoring groups'
     assert len(stages[1]['items']) == 6, 'Stage 2 must list all 6 deduction families'
+    assert len(stages[2]['items']) == 4, 'Stage 3 must list all 4 deduction families'
     cases = data['microCases']
     assert [case['id'] for case in cases] == ['case1', 'case2', 'case3', 'case4']
     for group in [*stages, *cases]:
@@ -106,6 +112,7 @@ if __name__ == '__main__':
     ledger_html = (WEB / 'results.html').read_text(encoding='utf-8')
     assert ledger_page.ids, 'Ledger page must expose anchor targets'
     assert '<title>评测结果｜RWX-Agent</title>' in ledger_html
+    assert 'id="last-updated"' in ledger_html
     assert 'resource/results.json' in (WEB / 'results.js').read_text(encoding='utf-8')
     assert (WEB / 'results.js').is_file()
     assert './results.html' in html, 'Home page must link to the ledger'
@@ -130,7 +137,7 @@ if __name__ == '__main__':
         deployed.extend(p for p in (WEB / 'resource' / folder).rglob('*') if p.is_file())
     total = sum(path.stat().st_size for path in deployed)
     assert total < 1_000_000_000, 'Site exceeds GitHub Pages size limit'
-    print(f'PASS: {len(recordings)} recordings, {ledger["overview"]["currentMatches"]} current matches, '
-          f'{ledger["overview"]["legacyMatches"]} archived, {len(scoring["microCases"])} micro cases, '
+    print(f'PASS: {len(recordings)} recordings, {ledger["overview"]["matches"]} old_v1.1 matches, '
+          f'{len(scoring["microCases"])} micro cases, '
           f'{len(deployed)} deployable files, '
           f'{total / 1024 / 1024:.1f} MiB; local links, video checksums and ledger scores valid.')

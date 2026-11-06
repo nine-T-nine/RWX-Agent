@@ -99,8 +99,8 @@ function calibrate(rows, options = {}) {
     throw Error(`need at least ${minimum} faithful matches to calibrate S0, got ${included.length}`);
   }
   const medianOf = name => median(included.map(row => row.families[name].S));
-  // A family with no events in the whole corpus has S = 0 and no usable scale: fall back to the
-  // shipped placeholder instead of dividing by zero.
+  // A family with no events in the whole corpus has S = 0 and no usable scale: keep the S0 already
+  // shipped in config.json instead of dividing by zero (or resetting a real calibration to 1).
   const positive = value => (Number.isFinite(value) && value > 0 ? value : null);
   const ambushMedian = included.length ? positive(medianOf('ambush')) : null;
   const barrageMedian = included.length ? positive(medianOf('barrage')) : null;
@@ -132,7 +132,7 @@ function calibrate(rows, options = {}) {
 
 function markdown(result, aggregate) {
   const label = (name, s0, medianValue) => (medianValue === null && !result.fixed
-    ? `${round(s0)}（该族无记录，沿用占位值）` : `${round(s0)}`);
+    ? `${round(s0)}（该族无记录，沿用 config.json 的 S0）` : `${round(s0)}`);
   const lines = ['# ' + (aggregate.title || '第三阶段归档基线'), '',
     `生成于 ${aggregate.generatedAt}，样本 ${aggregate.matches?.length ?? result.scored.length} 局（可复现重放${result.fixed
       ? `；其中 ${result.included.length} 局证据完整` : ''}）。`,

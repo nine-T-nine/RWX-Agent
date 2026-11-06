@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "version": "rwx-evaluation-config-v1",
+  "updatedAt": "2026-11-06T00:00:00+08:00",
+  "policy": {
+    "archiveLabel": "old_v1.1",
+    "tuningPool": {
+      "minDurationExclusiveSeconds": 900,
+      "requireCompleteEvidence": true,
+      "requireFaithfulReplay": true,
+      "description": "后续参数调优只使用评分窗口严格大于 15 分钟、证据完整且重放无分叉的对局；胜负只记录，不作为硬筛选。"
+    }
+  },
+  "total": {
+    "v1": {
+      "version": "total-v1",
+      "description": "旧版总分，保留用于 old_v1.1 归档对照。",
+      "parameters": {
+        "stage1Weight": {"description": "旧第一阶段权重", "initial": 0.4, "current": 0.4},
+        "stage2Weight": {"description": "第二阶段权重", "initial": 0.6, "current": 0.6}
+      }
+    },
+    "v2": {
+      "version": "total-v2",
+      "description": "新版总分 = Stage3 × k + Stage1-v2 × (1-k)。",
+      "parameters": {
+        "k": {"description": "Stage3 权重；设计中的调整机制尚未确定，当前固定", "initial": 0.6, "current": 0.6, "status": "provisional"}
+      }
+    }
+  },
+  "stage1": {
+    "v1": {
+      "version": "stage1-v2",
+      "description": "历史代码版本名为 stage1-v2，但实现的是 score_design 的 12 项 v1 公式；只作归档对照。",
+      "parameters": {
+        "caps": {"description": "12 项扣分上限，按 score_design v1 顺序", "initial": [15, 5, 5, 8, 18, 10, 8, 15, 8, 8, 6, 10], "current": [15, 5, 5, 8, 18, 10, 8, 15, 8, 8, 6, 10]},
+        "firstOrderBreakpointsSeconds": {"description": "首个行动分段", "initial": [0, 5, 8, 20, 60], "current": [0, 5, 8, 20, 60]},
+        "firstMiningSeconds": {"description": "首个采矿建造满扣时点", "initial": 20, "current": 20},
+        "firstBuilderSeconds": {"description": "首个建造者生产满扣时点", "initial": 30, "current": 30},
+        "productionPerMinuteTarget": {"description": "底层生产指令率免扣目标", "initial": 8, "current": 8},
+        "queryActionNoPenaltyRange": {"description": "A/B 免扣区间", "initial": [0.3, 3], "current": [0.3, 3]}
+      }
+    },
+    "v2": {
+      "version": "stage1-score-v2",
+      "description": "B 簇、观察/行动延迟与时间加权空窗评分。",
+      "parameters": {
+        "clusterGapSeconds": {"description": "相邻 B 合并为同簇的最大间隔", "initial": 5, "current": 5},
+        "weightedQuantile": {"description": "空窗按时长加权后的分位", "initial": 0.9, "current": 0.9},
+        "minimumDurationSeconds": {"description": "低于该评分窗口不评分", "initial": 300, "current": 300},
+        "minimumSamples": {"description": "少样本收缩到最差值的目标样本数", "initial": 5, "current": 5},
+        "minimumNativeCommandsPerMinute": {"description": "活跃度闸门阈值", "initial": 8, "current": 8, "status": "provisional"},
+        "activityGateScoreCap": {"description": "低于活跃度阈值时的得分上限；设计未给数值", "initial": 60, "current": 60, "status": "provisional"},
+        "lambda": {"description": "g_lambda 曲线参数；设计只给搜索范围，当前使用线性极限", "initial": 0, "current": 0, "status": "provisional"},
+        "groupWeights": {"description": "启动/回合延迟/空窗组权重", "initial": {"startup": 20, "cycle": 40, "silence": 40}, "current": {"startup": 20, "cycle": 40, "silence": 40}},
+        "featureThresholdsSeconds": {"description": "各特征 lo/hi；当前为设计先验，尚未由参考池冻结", "initial": {"f1": [3, 90], "f2": [5, 30], "f3": [5, 35], "f4": [5, 60], "f5": [5, 60], "f6": [3, 45]}, "current": {"f1": [3, 90], "f2": [5, 30], "f3": [5, 35], "f4": [5, 60], "f5": [5, 60], "f6": [3, 45]}, "status": "provisional"}
+      }
+    }
+  },
+  "stage2": {
+    "v2": {
+      "version": "stage2-v2",
+      "description": "旧总分可选对照；Stage3 上线后不参与 total-v2。",
+      "parameters": {
+        "caps": {"description": "AMBUSH/GRINDER/STALE/BUILDER_IDLE/FACTORY_IDLE/FUNDS 类别上限", "initial": {"AMBUSH": 35, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 20, "FACTORY_IDLE": 15, "FUNDS": 20}, "current": {"AMBUSH": 40, "GRINDER": 20, "STALE": 15, "BUILDER_IDLE": 25, "FACTORY_IDLE": 20, "FUNDS": 30}},
+        "singleMax": {"description": "各事件单次倍率", "initial": {"AMBUSH": 18, "GRINDER": 15, "BUILDER_IDLE": 8, "FACTORY_IDLE": 5, "FUNDS": 7}, "current": {"AMBUSH": 18, "GRINDER": 15, "BUILDER_IDLE": 8, "FACTORY_IDLE": 5, "FUNDS": 7}},
+        "ambush": {"description": "响应秒/免扣冲击/满冲击/指数", "initial": {"responseSeconds": 35, "deadZone": 1, "fullImpact": 12, "gamma": 3}, "current": {"responseSeconds": 30, "deadZone": 1, "fullImpact": 12, "gamma": 3}},
+        "grinder": {"description": "响应秒/免扣冲击/满冲击/指数", "initial": {"responseSeconds": 45, "deadZone": 3, "fullImpact": 18, "gamma": 1.5}, "current": {"responseSeconds": 45, "deadZone": 3, "fullImpact": 18, "gamma": 1.5}},
+        "funds": {"description": "资金区间检测参数", "initial": {"K": 30, "spendFloor": 800, "spendShare": 0.25, "rho1": 0.5, "rho2": 0.25}, "current": {"K": 30, "spendFloor": 800, "spendShare": 0.25, "rho1": 0.5, "rho2": 0.25}}
+      }
+    }
+  },
+  "stage3": {
+    "version": "stage3-score-v2",
+    "description": "偷袭、偷家、危险区建造者死亡与资金空余四项。",
+    "parameters": {
+      "shared": {
+        "alpha": {"description": "护盾伤害折算权重", "initial": 0.4, "current": 0.4},
+        "beta": {"description": "未致死损失上限系数", "initial": 0.9, "current": 0.9}
+      },
+      "ambush": {
+        "WMin": {"description": "受击警告项下限", "initial": 0.1, "current": 0.1},
+        "NSat": {"description": "受击次数饱和点", "initial": 8, "current": 8},
+        "gamma": {"description": "空闲时长最大加成", "initial": 0.5, "current": 0.5},
+        "T0": {"description": "空闲时长免罚阈值秒", "initial": 3, "current": 3},
+        "TSpan": {"description": "时长项爬升跨度秒", "initial": 27, "current": 27},
+        "Cw": {"description": "价值权重基准造价", "initial": 1000, "current": 1000},
+        "wLo": {"description": "价值权重下限", "initial": 0.4, "current": 0.4},
+        "wHi": {"description": "价值权重上限", "initial": 2.6457513111, "current": 2.6457513111},
+        "GRef": {"description": "时长归一化基准秒", "initial": 1200, "current": 1200},
+        "rLo": {"description": "时长缩放下限", "initial": 0.5, "current": 0.5},
+        "rHi": {"description": "时长缩放上限", "initial": 2, "current": 2},
+        "PMax": {"description": "本项扣分上限", "initial": 60, "current": 50},
+        "S0": {"description": "饱和速度基线；取 5 局 >15min 忠实对局 S 中位数（样本全为战败）", "initial": 1, "current": 17.678, "status": "provisional"}
+      },
+      "barrage": {
+        "WMin": {"description": "炮击警告项下限", "initial": 0.1, "current": 0.1},
+        "NSat": {"description": "炮击次数饱和点", "initial": 4, "current": 4},
+        "Cw": {"description": "价值权重基准造价", "initial": 1000, "current": 1000},
+        "wLo": {"description": "价值权重下限", "initial": 0.5, "current": 0.5},
+        "wHi": {"description": "价值权重上限", "initial": 2.8284271247, "current": 2.8284271247},
+        "GRef": {"description": "时长归一化基准秒", "initial": 1200, "current": 1200},
+        "rLo": {"description": "时长缩放下限", "initial": 0.5, "current": 0.5},
+        "rHi": {"description": "时长缩放上限", "initial": 2, "current": 2},
+        "PMax": {"description": "本项扣分上限", "initial": 60, "current": 50},
+        "S0": {"description": "饱和速度基线；取 5 局 >15min 忠实对局 S 中位数（样本全为战败）", "initial": 1, "current": 12.122, "status": "provisional"},
+        "KToleranceMultiplier": {"description": "最大炮兵攻击间隔的超时倍数", "initial": 1.3, "current": 1.3}
+      },
+      "grinder": {
+        "X": {"description": "危险区半径；由引擎 v1 半径计算提供", "initial": "engine-v1", "current": "engine-v1"},
+        "Kz": {"description": "危险区检查周期秒", "initial": 4, "current": 4},
+        "R": {"description": "我方建筑造价倍率", "initial": 2, "current": 2},
+        "R2": {"description": "近期死亡资源建筑造价倍率", "initial": 0.5, "current": 0.5},
+        "TDead": {"description": "近期死亡台账秒", "initial": 5, "current": 5},
+        "UCreate": {"description": "危险区建立 ratio 阈值", "initial": 0.7, "current": 0.7},
+        "UKeep": {"description": "危险区保留 ratio 阈值", "initial": 0.4, "current": 0.4},
+        "EMin": {"description": "建区所需敌方最小造价", "initial": 1500, "current": 1500},
+        "NClear": {"description": "连续失败清区次数", "initial": 2, "current": 2},
+        "triggerCost": {"description": "触发危险区的生产单位最低造价", "initial": 700, "current": 700},
+        "delta0": {"description": "建区后信息宽限秒", "initial": 5, "current": 5},
+        "TMerge": {"description": "同区建造者死亡合并秒", "initial": 5, "current": 5},
+        "TStale": {"description": "严重度爬升秒", "initial": 30, "current": 30},
+        "LMin": {"description": "宽限后基础严重度", "initial": 0.4, "current": 0.4},
+        "WFull": {"description": "规模项饱和权重", "initial": 10, "current": 10},
+        "SingleMax": {"description": "单次事件最高扣分", "initial": 8, "current": 4},
+        "Cap": {"description": "本项扣分上限", "initial": 40, "current": 20}
+      },
+      "funds": {
+        "K": {"description": "资金阈值的收入倍数", "initial": 30, "current": 30},
+        "incomeWindowSeconds": {"description": "平均收入窗口", "initial": 30, "current": 30},
+        "medianWindowSeconds": {"description": "资金中值平滑窗口", "initial": 3, "current": 3},
+        "incomeFieldPerSecond": {"description": "economy.log 收入字段换算为每秒资金", "initial": 1.5625, "current": 1.5625},
+        "spendFloor": {"description": "最小有效花费先验；动态 kappa 未定义前固定", "initial": 800, "current": 800, "status": "provisional"},
+        "spendShare": {"description": "最小有效花费占区间峰值比例", "initial": 0.25, "current": 0.25},
+        "rho1": {"description": "释放不超过 50% 时 D 折减", "initial": 0.5, "current": 0.5},
+        "rho2": {"description": "释放 50% 到 80% 时 D 折减", "initial": 0.25, "current": 0.25},
+        "releaseShare": {"description": "彻底释放阈值", "initial": 0.8, "current": 0.8},
+        "d0": {"description": "资金闲置免扣秒", "initial": 15, "current": 15, "status": "provisional"},
+        "d1": {"description": "资金闲置满严重度秒", "initial": 120, "current": 120, "status": "provisional"},
+        "lambda": {"description": "资金严重度指数；设计未给定，当前取 1", "initial": 1, "current": 1, "status": "provisional"},
+        "eventMax": {"description": "每区间满严重度扣分", "initial": 7, "current": 7},
+        "Cap": {"description": "资金空余扣分上限", "initial": 30, "current": 30},
+        "minimumCalibrationIntervals": {"description": "动态标定最低参考区间数", "initial": 30, "current": 30},
+        "shrinkage": {"description": "向先验收缩机制；设计未给公式，当前不启用动态改写", "initial": "disabled", "current": "disabled", "status": "provisional"}
+      }
+    }
+  }
+}

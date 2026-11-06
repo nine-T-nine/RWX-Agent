@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d0913">
   <title>评测结果｜RWX-Agent</title>
-  <meta name="description" content="RWX-Agent 已完成的全部对局评分：当前标准 total-v1 的每一局都展开到每个扣分项，附本局证据；另有归档账本、材料不足记录与口径限制。">
+  <meta name="description" content="RWX-Agent old_v1.1 全部可忠实还原对局的 total-v2 汇总：明确时长、胜负、Agent 与工具配对，并展示 Stage1-v2 与四项 Stage3。">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./results.js"></script>
@@ -25,7 +25,7 @@
       <a class="brand" href="./index.html" aria-label="RWX-Agent 首页"><span class="brand-mark"><svg><use href="#i-target"/></svg></span><span>RWX<span class="brand-dash">—</span>Agent<span class="brand-period">.</span></span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="展开导航"><span></span><span></span></button>
       <nav id="primary-nav" aria-label="主导航">
-        <a href="#current">对局榜单</a><a href="#deductions">逐局明细</a><a href="#scoring">评分规则</a><a href="#micro-cases">微操 CASE</a><a href="./results.html" aria-current="page">评测结果</a>
+        <a href="#current">归档总表</a><a href="#deductions">Stage3 明细</a><a href="#scoring">评分规则</a><a href="#micro-cases">微操 CASE</a><a href="./results.html" aria-current="page">评测结果</a>
       </nav>
       <a class="header-github" href="https://github.com/nine-T-nine/RWX-Agent" target="_blank" rel="noopener noreferrer"><svg class="icon"><use href="#i-github"/></svg> GitHub <svg class="icon small"><use href="#i-external"/></svg></a>
     </div>
@@ -33,47 +33,48 @@
 
   <main id="main">
     <section class="results-hero shell">
-      <div class="eyebrow"><span class="status-dot"></span> EVALUATION LEDGER / TOTAL-V1</div>
+      <div class="eyebrow"><span class="status-dot"></span> EVALUATION ARCHIVE / OLD_V1.1 / TOTAL-V2</div>
       <h1>评测结果</h1>
-      <p class="results-lead">这里列出目前所有完成过的 RWX 对局：当前标准的每一局都按同一张表展开到每个扣分项，归档账本只作历史参考，材料不足的对局单独列出、不计分。</p>
-      <p class="results-standard" id="standard-line">total-v1 = stage1-v2 × 0.4 + stage2-v2 × 0.6。</p>
+      <p class="results-lead">当前全部对局统一归档为 <code>old_v1.1</code>。本页只展示材料完整或能被忠实 resim 还原的对局；每局明确列出评分时长、胜负，以及 Agent 模型与实际工具的配对关系。</p>
+      <p class="results-standard" id="standard-line">total-v2 = stage3 × 0.6 + stage1-v2 × 0.4。</p>
+      <p class="results-standard" id="last-updated">最后更新：加载中</p>
       <div class="kpi-row" id="results-kpis"></div>
     </section>
 
     <section id="current" class="section shell">
-      <div class="section-heading"><span class="section-index">01 / CURRENT STANDARD</span><span class="section-kicker">当前标准 · 可横向比较</span></div>
+      <div class="section-heading"><span class="section-index">01 / OLD_V1.1 ARCHIVE</span><span class="section-kicker">统一归档 · 17 局</span></div>
       <div class="results-heading">
-        <h2>当前标准下的全部对局</h2>
-        <p>下列对局都带有完整证据链（回放、实时遥测、伤害 HP 字段），版本为 <code>stage1-v2</code> / <code>stage2-v2</code>，综合分 <code>total-v1</code>。评测者标注为“模型 + 工具 + 推理强度”；每局 18 个扣分项在下面的「扣分明细总表」里横向展开，最后一列可以直接跳到该局那一行。</p>
+        <h2>old_v1.1 对局总表</h2>
+        <p>主分采用真正的 <code>stage1-score-v2</code> 与四项 <code>stage3-score-v2</code>。旧 Stage1/Stage2 能复算的仍作为可选对照列保留。多 Agent 对局会显示数量；工具的桥接、MCP、push、mail 等改造统一放在 <code>extra</code> 行。</p>
       </div>
-      <p class="callout"><b>同图可比的三局：</b>同一模型、同一地图（Ice Island (2p)，对手 Hard，x2 收入）下，MCPtool3 84.60 &gt; MCPtool1 79.93 &gt; MCPtool2 74.93。差距集中在第二阶段：MCPtool2 的偷袭扣 11.67 分（另两局 1.03 / 2.72），资金闲置三局为 0 / 7 / 7，建造者与工厂闲置在现行口径下单项都不到 3 分。每臂只有 1 局，提示词也不只差接口，所以分差不能全部归因给 MCP。其余对局换了地图、对手或交付方式，只作单局记录。</p>
+      <p class="callout"><b>调参池：</b>只选评分窗口严格大于 15 分钟、证据完整且重放无分叉的对局。当前只有 5 局，且全部为战败，因此 S0 与 Stage1-v2 参数仍标记 provisional。</p>
       <div class="table-wrap">
         <table class="data-table" id="current-table">
-          <caption>按综合分排序；分数采用“得分/满分”格式；地图配置列展示地图、AI 难度、经济倍率与有效时长；结局一列是游戏内结果，不参与计分。</caption>
+          <caption>按 total-v2 排序；胜负与评分窗口明确展示，胜负本身不直接进入公式。</caption>
         </table>
       </div>
     </section>
 
     <section id="deductions" class="section shell">
-      <div class="section-heading"><span class="section-index">02 / DEDUCTION MATRIX</span><span class="section-kicker">横向比较 · 悬浮看证据</span></div>
+      <div class="section-heading"><span class="section-index">02 / STAGE3 MATRIX</span><span class="section-kicker">四项扣分 · 全局汇总</span></div>
       <div class="results-heading">
-        <h2>扣分明细总表</h2>
-        <p>一张表看全部对局：每一行是一局，左侧固定列是对局标识，右侧 18 列依次是第一阶段 12 项与第二阶段 6 类。格子采用“扣分/上限”格式，<b>鼠标悬浮</b>可看该项在本局的证据与原始值；深色底表示达到该项上限。表下方的「合计」同样显示扣分/上限与综合分。</p>
+        <h2>Stage3 与总分汇总</h2>
+        <p>每行是一局，四列依次为偷袭延迟、建筑炮击延迟、危险区建造者死亡与资金空余；格子采用“扣分/上限”格式。末三列给出 Stage1-v2、Stage3 与 total-v2。</p>
       </div>
       <div class="matrix-wrap" id="match-matrix" aria-live="polite"></div>
       <noscript><p class="callout">扣分明细由 <code>resource/results.json</code> 渲染；禁用脚本时可直接查看该 JSON 文件。</p></noscript>
     </section>
 
     <section id="scoring" class="section shell scoring-section">
-      <div class="section-heading"><span class="section-index">03 / FULL-MATCH SCORING</span><span class="section-kicker">完整对局 · 两阶段扣分表</span></div>
+      <div class="section-heading"><span class="section-index">03 / FULL-MATCH SCORING</span><span class="section-kicker">完整对局 · v2 公式</span></div>
       <div class="results-heading scoring-heading">
         <h2>完整对局怎么扣分</h2>
-        <p>第一、第二阶段都从 100 分起扣；每项先按自己的上限封顶，再求和。扣分项与说明保持稳定，公式和参数集中在独立数据文件中，便于后续调整。</p>
+        <p>Stage1-v2 衡量交互节奏，Stage3 从四类严重失误扣分。所有当前参数以 <code>evaluate/config.json</code> 为唯一账本；未在设计中确定的值明确标记 provisional。</p>
       </div>
       <div class="score-formula-strip" aria-label="完整对局评分公式">
-        <span><b>S1</b> = max(0, 100 − Σ 第一阶段扣分)</span>
-        <span><b>S2</b> = max(0, 100 − Σ 第二阶段扣分)</span>
-        <span><b>总分</b> = 0.4 × S1 + 0.6 × S2</span>
+        <span><b>S1-v2</b> = 100 − 启动 / 回合延迟 / 空窗扣分</span>
+        <span><b>S3</b> = max(0, 100 − 四项扣分)</span>
+        <span><b>total-v2</b> = 0.4 × S1-v2 + 0.6 × S3</span>
       </div>
       <div id="full-match-scoring" class="scoring-stages" aria-live="polite"></div>
       <p id="scoring-status" class="data-pending" hidden></p>
@@ -89,30 +90,17 @@
       <div id="micro-cases-list" class="micro-cases-list" aria-live="polite"></div>
     </section>
 
-    <section id="legacy" class="section shell">
-      <div class="section-heading"><span class="section-index">05 / ARCHIVE</span><span class="section-kicker">历史账本 · 不与当前标准混榜</span></div>
-      <div class="results-heading">
-        <h2>归档对局</h2>
-        <p>这些对局的材料在 2026-11-02 至 03 的整备中归档为 <code>_old</code>：当时没有保留完整的伤害 / HP 证据，无法按当前口径复算第二阶段的偷袭与损失扣分。分数只能代表当时的材料，模型与工具归属按目录名记录，未逐局核验。</p>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table" id="legacy-table">
-          <caption>仅第一阶段 / 第二阶段分，不含综合分。</caption>
-        </table>
-      </div>
-    </section>
-
     <section id="gaps" class="section shell">
-      <div class="section-heading"><span class="section-index">06 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
+      <div class="section-heading"><span class="section-index">05 / MATERIAL GAPS</span><span class="section-kicker">材料不足 · 不计分</span></div>
       <div class="results-heading">
         <h2>没有进入排名的材料</h2>
-        <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。</p>
+        <p>把“打了但材料不够”与“根本没打成”分开记录，避免用猜测补分。重放分叉的局（4P 归档）与回放未完成的局都在这里，写明原因，不进入任何均分。</p>
       </div>
       <div class="gap-list" id="gap-list"></div>
     </section>
 
     <section id="method" class="section shell">
-      <div class="section-heading"><span class="section-index">07 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
+      <div class="section-heading"><span class="section-index">06 / METHOD &amp; LIMITS</span><span class="section-kicker">口径与已知限制</span></div>
       <div class="results-heading">
         <h2>分数是怎么来的</h2>
         <p>数据直接取自评分产物与 DSH 会话存档，页面不做二次换算。</p>
@@ -127,7 +115,7 @@
           <ul class="method-list" id="method-limits"></ul>
         </div>
       </div>
-      <p class="method-note">判定标准与曲线定义见仓库 <a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/STAGE1_SCORING.md" target="_blank" rel="noopener noreferrer">STAGE1_SCORING.md <svg class="icon small"><use href="#i-external"/></svg></a> 与 <a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/STAGE2_SCORING.md" target="_blank" rel="noopener noreferrer">STAGE2_SCORING.md <svg class="icon small"><use href="#i-external"/></svg></a>。</p>
+      <p class="method-note">公式与参数见仓库 <a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/score_design.md" target="_blank" rel="noopener noreferrer">score_design.md <svg class="icon small"><use href="#i-external"/></svg></a>、<a href="https://github.com/nine-T-nine/RWX-Agent/blob/main/evaluate/STAGE3_SCORING.md" target="_blank" rel="noopener noreferrer">STAGE3_SCORING.md <svg class="icon small"><use href="#i-external"/></svg></a> 与 <code>evaluate/config.json</code>。</p>
     </section>
   </main>
 
